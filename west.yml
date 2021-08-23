@@ -11,4 +11,3 @@ manifest:
       import: true
   self:
     path: application
-    revision: master
