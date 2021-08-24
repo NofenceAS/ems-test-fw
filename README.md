@@ -10,4 +10,6 @@ strongly recommend to use Linux Ubuntu 20.1 for development. Some of the feature
 the build system will not be available on windows (mainly due to POSIX compliance)
 
 1. Install the Nordic Connect SDK manually as described in https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/gs_installing.html
+   In particular, install west and the GNU ARM Embedded Toolchain
+
 
