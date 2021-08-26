@@ -12,4 +12,4 @@ the build system will not be available on windows (mainly due to POSIX complianc
 1. Install the Nordic Connect SDK manually as described in https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/gs_installing.html
    In particular, install west and the GNU ARM Embedded Toolchain
 
-
+2. 
