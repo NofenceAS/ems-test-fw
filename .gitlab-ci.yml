@@ -6,6 +6,8 @@ variables:
 stages:
   - build
 
+before_script:
+  - apt install -y ruby
 
 firmware:
   stage: build
