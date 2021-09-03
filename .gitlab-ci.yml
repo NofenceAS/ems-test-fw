@@ -1,0 +1,20 @@
+
+# xboot is a submodule so we need to include it
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+stages:
+  - build
+
+
+firmware:
+  stage: build
+  extends: .build-job
+  script:
+    - export BUILD_NUMBER=$(($CI_PIPELINE_IID + 1000))
+    - printf "$BUILD_NUMBER" > buildnumber
+    - printf "$CI_COMMIT_SHA" 
+
+.build-job:
+  image: zephyrprojectrtos/ci
+  
