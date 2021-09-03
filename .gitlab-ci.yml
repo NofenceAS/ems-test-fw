@@ -16,9 +16,12 @@ firmware:
     - export BUILD_NUMBER=$(($CI_PIPELINE_IID + 1000))
     - printf "$BUILD_NUMBER" > buildnumber
     - printf "$CI_COMMIT_SHA" 
-    - west init -l .
+    - >
+      if [ ! -d ../zephyr/ ]; then 
+        west init -l .
+      fi
     - west update
-    - ../zephyr/scripts/twister -T tests/
+    - ../zephyr/scripts/twister -i -T tests/
 
 .build-job:
   image: zephyrprojectrtos/ci

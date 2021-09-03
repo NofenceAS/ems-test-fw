@@ -49,6 +49,13 @@
 		};
 	};
 
+    pwmdevs {
+        compatible = "pwm-leds";
+        pwm_dev0: pwm_dev_0 {
+            pwms = <&pwm0 27>;
+        };
+    };
+
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
@@ -121,6 +128,8 @@
 		sw2 = &button2;
 		sw3 = &button3;
 		bootloader-led0 = &led0;
+        pwmsound = &pwm_dev0;    // Nofence buzzer
+
 	};
 };
 
@@ -174,7 +183,7 @@ arduino_i2c: &i2c0 {
 
 &pwm0 {
 	status = "okay";
-	ch0-pin = <13>;
+	ch0-pin = <27>;
 	ch0-inverted;
 };
 
