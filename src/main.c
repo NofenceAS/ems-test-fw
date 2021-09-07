@@ -1,23 +1,13 @@
-/*
- * Copyright (c) 2016 Intel Corporation
- * Copyright (c) 2020 Nordic Semiconductor ASA
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+
+#include "ble/nf_ble.h"
+#include <sys/printk.h>
+#include <zephyr.h>
 
 /**
- * @file Sample app to demonstrate PWM.
+ * The Nofence X3 main entry point. This is
+ * called from the Zephyr kernel.
  */
-
-#include <zephyr.h>
-#include <sys/printk.h>
-#include "ble/nf_ble.h"
-
-
-void main(void)
-{
-    //sys_pm_ctrl_disable_state(SYS_POWER_STATE_DEEP_SLEEP_1);
-    nf_ble_init();
-    nf_ble_start_scan();
-
+void main(void) {
+  printk("main %p\n", k_current_get());
+  nf_ble_init();
 }
