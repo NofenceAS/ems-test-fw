@@ -169,7 +169,7 @@
 					  label = "LIS3DH";
 					  spi-max-frequency = <8000000>;
 					  reg = <0>;
-					 /* int1-gpios = <&gpio0 9 0>;  TODO no interrupt for this driver !!!*/
+					  irq-gpios = <&gpio0 20 0>;   /* INT2_TILT P0.20 */
 	   };
 
 		NOTUSED@1 {
