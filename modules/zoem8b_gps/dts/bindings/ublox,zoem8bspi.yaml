@@ -1,0 +1,12 @@
+# A YAML binding matching the node
+description: |
+  Ublox M8 receiver accessed through SPI bus
+
+compatible: "ublox,zoem8bspi"
+
+include: ["spi-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
