@@ -132,13 +132,14 @@ static int zoem8b_spi_raw_read(const struct device *dev,
   const struct spi_config *spi_cfg = &cfg->bus_cfg.spi_cfg->spi_conf;
 
   uint8_t buffer_tx[64];
-  uint8_t buffer_1[] = {0xB5,0x62,0x0A,0x04,0x00,0x00,0x0E,0x34};
+ // uint8_t buffer_1[] = {0xB5,0x62,0x0A,0x04,0x00,0x00,0x0E,0x34};
+  uint8_t buffer_1[] = {0x5B,0x62,0x06,0x09,0x0c,0x00,0x1f,0x1f,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x59,0x58};
   memset(buffer_tx,0xFF,sizeof(buffer_tx));
   memcpy(buffer_tx,buffer_1,sizeof(buffer_1));
 
   const struct spi_buf tx_buf = {
-      .buf = buffer_tx,
-      .len = sizeof(buffer_tx),
+      .buf = buffer_1,
+      .len = sizeof(buffer_1),
   };
   const struct spi_buf_set tx = {
       .buffers = &tx_buf,
@@ -158,6 +159,7 @@ static int zoem8b_spi_raw_read(const struct device *dev,
     return -EIO;
   }
   ret = spi_transceive(data->bus, spi_cfg, &tx, &rx);
+  //ret = spi_transceive(data->bus, spi_cfg, &tx, &rx);
   if (ret) {
     LOG_ERR("spi_transceive %d\n",ret);
     return -EIO;
@@ -291,11 +293,17 @@ wait:
 
   while (true) {
     // TODO, look at nrf9160 gps here
-    k_sleep(K_MSEC(5000));
+    k_sleep(K_MSEC(500));
     has_fix = true;
     memset(buf,0x01,sizeof(buf));
     zoem8b_spi_raw_read(dev,buf, sizeof(buf));
-    LOG_HEXDUMP_INF(buf,sizeof(buf),"SPI");
+    for (int i = 0; i < sizeof(buf); i++) {
+      if (buf[i] != 0xFF) {
+        LOG_HEXDUMP_INF(buf, sizeof(buf), "SPI");
+        break;
+      }
+    }
+
     struct gps_event evt = {0};
 
     /* There is no way of knowing if nrf_recv() blocks because the
@@ -477,7 +485,7 @@ static const struct gps_driver_api gps_api_funcs = {
 	{ .cs_ctrl = {							\
 		.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(inst),		\
 		.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(inst), \
-		.delay = 10,                                         \
+		.delay = 20,                                         \
 		},							\
 	}
 

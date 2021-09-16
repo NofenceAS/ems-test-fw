@@ -2,6 +2,17 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
+# Print out build type
+message(STATUS "Build type: ${BUILD_TYPE} 🚀")
+
+# Define configuration files.
+if (HARDWARE_TEST)
+list(APPEND CONF_FILE
+        ${CMAKE_CURRENT_SOURCE_DIR}/prj.conf
+        ${CMAKE_CURRENT_SOURCE_DIR}/hw_test.conf
+        )
+endif()
+
 # Out-of-tree driver for GNSS,
 # see https://github.com/zephyrproject-rtos/zephyr/tree/main/samples/application_development/out_of_tree_driver
 list(APPEND ZEPHYR_EXTRA_MODULES

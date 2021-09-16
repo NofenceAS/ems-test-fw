@@ -26,10 +26,7 @@ static int pwr_ctrl_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	//gpio_pin_configure(gpio, cfg->pin, GPIO_OUTPUT_HIGH);
 	gpio_pin_configure(gpio, cfg->pin, GPIO_OUTPUT_HIGH);
-	gpio_pin_configure(gpio, 19, GPIO_OUTPUT_HIGH); // TODO, just debugging GPS-backup
-
 	k_sleep(K_MSEC(1)); /* Wait for the rail to come up and stabilize */
 
 	return 0;

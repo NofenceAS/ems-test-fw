@@ -23,9 +23,9 @@
 
 LOG_MODULE_REGISTER(main);
 
-//#define TEST_ZOEM8B_GPS 1
+#define TEST_ZOEM8B_GPS 1
 //#define TEST_LIS2DH 1
-#define TEST_FLASH 1
+//#define TEST_FLASH 1
 
 #define FLASH_DEVICE DT_LABEL(DT_INST(0, jedec_spi_nor))
 #define FLASH_NAME "JEDEC SPI-NOR"

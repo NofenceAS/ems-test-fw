@@ -22,39 +22,6 @@
 		zephyr,code-partition = &slot0_partition;
 	};
 
-	leds {
-		compatible = "gpio-leds";
-		led0: led_0 {
-			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
-			label = "Green LED 0";
-		};
-		led1: led_1 {
-			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
-			label = "Green LED 1";
-		};
-		led2: led_2 {
-			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
-			label = "Green LED 2";
-		};
-		led3: led_3 {
-			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
-			label = "Green LED 3";
-		};
-	};
-
-	pwmleds {
-		compatible = "pwm-leds";
-		pwm_led0: pwm_led_0 {
-			pwms = <&pwm0 13>;
-		};
-	};
-
-    pwmdevs {
-        compatible = "pwm-leds";
-        pwm_dev0: pwm_dev_0 {
-            pwms = <&pwm0 27>;
-        };
-    };
 
 	vdd_pwr: vdd-pwr-ctrl {
 		compatible = "regulator-fixed-sync", "regulator-fixed";
@@ -64,17 +31,6 @@
 		regulator-boot-on;
 		};
 
-	/* These aliases are provided for compatibility with samples */
-	aliases {
-		led0 = &led0;
-		led1 = &led1;
-		led2 = &led2;
-		led3 = &led3;
-		pwm-led0 = &pwm_led0;
-		bootloader-led0 = &led0;
-        pwmsound = &pwm_dev0;    // Nofence buzzer
-
-	};
 };
 
 &adc {
@@ -91,16 +47,6 @@
 
 &gpio1 {
 	status = "okay";
-};
-
-&uart0 {
-	compatible = "nordic,nrf-uarte";
-	status = "disabled";
-	current-speed = <115200>;
-	tx-pin = <6>;
-	rx-pin = <8>;
-	rts-pin = <5>;
-	cts-pin = <7>;
 };
 
 
@@ -132,8 +78,8 @@
 	compatible = "nordic,nrf-spim";
 	status = "okay";
 	sck-pin = <8>;    /* P 0.08 */
-	mosi-pin = <27>;  /* P 0.27 */
-	miso-pin = <06>;  /* P 0.06 */
+	mosi-pin = <06>;  /* P 0.27 */
+	miso-pin = <27>;  /* P 0.06 */
 
 	cs-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;  /* CS GPS */
 
@@ -141,7 +87,7 @@
 				 compatible = "ublox,zoem8bspi";
 				 label = "ZOEM8B";
 				 status="okay";
-				 spi-max-frequency = <1000000>;
+				 spi-max-frequency = <500000>;
 				 reg = <0>;
 				/* extint-pin = <26>;    P0.26 */
    };
@@ -166,13 +112,14 @@
 					  reg = <0>;
 					  irq-gpios = <&gpio0 20 0>;   /* INT2_TILT P0.20 */
 	   };
-	   at25dl081: at25dl081@1 { /* https://no.mouser.com/datasheet/2/590/doc8732-1385712.pdf */
+	   at25dl081: at25dl081@1 {
+						    /* https://no.mouser.com/datasheet/2/590/doc8732-1385712.pdf */
 							 compatible = "jedec,spi-nor";
 							 status="okay";
 							 label = "AT25DL081";
 							 reg = < 1 >;
 							 spi-max-frequency = < 40000000 >;
-							 has-lock = < 0xBC >;
+							 has-lock = < 0xBC >;   /* Important: clears the protection flags */
 							 size = < 0x800000 >;
 							 has-dpd;
 							 t-enter-dpd = < 3000 >;
@@ -182,9 +129,7 @@
 
 };
 
-
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -211,6 +156,15 @@
 		 * The flash starting at 0x000f8000 and ending at
 		 * 0x000fffff is reserved for use by the application.
 		 */
+
+	};
+};
+
+&at25dl081 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		/*
 		 * Storage partition will be used by FCB/LittleFS/NVS
