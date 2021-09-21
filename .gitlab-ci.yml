@@ -32,5 +32,5 @@ firmware:
     - ../zephyr/scripts/twister -i -T tests/
 
 .build-job:
-  image: zephyrprojectrtos/ci
+  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/zephyrprojectrtos/ci
   
