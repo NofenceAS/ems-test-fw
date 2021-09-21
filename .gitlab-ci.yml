@@ -4,22 +4,20 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
-  - .pre
+  - compliance
   - build
 
 before_script:
   - apt install -y ruby
 
 check_compliance:
-  stage: .pre
+  stage: compliance
   extends: .build-job
   script:
     - export ZEPHYR_BASE=$PWD/../zephyr
     - ls -la
     - git log  --pretty=oneline | head -n 10
     
-
-
 firmware:
   stage: build
   extends: .build-job
