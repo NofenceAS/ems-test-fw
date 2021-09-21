@@ -4,10 +4,21 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
+  - .pre
   - build
 
 before_script:
   - apt install -y ruby
+
+check_compliance:
+  stage: .pre
+  extends: .build-job
+  script:
+    - export ZEPHYR_BASE=$PWD/../zephyr
+    - ls -la
+    - git log  --pretty=oneline | head -n 10
+    - git diff --cached | ${ZEPHYR_BASE}/scripts/checkpatch.pl --ignore BRACES -
+
 
 firmware:
   stage: build
@@ -16,10 +27,7 @@ firmware:
     - export BUILD_NUMBER=$(($CI_PIPELINE_IID + 1000))
     - printf "$BUILD_NUMBER" > buildnumber
     - printf "$CI_COMMIT_SHA" 
-    - >
-      if [ ! -d ../zephyr/ ]; then 
-        west init -l .
-      fi
+    - west init -l . || true
     - west update
     - ../zephyr/scripts/twister -i -T tests/
 
