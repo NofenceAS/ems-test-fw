@@ -17,7 +17,7 @@ check_compliance:
     - export ZEPHYR_BASE=$PWD/../zephyr
     - ls -la
     - git log  --pretty=oneline | head -n 10
-    - git diff --cached | ${ZEPHYR_BASE}/scripts/checkpatch.pl --ignore BRACES -
+    - git diff --cached | ${ZEPHYR_BASE}/scripts/checkpatch.pl --ignore BRACES - || false
 
 
 firmware:
