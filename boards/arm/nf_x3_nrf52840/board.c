@@ -25,10 +25,11 @@ static int pwr_ctrl_init(const struct device *dev)
 		printk("Could not bind device \"%s\"\n", cfg->port);
 		return -ENODEV;
 	}
-
+/* TODO */
+#ifdef TEST_ZOEM8B_GPS
 	gpio_pin_configure(gpio, cfg->pin, GPIO_OUTPUT_HIGH);
 	k_sleep(K_MSEC(1)); /* Wait for the rail to come up and stabilize */
-
+#endif
 	return 0;
 }
 
@@ -50,9 +51,5 @@ static const struct pwr_ctrl_cfg vdd_pwr_ctrl_cfg = {
 	.pin = VDD_PWR_CTRL_GPIO_PIN,
 };
 
-DEVICE_DEFINE(vdd_pwr_ctrl_init, "", pwr_ctrl_init, NULL, NULL,
-	      &vdd_pwr_ctrl_cfg,
-	      POST_KERNEL, CONFIG_BOARD_VDD_PWR_CTRL_INIT_PRIORITY,
-	      NULL);
-
-
+DEVICE_DEFINE(vdd_pwr_ctrl_init, "", pwr_ctrl_init, NULL, NULL, &vdd_pwr_ctrl_cfg, POST_KERNEL,
+	      CONFIG_BOARD_VDD_PWR_CTRL_INIT_PRIORITY, NULL);
