@@ -29,6 +29,10 @@ set(BOARD nf_x3_nrf52840)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(x3_fw)
 
+# As the Zephyr GNSS API is not yet finalized, ( see https://github.com/zephyrproject-rtos/zephyr/issues/30564)
+# We put the proposed API out-of-tree
+zephyr_include_directories(include)
+
 # These are common files used by both hardware test and the real app
 set(APP_SOURCES
         src/ble/nf_ble.c

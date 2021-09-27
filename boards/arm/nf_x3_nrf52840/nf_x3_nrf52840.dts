@@ -50,6 +50,28 @@
 };
 
 
+&uart1 { /* u-blox SARA-U2 or SARA-R4 */
+    compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "okay";
+	tx-pin = <45>; /* AS diagram */
+	rx-pin = <44>; /* As diagram */
+//	rts-pin = <39>;
+//	cts-pin = <38>;
+//	hw-flow-control;
+
+	sara_r4 {
+		compatible = "ublox,sara-r4";
+		label = "ublox-sara-r4";
+		status = "okay";
+
+		 mdm-power-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH >;
+		//mdm-power-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+		mdm-reset-gpios = <&gpio1 11 0>;
+		mdm-vint-gpios = <&gpio1 07 0>;
+	};
+};
+
 
 &i2c1 {
 	compatible = "nordic,nrf-twi";
@@ -87,9 +109,9 @@
 				 compatible = "ublox,zoem8bspi";
 				 label = "ZOEM8B";
 				 status="okay";
-				 spi-max-frequency = <500000>;
+				 spi-max-frequency = <1000000>;
 				 reg = <0>;
-				/* extint-pin = <26>;    P0.26 */
+				 reset-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;  /* RESET1 GPS */
    };
 
 };

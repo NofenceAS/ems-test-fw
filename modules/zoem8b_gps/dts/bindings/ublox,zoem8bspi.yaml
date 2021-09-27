@@ -4,9 +4,14 @@ description: |
 
 compatible: "ublox,zoem8bspi"
 
-include: ["spi-device.yaml"]
+include: [ "spi-device.yaml" ]
 
 properties:
   reg:
     required: true
+
+  reset-gpios:
+    type: phandle-array
+    required: false
+    description: RESETn pin
 

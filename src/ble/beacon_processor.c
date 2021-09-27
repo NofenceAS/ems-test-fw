@@ -10,92 +10,86 @@
 
 LOG_MODULE_REGISTER(beacon_processor);
 
-
-
 /** @brief defines the minimum number of RSSI measurements to define a RSSI based distance */
 #define MIN_VALID_BEACON_MEASUREMENTS 5
-
 
 /** @brief : Contains the whole structure for the tracked beacons **/
 static BeaconsInfo_t m_beaconsInfo;
 
-static inline uint8_t ring_buffer_num_items(struct ring_buffer_t *buffer) {
-    return ((buffer->head_index - buffer->tail_index) & RING_BUFFER_MASK);
+static inline uint8_t ring_buffer_num_items(struct ring_buffer_t *buffer)
+{
+	return ((buffer->head_index - buffer->tail_index) & RING_BUFFER_MASK);
 }
 
-static inline uint8_t ring_buffer_peek(struct ring_buffer_t *buffer, BeaconHistory *data, uint8_t index) {
-    if(index >= ring_buffer_num_items(buffer)) {
-        return 0;
-    }
-    /* Add index to pointer */
-    uint8_t data_index = ((buffer->tail_index + index) & RING_BUFFER_MASK);
-    *data = buffer->buffer[data_index];
-    return 1;
+static inline uint8_t ring_buffer_peek(struct ring_buffer_t *buffer, BeaconHistory *data,
+				       uint8_t index)
+{
+	if (index >= ring_buffer_num_items(buffer)) {
+		return 0;
+	}
+	/* Add index to pointer */
+	uint8_t data_index = ((buffer->tail_index + index) & RING_BUFFER_MASK);
+	*data = buffer->buffer[data_index];
+	return 1;
 }
 
-static inline uint8_t ring_buffer_is_full(struct ring_buffer_t *buffer) {
-    return ((buffer->head_index - buffer->tail_index) & RING_BUFFER_MASK) == RING_BUFFER_MASK;
+static inline uint8_t ring_buffer_is_full(struct ring_buffer_t *buffer)
+{
+	return ((buffer->head_index - buffer->tail_index) & RING_BUFFER_MASK) == RING_BUFFER_MASK;
 }
 
-static inline uint8_t ring_buffer_is_empty(struct ring_buffer_t *buffer) {
-    return (buffer->head_index == buffer->tail_index);
+static inline uint8_t ring_buffer_is_empty(struct ring_buffer_t *buffer)
+{
+	return (buffer->head_index == buffer->tail_index);
 }
 
-static inline void ring_buffer_queue(struct ring_buffer_t *buffer,BeaconHistory * data) {
-    /* Is buffer full? */
-    if(ring_buffer_is_full(buffer)) {
-        /* Is going to overwrite the oldest byte */
-        /* Increase tail index */
-        buffer->tail_index = ((buffer->tail_index + 1) & RING_BUFFER_MASK);
-    }
+static inline void ring_buffer_queue(struct ring_buffer_t *buffer, BeaconHistory *data)
+{
+	/* Is buffer full? */
+	if (ring_buffer_is_full(buffer)) {
+		/* Is going to overwrite the oldest byte */
+		/* Increase tail index */
+		buffer->tail_index = ((buffer->tail_index + 1) & RING_BUFFER_MASK);
+	}
 
-    /* Place data in buffer */
-    buffer->buffer[buffer->head_index] = *data;
-    buffer->head_index = ((buffer->head_index + 1) & RING_BUFFER_MASK);
+	/* Place data in buffer */
+	buffer->buffer[buffer->head_index] = *data;
+	buffer->head_index = ((buffer->head_index + 1) & RING_BUFFER_MASK);
 }
 
-static uint8_t ring_buffer_dequeue(struct ring_buffer_t *buffer, BeaconHistory *data) {
-    if(ring_buffer_is_empty(buffer)) {
-        /* No items */
-        return 0;
-    }
+static uint8_t ring_buffer_dequeue(struct ring_buffer_t *buffer, BeaconHistory *data)
+{
+	if (ring_buffer_is_empty(buffer)) {
+		/* No items */
+		return 0;
+	}
 
-    *data = buffer->buffer[buffer->tail_index];
-    buffer->tail_index = ((buffer->tail_index + 1) & RING_BUFFER_MASK);
-    return 1;
+	*data = buffer->buffer[buffer->tail_index];
+	buffer->tail_index = ((buffer->tail_index + 1) & RING_BUFFER_MASK);
+	return 1;
 }
-
-
-
-
 
 /** @brief converts an unsigned 16 bit RSSI value to a signed int8 */
-static inline int8_t signed2(uint16_t x) {
-    uint8_t x1 = (uint8_t) x;
-    uint8_t x2 = ~x1;
-    uint16_t x3 = x2 + (uint16_t) 1;
-    return (int8_t) -x3;
+static inline int8_t signed2(uint16_t x)
+{
+	uint8_t x1 = (uint8_t)x;
+	uint8_t x2 = ~x1;
+	uint16_t x3 = x2 + (uint16_t)1;
+	return (int8_t)-x3;
 }
 
-
-static inline bool is_equal_mac_addr(const bt_addr_le_t *p1, const bt_addr_le_t *p2) {
-    return (bt_addr_le_cmp(p1, p2) == 0);
+static inline bool is_equal_mac_addr(const bt_addr_le_t *p1, const bt_addr_le_t *p2)
+{
+	return (bt_addr_le_cmp(p1, p2) == 0);
 }
 
+static char *mac2string(char *s, size_t sSize, const bt_addr_le_t *pMac)
+{
+	static const char *fmt_upper = "%02x%02x%02x%02x%02x%02x";
+	snprintf(s, sSize, fmt_upper, pMac->a.val[0], pMac->a.val[1], pMac->a.val[2],
+		 pMac->a.val[3], pMac->a.val[4], pMac->a.val[5]);
 
-static char *mac2string(char *s, size_t sSize, const bt_addr_le_t *pMac) {
-    static const char *fmt_upper =
-            "%02x%02x%02x%02x%02x%02x";
-    snprintf(s, sSize, fmt_upper,
-             pMac->a.val[0],
-             pMac->a.val[1],
-             pMac->a.val[2],
-             pMac->a.val[3],
-             pMac->a.val[4],
-             pMac->a.val[5]);
-
-    return s;
-
+	return s;
 }
 
 /**
@@ -103,223 +97,222 @@ https://github.com/RadiusNetworks/android-ibeacon-service/blob/4185a5bd0c657acaf
  TODO, pow is too large, create a lookup table from ratio instead
 */
 
-static double calculateAccuracy(int8_t txPower, int8_t rssi) {
-    if (rssi == 0) {
-        return DBL_MAX; // if we cannot determine accuracy, return
-    }
-    double ratio = rssi / (double) txPower;
-    if (ratio < 1.0) {
-        return pow(ratio, 10.0);
-    } else {
-        double accuracy = (0.89976) * pow(ratio, 7.7095) + 0.111;
-        return accuracy;
-    }
+static double calculateAccuracy(int8_t txPower, int8_t rssi)
+{
+	if (rssi == 0) {
+		return DBL_MAX; // if we cannot determine accuracy, return
+	}
+	double ratio = rssi / (double)txPower;
+	if (ratio < 1.0) {
+		return pow(ratio, 10.0);
+	} else {
+		double accuracy = (0.89976) * pow(ratio, 7.7095) + 0.111;
+		return accuracy;
+	}
 }
 
 #ifdef USE_MEDIAN
 
 // https://www.programiz.com/dsa/shell-sort
-void shell_sort(int array[], int n) {
-    // Rearrange elements at each n/2, n/4, n/8, ... intervals
-    for (int interval = n / 2; interval > 0; interval /= 2) {
-        for (int i = interval; i < n; i += 1) {
-            int temp = array[i];
-            int j;
-            for (j = i; j >= interval && array[j - interval] > temp; j -= interval) {
-                array[j] = array[j - interval];
-            }
-            array[j] = temp;
-        }
-    }
+void shell_sort(int array[], int n)
+{
+	// Rearrange elements at each n/2, n/4, n/8, ... intervals
+	for (int interval = n / 2; interval > 0; interval /= 2) {
+		for (int i = interval; i < n; i += 1) {
+			int temp = array[i];
+			int j;
+			for (j = i; j >= interval && array[j - interval] > temp; j -= interval) {
+				array[j] = array[j - interval];
+			}
+			array[j] = temp;
+		}
+	}
 }
 
 #endif
 
-
-static uint8_t get_median_dist(SingleBeaconInfo_t *pB, uint32_t now) {
-
+static uint8_t get_median_dist(SingleBeaconInfo_t *pB, uint32_t now)
+{
 #ifdef USE_MEDIAN
-    int distbuf[MAX_BEACON_MEASUREMENTS];
-    int n_distbuf = 0;
+	int distbuf[MAX_BEACON_MEASUREMENTS];
+	int n_distbuf = 0;
 #endif
-    uint32_t delta = now - pB->prevMeasureTime;
-    BeaconHistory hist;
+	uint32_t delta = now - pB->prevMeasureTime;
+	BeaconHistory hist;
 
-    pB->calculated_dist = BEACON_DIST_INFINITY;
+	pB->calculated_dist = BEACON_DIST_INFINITY;
 
-    uint16_t fifo_index = ring_buffer_num_items(&pB->beacon_hist_fifo) - 1;
-    while (delta <= MAX_MEASUREMENT_AGE_SEC &&
-           ring_buffer_peek(&pB->beacon_hist_fifo,&hist,fifo_index)) {
-        fifo_index--;
-        delta += hist.time_diff;
+	uint16_t fifo_index = ring_buffer_num_items(&pB->beacon_hist_fifo) - 1;
+	while (delta <= MAX_MEASUREMENT_AGE_SEC &&
+	       ring_buffer_peek(&pB->beacon_hist_fifo, &hist, fifo_index)) {
+		fifo_index--;
+		delta += hist.time_diff;
 #ifdef USE_MEDIAN
-        distbuf[n_distbuf++] = dist;
+		distbuf[n_distbuf++] = dist;
 #else
-        if (hist.beacon_dist < pB->calculated_dist) {
-            pB->calculated_dist = hist.beacon_dist;
-        }
+		if (hist.beacon_dist < pB->calculated_dist) {
+			pB->calculated_dist = hist.beacon_dist;
+		}
 #endif
-    }
+	}
 
 #ifdef USE_MEDIAN
-    shell_sort(distbuf, n_distbuf);
-    if (n_distbuf == 0) {
-        pB->calculated_dist = BEACON_DIST_INFINITY;
-    } else if (n_distbuf % 2 == 0) { // even, 2, 4, 6
-        pB->calculated_dist = (distbuf[(n_distbuf / 2) - 1] + distbuf[(n_distbuf / 2)]) / 2;
-    } else {
-        pB->calculated_dist = distbuf[(n_distbuf / 2)];
-    }
+	shell_sort(distbuf, n_distbuf);
+	if (n_distbuf == 0) {
+		pB->calculated_dist = BEACON_DIST_INFINITY;
+	} else if (n_distbuf % 2 == 0) { // even, 2, 4, 6
+		pB->calculated_dist = (distbuf[(n_distbuf / 2) - 1] + distbuf[(n_distbuf / 2)]) / 2;
+	} else {
+		pB->calculated_dist = distbuf[(n_distbuf / 2)];
+	}
 
 #endif
-    return pB->calculated_dist;
-
+	return pB->calculated_dist;
 }
 
-static void reset_beacon_info_values(SingleBeaconInfo_t *pBeaconInfo) {
-
-    memset(&pBeaconInfo->beacon_hist_fifo, 0, sizeof(pBeaconInfo->beacon_hist_fifo));
-    pBeaconInfo->calculated_dist = BEACON_DIST_INFINITY;
+static void reset_beacon_info_values(SingleBeaconInfo_t *pBeaconInfo)
+{
+	memset(&pBeaconInfo->beacon_hist_fifo, 0, sizeof(pBeaconInfo->beacon_hist_fifo));
+	pBeaconInfo->calculated_dist = BEACON_DIST_INFINITY;
 }
 
-static void reset_beacon_info(SingleBeaconInfo_t *pBeaconInfo) {
-    memset(pBeaconInfo, 0, sizeof(*pBeaconInfo));
-    reset_beacon_info_values(pBeaconInfo);
-
+static void reset_beacon_info(SingleBeaconInfo_t *pBeaconInfo)
+{
+	memset(pBeaconInfo, 0, sizeof(*pBeaconInfo));
+	reset_beacon_info_values(pBeaconInfo);
 }
 
-SingleBeaconInfo_t *beac_get_nearest_beacon(uint32_t now) {
-    uint8_t minDist = BEACON_DIST_INFINITY;
-    uint8_t ind = UINT8_MAX;
-    for (uint8_t i = 0; i < MAX_BEACONS; i++) {
-        uint8_t dist = get_median_dist(&m_beaconsInfo.single_beacon_infos[i], now);
-        if (dist < minDist) {
-            minDist = dist;
-            ind = i;
-        }
-    }
-    return ind < MAX_BEACONS ? &m_beaconsInfo.single_beacon_infos[ind] : NULL;
+SingleBeaconInfo_t *beac_get_nearest_beacon(uint32_t now)
+{
+	uint8_t minDist = BEACON_DIST_INFINITY;
+	uint8_t ind = UINT8_MAX;
+	for (uint8_t i = 0; i < MAX_BEACONS; i++) {
+		uint8_t dist = get_median_dist(&m_beaconsInfo.single_beacon_infos[i], now);
+		if (dist < minDist) {
+			minDist = dist;
+			ind = i;
+		}
+	}
+	return ind < MAX_BEACONS ? &m_beaconsInfo.single_beacon_infos[ind] : NULL;
 }
-
 
 /** @brief : Searches the FIFO buffer of MAC addresses and finds or overwrites.
  * In all cases, this MAC will be marked as the most current */
-static SingleBeaconInfo_t *queue_beacon_info_head(const bt_addr_le_t *p_mac_addr, uint8_t m, uint32_t now) {
+static SingleBeaconInfo_t *queue_beacon_info_head(const bt_addr_le_t *p_mac_addr, uint8_t m,
+						  uint32_t now)
+{
+	uint8_t index = UINT8_MAX;
+	bool foundExisting = false;
 
-    uint8_t index = UINT8_MAX;
-    bool foundExisting = false;
+	for (uint8_t i = 0; i < MAX_BEACONS; i++) {
+		if (is_equal_mac_addr(&m_beaconsInfo.single_beacon_infos[i].mac_address,
+				      p_mac_addr)) {
+			index = i;
+			foundExisting = true;
+			break;
+		}
+	}
+	// New beacon, replace the beacon with worst measurements and worse than m. In this case
+	// we must update the cached distances
+	if (index == UINT8_MAX) {
+		uint8_t worstDistance = 0;
+		char mac_s[MAC_CHARBUF_SIZE];
+		// Update distances
+		(void)beac_get_nearest_beacon(now);
+		for (uint8_t i = 0; i < MAX_BEACONS; i++) {
+			LOG_ERR("%d MAC=%s dist=%d\n", i,
+				log_strdup(mac2string(
+					mac_s, sizeof(mac_s),
+					&m_beaconsInfo.single_beacon_infos[i].mac_address)),
+				m_beaconsInfo.single_beacon_infos[i].calculated_dist);
 
-    for (uint8_t i = 0; i < MAX_BEACONS; i++) {
-        if (is_equal_mac_addr(&m_beaconsInfo.single_beacon_infos[i].mac_address, p_mac_addr)) {
-            index = i;
-            foundExisting = true;
-            break;
-        }
-    }
-    // New beacon, replace the beacon with worst measurements and worse than m. In this case
-    // we must update the cached distances
-    if (index == UINT8_MAX) {
-        uint8_t worstDistance = 0;
-        char mac_s[MAC_CHARBUF_SIZE];
-        // Update distances
-        (void) beac_get_nearest_beacon(now);
-        for (uint8_t i = 0; i < MAX_BEACONS; i++) {
-            LOG_ERR("%d MAC=%s dist=%d\n",
-                    i,
-                    log_strdup(mac2string(mac_s, sizeof(mac_s), &m_beaconsInfo.single_beacon_infos[i].mac_address)),
-                    m_beaconsInfo.single_beacon_infos[i].calculated_dist);
+			if (m_beaconsInfo.single_beacon_infos[i].calculated_dist > worstDistance) {
+				index = i;
+				worstDistance =
+					m_beaconsInfo.single_beacon_infos[i].calculated_dist;
+			}
+		}
+		if (m > worstDistance) {
+			return NULL;
+		}
+	}
 
-            if (m_beaconsInfo.single_beacon_infos[i].calculated_dist > worstDistance) {
-                index = i;
-                worstDistance = m_beaconsInfo.single_beacon_infos[i].calculated_dist;
-            }
-        }
-        if (m > worstDistance) {
-            return NULL;
-        }
-    }
-
-    if (!foundExisting) {
+	if (!foundExisting) {
 #if IS_ENABLED(CONFIG_LOG)
-        char mac_s[MAC_CHARBUF_SIZE];
-        char mac_s1[MAC_CHARBUF_SIZE];
-        LOG_DBG("RESETS beacon info %s replaces %s (%d)\n",
-                log_strdup(mac2string(mac_s, sizeof(mac_s), p_mac_addr)),
-                log_strdup(mac2string(mac_s1, sizeof(mac_s1), &m_beaconsInfo.single_beacon_infos[index].mac_address)),
-                index);
+		char mac_s[MAC_CHARBUF_SIZE];
+		char mac_s1[MAC_CHARBUF_SIZE];
+		LOG_DBG("RESETS beacon info %s replaces %s (%d)\n",
+			log_strdup(mac2string(mac_s, sizeof(mac_s), p_mac_addr)),
+			log_strdup(
+				mac2string(mac_s1, sizeof(mac_s1),
+					   &m_beaconsInfo.single_beacon_infos[index].mac_address)),
+			index);
 #endif
-        reset_beacon_info(&m_beaconsInfo.single_beacon_infos[index]);
-        memcpy(&(m_beaconsInfo.single_beacon_infos[index].mac_address), p_mac_addr, sizeof(*p_mac_addr));
-    }
+		reset_beacon_info(&m_beaconsInfo.single_beacon_infos[index]);
+		memcpy(&(m_beaconsInfo.single_beacon_infos[index].mac_address), p_mac_addr,
+		       sizeof(*p_mac_addr));
+	}
 
-
-    return &m_beaconsInfo.single_beacon_infos[index];
-
+	return &m_beaconsInfo.single_beacon_infos[index];
 }
 
+bool beac_process_event(uint32_t now_ms, const bt_addr_le_t *addr, int8_t rssi_sample_value,
+			adv_data_t *p_adv_data)
+{
+	BeaconHistory beacon_history;
 
-bool beac_process_event(uint32_t now_ms, const bt_addr_le_t *addr, int8_t rssi_sample_value, adv_data_t *p_adv_data) {
-    BeaconHistory beacon_history;
+	int8_t rssi = signed2(p_adv_data->rssi);
+	double m = calculateAccuracy(rssi, -rssi_sample_value);
 
-    int8_t rssi = signed2(p_adv_data->rssi);
-    double m = calculateAccuracy(rssi, -rssi_sample_value);
+	if (m > BEACON_DIST_INFINITY) {
+		m = BEACON_DIST_INFINITY;
+	}
+	if (m < 1.0) {
+		m = 1.0;
+	}
 
-    if (m > BEACON_DIST_INFINITY) {
-        m = BEACON_DIST_INFINITY;
-    }
-    if (m < 1.0) {
-        m = 1.0;
-    }
+	if (m > BEACON_DIST_MAX_M) {
+		return false;
+	}
 
-    if (m > BEACON_DIST_MAX_M) {
-        return false;
-    }
+	SingleBeaconInfo_t *pBeaconInfo = queue_beacon_info_head(addr, (uint8_t)m, now_ms);
+	if (pBeaconInfo == NULL) {
+		// This beacon measurement is ignored
+		return true;
+	}
 
-    SingleBeaconInfo_t *pBeaconInfo = queue_beacon_info_head(addr, (uint8_t) m, now_ms);
-    if (pBeaconInfo == NULL) {
-        // This beacon measurement is ignored
-        return true;
-    }
+	uint32_t time_diff = now_ms - pBeaconInfo->prevMeasureTime;
+	if (time_diff > UINT8_MAX) {
+		time_diff = UINT8_MAX;
+	}
+	pBeaconInfo->prevMeasureTime = now_ms;
 
-    uint32_t time_diff = now_ms - pBeaconInfo->prevMeasureTime;
-    if (time_diff > UINT8_MAX) {
-        time_diff = UINT8_MAX;
-    }
-    pBeaconInfo->prevMeasureTime = now_ms;
+	if (ring_buffer_is_full(&pBeaconInfo->beacon_hist_fifo)) {
+		ring_buffer_dequeue(&pBeaconInfo->beacon_hist_fifo, &beacon_history);
+	}
+	beacon_history.beacon_dist = m;
+	beacon_history.time_diff = time_diff;
 
-    if (ring_buffer_is_full(&pBeaconInfo->beacon_hist_fifo)) {
-        ring_buffer_dequeue(&pBeaconInfo->beacon_hist_fifo, &beacon_history);
-    }
-    beacon_history.beacon_dist = m;
-    beacon_history.time_diff = time_diff;
+	ring_buffer_queue(&pBeaconInfo->beacon_hist_fifo, &beacon_history);
 
-    ring_buffer_queue(&pBeaconInfo->beacon_hist_fifo, &beacon_history);
+	char mac_s[MAC_CHARBUF_SIZE];
 
-    char mac_s[MAC_CHARBUF_SIZE];
+	LOG_DBG("MAC=%s  RSSI=%d reported =%d  m=%d calc=%d\n",
+		mac2string(mac_s, sizeof(mac_s), addr), (int)rssi_sample_value, (int)rssi, (int)m,
+		pBeaconInfo->calculated_dist);
 
-    LOG_DBG("MAC=%s  RSSI=%d reported =%d  m=%d calc=%d\n",
-            mac2string(mac_s, sizeof(mac_s), addr),
-            (int)rssi_sample_value,
-            (int)rssi,
-            (int) m, pBeaconInfo->calculated_dist);
-
-
-    return true;
-
+	return true;
 }
 
-
-void beac_init() {
-    beac_reset();
+void beac_init()
+{
+	beac_reset();
 }
 
-
-void beac_reset() {
-    memset(&m_beaconsInfo, 0, sizeof(m_beaconsInfo));
-    for (uint8_t i = 0; i < MAX_BEACONS; i++) {
-        reset_beacon_info(&m_beaconsInfo.single_beacon_infos[i]);
-    }
+void beac_reset()
+{
+	memset(&m_beaconsInfo, 0, sizeof(m_beaconsInfo));
+	for (uint8_t i = 0; i < MAX_BEACONS; i++) {
+		reset_beacon_info(&m_beaconsInfo.single_beacon_infos[i]);
+	}
 }
-
-
-
