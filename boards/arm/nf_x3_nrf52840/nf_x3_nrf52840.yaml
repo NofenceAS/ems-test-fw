@@ -1,5 +1,5 @@
 identifier: nf_x3_nrf52840
-name: nRF52840-DK-NRF52840
+name: nRF52840-NF-PCP006
 type: mcu
 arch: arm
 ram: 256

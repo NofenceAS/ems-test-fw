@@ -2,6 +2,23 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
+# Print out build type
+message(STATUS "Build type: ${BUILD_TYPE} 🚀")
+
+# Define configuration files.
+if (HARDWARE_TEST)
+list(APPEND CONF_FILE
+        ${CMAKE_CURRENT_SOURCE_DIR}/prj.conf
+        ${CMAKE_CURRENT_SOURCE_DIR}/hw_test.conf
+        )
+endif()
+
+# Out-of-tree driver for GNSS,
+# see https://github.com/zephyrproject-rtos/zephyr/tree/main/samples/application_development/out_of_tree_driver
+list(APPEND ZEPHYR_EXTRA_MODULES
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/zoem8b_gps
+        )
+
 # Re-direct the directory where the 'boards' directory is found from
 # $ZEPHYR_BASE to this directory.
 set(BOARD_ROOT ${CMAKE_CURRENT_LIST_DIR})
@@ -11,6 +28,10 @@ set(BOARD nf_x3_nrf52840)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(x3_fw)
+
+# As the Zephyr GNSS API is not yet finalized, ( see https://github.com/zephyrproject-rtos/zephyr/issues/30564)
+# We put the proposed API out-of-tree
+zephyr_include_directories(include)
 
 # These are common files used by both hardware test and the real app
 set(APP_SOURCES
