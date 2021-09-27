@@ -65,7 +65,7 @@
 		label = "ublox-sara-r4";
 		status = "okay";
 
-		 mdm-power-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH >;
+		 mdm-power-gpios = <&gpio0 31 0 >;
 		//mdm-power-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 		mdm-reset-gpios = <&gpio1 11 0>;
 		mdm-vint-gpios = <&gpio1 07 0>;
