@@ -12,11 +12,6 @@
 	compatible = "nordic,nrf52840-dk-nrf52840";
 
 	chosen {
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
-		zephyr,uart-mcumgr = &uart0;
-		zephyr,bt-mon-uart = &uart0;
-		zephyr,bt-c2h-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -40,18 +35,7 @@
 	status = "okay";
 };
 
-/* nRF52840DK pin spesific */
-&uart0 {
-	compatible = "nordic,nrf-uarte";
-	status = "okay";
-	current-speed = <115200>;
-	tx-pin = <6>;
-	rx-pin = <8>;
-	rts-pin = <5>;
-	cts-pin = <7>;
-};
-
-&uart1 { /* u-blox SARA-U2 or SARA-R4 */
+&uart0 { /* u-blox SARA-U2 or SARA-R4 */
     compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
 	status = "okay";
@@ -64,8 +48,13 @@
 		mdm-power-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
 		mdm-reset-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 		mdm-vint-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
-		/* Should RI (ring indicator) be connected? */
+		/* Should RI (ring indicator) be connected? Do we need this interrupt? */
 	};
+};
+
+/* FOR GNSS DRIVER */
+&uart1 {
+	status = "disabled";
 };
 
 &i2c0 {
@@ -92,7 +81,7 @@
 &spi0 {
 	compatible = "nordic,nrf-spi";
 	/* Cannot be used together with i2c0. */
-	status = "disabled";
+	status = "okay";
 	sck-pin = <40>; /* P1.08 */
 	mosi-pin = <41>;/* P1.09 */
 	miso-pin = <11>;/* P0.11 */
@@ -110,9 +99,25 @@
 		label = "LIS2DH12-ACCEL";
   	};
 	
-	/* Add EEprom */
+	bme280@1 {
+		compatible = "bosch,bme280";
+		label = "BME280_SPI";
+		reg = <1>;
+		spi-max-frequency = <1000000>;
+	};
 
-	/* Add Barometer BME280 */
+	eeprom@2 {
+		compatible = "atmel,at25";
+		reg = <2>;
+		label = "eeprom";
+		/*wp-gpios = <&gpiob 7 GPIO_ACTIVE_LOW>;*/
+		size = <DT_SIZE_K(4)>;
+		pagesize = <16>;
+		address-width = <8>;
+		timeout = <10>;
+		status = "okay";
+		spi-max-frequency = <8000000>;
+	};
 };
 
 &spi1 {
