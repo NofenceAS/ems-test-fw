@@ -9,6 +9,9 @@ stages:
 
 before_script:
   - apt install -y ruby
+  - west init -l . || true
+  - west update --path-cache /cache/x3
+  
 
 check_compliance:
   stage: compliance
@@ -16,7 +19,8 @@ check_compliance:
   script:
     - export ZEPHYR_BASE=$PWD/../zephyr
     - ls -la
-    - git log  --pretty=oneline | head -n 10
+    - git log  --pretty=oneline -n 10
+    - git diff --cached | ${ZEPHYR_BASE}/scripts/checkpatch.pl --ignore BRACES - || false
     
 firmware:
   stage: build
@@ -25,10 +29,11 @@ firmware:
     - export BUILD_NUMBER=$(($CI_PIPELINE_IID + 1000))
     - printf "$BUILD_NUMBER" > buildnumber
     - printf "$CI_COMMIT_SHA" 
-    - west init -l . || true
-    - west update
     - ../zephyr/scripts/twister -i -T tests/
+#    - west build -p
 
 .build-job:
-  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/zephyrprojectrtos/ci
+  image: registry.gitlab.com/nofence/x3-fw-app/x3-firmware-ci
+
+     
   
