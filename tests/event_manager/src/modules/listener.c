@@ -2,7 +2,7 @@
 
 void request_sensor_data()
 {
-	struct ack_event *event = new_ack_event();
+	struct req_event *event = new_req_event();
 	EVENT_SUBMIT(event);
 }
 
