@@ -1,3 +1,9 @@
+// ! Commented out since we need to write the unit tests mentioned in
+// the readme file, using event_manager modules and twister !
+// Difficulties by unit testing event-driven architecture is how to expect a return value
+// from the given ztest assertion with passed function return value
+//
+//
 //#include <ztest.h>
 //#include "publisher.h"
 //#include "listener.h"
