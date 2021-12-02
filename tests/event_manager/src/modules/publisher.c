@@ -8,10 +8,11 @@
 
 #include "sensor_event.h"
 #include "req_event.h"
+#include "publisher.h"
 
 void update_sensor(int value1, int value2, int value3)
 {
-	struct sensor_evt *event = new_sensor_event();
+	struct sensor_event *event = new_sensor_event();
 
 	/* Storing values into the event so modules subscribing to it can retrieve it. 
     This will be replaced by communication with the driver API calls to retrieve the data */

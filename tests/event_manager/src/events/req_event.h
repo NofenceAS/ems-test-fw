@@ -13,7 +13,7 @@
  * @{
  */
 
-#include "event_manager.h"
+#include <event_manager.h>
 
 struct req_event {
 	struct event_header header;

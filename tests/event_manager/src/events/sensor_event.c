@@ -33,7 +33,7 @@ EVENT_INFO_DEFINE(sensor_event,
 		  ENCODE("value1", "value2", "value3"),
 		  profile_sensor_event);
 
-EVENT_TYPE_DEFINE(sensor__event,
+EVENT_TYPE_DEFINE(sensor_event,
 		  true,
 		  log_sensor_event,
 		  &sensor_event_info);
