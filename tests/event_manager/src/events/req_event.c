@@ -1,14 +1,12 @@
-/*
- * Copyright (c) 2019 Nordic Semiconductor ASA
- *
- * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
- */
-
 #include <stdio.h>
-
 #include "req_event.h"
 
-
+/**
+ * @brief Function for debugging/information. Uses the profiler tool to make it easier to
+ * debug what is happening on the event bus
+ * @param buf triggered event's log event buffer
+ * @param ev event_header for given event
+ */
 static void profile_req_event(struct log_event_buf *buf,
 			      const struct event_header *eh)
 {

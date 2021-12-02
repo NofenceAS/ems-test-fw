@@ -9,6 +9,12 @@ void request_sensor_data()
 	EVENT_SUBMIT(event);
 }
 
+/**
+ * @brief Main event handler function that handles all the events this module subscribes to,
+ * basically a large *switch* case using if's and prefedined event triggers to check against given
+ * event_header param.
+ * @param eh event_header for the if-chain to use to recognize which event triggered
+ */
 static bool event_handler(const struct event_header *eh)
 {
 	if (is_sensor_event(eh)) {

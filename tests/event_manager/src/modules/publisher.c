@@ -1,11 +1,4 @@
-/*
- * Copyright (c) 2019 Nordic Semiconductor ASA
- *
- * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
- */
-
 #include <zephyr.h>
-
 #include "sensor_event.h"
 #include "req_event.h"
 #include "publisher.h"
@@ -23,6 +16,12 @@ void update_sensor(int value1, int value2, int value3)
 	EVENT_SUBMIT(event);
 }
 
+/**
+ * @brief Main event handler function that handles all the events this module subscribes to,
+ * basically a large *switch* case using if's and prefedined event triggers to check against given
+ * event_header param.
+ * @param eh event_header for the if-chain to use to recognize which event triggered
+ */
 static bool event_handler(const struct event_header *eh)
 {
 	if (is_req_event(eh)) {

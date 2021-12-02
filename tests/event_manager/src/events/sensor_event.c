@@ -1,13 +1,14 @@
-/*
- * Copyright (c) 2019 Nordic Semiconductor ASA
- *
- * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
- */
-
 #include <stdio.h>
-
 #include "sensor_event.h"
 
+/**
+ * @brief Function for debugging/information. This logs the given values
+ * from the simulated sensor and gives number of bytes for that operation
+ * @param eh event_header for the sensor_event
+ * @param buf data from the event
+ * @param buf_len length of the data from the event
+ * @returns number of bytes stored with snprintf
+ */
 static int log_sensor_event(const struct event_header *eh, char *buf,
 				 size_t buf_len)
 {
@@ -17,6 +18,12 @@ static int log_sensor_event(const struct event_header *eh, char *buf,
 			event->value2, event->value3);
 }
 
+/**
+ * @brief Function for debugging/information. Uses the profiler tool to make it easier to
+ * debug what is happening on the event bus
+ * @param buf triggered event's log event buffer
+ * @param ev event_header for given event
+ */
 static void profile_sensor_event(struct log_event_buf *buf,
 				      const struct event_header *eh)
 {
