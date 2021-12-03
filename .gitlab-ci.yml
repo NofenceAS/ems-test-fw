@@ -1,5 +1,5 @@
 
-# xboot is a submodule so we need to include it
+# Nofence CI
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
@@ -9,26 +9,32 @@ stages:
 
 before_script:
   - apt install -y ruby
+  - west init -l . || true
+  - west update --path-cache /cache/x3
+
 
 check_compliance:
   stage: compliance
   extends: .build-job
   script:
-    - export ZEPHYR_BASE=$PWD/../zephyr
+    - export ZEPHYR_BASE=${PWD}/../zephyr
     - ls -la
-    - git log  --pretty=oneline | head -n 10
-    
+#    - export
+    - git log  --pretty=oneline -n 10
+    - git diff ${CI_COMMIT_SHA}~ | ${ZEPHYR_BASE}/scripts/checkpatch.pl --ignore BRACES -
+
 firmware:
   stage: build
   extends: .build-job
   script:
     - export BUILD_NUMBER=$(($CI_PIPELINE_IID + 1000))
     - printf "$BUILD_NUMBER" > buildnumber
-    - printf "$CI_COMMIT_SHA" 
-    - west init -l . || true
-    - west update
+    - printf "$CI_COMMIT_SHA"
     - ../zephyr/scripts/twister -i -T tests/
+#    - west build -p
 
 .build-job:
-  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/zephyrprojectrtos/ci
-  
+  image: registry.gitlab.com/nofence/x3-fw-app/x3-firmware-ci
+
+
+
