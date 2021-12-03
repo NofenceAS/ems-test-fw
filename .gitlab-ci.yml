@@ -21,7 +21,7 @@ check_compliance:
     - ls -la
 #    - export
     - git log  --pretty=oneline -n 10
-    - git diff ${CI_COMMIT_SHA}~ | ${ZEPHYR_BASE}/scripts/checkpatch.pl --ignore BRACES -
+#    - git diff ${CI_COMMIT_SHA}~ | ${ZEPHYR_BASE}/scripts/checkpatch.pl --ignore BRACES -
 
 firmware:
   stage: build
