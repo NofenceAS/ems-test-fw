@@ -51,6 +51,11 @@ zephyr_library_include_directories(
 add_subdirectory(tests/event_manager)
 #
 
+zephyr_library_include_directories(
+  src/modules/fw_upgrade
+)
+add_subdirectory(src/modules/fw_upgrade)
+
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
         )
