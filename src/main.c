@@ -3,6 +3,7 @@
 #include <sys/printk.h>
 #include <zephyr.h>
 #include <event_manager.h>
+#include "fw_upgrade.h"
 
 /**
  * The Nofence X3 main entry point. This is
@@ -17,4 +18,10 @@ void main(void)
     if (err) {
         // Error handler
     }
+    /* Initialize firmware upgrade module */
+    err = fw_upgrade_module_init();
+    if (err) {
+        // Error handler
+    }
+
 }
