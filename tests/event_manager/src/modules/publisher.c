@@ -3,6 +3,8 @@
 #include "req_event.h"
 #include "publisher.h"
 
+#define MODULE publisher_example
+
 void update_sensor(int value1, int value2, int value3)
 {
 	struct sensor_event *event = new_sensor_event();

@@ -3,6 +3,8 @@
 #include "sensor_event.h"
 #include "listener.h"
 
+#define MODULE listener_example
+
 void request_sensor_data()
 {
 	struct req_event *event = new_req_event();
