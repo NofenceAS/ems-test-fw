@@ -12,12 +12,6 @@ static void profile_req_event(struct log_event_buf *buf,
 {
 }
 
-EVENT_INFO_DEFINE(req_event,
-		  ENCODE(),
-		  ENCODE(),
-		  profile_req_event);
+EVENT_INFO_DEFINE(req_event, ENCODE(), ENCODE(), profile_req_event);
 
-EVENT_TYPE_DEFINE(req_event,
-		  true,
-		  NULL,
-		  &req_event_info);
+EVENT_TYPE_DEFINE(req_event, true, NULL, &req_event_info);
