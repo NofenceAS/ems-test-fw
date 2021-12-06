@@ -30,7 +30,11 @@ project(x3_fw)
 
 # As the Zephyr GNSS API is not yet finalized, ( see https://github.com/zephyrproject-rtos/zephyr/issues/30564)
 # We put the proposed API out-of-tree
-zephyr_include_directories(include)
+# Include application events and disk files
+zephyr_library_include_directories(
+        include
+        src/events
+  )
 
 # These are common files used by both hardware test and the real app
 set(APP_SOURCES
@@ -48,4 +52,7 @@ target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
         )
 
+# Application sources
+add_subdirectory(src/events)
+add_subdirectory(src/modules)
 
