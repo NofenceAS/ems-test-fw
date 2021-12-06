@@ -2,8 +2,8 @@
  * Copyright (c) 2021 Nofence AS
  */
 
-#ifndef _STORATE_EVENT_H_
-#define _STORATE_EVENT_H_
+#ifndef _STORAGE_EVENT_H_
+#define _STORAGE_EVENT_H_
 
 /**
  * @brief Storage Event

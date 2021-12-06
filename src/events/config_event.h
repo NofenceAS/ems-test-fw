@@ -17,10 +17,16 @@
 extern "C" {
 #endif
 
+
+/** @brief Config event types submitted by Configuration module. */
+enum config_event_type {
+	CONFIG_EVT_START,
+	CONFIG_EVT_ERROR
+};
+
 struct config_event {
 	struct event_header header;
-
-	uint32_t serial_number;
+	enum config_event_type type;
 };
 
 EVENT_TYPE_DECLARE(config_event);
