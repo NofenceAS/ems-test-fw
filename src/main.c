@@ -24,7 +24,7 @@ void main(void)
 		LOG_ERR("Event manager not initialized");
 	} else {
 		struct config_event *event = new_config_event();
-		event->init_value1 = INIT_VALUE1;
+		event->type = CONFIG_EVT_START;
 		EVENT_SUBMIT(event);
 	}
 }

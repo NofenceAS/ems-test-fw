@@ -49,4 +49,4 @@ EVENT_TYPE_DECLARE(storage_event);
  * @}
  */
 
-#endif /* _STORATE_EVENT_H_ */
+#endif /* _STORAGE_EVENT_H_ */

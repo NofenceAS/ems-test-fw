@@ -38,7 +38,7 @@ static void profile_event(struct log_event_buf *buf,
 	struct storage_event *event = cast_storage_event(eh);
 
 	ARG_UNUSED(event);
-	profiler_log_encode_u32(buf, event->seral_number);
+	profiler_log_encode_u32(buf, event->type);
 }
 
 EVENT_INFO_DEFINE(storage_event,
