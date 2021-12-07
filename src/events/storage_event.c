@@ -13,6 +13,8 @@ static char *get_evt_type_str(enum storage_event_type type)
 		return "STORAGE_EVT_READ_SERIAL_NR";
 	case STORAGE_EVT_WRITE_SERIAL_NR:
 		return "STORAGE_EVT_WRITE_SERIAL_NR";
+	case STORAGE_EVT_ERROR_CODE:
+		return "STORAGE_EVT_ERROR_CODE";
 	default:
 		return "Unknown event";
 	}

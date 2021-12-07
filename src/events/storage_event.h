@@ -21,6 +21,7 @@ extern "C" {
 enum storage_event_type {
 	STORAGE_EVT_READ_SERIAL_NR,
 	STORAGE_EVT_WRITE_SERIAL_NR,
+    STORAGE_EVT_ERROR_CODE,
 };
 
 struct storage_pvt {

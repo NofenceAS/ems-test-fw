@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(main);
 
 void main(void)
 {
+	k_sleep(K_MSEC(2000));
 	LOG_INF("Starting nofence application");
 	if (event_manager_init()) {
 		LOG_ERR("Event manager not initialized");
