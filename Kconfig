@@ -1,6 +1,15 @@
+menu "APPLICATION_CODE"
 
-config UBX_CONTROLLER_LOG_LEVEL
-	int "Log level for the ESB PTX sample"
-	default 4
+	menu "COMMUNICATION"
+	rsource "src/modules/communication/Kconfig"
+	endmenu # COMMUNICATION
 
+	config UBX_CONTROLLER_LOG_LEVEL
+		int "Log level for the ESB PTX sample"
+		default 4
+
+endmenu # APPLICATION CODE
+
+menu "Zephyr Kernel"
 source "Kconfig.zephyr"
+endmenu

@@ -71,6 +71,11 @@ else ()
     set(APP_MAIN src/main.c)
 endif ()
 
+zephyr_library_include_directories(
+  src/modules/communication
+)
+add_subdirectory(src/modules/communication)
+
 
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
