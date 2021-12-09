@@ -13,8 +13,18 @@ static char *get_evt_type_str(enum storage_event_type type)
 		return "STORAGE_EVT_READ_SERIAL_NR";
 	case STORAGE_EVT_WRITE_SERIAL_NR:
 		return "STORAGE_EVT_WRITE_SERIAL_NR";
+	case STORAGE_EVT_ERASE_FLASH:
+		return "STORAGE_EVT_ERASE_FLASH";
 	case STORAGE_EVT_ERROR_CODE:
 		return "STORAGE_EVT_ERROR_CODE";
+	case STORAGE_EVT_READ_IP_ADDRESS:
+		return "STORAGE_EVT_READ_IP_ADDRESS";
+	case STORAGE_EVT_WRITE_IP_ADDRESS:
+		return "STORAGE_EVT_WRITE_IP_ADDRESS";
+    case STORAGE_EVT_READ_FW_VERSION:
+		return "STORAGE_EVT_READ_FW_VERSION";
+	case STORAGE_EVT_WRITE_FW_VERSION:
+		return "STORAGE_EVT_WRITE_FW_VERSION";
 	default:
 		return "Unknown event";
 	}
@@ -26,7 +36,7 @@ static int log_event(const struct event_header *eh, char *buf,
 				 size_t buf_len)
 {
 	struct storage_event *event = cast_storage_event(eh);
-    if (event->type == STORAGE_EVT_READ_SERIAL_NR) 
+    if (event->type == STORAGE_EVT_WRITE_SERIAL_NR) 
     {
         return snprintf(buf, buf_len, "%s - #:%d",
 				get_evt_type_str(event->type), event->data.pvt.serial_number);
