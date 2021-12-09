@@ -49,7 +49,6 @@
 		mdm-power-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
 		mdm-reset-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 		mdm-vint-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
-		/* Should RI (ring indicator) be connected? Do we need this interrupt? */
 	};
 };
 
