@@ -13,6 +13,13 @@ list(APPEND CONF_FILE
         )
 endif()
 
+if (CELLULAR_DEMO)
+    list(APPEND CONF_FILE
+#            ${CMAKE_CURRENT_SOURCE_DIR}/prj.conf
+            ${CMAKE_CURRENT_SOURCE_DIR}/cell_comm_demo.conf
+            )
+endif()
+
 # Out-of-tree driver for GNSS,
 # see https://github.com/zephyrproject-rtos/zephyr/tree/main/samples/application_development/out_of_tree_driver
 list(APPEND ZEPHYR_EXTRA_MODULES
@@ -40,7 +47,9 @@ set(APP_SOURCES
 
 if (HARDWARE_TEST)
     set(APP_MAIN src/main_hardware_test.c)
-else ()
+elseif(CELLULAR_DEMO)
+    set(APP_MAIN src/main_cell_comm_demo.c)
+else()
     set(APP_MAIN src/main.c)
 endif ()
 
@@ -48,5 +57,7 @@ endif ()
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
         )
-
-
+if(CELLULAR_DEMO)
+target_sources_ifdef(CONFIG_NET_UDP app PRIVATE src/cellular_communicator_demo/udp.c)
+target_sources_ifdef(CONFIG_NET_TCP app PRIVATE src/cellular_communicator_demo/tcp.c)
+endif()
