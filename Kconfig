@@ -1,9 +1,5 @@
 menu "APPLICATION_CODE"
 
-	menu "COMMUNICATION"
-	rsource "src/modules/communication/Kconfig"
-	endmenu # COMMUNICATION
-
 	config UBX_CONTROLLER_LOG_LEVEL
 		int "Log level for the ESB PTX sample"
 		default 4

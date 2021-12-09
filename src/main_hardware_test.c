@@ -122,6 +122,8 @@ static void test_encode_valid_data(void)
 	size_t raw_size = 0;
 	if (collar_protocol_encode(&reqMsg, raw_buf, sizeof(raw_buf), &raw_size)) {
 		// Test failed
+		LOG_ERR("collar_protocol_encode failed for valid data\n");
+		return;
 	}
 
 	NofenceMessage message;
@@ -129,11 +131,16 @@ static void test_encode_valid_data(void)
 
 	if (collar_protocol_decode(raw_buf, raw_size, &message)) {
 		// Test failed
+		LOG_ERR("collar_protocol_decode failed for valid data\n");
+		return;
 	}
 
 	if (memcmp(&reqMsg, &message, sizeof(NofenceMessage)) != 0) {
 		// Test failed
+		LOG_ERR("collar_protocol_decode resulted in unexpected data\n");
+		return;
 	}
+	LOG_INF("test_encode_valid_data PASSED!\n");
 }
 
 static void test_decode_valid_data(void)
@@ -142,6 +149,8 @@ static void test_decode_valid_data(void)
 	uint8_t raw_buf[] = {0x0A, 0x0C, 0x08, 0xB9, 0x0A, 0x10, 0xD4, 0xCB, 0xC4, 0x8D, 0x06, 0x18, 0xC7, 0x02, 0x22, 0x10, 0x08, 0xBE, 0xDE, 0x38, 0x10, 0x10, 0x18, 0x0E, 0x22, 0x06, 0x08, 0x0C, 0x10, 0x00, 0x18, 0x01};
 	if (collar_protocol_decode(raw_buf, sizeof(raw_buf), &message)) {
 		// Test failed
+		LOG_ERR("collar_protocol_decode failed for valid data\n");
+		return;
 	}
 
 	if ((!message.header.has_ulVersion) ||
@@ -158,7 +167,10 @@ static void test_decode_valid_data(void)
 	    (message.m.firmware_upgrade_req.versionInfoHW.ucPCB_HV_Version != 0) ||
 	    (message.m.firmware_upgrade_req.usFrameNumber != 16)) {
 		// Test failed
+		LOG_ERR("collar_protocol_decode resulted in unexpected data\n");
+		return;
 	}
+	LOG_INF("test_decode_valid_data PASSED!\n");
 }
 
 static void test_invalid_input(void) {
@@ -175,11 +187,15 @@ static void test_invalid_input(void) {
 	    (collar_protocol_decode(NULL, 0, &message) != -EINVAL) || 
 	    (collar_protocol_decode(NULL, 0, NULL) != -EINVAL)) {
 		// Test failed, decode with NULL/0 values
+		LOG_ERR("collar_protocol_decode returned wrong error for invalid arguments\n");
+		return;
 	}
 
 	// Decode raw_buf, should work since it contains valid data and was tested previously
 	if (collar_protocol_decode(raw_buf, sizeof(raw_buf), &message)) {
 		// Test failed, unexpectedly
+		LOG_ERR("collar_protocol_decode returned unexpected error\n");
+		return;
 	}
 
 	if ((collar_protocol_encode(&message, raw_buf, sizeof(raw_buf), NULL) != -EINVAL) ||
@@ -198,7 +214,10 @@ static void test_invalid_input(void) {
 	    (collar_protocol_encode(NULL,     NULL,    0,               &raw_size) != -EINVAL) ||
 	    (collar_protocol_encode(NULL,     NULL,    0,               NULL) != -EINVAL)) {
 		// Test failed, encode with NULL/0 values returned wrong code
+		LOG_ERR("collar_protocol_encode returned wrong error for invalid arguments\n");
+		return;
 	}
+	LOG_INF("test_invalid_input PASSED!\n");
 }
 
 static void test_buffer_overflow(void) {
@@ -210,22 +229,31 @@ static void test_buffer_overflow(void) {
 	// Decode raw_buf, should work since it contains valid data and was tested previously
 	if (collar_protocol_decode(raw_buf, sizeof(raw_buf), &message)) {
 		// Test failed, unexpectedly
+		LOG_ERR("collar_protocol_decode failed for valid data\n");
+		return;
 	}
 
 	// Attempt encode with buffer size one less than required
 	if (collar_protocol_encode(&message, raw_buf, sizeof(raw_buf)-1, &raw_size) != -EMSGSIZE) {
 		// Test failed, encode with too small buffer returned wrong code
+		LOG_ERR("collar_protocol_encode returned wrong result for insufficient buffer size (-1)\n");
+		return;
 	}
 
 	// Attempt encode with buffer size half of required
 	if (collar_protocol_encode(&message, raw_buf, sizeof(raw_buf)/2, &raw_size) != -EMSGSIZE) {
 		// Test failed, encode with too small buffer returned wrong code
+		LOG_ERR("collar_protocol_encode returned wrong result for insufficient buffer size (/2)\n");
+		return;
 	}
 
 	// Attempt encode with buffer size of 1
 	if (collar_protocol_encode(&message, raw_buf, 1, &raw_size) != -EMSGSIZE) {
 		// Test failed, encode with too small buffer returned wrong code
+		LOG_ERR("collar_protocol_encode returned wrong result for insufficient buffer size (=1)\n");
+		return;
 	}
+	LOG_INF("test_buffer_overflow PASSED!\n");
 }
 
 static void test_corrupted_decode(void) {
@@ -234,17 +262,20 @@ static void test_corrupted_decode(void) {
 	uint8_t corrupted_raw_buf[] = {0xFF, 0xFE, 0x99, 0x78, 0x0A, 0x10, 0xD4, 0xFF, 0xC4, 0x8D, 0x00, 0x18, 0xC7, 0x02, 0xAA, 0x10, 0x08, 0xBE, 0xDE, 0x38, 0x10, 0x10, 0x18, 0x0E, 0x22, 0x06, 0x08, 0x0C, 0x10, 0x00, 0x18, 0x01};
 	if (collar_protocol_decode(corrupted_raw_buf, sizeof(corrupted_raw_buf), &message) != -EILSEQ) {
 		// Test failed, decode with corrupted buffer returned wrong code
+		LOG_ERR("collar_protocol_decode returned wrong result for corrupted data\n");
+		return;
 	}
+	LOG_INF("test_corrupted_decode PASSED!\n");
 }
 
 void main(void)
 {
+	LOG_INF("Running collar protocol tests: \n");
 	test_encode_valid_data();
 	test_decode_valid_data();
 	test_invalid_input();
 	test_buffer_overflow();
 	test_corrupted_decode();
-
 	// sys_pm_ctrl_disable_state(SYS_POWER_STATE_DEEP_SLEEP_1);
 	printk("main %p\n", k_current_get());
 	LOG_ERR("main starting!\n");

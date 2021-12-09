@@ -19,9 +19,14 @@ list(APPEND ZEPHYR_EXTRA_MODULES
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/zoem8b_gps
         )
 
-# Nanopb definitions
-list (APPEND CMAKE_MODULE_PATH
-        "${CMAKE_CURRENT_SOURCE_DIR}/../modules/lib/nanopb/extra")
+list(APPEND ZEPHYR_EXTRA_MODULES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/collar_protocol
+        )
+#set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/modules/collar_protocol/embedded.pb.h PROPERTY GENERATED 1)
+#add_custom_target(
+#    collar_protocol_2 ALL
+#    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/modules/collar_protocol/embedded.pb.h
+#    )
 
 # Re-direct the directory where the 'boards' directory is found from
 # $ZEPHYR_BASE to this directory.
@@ -31,8 +36,6 @@ set(BOARD_ROOT ${CMAKE_CURRENT_LIST_DIR})
 set(BOARD nf_x3_nrf52840)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-find_package(Nanopb REQUIRED)
-include_directories(${NANOPB_INCLUDE_DIRS})
 
 project(x3_fw)
 
@@ -41,28 +44,13 @@ project(x3_fw)
 zephyr_include_directories(include
                           )
 
-# Pick up embedded protocol buffer files from external git project
-set(COLLAR_PROTOCOL_DIR
-        ${CMAKE_CURRENT_SOURCE_DIR}/../collar-protocol
-        )
-
-nanopb_generate_cpp(PROTO_SRCS PROTO_HDRS
-        ${COLLAR_PROTOCOL_DIR}/base.proto
-        ${COLLAR_PROTOCOL_DIR}/embedded.proto
-        )
-set_source_files_properties(${PROTO_SRCS} ${PROTO_HDRS}
-        PROPERTIES GENERATED TRUE)
-
 zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-
 
 # These are common files used by both hardware test and the real app
 set(APP_SOURCES
         src/ble/nf_ble.c        
         src/ble/beacon_processor.c
-        ${PROTO_SRCS}
-        ${PROTO_HDRS}
         )
 
 if (HARDWARE_TEST)
@@ -71,14 +59,8 @@ else ()
     set(APP_MAIN src/main.c)
 endif ()
 
-zephyr_library_include_directories(
-  src/modules/communication
-)
-add_subdirectory(src/modules/communication)
-
+add_dependencies(app collar_protocol_headers)
 
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
         )
-
-
