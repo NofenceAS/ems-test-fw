@@ -1,0 +1,5 @@
+tests:
+  # section.subsection
+  collar_protocol.test:
+    platform_allow: native_posix
+    tags: testing
