@@ -220,7 +220,7 @@ static int process_tcp_proto(struct data *data)
         else
         {
             /* We send back the greeting message from the server to initiate the infinity mirror. */
-            ret = send(0, buf, received, 0);
+            ret = send(data->tcp.sock, buf, received, 0);
             data->tcp.expecting = received;
         }
         total_sends ++;
