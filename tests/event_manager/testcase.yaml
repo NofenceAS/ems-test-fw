@@ -1,0 +1,5 @@
+tests:
+  event_manager.core:
+    integration_platforms:
+      - nrf52840dk_nrf52840
+    tags: event_manager
