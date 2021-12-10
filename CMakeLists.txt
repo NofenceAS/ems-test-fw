@@ -22,11 +22,6 @@ list(APPEND ZEPHYR_EXTRA_MODULES
 list(APPEND ZEPHYR_EXTRA_MODULES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/collar_protocol
         )
-#set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/modules/collar_protocol/embedded.pb.h PROPERTY GENERATED 1)
-#add_custom_target(
-#    collar_protocol_2 ALL
-#    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/modules/collar_protocol/embedded.pb.h
-#    )
 
 # Re-direct the directory where the 'boards' directory is found from
 # $ZEPHYR_BASE to this directory.
