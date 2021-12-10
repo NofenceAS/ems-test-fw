@@ -1,5 +1,4 @@
 tests:
   collar_protocol.test:
-    build_only: true
     platform_allow: native_posix
     tags: protocol protobuf
