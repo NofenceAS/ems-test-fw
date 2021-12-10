@@ -1,0 +1,52 @@
+
+- name: Deploy firmware to EFS
+  hosts: firmware_efs
+  vars:
+    ansible_user: ec2-user
+    ansible_python_interpreter: /usr/bin/python3
+    firmware_install_dir: /tmp/test-install # Replace with cli argument when running the playbook
+    firmware_upload_rsync_opts: []
+  vars_prompt:
+    - name: firmware_src_dir
+      prompt: Path to firmware src directory
+      private: no
+  tasks:
+
+    - name: Create temporary upload directory
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: firmware-upload
+      register: tmp_upload_dir
+
+    - debug:
+        msg: "Uploading to {{ tmp_upload_dir.path }} from {{ firmware_src_dir }}"
+
+    - name: Upload firmware to tmp dir
+      ansible.posix.synchronize:
+        src: "{{ firmware_src_dir }}/"
+        dest: "{{ tmp_upload_dir.path }}/"
+        rsync_opts: "{{ firmware_upload_rsync_opts }}"
+      # no_log: yes
+
+    - block:
+        - name: Install firmware
+          ansible.builtin.script: install_firmware.sh "{{ tmp_upload_dir.path }}" "{{ firmware_install_dir }}"
+          register: install_result
+      rescue:
+        # The output does not always show on gitlab if the install script fails, so we catch the error and print it again here
+        - fail:
+            msg: "STDOUT:\n{{ install_result.stdout }}\n\nSTDERR:\n{{ install_result.stderr }}"
+          when: not ansible_check_mode
+
+
+    # If the install fails the folder will not be cleaned up, so that the tmp files can be inspected. If this is not wanted
+    # this job can be put into an always section of the above block to always cleanup the folders.
+    - name: Cleanup tmp upload folder
+      ansible.builtin.file:
+        path: "{{ tmp_upload_dir.path }}/"
+        state: absent
+      no_log: yes
+
+
+
+
