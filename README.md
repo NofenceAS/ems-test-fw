@@ -38,3 +38,10 @@ To build the real X3 app:
 ````
 west build -b nf_x3_nrf52840
 ```
+
+# Unit test with twister
+Run the following command to run unit tests in folder 'twister_output'. The ./scripts/twister command path must be correct corresponding to your path of where the twister script is located
+````
+./scripts/twister -T . -O twister_output -c
+```
+
