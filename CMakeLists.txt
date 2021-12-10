@@ -16,7 +16,6 @@ endif()
 # Out-of-tree driver for GNSS,
 # see https://github.com/zephyrproject-rtos/zephyr/tree/main/samples/application_development/out_of_tree_driver
 list(APPEND ZEPHYR_EXTRA_MODULES
-        ${CMAKE_CURRENT_SOURCE_DIR}/modules/zoem8b_gps
         )
 
 list(APPEND ZEPHYR_EXTRA_MODULES
@@ -28,7 +27,7 @@ list(APPEND ZEPHYR_EXTRA_MODULES
 set(BOARD_ROOT ${CMAKE_CURRENT_LIST_DIR})
 
 # The Nofence X3 board exists out-of-tree from zephyr boards
-set(BOARD nf_x3_nrf52840)
+set(BOARD nf_x25_nrf52840)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
