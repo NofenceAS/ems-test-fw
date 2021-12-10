@@ -99,12 +99,6 @@ static int setup_gps(void)
 
 void main(void)
 {
-	LOG_INF("Running collar protocol tests: \n");
-	test_encode_valid_data();
-	test_decode_valid_data();
-	test_invalid_input();
-	test_buffer_overflow();
-	test_corrupted_decode();
 	// sys_pm_ctrl_disable_state(SYS_POWER_STATE_DEEP_SLEEP_1);
 	printk("main %p\n", k_current_get());
 	LOG_ERR("main starting!\n");
