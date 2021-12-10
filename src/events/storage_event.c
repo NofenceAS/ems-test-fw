@@ -6,6 +6,11 @@
 
 #include "storage_event.h"
 
+/**
+ * @brief Internal functions to convert event type to string.
+ * @param type enum with storage event type
+ * @return char - string of event type
+ */
 static char *get_evt_type_str(enum storage_event_type type)
 {
 	switch (type) {
@@ -30,8 +35,13 @@ static char *get_evt_type_str(enum storage_event_type type)
 	}
 }
 
-#if defined(CONFIG_PROFILER)
-
+/**
+ * @brief Useful fuction to log event
+ * @param eh event_header struct
+ * @param buf buffer to store the log
+ * @param buf_len size of buffer
+ * @return return the number of characters written to the buffer
+ */
 static int log_event(const struct event_header *eh, char *buf,
 				 size_t buf_len)
 {
@@ -44,6 +54,12 @@ static int log_event(const struct event_header *eh, char *buf,
 	return snprintf(buf, buf_len, "%s", get_evt_type_str(event->type));
 }
 
+#if defined(CONFIG_PROFILER)
+/**
+ * @brief Useful fuction to profile event
+ * @param buf buffer pointer to send to profiler
+ * @param eh event_header struct
+ */
 static void profile_event(struct log_event_buf *buf,
 				      const struct event_header *eh)
 {
