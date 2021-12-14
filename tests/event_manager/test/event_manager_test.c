@@ -1,1 +1,0 @@
-/* Include example module that contain events and run tests on them */
