@@ -8,6 +8,6 @@ static void test_equal(void)
 
 void test_main(void)
 {
-	ztest_test_suite(common, ztest_unit_test(test_equal), );
+	ztest_test_suite(common, ztest_unit_test(test_equal));
 	ztest_run_test_suite(common);
 }
