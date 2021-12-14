@@ -27,14 +27,28 @@ then fetch the repo:
    west update
    ```
 
+4. Install the protobuf compiler:
+   ```
+   ("sudo apt-get install protobuf-compiler" only does not seem to work? To be verified..)
+
+   wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.1/protobuf-all-3.19.1.tar.gz
+   tar -xvf protobuf-all-3.19.1.tar.gz
+   cd protobuf-all-3.19.1
+   ./configure
+   make
+   (sudo) make install
+   (sudo) ldconfig
+   ```
+
+
 You can now try to build the hardware-test application or the main Zephyr app. 
 
 To build the hardware-test:
-````
+```
 west build -b nf_x3_nrf52840 -- -DHARDWARE_TEST=1
 ```
 
 To build the real X3 app:
-````
+```
 west build -b nf_x3_nrf52840
 ```
