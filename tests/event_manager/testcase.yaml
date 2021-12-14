@@ -1,4 +1,4 @@
 tests:
-  event_manager.ztest:
-    tags: event_manager
+  event_manager.test:
     platform_allow: native_posix
+    tags: event_manager
