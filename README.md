@@ -44,11 +44,11 @@ then fetch the repo:
 You can now try to build the hardware-test application or the main Zephyr app. 
 
 To build the hardware-test:
-```
-west build -b nf_x3_nrf52840 -- -DHARDWARE_TEST=1
+````
+west build -b nf_x25_nrf52840 -- -DHARDWARE_TEST=1
 ```
 
 To build the real X3 app:
 ```
-west build -b nf_x3_nrf52840
+west build -b nf_x25_nrf52840
 ```
