@@ -10,7 +10,7 @@ strongly recommend to use Linux Ubuntu 20.1 for development. Some of the feature
 the build system will not be available on windows (mainly due to POSIX compliance)
 
 1. Install the Nordic Connect SDK **manually** as described in https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/gs_installing.html
-   In particular, install west and the GNU ARM Embedded Toolchain
+   Only install west and the GNU ARM Embedded Toolchain.
 
 2. Create a top level directory `x3` placed somewhere inside your home directory structure, 
 then fetch the repo:
@@ -29,8 +29,6 @@ then fetch the repo:
 
 4. Install the protobuf compiler:
    ```
-   ("sudo apt-get install protobuf-compiler" only does not seem to work? To be verified..)
-
    wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.1/protobuf-all-3.19.1.tar.gz
    tar -xvf protobuf-all-3.19.1.tar.gz
    cd protobuf-all-3.19.1
