@@ -58,6 +58,15 @@ production-firmware-deploy:
   script:
     - export ZEPHYR_BASE=${PWD}/../zephyr
     - apt install -y ruby
+    ## Run ssh-agent (inside the build environment)
+    - eval $(ssh-agent -s)
+    ## Create the SSH directory and give it the right permissions
+    -  mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    ## Add gitlab.com to known hosts
+    - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    ## Resync the west repositories using the docker cache
     - west init -l . || true
     - west update --path-cache /cache/x3
 

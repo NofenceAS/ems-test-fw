@@ -18,6 +18,10 @@ endif()
 list(APPEND ZEPHYR_EXTRA_MODULES
         )
 
+list(APPEND ZEPHYR_EXTRA_MODULES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/collar_protocol
+        )
+
 # Re-direct the directory where the 'boards' directory is found from
 # $ZEPHYR_BASE to this directory.
 set(BOARD_ROOT ${CMAKE_CURRENT_LIST_DIR})
@@ -26,16 +30,22 @@ set(BOARD_ROOT ${CMAKE_CURRENT_LIST_DIR})
 set(BOARD nf_x25_nrf52840)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
 project(x3_fw)
 
 # As the Zephyr GNSS API is not yet finalized, ( see https://github.com/zephyrproject-rtos/zephyr/issues/30564)
 # We put the proposed API out-of-tree
-zephyr_include_directories(include)
+zephyr_include_directories(include
+                          )
+
+zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # These are common files used by both hardware test and the real app
 set(APP_SOURCES
-        src/ble/nf_ble.c
-        src/ble/beacon_processor.c)
+        src/ble/nf_ble.c        
+        src/ble/beacon_processor.c
+        )
 
 if (HARDWARE_TEST)
     set(APP_MAIN src/main_hardware_test.c)
@@ -43,9 +53,8 @@ else ()
     set(APP_MAIN src/main.c)
 endif ()
 
+add_dependencies(app collar_protocol_headers)
 
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
         )
-
-
