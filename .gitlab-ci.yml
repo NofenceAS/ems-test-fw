@@ -1,51 +1,17 @@
-
 # Nofence CI
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
+  ZEPHYR_TOOLCHAIN_VARIANT: gnuarmemb
 
 stages:
   - compliance
   - build
-
-before_script:
-  - apt install -y ruby
-  ## Run ssh-agent (inside the build environment)
-  - eval $(ssh-agent -s)
-  ##
-  ## Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
-  ## We're using tr to fix line endings which makes ed25519 keys work
-  ## without extra base64 encoding.
-  ## https://gitlab.com/gitlab-examples/ssh-private-key/issues/1#note_48526556
-  ##
-  - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
-
-  ##
-  ## Create the SSH directory and give it the right permissions
-  ##
-  - mkdir -p ~/.ssh
-  - chmod 700 ~/.ssh
-
-  ##
-  ## Use ssh-keyscan to scan the keys of your private server. Replace gitlab.com
-  ## with your own domain name. You can copy and repeat that command if you have
-  ## more than one server to connect to.
-  ##
-  - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
-  - chmod 644 ~/.ssh/known_hosts
-  ##
-  ##  Initialize zephyr repos from Docker caches
-  ##
-  - west init -l . || true
-  - west update --path-cache /cache/x3
-
+  - deploy
 
 check_compliance:
   stage: compliance
   extends: .build-job
   script:
-    - export ZEPHYR_BASE=${PWD}/../zephyr
-    - ls -la
-#    - export
     - git log  --pretty=oneline -n 10
 #    - git diff ${CI_COMMIT_SHA}~ | ${ZEPHYR_BASE}/scripts/checkpatch.pl --ignore BRACES -
 
@@ -57,10 +23,64 @@ firmware:
     - printf "$BUILD_NUMBER" > buildnumber
     - printf "$CI_COMMIT_SHA"
     - ../zephyr/scripts/twister -i -T tests/
-#    - west build -p
+    - west build -p -b nf_x25_nrf52840
+
+  artifacts:
+    name: "firmware"
+    paths:
+      - buildnumber
+      - build/zephyr/app_*
+
+# Firmware
+staging-firmware-deploy:
+  stage: deploy
+  extends: .firmware-deploy-job
+  needs:
+    - firmware
+  variables:
+    LIMIT: "staging[0]" # We only need to deploy to the first host, as they all share the same EFS
+  when: manual
+
+
+production-firmware-deploy:
+  stage: deploy
+  extends: .firmware-deploy-job
+  needs:
+    - firmware
+  variables:
+    LIMIT: "production[0]" # We only need to deploy to the first host, as they all share the same EFS
+  when: manual
+
 
 .build-job:
+  #image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/registry.gitlab.com/nofence/x3-fw-app/x3-firmware-ci
   image: registry.gitlab.com/nofence/x3-fw-app/x3-firmware-ci
+  script:
+    - export ZEPHYR_BASE=${PWD}/../zephyr
+    - apt install -y ruby
+    ## Run ssh-agent (inside the build environment)
+    - eval $(ssh-agent -s)
+    ## Create the SSH directory and give it the right permissions
+    -  mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    ## Add gitlab.com to known hosts
+    - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    ## Resync the west repositories using the docker cache
+    - west init -l . || true
+    - west update --path-cache /cache/x3
 
+#
+# The environment variable SSH_PRIVATE_KEY must be set and contain a valid private key in the CI variables for this to work.
+#
+.firmware-deploy-job:
+  image: registry.gitlab.com/nofence/nofence/gitlab-deploy:1
+  script:
+    - cd ci/deploy/firmware
+    - ansible-playbook -i inventory deploy-firmware.yml
+      -e firmware_src_dir="$CI_PROJECT_DIR/build/zephyr"
+      -e firmware_install_dir=/mnt/efs/firmware/x25
+      -e firmware_upload_rsync_opts='["--include=app_*","--exclude=nrf52/bootloader/20"]'
+      --limit "$LIMIT"
 
 
