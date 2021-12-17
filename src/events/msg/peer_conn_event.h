@@ -1,7 +1,5 @@
 /*
- * Copyright (c) 2020 Nordic Semiconductor ASA
- *
- * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ * Copyright (c) 2021 Nofence AS
  */
 
 #ifndef _PEER_CONN_EVENT_H_
