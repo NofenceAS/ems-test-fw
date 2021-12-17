@@ -52,9 +52,16 @@ if (HARDWARE_TEST)
 else ()
     set(APP_MAIN src/main.c)
 endif ()
-
+if (CONFIG_COLLAR_PROTOCOL)
 add_dependencies(app collar_protocol_headers)
+endif ()
 
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
         )
+
+# Application sources
+add_subdirectory(src/events/ble)
+add_subdirectory(src/events/msg)
+add_subdirectory(src/modules/ble)
+add_subdirectory(src/modules/msg)
