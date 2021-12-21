@@ -53,6 +53,13 @@ else ()
     set(APP_MAIN src/main.c)
 endif ()
 
+# Some unit test flag here?
+zephyr_library_include_directories(
+  tests/event_manager
+)
+add_subdirectory(tests/event_manager)
+#
+
 add_dependencies(app collar_protocol_headers)
 
 target_sources(app PRIVATE ${APP_MAIN}
