@@ -8,8 +8,8 @@ manifest:
   projects:
     - name: nrf
       repo-path: sdk-nrf
-      remote: ncs
-      revision: v1.8.0
+      remote: nofence
+      revision: v1.8.0-nf1
       import: true
     - name: collar-protocol
       remote: nofence

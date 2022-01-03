@@ -1,5 +1,4 @@
 tests:
   event_manager.core:
-    integration_platforms:
-      - nrf52840dk_nrf52840
+    platform_allow: native_posix
     tags: event_manager
