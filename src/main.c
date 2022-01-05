@@ -22,4 +22,11 @@ void main(void)
 	} else {
 		module_set_state(MODULE_STATE_READY);
 	}
+	printk("main %p\n", k_current_get());
+	nf_ble_init();
+    /* Initialize the event manager to have modules subscribed to respective topics */
+    int err = event_manager_init();
+    if (err) {
+        // Error handler
+    }
 }

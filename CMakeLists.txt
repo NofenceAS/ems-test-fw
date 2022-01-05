@@ -17,9 +17,8 @@ endif()
 # see https://github.com/zephyrproject-rtos/zephyr/tree/main/samples/application_development/out_of_tree_driver
 list(APPEND ZEPHYR_EXTRA_MODULES
         )
-
 list(APPEND ZEPHYR_EXTRA_MODULES
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/collar_protocol
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/collar_protocol/
         )
 
 # Re-direct the directory where the 'boards' directory is found from
@@ -47,13 +46,14 @@ set(APP_SOURCES
         src/ble/beacon_processor.c
         )
 
+add_dependencies(app
+        		collar_protocol_headers
+    )
+
 if (HARDWARE_TEST)
     set(APP_MAIN src/main_hardware_test.c)
 else ()
     set(APP_MAIN src/main.c)
-endif ()
-if (CONFIG_COLLAR_PROTOCOL)
-add_dependencies(app collar_protocol_headers)
 endif ()
 
 target_sources(app PRIVATE ${APP_MAIN}
