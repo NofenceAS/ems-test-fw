@@ -58,3 +58,10 @@ add_dependencies(app collar_protocol_headers)
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
         )
+
+# !! REMOVE THIS AND SOURCE WHEN REAL EVENTS ARE ADDED !!
+zephyr_library_include_directories(src/events)
+
+target_sources(app PRIVATE
+		src/events/test_event.c
+)
