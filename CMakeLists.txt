@@ -61,7 +61,8 @@ target_sources(app PRIVATE ${APP_MAIN}
         )
 
 # Application sources
-add_subdirectory(src/events/ble)
-add_subdirectory(src/events/msg)
-add_subdirectory(src/modules/ble)
-add_subdirectory(src/modules/msg)
+#add_subdirectory(src/events/ble)
+#add_subdirectory(src/modules/ble)
+
+add_subdirectory(src/events/messaging)
+add_subdirectory(src/modules/messaging)

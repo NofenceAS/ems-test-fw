@@ -16,20 +16,14 @@ menu "APPLICATION_CODE"
 endmenu # APPLICATION CODE
 
 
-menu "BLE Modules"
+menu "BLE"
 rsource "src/modules/ble/Kconfig"
-endmenu
-
-menu "MSG Modules"
-rsource "src/modules/msg/Kconfig"
-endmenu
-
-menu "BLE Events"
 rsource "src/events/ble/Kconfig"
 endmenu
 
-menu "MSG Events"
-rsource "src/events/msg/Kconfig"
+menu "Messaging"
+rsource "src/modules/messaging/Kconfig"
+rsource "src/events/messaging/Kconfig"
 endmenu
 
 menu "Zephyr Kernel"
