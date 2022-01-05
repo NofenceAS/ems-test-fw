@@ -1,17 +1,18 @@
-# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2019 Nordic Semiconductor
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
 
 cmake_minimum_required(VERSION 3.20.0)
 
-list(APPEND ZEPHYR_EXTRA_MODULES
-
-        )
-
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(event_manager_testing)
+project("Event Manager unit tests")
 
-zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR})
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+# Include event headers
+zephyr_library_include_directories(src/events)
 
-FILE(GLOB app_sources src/*.c)
-target_sources(app PRIVATE ${app_sources})
-target_include_directories(app PRIVATE ${APP_SOURCE})
+# Add test sources
+target_sources(app PRIVATE src/main.c)
+add_subdirectory(src/events)
+add_subdirectory(src/modules)

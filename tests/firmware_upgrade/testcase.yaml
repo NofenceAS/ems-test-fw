@@ -1,4 +1,4 @@
 tests:
-  event_manager.core:
+  firmware_upgrade.test:
     platform_allow: native_posix
     tags: event_manager
