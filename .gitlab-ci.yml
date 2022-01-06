@@ -32,6 +32,7 @@ firmware:
     paths:
       - buildnumber
       - build/zephyr/app_*
+      - build/nf_version.sh
 
 # Firmware
 staging-firmware-deploy:
@@ -83,9 +84,10 @@ production-firmware-deploy:
   image: registry.gitlab.com/nofence/nofence/gitlab-deploy:1
   script:
     - cd ci/deploy/firmware
+    - source "$CI_PROJECT_DIR/build/nf_version.sh"
     - ansible-playbook -i inventory deploy-firmware.yml
       -e firmware_src_dir="$CI_PROJECT_DIR/build/zephyr"
-      -e firmware_install_dir=/mnt/efs/firmware/x25
+      -e firmware_install_dir="/mnt/efs/firmware/x25/$NF_X25_VERSION_NUMBER"
       -e firmware_upload_rsync_opts='["--include=app_*","--exclude=nrf52/bootloader/20"]'
       --limit "$LIMIT"
 
