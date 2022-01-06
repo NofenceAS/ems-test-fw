@@ -18,6 +18,7 @@ endif()
 # see https://github.com/zephyrproject-rtos/zephyr/tree/main/samples/application_development/out_of_tree_driver
 list(APPEND ZEPHYR_EXTRA_MODULES
         )
+
 list(APPEND ZEPHYR_EXTRA_MODULES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/collar_protocol/
         )
@@ -53,15 +54,21 @@ set(APP_SOURCES
         src/ble/beacon_processor.c
         )
 
-add_dependencies(app
-        		collar_protocol_headers
-    )
-
 if (HARDWARE_TEST)
     set(APP_MAIN src/main_hardware_test.c)
 else ()
     set(APP_MAIN src/main.c)
 endif ()
+
+add_dependencies(app collar_protocol_headers)
+
+# Added as zephyr library
+zephyr_library_include_directories(
+  src/modules/fw_upgrade
+)
+add_subdirectory(src/modules/fw_upgrade)
+
+
 
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}

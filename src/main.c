@@ -2,13 +2,13 @@
 #include "ble/nf_ble.h"
 #include <sys/printk.h>
 #include <zephyr.h>
-#include <logging/log.h>
 #include <event_manager.h>
+#include "fw_upgrade_events.h"
+#include "fw_upgrade.h"
+#include <logging/log.h>
 
-#define MODULE main
-#include "module_state_event.h"
-
-LOG_MODULE_REGISTER(MODULE);
+#define LOG_MODULE_NAME main_app
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_LOG_DEFAULT_LEVEL);
 
 /**
  * The Nofence X3 main entry point. This is
@@ -18,15 +18,11 @@ void main(void)
 {
 	LOG_INF("Starting nofence application");
 	if (event_manager_init()) {
-		LOG_ERR("Event manager not initialized");
-	} else {
-		module_set_state(MODULE_STATE_READY);
+		LOG_ERR("Event manager could not initialize.");
 	}
-	printk("main %p\n", k_current_get());
 	nf_ble_init();
-    /* Initialize the event manager to have modules subscribed to respective topics */
-    int err = event_manager_init();
-    if (err) {
-        // Error handler
-    }
+	/* Initialize firmware upgrade module. */
+	if (fw_upgrade_module_init()) {
+		LOG_ERR("Could not initialize firmware upgrade module");
+	}
 }
