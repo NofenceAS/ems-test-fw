@@ -1,0 +1,4 @@
+#!/bin/bash
+# @templates@ values come from cmake/version.cmake
+
+export NF_X25_VERSION_NUMBER=@PROJECT_X25_VERSION_NUMBER@
