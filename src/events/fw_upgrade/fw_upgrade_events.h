@@ -27,24 +27,6 @@ struct dfu_fragment_event {
 	struct event_dyndata dyndata;
 };
 
-/** @brief Struct containg fragment data as well as a dyndata field
- *         that is used for dynamic fragment allocation and storage.
- */
-struct firmware_info_event {
-	struct event_header header;
-
-	size_t file_size;
-
-	/** Update triggered by modem or bluetooth. */
-	enum dfu_trigger_type trigger_type;
-
-	uint8_t *file_url;
-	uint8_t *path_url;
-	uint8_t *apn_url;
-
-	int firmware_version;
-};
-
 /** @brief Enum for different dfu statuses, 
  *         if we want modules to shutdown correctly etc...
  *         We call it schedule reboot, since fw_upgrade module must schedule 
