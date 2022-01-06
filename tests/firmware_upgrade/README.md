@@ -14,5 +14,5 @@ The next test simply simulates dummy fragment data, and submits them to the even
 
 If the number of times(and if we did NOT go through each state as expected) the test fails. We check that the firmware module sets the states correctly.
 
-## Fragment size > file_size
-If we recieve more fragments than indicates by the file size, we should get an error. We have to create a new test suite, to properly teardown and cleanup from the previous tests.
+## Fragment size > file_size test
+If we recieve more fragments than indicated by the file size, we should get an error. This test also sufficiently test if the firmware module properly resets itself if something happens during DFU. First assert should go through as we will go to IN_PROGRESS DFU status, but then eventually we will get an error i.e.: dfu_error != 0.
