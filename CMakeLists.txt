@@ -2,6 +2,7 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
+
 # Print out build type
 message(STATUS "Build type: ${BUILD_TYPE} 🚀")
 
@@ -31,7 +32,13 @@ set(BOARD nf_x25_nrf52840)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
+include(cmake/version.cmake)
+
 project(x3_fw)
+
+# Genrerate firmware version info
+configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/nf_version.h)
+configure_file(version.sh.in ${PROJECT_BINARY_DIR}/nf_version.sh)
 
 # As the Zephyr GNSS API is not yet finalized, ( see https://github.com/zephyrproject-rtos/zephyr/issues/30564)
 # We put the proposed API out-of-tree
