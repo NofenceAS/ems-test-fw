@@ -10,8 +10,11 @@
  * be AS_IS (-1) -> IDLE (0) -> IN_PROGRESS (1) -> REBOOT_SCHEDULED (2).
  */
 static int dfu_status_sequence = -1;
-
 static K_SEM_DEFINE(test_frag_rec, 0, 1);
+static K_SEM_DEFINE(test_status, 0, 1);
+
+enum test_event_id { TEST_EVENT_APPLY_DFU = 0, TEST_EVENT_EXCEED_SIZE = 1 };
+static enum test_event_id cur_id = TEST_EVENT_APPLY_DFU;
 
 /* Want to cycle through all the statuses, if this counter mismatches,
  * we missed a status event.
@@ -87,16 +90,34 @@ void test_perform_dfu(void)
 		ztest_returns_value(dfu_target_write, 0);
 		submit_fragment(fragment_size, file_size);
 		int err = k_sem_take(&test_frag_rec, K_SECONDS(30));
-		zassert_equal(err, 0, "Test execution hanged");
+		zassert_equal(err, 0, "Test fragment event execution hanged");
 	}
 	/* Expect the next status event to be reboot. */
 	dfu_status_sequence = DFU_STATUS_SUCCESS_REBOOT_SCHEDULED;
 }
 
+void test_exceed_file_size(void)
+{
+	/* Mock dfu writing/setup to internal flash functions. */
+	ztest_returns_value(dfu_target_reset, 0);
+	ztest_returns_value(dfu_target_mcuboot_set_buf, 0);
+	ztest_returns_value(dfu_target_img_type, 0);
+	ztest_returns_value(dfu_target_init, 0);
+	ztest_returns_value(dfu_target_write, 0);
+
+	/* First it goes to IN_PROGRESS then it goes to an ERROR. */
+	dfu_status_sequence = 0;
+	submit_fragment(512, 511);
+
+	int err = k_sem_take(&test_status, K_SECONDS(30));
+	zassert_equal(err, 0, "Test status event execution hanged.");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(firmware_upgrade_tests, ztest_unit_test(test_init),
-			 ztest_unit_test(test_perform_dfu));
+			 ztest_unit_test(test_perform_dfu),
+			 ztest_unit_test(test_exceed_file_size));
 
 	ztest_run_test_suite(firmware_upgrade_tests);
 }
@@ -106,30 +127,53 @@ static bool event_handler(const struct event_header *eh)
 	if (is_dfu_status_event(eh)) {
 		struct dfu_status_event *ev = cast_dfu_status_event(eh);
 
-		/* This checks if the dfu process goes as normal. If we go
-		 * through all steps from IDLE -> PROGRESS -> REBOOT
-		 * we know that everything works in regards
-		 * to multiple fragments.
-		 */
-		zassert_ok(ev->dfu_error, "Error occured during dfu process");
-		zassert_equal(dfu_status_sequence, ev->dfu_status,
-			      "DFU status did not match expected value.");
-		dfu_status_cycle_counter += 1;
-
-		/* If the status indicates we're done, check if we have gone
-		 * through all the states that we expected. 
-		 */
-		if (dfu_status_sequence ==
-		    DFU_STATUS_SUCCESS_REBOOT_SCHEDULED) {
+		if (cur_id == TEST_EVENT_APPLY_DFU) {
+			/* This checks if the dfu process goes as normal. 
+			 * If we go through all steps from 
+			 * IDLE -> PROGRESS -> REBOOT
+			 * we know that everything works in regards
+			 * to multiple fragments.
+			 */
+			zassert_ok(ev->dfu_error,
+				   "Error occured during dfu process");
 			zassert_equal(
-				dfu_status_cycle_counter,
-				dfu_status_cycle_number,
-				"Failed to go through all states expected");
+				dfu_status_sequence, ev->dfu_status,
+				"DFU status did not match expected value.");
+			dfu_status_cycle_counter += 1;
+
+			/* If the status indicates we're done, 
+			 * check if we have gone
+		 	 * through all the states that we expected. 
+		 	 */
+			if (dfu_status_sequence ==
+			    DFU_STATUS_SUCCESS_REBOOT_SCHEDULED) {
+				zassert_equal(dfu_status_cycle_counter,
+					      dfu_status_cycle_number,
+					      "Failed to go through all \
+					states expected");
+
+				/* Prepare for next test. */
+				cur_id = TEST_EVENT_EXCEED_SIZE;
+			}
+		} else if (cur_id == TEST_EVENT_EXCEED_SIZE) {
+			if (dfu_status_sequence == 0) {
+				/* In progress, no errors. */
+				zassert_equal(ev->dfu_error, 0,
+					      "Error reported at IN PROGRESS.");
+				dfu_status_sequence = 1;
+			} else if (dfu_status_sequence == 1) {
+				/* Error reported, file size should exceed. */
+				zassert_not_equal(ev->dfu_error, 0,
+						  "No error reported \
+					      when it should.");
+			}
 		}
+		k_sem_give(&test_status);
 		return false;
 	}
 	if (is_dfu_fragment_event(eh)) {
 		struct dfu_fragment_event *ev = cast_dfu_fragment_event(eh);
+
 		/* This is the content we sent, so this is what we expect. */
 		uint8_t dummy_data[ev->dyndata.size];
 		memset(dummy_data, 0xAE, sizeof(dummy_data));

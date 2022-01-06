@@ -18,7 +18,7 @@ static K_SEM_DEFINE(test_end_sem, 0, 1);
 BUILD_ASSERT(!IS_ENABLED(CONFIG_ASSERT_NO_FILE_INFO));
 void assert_post_action(const char *file, unsigned int line)
 {
-       printk("assert_post_action - file: %s (line: %u)\n", file, line);
+	printk("assert_post_action - file: %s (line: %u)\n", file, line);
 }
 
 void test_init(void)
@@ -68,15 +68,13 @@ void test_oom_reset(void);
 
 void test_main(void)
 {
-	ztest_test_suite(event_manager_tests,
-			 ztest_unit_test(test_init),
+	ztest_test_suite(event_manager_tests, ztest_unit_test(test_init),
 			 ztest_unit_test(test_basic),
 			 ztest_unit_test(test_data),
 			 ztest_unit_test(test_event_order),
 			 ztest_unit_test(test_subs_order),
 			 ztest_unit_test(test_oom_reset),
-			 ztest_unit_test(test_multicontext)
-			 );
+			 ztest_unit_test(test_multicontext));
 
 	ztest_run_test_suite(event_manager_tests);
 }
