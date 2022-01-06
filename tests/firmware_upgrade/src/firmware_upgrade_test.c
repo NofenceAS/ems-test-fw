@@ -11,7 +11,13 @@
  */
 static int dfu_status_sequence = -1;
 
-static int event_test_id = 0;
+static K_SEM_DEFINE(test_frag_rec, 0, 1);
+
+/* Want to cycle through all the statuses, if this counter mismatches,
+ * we missed a status event.
+ */
+static int dfu_status_cycle_number = 3;
+static int dfu_status_cycle_counter = 0;
 
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
@@ -34,7 +40,7 @@ void test_init(void)
 		      "Error when initializing firmware upgrade module");
 }
 
-static void test_submit_fragment(uint32_t fragment_size, uint32_t file_size)
+static void submit_fragment(uint32_t fragment_size, uint32_t file_size)
 {
 	/* Set fragment data to 0xAE as we do not care about the contents
 	 * but still want to verify that the contents stay unchanged.
@@ -52,24 +58,8 @@ static void test_submit_fragment(uint32_t fragment_size, uint32_t file_size)
 	EVENT_SUBMIT(ts);
 }
 
-int apply_fragment(void)
-{
-	ztest_get_return_value();
-}
-
-void test_verify_fragment(void)
-{
-	/* This test verifies that the contents of the fragment is intact
-	 * when read from the event handler function. We mock the apply fragment
-	 * function since we do not care about that sequence in this test.
-	 */
-	ztest_returns_values(apply_fragment, 0);
-	test_submit_fragment(512, 512);
-}
-
 void test_perform_dfu(void)
 {
-	/* We 
 	/* Expect the next event to be IN_PROGRESS event. */
 	dfu_status_sequence = DFU_STATUS_IN_PROGRESS;
 
@@ -89,20 +79,18 @@ void test_perform_dfu(void)
 	uint32_t file_size = 2570;
 	uint32_t fragment_size = 512;
 	uint32_t num_fragments = (uint32_t)(file_size / fragment_size) + 1;
-	for (uint32_t i = 0; i < num_fragments; ++i) {
-		if (i == num_fragments) {
+	for (uint32_t i = 0; i < num_fragments; i++) {
+		if (i == num_fragments - 1) {
 			fragment_size = 10;
-			/* Expect the next event to be REBOOT event since
-			 * we're finished.
-			 */
-			dfu_status_sequence =
-				DFU_STATUS_SUCCESS_REBOOT_SCHEDULED;
-			/* Mock the dfu_done function since we're finished. */
 			ztest_returns_value(dfu_target_done, 0);
 		}
 		ztest_returns_value(dfu_target_write, 0);
-		test_submit_fragment(fragment_size, file_size);
+		submit_fragment(fragment_size, file_size);
+		int err = k_sem_take(&test_frag_rec, K_SECONDS(30));
+		zassert_equal(err, 0, "Test execution hanged");
 	}
+	/* Expect the next status event to be reboot. */
+	dfu_status_sequence = DFU_STATUS_SUCCESS_REBOOT_SCHEDULED;
 }
 
 void test_main(void)
@@ -123,8 +111,33 @@ static bool event_handler(const struct event_header *eh)
 		 * we know that everything works in regards
 		 * to multiple fragments.
 		 */
+		zassert_ok(ev->dfu_error, "Error occured during dfu process");
 		zassert_equal(dfu_status_sequence, ev->dfu_status,
 			      "DFU status did not match expected value.");
+		dfu_status_cycle_counter += 1;
+
+		/* If the status indicates we're done, check if we have gone
+		 * through all the states that we expected. 
+		 */
+		if (dfu_status_sequence ==
+		    DFU_STATUS_SUCCESS_REBOOT_SCHEDULED) {
+			zassert_equal(
+				dfu_status_cycle_counter,
+				dfu_status_cycle_number,
+				"Failed to go through all states expected");
+		}
+		return false;
+	}
+	if (is_dfu_fragment_event(eh)) {
+		struct dfu_fragment_event *ev = cast_dfu_fragment_event(eh);
+		/* This is the content we sent, so this is what we expect. */
+		uint8_t dummy_data[ev->dyndata.size];
+		memset(dummy_data, 0xAE, sizeof(dummy_data));
+		zassert_mem_equal(ev->dyndata.data, dummy_data,
+				  ev->dyndata.size, "Memory contents was \
+					  not equal for fragment received.");
+		/* Contents are valid, give semaphore so we can send next. */
+		k_sem_give(&test_frag_rec);
 		return false;
 	}
 	zassert_true(false, "Wrong event type received");
@@ -133,3 +146,4 @@ static bool event_handler(const struct event_header *eh)
 
 EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, dfu_status_event);
+EVENT_SUBSCRIBE(test_main, dfu_fragment_event);
