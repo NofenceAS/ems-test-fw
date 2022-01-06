@@ -15,4 +15,4 @@ The next test simply simulates dummy fragment data, and submits them to the even
 If the number of times(and if we did NOT go through each state as expected) the test fails. We check that the firmware module sets the states correctly.
 
 ## Fragment size > file_size
-If we recieve more fragments than indicates by the file size, we should get an error.
+If we recieve more fragments than indicates by the file size, we should get an error. We have to create a new test suite, to properly teardown and cleanup from the previous tests.
