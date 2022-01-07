@@ -1,7 +1,5 @@
 /*
- * Copyright (c) 2020 Nordic Semiconductor ASA
- *
- * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ * Copyright (c) 2021 Nofence AS
  */
 
 #ifndef _BLE_CTRL_EVENT_H_
@@ -18,10 +16,9 @@
 
 #include "event_manager.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+/** @brief Enum for defining the differen bluetooth control commands
+ * 		   to enable or disable advertisement, and update ad array. 
+ */
 enum ble_ctrl_cmd {
 	BLE_CTRL_ENABLE,
 	BLE_CTRL_DISABLE,
@@ -52,13 +49,5 @@ struct ble_ctrl_event {
 };
 
 EVENT_TYPE_DECLARE(ble_ctrl_event);
-
-#ifdef __cplusplus
-}
-#endif
-
-/**
- * @}
- */
 
 #endif /* _BLE_CTRL_EVENT_H_ */
