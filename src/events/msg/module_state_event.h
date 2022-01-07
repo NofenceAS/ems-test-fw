@@ -16,10 +16,6 @@
 
 #include "event_manager.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** Module state list. */
 #define MODULE_STATE_LIST                                                      \
 	X(READY)                                                               \
@@ -79,13 +75,5 @@ static inline bool check_state(const struct module_state_event *event,
 		extern const void *const _CONCAT(__module_, mname);            \
 		_CONCAT(__module_, mname);                                     \
 	})
-
-#ifdef __cplusplus
-}
-#endif
-
-/**
- * @}
- */
 
 #endif /* _MODULE_STATE_EVENT_H_ */

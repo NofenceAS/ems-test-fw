@@ -16,10 +16,6 @@
 
 #include "event_manager.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** Peer type list. */
 #define PEER_ID_LIST X(BLE)
 
@@ -44,13 +40,5 @@ struct peer_conn_event {
 };
 
 EVENT_TYPE_DECLARE(peer_conn_event);
-
-#ifdef __cplusplus
-}
-#endif
-
-/**
- * @}
- */
 
 #endif /* _PEER_CONN_EVENT_H_ */

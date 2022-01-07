@@ -13,6 +13,15 @@ static const char *const state_name[] = {
 #undef X
 };
 
+/**
+ * @brief Module state event function for debugging/information. 
+ *        Uses the log to make it easier to
+ *        debug what is happening on the event bus.
+ * 
+ * @param[in] ev event_header for given event.
+ * @param[in] buf triggered event's log event buffer.
+ * @param[in] buf_len length of the buffer received.
+ */
 static int log_module_state_event(const struct event_header *eh, char *buf,
 				  size_t buf_len)
 {
