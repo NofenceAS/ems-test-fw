@@ -1,0 +1,4 @@
+tests:
+  eeprom.test:
+    platform_allow: native_posix
+    tags: eeprom
