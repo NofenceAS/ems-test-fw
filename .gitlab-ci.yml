@@ -12,6 +12,7 @@ check_compliance:
   stage: compliance
   extends: .build-job
   script:
+    - !reference [.build-job-script, script]
     - git log  --pretty=oneline -n 10
 #    - git diff ${CI_COMMIT_SHA}~ | ${ZEPHYR_BASE}/scripts/checkpatch.pl --ignore BRACES -
 
@@ -19,6 +20,7 @@ firmware:
   stage: build
   extends: .build-job
   script:
+    - !reference [.build-job-script, script]
     - export BUILD_NUMBER=$(($CI_PIPELINE_IID + 1000))
     - printf "$BUILD_NUMBER" > buildnumber
     - printf "$CI_COMMIT_SHA"
@@ -30,6 +32,7 @@ firmware:
     paths:
       - buildnumber
       - build/zephyr/app_*
+      - build/nf_version.sh
 
 # Firmware
 staging-firmware-deploy:
@@ -51,15 +54,14 @@ production-firmware-deploy:
     LIMIT: "production[0]" # We only need to deploy to the first host, as they all share the same EFS
   when: manual
 
-
-.build-job:
-  #image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/registry.gitlab.com/nofence/x3-fw-app/x3-firmware-ci
-  image: registry.gitlab.com/nofence/x3-fw-app/x3-firmware-ci
+.build-job-script:
   script:
     - export ZEPHYR_BASE=${PWD}/../zephyr
     - apt install -y ruby
     ## Run ssh-agent (inside the build environment)
     - eval $(ssh-agent -s)
+    ## Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
     ## Create the SSH directory and give it the right permissions
     -  mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -70,6 +72,11 @@ production-firmware-deploy:
     - west init -l . || true
     - west update --path-cache /cache/x3
 
+.build-job:
+  #image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/registry.gitlab.com/nofence/x3-fw-app/x3-firmware-ci
+  image: registry.gitlab.com/nofence/x3-fw-app/x3-firmware-ci
+  
+
 #
 # The environment variable SSH_PRIVATE_KEY must be set and contain a valid private key in the CI variables for this to work.
 #
@@ -77,9 +84,10 @@ production-firmware-deploy:
   image: registry.gitlab.com/nofence/nofence/gitlab-deploy:1
   script:
     - cd ci/deploy/firmware
+    - source "$CI_PROJECT_DIR/build/nf_version.sh"
     - ansible-playbook -i inventory deploy-firmware.yml
       -e firmware_src_dir="$CI_PROJECT_DIR/build/zephyr"
-      -e firmware_install_dir=/mnt/efs/firmware/x25
+      -e firmware_install_dir="/mnt/efs/firmware/x25/$NF_X25_VERSION_NUMBER"
       -e firmware_upload_rsync_opts='["--include=app_*","--exclude=nrf52/bootloader/20"]'
       --limit "$LIMIT"
 

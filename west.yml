@@ -8,13 +8,10 @@ manifest:
   projects:
     - name: nrf
       repo-path: sdk-nrf
-      remote: ncs
-      revision: v1.6.1
+      remote: nofence
+      revision: v1.8.0-nf1
       import: true
     - name: collar-protocol
       remote: nofence
       repo-path: collar-protocol
       revision: initial_copy
-
-  self:
-    path: application
