@@ -6,7 +6,7 @@
 #include "messaging.h"
 #include "ble_ctrl_event.h"
 #include "ble_data_event.h"
-#include "lte_data_event.h"
+#include "lte_proto_event.h"
 
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
@@ -32,7 +32,7 @@ void test_event_contents(void)
 	/* Allocate events. */
 	struct ble_ctrl_event *ev_ble_ctrl = new_ble_ctrl_event();
 	struct ble_data_event *ev_ble_data = new_ble_data_event();
-	struct lte_data_event *ev_lte_data = new_lte_data_event();
+	struct lte_proto_event *ev_lte_proto = new_lte_proto_event();
 
 	/* BLE CTRL event. */
 	ev_ble_ctrl->cmd = BLE_CTRL_BATTERY_UPDATE;
@@ -43,13 +43,13 @@ void test_event_contents(void)
 	ev_ble_data->len = sizeof(dummy_data);
 
 	/* LTE data event. */
-	ev_lte_data->buf = dummy_data;
-	ev_lte_data->len = sizeof(dummy_data);
+	ev_lte_proto->buf = dummy_data;
+	ev_lte_proto->len = sizeof(dummy_data);
 
 	/* Submit events. */
 	EVENT_SUBMIT(ev_ble_ctrl);
 	EVENT_SUBMIT(ev_ble_data);
-	EVENT_SUBMIT(ev_lte_data);
+	EVENT_SUBMIT(ev_lte_proto);
 }
 
 //void test_event_poller(void)
@@ -59,7 +59,7 @@ void test_event_contents(void)
 void test_main(void)
 {
 	ztest_test_suite(messaging_tests, ztest_unit_test(test_init),
-			 ztest_unit_test(test_double_schedule));
+			 ztest_unit_test(test_event_contents));
 	ztest_run_test_suite(messaging_tests);
 }
 
@@ -84,8 +84,8 @@ static bool event_handler(const struct event_header *eh)
 		zassert_mem_equal(ev->buf, dummy_data, ev->len,
 				  "Contents not equal.");
 	}
-	if (is_lte_data_event(eh)) {
-		struct lte_data_event *ev = cast_lte_data_event(eh);
+	if (is_lte_proto_event(eh)) {
+		struct lte_proto_event *ev = cast_lte_proto_event(eh);
 		zassert_equal(ev->len, sizeof(dummy_data),
 			      "Buffer length mismatch");
 		zassert_mem_equal(ev->buf, dummy_data, ev->len,
@@ -97,4 +97,4 @@ static bool event_handler(const struct event_header *eh)
 EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, ble_ctrl_event);
 EVENT_SUBSCRIBE(test_main, ble_data_event);
-EVENT_SUBSCRIBE(test_main, lte_data_event);
+EVENT_SUBSCRIBE(test_main, lte_proto_event);
