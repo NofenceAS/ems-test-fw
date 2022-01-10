@@ -11,6 +11,12 @@
 	model = "Nofence X2.5";
 	compatible = "nofence,x25";
 
+	/* Convenience aliases */
+	aliases {
+		eeprom = &eeprom0;
+	};
+
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -111,7 +117,7 @@
 		spi-max-frequency = <1000000>;
 	};
 
-	eeprom@2 {
+    eeprom0: eeprom@2 {
 		compatible = "atmel,at25";
 		reg = <2>;
 		label = "eeprom";

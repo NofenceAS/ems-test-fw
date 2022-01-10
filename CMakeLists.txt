@@ -44,10 +44,13 @@ configure_file(version.sh.in ${PROJECT_BINARY_DIR}/nf_version.sh)
 # We put the proposed API out-of-tree
 zephyr_include_directories(include
                           )
-
 zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
+
+
+# Appplication directories
+add_subdirectory(src/eeprom)
 # These are common files used by both hardware test and the real app
 set(APP_SOURCES
         src/ble/nf_ble.c        
