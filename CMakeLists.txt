@@ -66,8 +66,12 @@ target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
         )
 
-# !! REMOVE THIS AND SOURCE WHEN REAL EVENTS ARE ADDED !!
-zephyr_library_include_directories(src/events)
+
+zephyr_library_include_directories(
+  src/modules/error_handler
+  src/events/error_handler
+)
+add_subdirectory(src/modules/error_handler)
 
 target_sources(app PRIVATE
 		src/events/test_event.c

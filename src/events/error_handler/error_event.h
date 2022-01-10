@@ -18,8 +18,8 @@ enum error_sender_module { ERR_SENDER_FW_UPGRADE = 0 };
  */
 enum error_severity {
 	ERR_SEVERITY_FATAL = 0,
-	ERR_SEVERITY_ERROR = 0,
-	ERR_SEVERITY_WARNING = 0
+	ERR_SEVERITY_ERROR = 1,
+	ERR_SEVERITY_WARNING = 2
 };
 
 /** @brief Struct containg status messages regarding the firmware upgrade. */

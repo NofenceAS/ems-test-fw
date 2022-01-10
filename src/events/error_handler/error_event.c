@@ -2,12 +2,12 @@
  * Copyright (c) 2021 Nofence AS
  */
 
-#include "fw_upgrade_events.h"
+#include "error_event.h"
 #include <logging/log.h>
 #include <stdio.h>
 
 #define LOG_MODULE_NAME fw_upgrade_events
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_FW_UPGRADE_LOG_LEVEL);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_ERROR_HANDLER_LOG_LEVEL);
 
 /**
  * @brief Error event function for debugging/information. 
