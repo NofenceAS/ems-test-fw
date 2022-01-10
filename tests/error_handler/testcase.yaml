@@ -1,0 +1,4 @@
+tests:
+  error_handler.test:
+    platform_allow: native_posix
+    tags: event_manager

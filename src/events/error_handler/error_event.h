@@ -29,26 +29,28 @@ struct error_event {
 	/** Which module triggered the error event. */
 	enum error_sender_module sender;
 
-	/** errno.h error code attached. */
+	/** errno.h error code. */
 	int code;
 
 	enum error_severity severity;
 
 	/** A temporary debug user message if needed. */
-	char user_message[CONFIG_ERROR_USER_MESSAGE_SIZE];
+	struct event_dyndata dyndata;
 };
 
 /**
- * @brief Submits the given parameters to the error event bus
+ * @brief Submits the given parameters to the error event bus.
  * 
  * @param[in] sender which module triggered the warning.
  * @param[in] severity severity of the error.
  * @param[in] code error code from the sender.
  * @param[in] msg custom user message attached to the event. Can be NULL.
+ * @param[in] msg_len length of user message, 
+ *                    maximum CONFIG_ERROR_USER_MESSAGE_SIZE characters.
  */
 void submit_error(enum error_sender_module sender, enum error_severity severity,
-		  int code, char *msg);
+		  int code, char *msg, size_t msg_len);
 
-EVENT_TYPE_DECLARE(error_event);
+EVENT_TYPE_DYNDATA_DECLARE(error_event);
 
 #endif /* _ERROR_EVENT_H_ */

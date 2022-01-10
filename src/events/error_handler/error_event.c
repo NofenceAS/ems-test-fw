@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Nofence AS
+ * Copyright (c) 2022 Nofence AS
  */
 
 #include "error_event.h"
@@ -23,24 +23,55 @@ static int log_error_event(const struct event_header *eh, char *buf,
 {
 	struct error_event *event = cast_error_event(eh);
 
-	return snprintf(buf, buf_len, "Error code=%d, Severity=%d, Sender=%d",
-			event->code, event->sender, event->severity);
+	if (event->dyndata.size > 0) {
+		return snprintf(buf, buf_len,
+				"<%s>, Error code=%d, Severity=%d, Sender=%d",
+				log_strdup(event->dyndata.data), event->code,
+				event->severity, event->sender);
+	} else {
+		return snprintf(
+			buf, buf_len,
+			"<No message>, Error code=%d, Severity=%d, Sender=%d",
+			event->code, event->severity, event->sender);
+	}
 }
 
 void submit_error(enum error_sender_module sender, enum error_severity severity,
 		  int code, char *msg, size_t msg_len)
 {
-	/* Allocate event. */
-	struct error_event *event = new_error_event();
+	size_t dyn_msg_size = msg_len;
 
-	/* Write data to error event. */
-	event->sender = sender;
+	/* Check if string is greater than limit, remove 
+	 * the entire message if exceeding. 
+	 */
+	if (msg_len > CONFIG_ERROR_USER_MESSAGE_SIZE) {
+		dyn_msg_size = 0;
+	}
+
+	struct error_event *event = new_error_event(dyn_msg_size);
+
+	/* -EINVALS to error handler, nothing to do about that. */
+	/* Not negative error code. */
+	if (code >= 0) {
+		return;
+	}
+
+	/* If not part of the ENUMs. */
+	if (sender < 0 || sender > ERR_SENDER_FW_UPGRADE) {
+		return;
+	}
+
+	/* If not part of the ENUMs. */
+	if (severity < 0 || severity > ERR_SEVERITY_WARNING) {
+		return;
+	}
+
 	event->code = code;
+	event->sender = sender;
 	event->severity = severity;
 
-	if (msg_len != 0 && msg_len <= CONFIG_ERROR_USER_MESSAGE_SIZE &&
-	    msg != NULL) {
-		strncpy(event->user_message, msg, msg_len);
+	if (dyn_msg_size > 0 && msg != NULL) {
+		memcpy(event->dyndata.data, msg, dyn_msg_size);
 	}
 
 	/* Submit event. */
