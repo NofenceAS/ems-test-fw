@@ -70,8 +70,11 @@ target_sources(app PRIVATE ${APP_MAIN}
 zephyr_library_include_directories(
   src/modules/error_handler
   src/events/error_handler
+  src/modules/fw_upgrade
 )
-add_subdirectory(src/modules/error_handler)
+add_subdirectory(
+src/modules/fw_upgrade
+src/modules/error_handler)
 
 target_sources(app PRIVATE
 		src/events/test_event.c
