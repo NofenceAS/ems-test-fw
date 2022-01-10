@@ -38,6 +38,17 @@ struct error_event {
 	char user_message[CONFIG_ERROR_USER_MESSAGE_SIZE];
 };
 
+/**
+ * @brief Submits the given parameters to the error event bus
+ * 
+ * @param[in] sender which module triggered the warning.
+ * @param[in] severity severity of the error.
+ * @param[in] code error code from the sender.
+ * @param[in] msg custom user message attached to the event. Can be NULL.
+ */
+void submit_error(enum error_sender_module sender, enum error_severity severity,
+		  int code, char *msg);
+
 EVENT_TYPE_DECLARE(error_event);
 
 #endif /* _ERROR_EVENT_H_ */

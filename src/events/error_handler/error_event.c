@@ -27,4 +27,24 @@ static int log_error_event(const struct event_header *eh, char *buf,
 			event->code, event->sender, event->severity);
 }
 
+void submit_error(enum error_sender_module sender, enum error_severity severity,
+		  int code, char *msg, size_t msg_len)
+{
+	/* Allocate event. */
+	struct error_event *event = new_error_event();
+
+	/* Write data to error event. */
+	event->sender = sender;
+	event->code = code;
+	event->severity = severity;
+
+	if (msg_len != 0 && msg_len <= CONFIG_ERROR_USER_MESSAGE_SIZE &&
+	    msg != NULL) {
+		strncpy(event->user_message, msg, msg_len);
+	}
+
+	/* Submit event. */
+	EVENT_SUBMIT(event);
+}
+
 EVENT_TYPE_DEFINE(error_event, true, log_error_event, NULL);
