@@ -2,6 +2,7 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
+
 # Print out build type
 message(STATUS "Build type: ${BUILD_TYPE} 🚀")
 
@@ -13,17 +14,13 @@ list(APPEND CONF_FILE
         )
 endif()
 
-if (CELLULAR_DEMO)
-    list(APPEND CONF_FILE
-#            ${CMAKE_CURRENT_SOURCE_DIR}/prj.conf
-            ${CMAKE_CURRENT_SOURCE_DIR}/cell_comm_demo.conf
-            )
-endif()
-
 # Out-of-tree driver for GNSS,
 # see https://github.com/zephyrproject-rtos/zephyr/tree/main/samples/application_development/out_of_tree_driver
 list(APPEND ZEPHYR_EXTRA_MODULES
-        ${CMAKE_CURRENT_SOURCE_DIR}/modules/zoem8b_gps
+        )
+
+list(APPEND ZEPHYR_EXTRA_MODULES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/collar_protocol
         )
 
 # Re-direct the directory where the 'boards' directory is found from
@@ -31,33 +28,51 @@ list(APPEND ZEPHYR_EXTRA_MODULES
 set(BOARD_ROOT ${CMAKE_CURRENT_LIST_DIR})
 
 # The Nofence X3 board exists out-of-tree from zephyr boards
-set(BOARD nf_x3_nrf52840)
+set(BOARD nf_x25_nrf52840)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+include(cmake/version.cmake)
+
 project(x3_fw)
+
+# Genrerate firmware version info
+configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/nf_version.h)
+configure_file(version.sh.in ${PROJECT_BINARY_DIR}/nf_version.sh)
 
 # As the Zephyr GNSS API is not yet finalized, ( see https://github.com/zephyrproject-rtos/zephyr/issues/30564)
 # We put the proposed API out-of-tree
-zephyr_include_directories(include)
+zephyr_include_directories(include
+                          )
+zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
+
+
+# Appplication directories
+add_subdirectory(src/eeprom)
 # These are common files used by both hardware test and the real app
 set(APP_SOURCES
-        src/ble/nf_ble.c
-        src/ble/beacon_processor.c)
+        src/ble/nf_ble.c        
+        src/ble/beacon_processor.c
+        )
 
 if (HARDWARE_TEST)
     set(APP_MAIN src/main_hardware_test.c)
-elseif(CELLULAR_DEMO)
-    set(APP_MAIN src/main_cell_comm_demo.c)
-else()
+else ()
     set(APP_MAIN src/main.c)
 endif ()
+
+add_dependencies(app collar_protocol_headers)
+
+# Added as zephyr library
+zephyr_library_include_directories(
+  src/modules/fw_upgrade
+)
+add_subdirectory(src/modules/fw_upgrade)
+
 
 
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
         )
-if(CELLULAR_DEMO)
-target_sources_ifdef(CONFIG_NET_UDP app PRIVATE src/cellular_communicator_demo/udp.c)
-target_sources_ifdef(CONFIG_NET_TCP app PRIVATE src/cellular_communicator_demo/tcp.c)
-endif()

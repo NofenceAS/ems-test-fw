@@ -1,0 +1,12 @@
+
+plugin: aws_ec2
+regions:
+  - eu-central-1
+filters:
+  tag:elasticbeanstalk:environment-name:
+    - master-server-http-staging
+    - master-server-http-production
+groups:
+  firmware_efs: 1 == 1 # Place all hosts in the firmware_efs group
+  staging: tags['elasticbeanstalk:environment-name'] == "master-server-http-staging"
+  production: tags['elasticbeanstalk:environment-name'] == "master-server-http-production"

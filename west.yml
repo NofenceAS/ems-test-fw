@@ -3,11 +3,15 @@ manifest:
   remotes:
     - name: ncs
       url-base: https://github.com/nrfconnect
+    - name: nofence
+      url-base: git@gitlab.com:nofence
   projects:
     - name: nrf
       repo-path: sdk-nrf
-      remote: ncs
-      revision: v1.6.1
+      remote: nofence
+      revision: v1.8.0-nf1
       import: true
-  self:
-    path: application
+    - name: collar-protocol
+      remote: nofence
+      repo-path: collar-protocol
+      revision: initial_copy
