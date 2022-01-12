@@ -13,6 +13,48 @@
  */
 enum error_sender_module { ERR_SENDER_FW_UPGRADE = 0 };
 
+/**
+ * @brief Registers a fatal error caused by some module/logic that must
+ *        be handled. So severe that the entire system shuts down if not treated
+ *        immediately.
+ * 
+ * @param[in] sender which module triggered the warning.
+ * @param[in] code error code from the sender.
+ * @param[in] msg custom user message attached to the event. Can be NULL.
+ * @param[in] msg_len length of user message, 
+ *                    maximum CONFIG_ERROR_USER_MESSAGE_SIZE characters.
+ */
+void NF_APP_FATAL(enum error_sender_module sender, int code, char *msg,
+		  size_t msg_len);
+
+/**
+ * @brief Registers a non-fatal error caused by some module/logic that must
+ *        be handled. May not cause total system failure, but should still be
+ *        processed and dealt with.
+ * 
+ * @param[in] sender which module triggered the warning.
+ * @param[in] code error code from the sender.
+ * @param[in] msg custom user message attached to the event. Can be NULL.
+ * @param[in] msg_len length of user message, 
+ *                    maximum CONFIG_ERROR_USER_MESSAGE_SIZE characters.
+ */
+void NF_APP_ERROR(enum error_sender_module sender, int code, char *msg,
+		  size_t msg_len);
+
+/**
+ * @brief Registers a warning caused by some module/logic that must
+ *        not necessarily be handled. May be ignored, but should be treated
+ *        if possible and dealt with.
+ * 
+ * @param[in] sender which module triggered the warning.
+ * @param[in] code error code from the sender.
+ * @param[in] msg custom user message attached to the event. Can be NULL.
+ * @param[in] msg_len length of user message, 
+ *                    maximum CONFIG_ERROR_USER_MESSAGE_SIZE characters.
+ */
+void NF_APP_WARNING(enum error_sender_module sender, int code, char *msg,
+		    size_t msg_len);
+
 /** @brief Enum for error severity. Can be replaced with error level in the
  *         future corresponding to integer values instead.
  */
@@ -37,19 +79,6 @@ struct error_event {
 	/** A temporary debug user message if needed. */
 	struct event_dyndata dyndata;
 };
-
-/**
- * @brief Submits the given parameters to the error event bus.
- * 
- * @param[in] sender which module triggered the warning.
- * @param[in] severity severity of the error.
- * @param[in] code error code from the sender.
- * @param[in] msg custom user message attached to the event. Can be NULL.
- * @param[in] msg_len length of user message, 
- *                    maximum CONFIG_ERROR_USER_MESSAGE_SIZE characters.
- */
-void submit_error(enum error_sender_module sender, enum error_severity severity,
-		  int code, char *msg, size_t msg_len);
 
 EVENT_TYPE_DYNDATA_DECLARE(error_event);
 

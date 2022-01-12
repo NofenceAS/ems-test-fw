@@ -36,8 +36,9 @@ static int log_error_event(const struct event_header *eh, char *buf,
 	}
 }
 
-void submit_error(enum error_sender_module sender, enum error_severity severity,
-		  int code, char *msg, size_t msg_len)
+static inline void submit_app_status(enum error_sender_module sender,
+				     enum error_severity severity, int code,
+				     char *msg, size_t msg_len)
 {
 	size_t dyn_msg_size = msg_len;
 
@@ -76,6 +77,24 @@ void submit_error(enum error_sender_module sender, enum error_severity severity,
 
 	/* Submit event. */
 	EVENT_SUBMIT(event);
+}
+
+void NF_APP_FATAL(enum error_sender_module sender, int code, char *msg,
+		  size_t msg_len)
+{
+	submit_app_status(sender, ERR_SEVERITY_FATAL, code, msg, msg_len);
+}
+
+void NF_APP_ERROR(enum error_sender_module sender, int code, char *msg,
+		  size_t msg_len)
+{
+	submit_app_status(sender, ERR_SEVERITY_ERROR, code, msg, msg_len);
+}
+
+void NF_APP_WARNING(enum error_sender_module sender, int code, char *msg,
+		    size_t msg_len)
+{
+	submit_app_status(sender, ERR_SEVERITY_WARNING, code, msg, msg_len);
 }
 
 EVENT_TYPE_DEFINE(error_event, true, log_error_event, NULL);
