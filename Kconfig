@@ -15,6 +15,9 @@ menu "APPLICATION_CODE"
 
 endmenu # APPLICATION CODE
 
+menu "FW_UPGRADE"
+rsource "src/modules/fw_upgrade/Kconfig"
+endmenu # FW_UPGRADE
 
 menu "BLE Modules"
 rsource "src/modules/ble/Kconfig"
