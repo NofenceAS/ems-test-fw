@@ -67,9 +67,12 @@ add_dependencies(app collar_protocol_headers)
 
 # Added as zephyr library
 zephyr_library_include_directories(
+  src/modules/amc
   src/modules/fw_upgrade
 )
+
 add_subdirectory(src/modules/fw_upgrade)
+add_subdirectory(src/modules/amc)
 
 
 

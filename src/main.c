@@ -8,6 +8,7 @@
 #include "fw_upgrade_events.h"
 #include "fw_upgrade.h"
 #include <logging/log.h>
+#include "amc_handler.h"
 
 #define LOG_MODULE_NAME main_app
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_LOG_DEFAULT_LEVEL);
@@ -31,4 +32,6 @@ void main(void)
 	if (fw_upgrade_module_init()) {
 		LOG_ERR("Could not initialize firmware upgrade module");
 	}
+	/* Initialize animal monitor control module. */
+	amc_module_init();
 }
