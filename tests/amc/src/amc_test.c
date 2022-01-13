@@ -62,14 +62,10 @@ static void simulate_dummy_fencedata(struct request_fencedata_event *ev)
 	if (cur_id == TEST_EVENT_INITIALIZE) {
 		for (int i = 0; i < ev->len; i++) {
 			memset(ev->data + i, 0xAE, sizeof(uint8_t));
-			printk("f0data at %p is 0x%x\n", ev->data + i,
-			       *(ev->data + i));
 		}
 	} else if (cur_id == TEST_EVENT_API_REQ_FUNCTIONS) {
 		for (int i = 0; i < ev->len; i++) {
 			memset(ev->data + i, 0xAD, sizeof(uint8_t));
-			printk("f1data at %p is 0x%x\n", ev->data + i,
-			       *(ev->data + i));
 		}
 	}
 
@@ -91,14 +87,10 @@ static void simulate_dummy_gnssdata(struct request_gnssdata_event *ev)
 	if (cur_id == TEST_EVENT_INITIALIZE) {
 		for (int i = 0; i < ev->len; i++) {
 			memset(ev->data + i, 0xDE, sizeof(uint8_t));
-			printk("g0data at %p is 0x%x\n", ev->data + i,
-			       *(ev->data + i));
 		}
 	} else if (cur_id == TEST_EVENT_API_REQ_FUNCTIONS) {
 		for (int i = 0; i < ev->len; i++) {
 			memset(ev->data + i, 0xAD, sizeof(uint8_t));
-			printk("g1data at %p is 0x%x\n", ev->data + i,
-			       *(ev->data + i));
 		}
 	}
 
