@@ -54,6 +54,25 @@ void test_init(void)
 	zassert_equal(err, 0, "Test hanged waiting for sound event.");
 }
 
+void test_request_api_functions()
+{
+	submit_request_fencedata();
+	submit_request_gnssdata();
+
+	/* Wait for event_handler to finish it zasserts.
+	 * We expect to get an ack for both the fencedata and GNSS data as well
+	 * as the sound event.
+	 */
+	int err = k_sem_take(&ack_fencedata_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "Test hanged waiting for fencedata.");
+
+	err = k_sem_take(&ack_gnssdata_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "Test hanged waiting for gnssdata.");
+
+	err = k_sem_take(&sound_event_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "Test hanged waiting for sound event.");
+}
+
 static void simulate_dummy_fencedata(struct request_fencedata_event *ev)
 {
 	/* Here we can check which test we're on, so we can have multiple tests
@@ -61,7 +80,7 @@ static void simulate_dummy_fencedata(struct request_fencedata_event *ev)
 	 */
 	if (cur_id == TEST_EVENT_INITIALIZE) {
 		for (int i = 0; i < ev->len; i++) {
-			memset(ev->data + i, 0xAE, sizeof(uint8_t));
+			memset(ev->data + i, 0xDE, sizeof(uint8_t));
 		}
 	} else if (cur_id == TEST_EVENT_API_REQ_FUNCTIONS) {
 		for (int i = 0; i < ev->len; i++) {
@@ -73,10 +92,6 @@ static void simulate_dummy_fencedata(struct request_fencedata_event *ev)
 	struct amc_ack_event *ack_e = new_amc_ack_event();
 	ack_e->type = AMC_REQ_FENCEDATA;
 	EVENT_SUBMIT(ack_e);
-}
-
-void test_request_api_functions()
-{
 }
 
 static void simulate_dummy_gnssdata(struct request_gnssdata_event *ev)
@@ -122,6 +137,7 @@ static bool event_handler(const struct event_header *eh)
 		* data to gnss data that got requested. */
 		simulate_dummy_gnssdata(ev);
 	}
+	/* Give ack semaphores for its respective request type. */
 	if (is_amc_ack_event(eh)) {
 		struct amc_ack_event *ev = cast_amc_ack_event(eh);
 		if (ev->type == AMC_REQ_FENCEDATA) {
@@ -158,7 +174,6 @@ static bool event_handler(const struct event_header *eh)
 			 * and prepare for next test with cur_id. 
 			 */
 			k_sem_give(&sound_event_sem);
-			cur_id = TEST_EVENT_API_REQ_FUNCTIONS;
 		}
 	}
 	return false;
@@ -166,7 +181,8 @@ static bool event_handler(const struct event_header *eh)
 
 void test_main(void)
 {
-	ztest_test_suite(amc_tests, ztest_unit_test(test_init));
+	ztest_test_suite(amc_tests, ztest_unit_test(test_init),
+			 ztest_unit_test(test_request_api_functions));
 	ztest_run_test_suite(amc_tests);
 }
 
