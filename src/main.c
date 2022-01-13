@@ -9,6 +9,7 @@
 #include "fw_upgrade.h"
 #include "fw_upgrade_events.h"
 #include "nf_eeprom.h"
+#include "ble_controller.h"
 
 #define EEPROM_INSTALLED 0
 #define MODULE main
@@ -30,8 +31,10 @@ void main(void)
 	/* Initialize the event manager. */
 	if (event_manager_init()) {
 		LOG_ERR("Event manager could not initialize.");
-	} else {
-		module_set_state(MODULE_STATE_READY);
+	}
+	/* Initialize BLE module. */
+	if (ble_module_init()) {
+		LOG_ERR("Could not initialize BLE module");
 	}
 	/* Initialize firmware upgrade module. */
 	if (fw_upgrade_module_init()) {

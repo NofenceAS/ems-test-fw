@@ -14,6 +14,7 @@
 
 #include <bluetooth/bluetooth.h>
 #include <drivers/bluetooth/hci_driver.h>
+#include "ble_controller.h"
 
 #define EXPECTED_ERROR -ENOSYS
 
