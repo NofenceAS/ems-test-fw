@@ -79,19 +79,19 @@ static inline void submit_app_status(enum error_sender_module sender,
 	EVENT_SUBMIT(event);
 }
 
-void NF_APP_FATAL(enum error_sender_module sender, int code, char *msg,
+void nf_app_fatal(enum error_sender_module sender, int code, char *msg,
 		  size_t msg_len)
 {
 	submit_app_status(sender, ERR_SEVERITY_FATAL, code, msg, msg_len);
 }
 
-void NF_APP_ERROR(enum error_sender_module sender, int code, char *msg,
+void nf_app_error(enum error_sender_module sender, int code, char *msg,
 		  size_t msg_len)
 {
 	submit_app_status(sender, ERR_SEVERITY_ERROR, code, msg, msg_len);
 }
 
-void NF_APP_WARNING(enum error_sender_module sender, int code, char *msg,
+void nf_app_warning(enum error_sender_module sender, int code, char *msg,
 		    size_t msg_len)
 {
 	submit_app_status(sender, ERR_SEVERITY_WARNING, code, msg, msg_len);

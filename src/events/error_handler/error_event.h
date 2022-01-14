@@ -24,7 +24,7 @@ enum error_sender_module { ERR_SENDER_FW_UPGRADE = 0 };
  * @param[in] msg_len length of user message, 
  *                    maximum CONFIG_ERROR_USER_MESSAGE_SIZE characters.
  */
-void NF_APP_FATAL(enum error_sender_module sender, int code, char *msg,
+void nf_app_fatal(enum error_sender_module sender, int code, char *msg,
 		  size_t msg_len);
 
 /**
@@ -38,7 +38,7 @@ void NF_APP_FATAL(enum error_sender_module sender, int code, char *msg,
  * @param[in] msg_len length of user message, 
  *                    maximum CONFIG_ERROR_USER_MESSAGE_SIZE characters.
  */
-void NF_APP_ERROR(enum error_sender_module sender, int code, char *msg,
+void nf_app_error(enum error_sender_module sender, int code, char *msg,
 		  size_t msg_len);
 
 /**
@@ -52,7 +52,7 @@ void NF_APP_ERROR(enum error_sender_module sender, int code, char *msg,
  * @param[in] msg_len length of user message, 
  *                    maximum CONFIG_ERROR_USER_MESSAGE_SIZE characters.
  */
-void NF_APP_WARNING(enum error_sender_module sender, int code, char *msg,
+void nf_app_warning(enum error_sender_module sender, int code, char *msg,
 		    size_t msg_len);
 
 /** @brief Enum for error severity. Can be replaced with error level in the
