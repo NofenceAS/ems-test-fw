@@ -14,10 +14,6 @@ config LOG_MSG_DATA_EVENT
 	bool "MSG data event"
 	default y
 
-config LOG_PEER_CONN_EVENT
-	bool "Peer connection event"
-	default y
-
 endmenu
 
 endif

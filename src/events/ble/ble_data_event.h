@@ -10,7 +10,9 @@
  * @defgroup ble_data_event BLE Data Event
  * @{
  */
-#include <zephyr.h>
+
+#include <string.h>
+
 #include "event_manager.h"
 
 /** Peer connection event. */

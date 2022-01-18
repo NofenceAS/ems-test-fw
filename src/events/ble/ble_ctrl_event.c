@@ -3,15 +3,14 @@
  */
 
 #include <stdio.h>
-#include <assert.h>
 
 #include "ble_ctrl_event.h"
 
 /**
- * @brief Bluetooth control event function for debugging/information. 
+ * @brief Bluetooth control event function for debugging/information.
  *        Uses the log to make it easier to
  *        debug what is happening on the event bus.
- * 
+ *
  * @param[in] ev event_header for given event.
  * @param[in] buf triggered event's log event buffer.
  * @param[in] buf_len length of the buffer received.

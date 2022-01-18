@@ -3,7 +3,6 @@
  */
 
 #include <stdio.h>
-#include <assert.h>
 
 #include "msg_data_event.h"
 

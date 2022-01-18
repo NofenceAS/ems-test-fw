@@ -11,7 +11,8 @@
  * @{
  */
 
-#include <zephyr.h>
+#include <string.h>
+
 #include "event_manager.h"
 
 /** @brief Enum for defining the differen bluetooth control commands

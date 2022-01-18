@@ -12,13 +12,8 @@
  */
 
 #include <string.h>
-#include <toolchain/common.h>
 
 #include "event_manager.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /** Module state list. */
 #define MODULE_STATE_LIST                                                      \
@@ -54,8 +49,6 @@ const void *const _CONCAT(__module_, MODULE) = MODULE_NAME;
 
 static inline void module_set_state(enum module_state state)
 {
-	__ASSERT_NO_MSG(state < MODULE_STATE_COUNT);
-
 	struct module_state_event *event = new_module_state_event();
 
 	event->module_id = _CONCAT(__module_, MODULE);
@@ -79,13 +72,5 @@ static inline bool check_state(const struct module_state_event *event,
 		extern const void *const _CONCAT(__module_, mname);            \
 		_CONCAT(__module_, mname);                                     \
 	})
-
-#ifdef __cplusplus
-}
-#endif
-
-/**
- * @}
- */
 
 #endif /* _MODULE_STATE_EVENT_H_ */

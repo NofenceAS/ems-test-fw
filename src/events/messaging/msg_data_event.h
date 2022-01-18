@@ -12,13 +12,8 @@
  */
 
 #include <string.h>
-#include <toolchain/common.h>
 
 #include "event_manager.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /** Peer connection event. */
 struct msg_data_event {
@@ -29,13 +24,5 @@ struct msg_data_event {
 };
 
 EVENT_TYPE_DECLARE(msg_data_event);
-
-#ifdef __cplusplus
-}
-#endif
-
-/**
- * @}
- */
 
 #endif /* _MSG_DATA_EVENT_H_ */

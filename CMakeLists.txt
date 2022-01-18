@@ -20,7 +20,7 @@ list(APPEND ZEPHYR_EXTRA_MODULES
         )
 
 list(APPEND ZEPHYR_EXTRA_MODULES
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/collar_protocol/
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/collar_protocol
         )
 
 # Re-direct the directory where the 'boards' directory is found from
@@ -63,12 +63,22 @@ else ()
     set(APP_MAIN src/main.c)
 endif ()
 
+if (CONFIG_COLLAR_PROTOCOL)
 add_dependencies(app collar_protocol_headers)
+endif ()
 
 # Added as zephyr library
 zephyr_library_include_directories(
-  src/modules/fw_upgrade
-)
+        src/modules/fw_upgrade
+        src/events)
+        
+        target_sources(app PRIVATE ${APP_MAIN}
+        ${APP_SOURCES}
+        )
+        
+# Application sources
+add_subdirectory(src/events/ble)
+add_subdirectory(src/modules/ble)
 add_subdirectory(src/modules/fw_upgrade)
 
 
@@ -76,10 +86,6 @@ add_subdirectory(src/modules/fw_upgrade)
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
         )
-
-# Application sources
-#add_subdirectory(src/events/ble)
-#add_subdirectory(src/modules/ble)
 
 add_subdirectory(src/events/messaging)
 add_subdirectory(src/modules/messaging)

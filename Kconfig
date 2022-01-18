@@ -1,9 +1,5 @@
 menu "APPLICATION_CODE"
 
-	menu "FW_UPGRADE"
-    rsource "src/modules/fw_upgrade/Kconfig"
-	endmenu # FW_UPGRADE
-
 	config APPLICATION_WORKQUEUE_STACK_SIZE
 		int "Application workqueue stack size"
 		default 4096
@@ -19,17 +15,24 @@ menu "APPLICATION_CODE"
 
 endmenu # APPLICATION CODE
 
+menu "FW_UPGRADE"
+rsource "src/modules/fw_upgrade/Kconfig"
+endmenu # FW_UPGRADE
 
-menu "BLE"
+menu "BLE Modules"
 rsource "src/modules/ble/Kconfig"
+endmenu
+
+menu "BLE Events"
 rsource "src/events/ble/Kconfig"
 endmenu
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
 
 menu "Messaging"
 rsource "src/modules/messaging/Kconfig"
 rsource "src/events/messaging/Kconfig"
 endmenu
 
-menu "Zephyr Kernel"
-source "Kconfig.zephyr"
 endmenu
