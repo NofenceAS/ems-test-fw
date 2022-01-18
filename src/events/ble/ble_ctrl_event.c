@@ -2,7 +2,6 @@
  * Copyright (c) 2021 Nofence AS
  */
 
-#include <assert.h>
 #include <stdio.h>
 
 #include "ble_ctrl_event.h"
@@ -24,4 +23,5 @@ static int log_ble_ctrl_event(const struct event_header *eh, char *buf,
 	return snprintf(buf, buf_len, "cmd:%d", event->cmd);
 }
 
-EVENT_TYPE_DEFINE(ble_ctrl_event, true, log_ble_ctrl_event, NULL);
+EVENT_TYPE_DEFINE(ble_ctrl_event, IS_ENABLED(CONFIG_LOG_BLE_CTRL_EVENT),
+		  log_ble_ctrl_event, NULL);

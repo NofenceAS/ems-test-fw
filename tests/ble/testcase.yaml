@@ -1,4 +1,4 @@
 tests:
-  ble.general:
+  ble.test:
     platform_allow: native_posix
     tags: ble

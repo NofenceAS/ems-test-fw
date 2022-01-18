@@ -2,7 +2,6 @@
  * Copyright (c) 2021 Nofence AS
  */
 
-#include <assert.h>
 #include <stdio.h>
 
 #include "ble_data_event.h"
@@ -24,4 +23,5 @@ static int log_ble_data_event(const struct event_header *eh, char *buf,
 	return snprintf(buf, buf_len, "buf:%p len:%d", event->buf, event->len);
 }
 
-EVENT_TYPE_DEFINE(ble_data_event, true, log_ble_data_event, NULL);
+EVENT_TYPE_DEFINE(ble_data_event, IS_ENABLED(CONFIG_LOG_BLE_DATA_EVENT),
+		  log_ble_data_event, NULL);
