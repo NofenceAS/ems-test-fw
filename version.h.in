@@ -1,0 +1,8 @@
+#ifndef _NOFENCE_X25_VERSION_H_
+#define _NOFENCE_X25_VERSION_H_
+
+/* @templates@ values come from cmake/version.cmake */
+
+#define NF_X25_VERSION_NUMBER          @PROJECT_X25_VERSION_NUMBER@
+
+#endif /* _NOFENCE_X25_VERSION_H_ */

@@ -9,7 +9,13 @@
 
 / {
 	model = "Nofence X2.5";
-	compatible = "nordic,nrf52840-dk-nrf52840";
+	compatible = "nofence,x25";
+
+	/* Convenience aliases */
+	aliases {
+		eeprom = &eeprom0;
+	};
+
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -43,13 +49,12 @@
 	tx-pin = <4>; /* P0.04 */
 	rx-pin = <26>; /* P0.26 */
 	sara_r4 {
-		compatible = "ublox,sara-r4";
+		compatible = "u-blox,sara-r4";
 		label = "ublox-sara-r4";
 		status = "okay";
 		mdm-power-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
 		mdm-reset-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 		mdm-vint-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
-		/* Should RI (ring indicator) be connected? Do we need this interrupt? */
 	};
 };
 
@@ -112,7 +117,7 @@
 		spi-max-frequency = <1000000>;
 	};
 
-	eeprom@2 {
+    eeprom0: eeprom@2 {
 		compatible = "atmel,at25";
 		reg = <2>;
 		label = "eeprom";
