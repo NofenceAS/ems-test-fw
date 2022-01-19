@@ -1,0 +1,12 @@
+# Copyright (c) 2021 Nofence AS
+ 
+if LOG
+
+menu "Event options"
+
+comment "Initially logged events"
+
+config LOG_EP_EVENT
+	bool "BLE data event"
+	default y
+endif

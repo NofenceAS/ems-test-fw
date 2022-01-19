@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2021 Nofence AS
+ */
+
+#include "ep_event.h"
+#include <logging/log.h>
+#include <stdio.h>
+
+#define LOG_MODULE_NAME ep_event
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_EP_LOG_LEVEL);
+
+/**
+ * @brief Electric Pulse status event function for debugging/information. 
+ *        Uses the log to make it easier to
+ *        debug what is happening on the event bus.
+ * 
+ * @param[in] ev event_header for given event.
+ * @param[in] buf triggered event's log event buffer.
+ * @param[in] buf_len length of the buffer received.
+ */
+static int log_ep_status_event(const struct event_header *eh, char *buf,
+			       size_t buf_len)
+{
+	struct dfu_status_event *event = cast_dfu_status_event(eh);
+	return snprintf(buf, buf_len, "DFU_status=%d", event->dfu_status);
+}
+
+EVENT_TYPE_DEFINE(ep_status_event, IS_ENABLED(CONFIG_LOG_EP_EVENT),
+		  log_ep_status_event, NULL);
