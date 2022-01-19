@@ -11,8 +11,18 @@
 
 #include "ble_controller.h"
 #include "event_manager.h"
+#include "bt.h"
 
-static K_SEM_DEFINE(test_status, 0, 1);
+static K_SEM_DEFINE(ble_connected_sem, 0, 1);
+static K_SEM_DEFINE(ble_disconnected_sem, 0, 1);
+static K_SEM_DEFINE(ble_data_sem, 0, 1);
+static K_SEM_DEFINE(ble_battery_sem, 0, 1);
+static K_SEM_DEFINE(ble_error_flag_sem, 0, 1);
+static K_SEM_DEFINE(ble_collar_mode_sem, 0, 1);
+static K_SEM_DEFINE(ble_collar_status_sem, 0, 1);
+static K_SEM_DEFINE(ble_fence_status_sem, 0, 1);
+static K_SEM_DEFINE(ble_pasture_status_sem, 0, 1);
+static K_SEM_DEFINE(ble_fence_def_ver_sem, 0, 1);
 
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
@@ -62,7 +72,7 @@ void test_ble_connection(void)
 	EVENT_SUBMIT(event);
 
 	/* Wait for it and see. */
-	int err = k_sem_take(&test_status, K_SECONDS(10));
+	int err = k_sem_take(&ble_connected_sem, K_SECONDS(10));
 	zassert_equal(err, 0, "Test status event execution hanged.");
 }
 
@@ -73,7 +83,7 @@ void test_ble_disconnection(void)
 	EVENT_SUBMIT(event);
 
 	/* Wait for it and see. */
-	int err = k_sem_take(&test_status, K_SECONDS(10));
+	int err = k_sem_take(&ble_disconnected_sem, K_SECONDS(10));
 	zassert_equal(err, 0, "Test status event execution hanged.");
 }
 
@@ -86,13 +96,15 @@ void test_ble_data_event(void)
 	EVENT_SUBMIT(event);
 
 	/* Wait for it and see. */
-	int err = k_sem_take(&test_status, K_SECONDS(10));
+	int err = k_sem_take(&ble_data_sem, K_SECONDS(10));
 	zassert_equal(err, 0, "Test status event execution hanged.");
 }
 
 /* Submit a battery change */
-void test_ble_ctrl_event(void)
+void test_ble_ctrl_event_battery(void)
 {
+	/* Safety check, is sempahore already given? */
+	k_sem_take(&ble_battery_sem, K_NO_WAIT);
 	ztest_returns_value(bt_le_adv_update_data, 0);
 	struct ble_ctrl_event *event = new_ble_ctrl_event();
 	event->cmd = BLE_CTRL_BATTERY_UPDATE;
@@ -100,8 +112,138 @@ void test_ble_ctrl_event(void)
 	EVENT_SUBMIT(event);
 
 	/* Wait for it and see. */
-	int err = k_sem_take(&test_status, K_SECONDS(10));
+	int err = k_sem_take(&ble_battery_sem, K_SECONDS(10));
 	zassert_equal(err, 0, "Test status event execution hanged.");
+
+	/* Semaphore given */
+	zassert_true(bt_mock_is_battery_adv_data_correct(event->param.battery),
+		     "Adv data not correct");
+}
+
+/* Submit error flag change */
+void test_ble_ctrl_event_error_flag(void)
+{
+	/* Safety check, is sempahore already given? */
+	k_sem_take(&ble_error_flag_sem, K_NO_WAIT);
+	ztest_returns_value(bt_le_adv_update_data, 0);
+	struct ble_ctrl_event *event = new_ble_ctrl_event();
+	event->cmd = BLE_CTRL_ERROR_FLAG_UPDATE;
+	event->param.error_flags = 2;
+	EVENT_SUBMIT(event);
+
+	/* Wait for it and see. */
+	int err = k_sem_take(&ble_error_flag_sem, K_SECONDS(10));
+	zassert_equal(err, 0, "Test status event execution hanged.");
+
+	/* Semaphore given */
+	zassert_true(bt_mock_is_error_flag_adv_data_correct(
+			     event->param.error_flags),
+		     "Adv data not correct");
+}
+
+/* Submit collar mode change */
+void test_ble_ctrl_event_collar_mode(void)
+{
+	/* Safety check, is sempahore already given? */
+	k_sem_take(&ble_collar_mode_sem, K_NO_WAIT);
+	ztest_returns_value(bt_le_adv_update_data, 0);
+	struct ble_ctrl_event *event = new_ble_ctrl_event();
+	event->cmd = BLE_CTRL_COLLAR_MODE_UPDATE;
+	event->param.collar_mode = 2;
+	EVENT_SUBMIT(event);
+
+	/* Wait for it and see. */
+	int err = k_sem_take(&ble_collar_mode_sem, K_SECONDS(10));
+	zassert_equal(err, 0, "Test status event execution hanged.");
+
+	/* Semaphore given */
+	zassert_true(bt_mock_is_collar_mode_adv_data_correct(
+			     event->param.collar_mode),
+		     "Adv data not correct");
+}
+
+/* Submit collar status change */
+void test_ble_ctrl_event_collar_status(void)
+{
+	/* Safety check, is sempahore already given? */
+	k_sem_take(&ble_collar_status_sem, K_NO_WAIT);
+	ztest_returns_value(bt_le_adv_update_data, 0);
+	struct ble_ctrl_event *event = new_ble_ctrl_event();
+	event->cmd = BLE_CTRL_COLLAR_STATUS_UPDATE;
+	event->param.collar_status = 2;
+	EVENT_SUBMIT(event);
+
+	/* Wait for it and see. */
+	int err = k_sem_take(&ble_collar_status_sem, K_SECONDS(10));
+	zassert_equal(err, 0, "Test status event execution hanged.");
+
+	/* Semaphore given */
+	zassert_true(bt_mock_is_collar_status_adv_data_correct(
+			     event->param.collar_status),
+		     "Adv data not correct");
+}
+
+/* Submit Fence status change */
+void test_ble_ctrl_event_fence_status(void)
+{
+	/* Safety check, is sempahore already given? */
+	k_sem_take(&ble_fence_status_sem, K_NO_WAIT);
+	ztest_returns_value(bt_le_adv_update_data, 0);
+	struct ble_ctrl_event *event = new_ble_ctrl_event();
+	event->cmd = BLE_CTRL_FENCE_STATUS_UPDATE;
+	event->param.fence_status = 2;
+	EVENT_SUBMIT(event);
+
+	/* Wait for it and see. */
+	int err = k_sem_take(&ble_fence_status_sem, K_SECONDS(10));
+	zassert_equal(err, 0, "Test status event execution hanged.");
+
+	/* Semaphore given */
+	zassert_true(bt_mock_is_fence_status_adv_data_correct(
+			     event->param.fence_status),
+		     "Adv data not correct");
+}
+
+/* Submit Pasture status change */
+void test_ble_ctrl_event_pasture_status(void)
+{
+	/* Safety check, is sempahore already given? */
+	k_sem_take(&ble_pasture_status_sem, K_NO_WAIT);
+	ztest_returns_value(bt_le_adv_update_data, 0);
+	struct ble_ctrl_event *event = new_ble_ctrl_event();
+	event->cmd = BLE_CTRL_PASTURE_UPDATE;
+	event->param.valid_pasture = 2;
+	EVENT_SUBMIT(event);
+
+	/* Wait for it and see. */
+	int err = k_sem_take(&ble_pasture_status_sem, K_SECONDS(10));
+	zassert_equal(err, 0, "Test status event execution hanged.");
+
+	/* Semaphore given */
+	zassert_true(bt_mock_is_pasture_status_adv_data_correct(
+			     event->param.valid_pasture),
+		     "Adv data not correct");
+}
+
+/* Submit Fence Def ver change */
+void test_ble_ctrl_event_fence_def_status(void)
+{
+	/* Safety check, is sempahore already given? */
+	k_sem_take(&ble_fence_def_ver_sem, K_NO_WAIT);
+	ztest_returns_value(bt_le_adv_update_data, 0);
+	struct ble_ctrl_event *event = new_ble_ctrl_event();
+	event->cmd = BLE_CTRL_FENCE_DEF_VER_UPDATE;
+	event->param.fence_def_ver = 100;
+	EVENT_SUBMIT(event);
+
+	/* Wait for it and see. */
+	int err = k_sem_take(&ble_fence_def_ver_sem, K_SECONDS(10));
+	zassert_equal(err, 0, "Test status event execution hanged.");
+
+	/* Semaphore given */
+	zassert_true(bt_mock_is_fence_def_ver_adv_data_correct(
+			     event->param.fence_def_ver),
+		     "Adv data not correct");
 }
 
 /* Test case main entry */
@@ -112,7 +254,13 @@ void test_main(void)
 			 ztest_unit_test(test_ble_connection),
 			 ztest_unit_test(test_ble_disconnection),
 			 ztest_unit_test(test_ble_data_event),
-			 ztest_unit_test(test_ble_ctrl_event));
+			 ztest_unit_test(test_ble_ctrl_event_battery),
+			 ztest_unit_test(test_ble_ctrl_event_error_flag),
+			 ztest_unit_test(test_ble_ctrl_event_collar_mode),
+			 ztest_unit_test(test_ble_ctrl_event_collar_status),
+			 ztest_unit_test(test_ble_ctrl_event_fence_status),
+			 ztest_unit_test(test_ble_ctrl_event_pasture_status),
+			 ztest_unit_test(test_ble_ctrl_event_fence_def_status));
 
 	ztest_run_test_suite(test_bluetooth);
 }
@@ -125,7 +273,7 @@ static bool event_handler(const struct event_header *eh)
 		uint8_t expected_data[2] = { 0x01, 0x02 };
 		zassert_mem_equal(event->buf, expected_data, 2,
 				  "Error buffer not equal");
-		k_sem_give(&test_status);
+		k_sem_give(&ble_data_sem);
 		return false;
 	}
 
@@ -136,12 +284,13 @@ static bool event_handler(const struct event_header *eh)
 			printk("BLE CONNECTED\n");
 			zassert_equal(event->conn_state, BLE_STATE_CONNECTED,
 				      "Error in BLE conn event");
+			k_sem_give(&ble_connected_sem);
 		} else {
 			printk("BLE DISCONNECTED\n");
 			zassert_equal(event->conn_state, BLE_STATE_DISCONNECTED,
 				      "Error in BLE conn event");
+			k_sem_give(&ble_disconnected_sem);
 		}
-		k_sem_give(&test_status);
 		return false;
 	}
 
@@ -149,40 +298,34 @@ static bool event_handler(const struct event_header *eh)
 		printk("BLE ctrl event received!\n");
 		const struct ble_ctrl_event *event = cast_ble_ctrl_event(eh);
 		switch (event->cmd) {
-		case BLE_CTRL_ENABLE:
-		case BLE_CTRL_DISABLE:
+		case BLE_CTRL_ADV_ENABLE:
+			// TODO: A test of this should be added later
+			break;
+		case BLE_CTRL_ADV_DISABLE:
+			// TODO: A test of this should be added later
 			break;
 		case BLE_CTRL_BATTERY_UPDATE:
-			zassert_equal(event->param.battery, 65,
-				      "Error not correct value");
+			k_sem_give(&ble_battery_sem);
 			break;
 		case BLE_CTRL_ERROR_FLAG_UPDATE:
-			zassert_equal(event->param.error_flags, 0,
-				      "Error not correct value");
+			k_sem_give(&ble_error_flag_sem);
 			break;
 		case BLE_CTRL_COLLAR_MODE_UPDATE:
-			zassert_equal(event->param.collar_mode, 1,
-				      "Error not correct value");
+			k_sem_give(&ble_collar_mode_sem);
 			break;
 		case BLE_CTRL_COLLAR_STATUS_UPDATE:
-			zassert_equal(event->param.collar_status, 5,
-				      "Error not correct value");
+			k_sem_give(&ble_collar_status_sem);
 			break;
 		case BLE_CTRL_FENCE_STATUS_UPDATE:
-			zassert_equal(event->param.fence_status, 1,
-				      "Error not correct value");
+			k_sem_give(&ble_fence_status_sem);
 			break;
 		case BLE_CTRL_PASTURE_UPDATE:
-			zassert_equal(event->param.valid_pasture, 1,
-				      "Error not correct value");
+			k_sem_give(&ble_pasture_status_sem);
 			break;
 		case BLE_CTRL_FENCE_DEF_VER_UPDATE:
-			zassert_equal(event->param.fence_def_ver, 0x00A1,
-				      "Error not correct value");
+			k_sem_give(&ble_fence_def_ver_sem);
 			break;
 		}
-
-		k_sem_give(&test_status);
 		return false;
 	}
 
@@ -193,4 +336,4 @@ static bool event_handler(const struct event_header *eh)
 EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, ble_data_event);
 EVENT_SUBSCRIBE(test_main, ble_conn_event);
-EVENT_SUBSCRIBE(test_main, ble_ctrl_event);
+EVENT_SUBSCRIBE_FINAL(test_main, ble_ctrl_event);

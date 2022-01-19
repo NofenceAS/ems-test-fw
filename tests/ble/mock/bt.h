@@ -6,6 +6,7 @@
 #define _BT_H_
 
 #include "event_manager.h"
+#include "ble_controller.h"
 #include <zephyr.h>
 
 #define CONFIG_BT_DEVICE_NAME "NF999999"
@@ -275,4 +276,15 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn,
 			 struct bt_gatt_exchange_params *params);
 
 void bt_conn_cb_register(struct bt_conn_cb *cb);
+
+bool bt_mock_is_battery_adv_data_correct(uint8_t data);
+bool bt_mock_is_error_flag_adv_data_correct(uint8_t data);
+bool bt_mock_is_collar_mode_adv_data_correct(uint8_t data);
+bool bt_mock_is_collar_status_adv_data_correct(uint8_t data);
+bool bt_mock_is_fence_status_adv_data_correct(uint8_t data);
+bool bt_mock_is_pasture_status_adv_data_correct(uint8_t data);
+bool bt_mock_is_fence_def_ver_adv_data_correct(uint16_t data);
+
+
+
 #endif
