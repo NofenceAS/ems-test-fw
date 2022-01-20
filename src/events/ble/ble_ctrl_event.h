@@ -19,8 +19,8 @@
  * 		   to enable or disable advertisement, and update ad array. 
  */
 enum ble_ctrl_cmd {
-	BLE_CTRL_ENABLE,
-	BLE_CTRL_DISABLE,
+	BLE_CTRL_ADV_ENABLE,
+	BLE_CTRL_ADV_DISABLE,
 	BLE_CTRL_BATTERY_UPDATE,
 	BLE_CTRL_ERROR_FLAG_UPDATE,
 	BLE_CTRL_COLLAR_MODE_UPDATE,
