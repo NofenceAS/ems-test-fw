@@ -48,6 +48,7 @@ zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 
+
 # These are common files used by both hardware test and the real app
 set(APP_SOURCES
 src/ble/nf_ble.c        
@@ -67,7 +68,9 @@ endif ()
 # Added as zephyr library
 zephyr_library_include_directories(
         src/modules/fw_upgrade
-        src/events)
+        src/events
+  	src/modules/error_handler
+  	src/events/error_handler)
         
         target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
@@ -81,8 +84,3 @@ add_subdirectory(src/modules/msg)
 add_subdirectory(src/modules/fw_upgrade)
 add_subdirectory(src/eeprom)
 
-
-
-target_sources(app PRIVATE ${APP_MAIN}
-        ${APP_SOURCES}
-        )
