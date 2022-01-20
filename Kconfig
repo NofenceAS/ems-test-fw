@@ -8,12 +8,16 @@ menu "APPLICATION_CODE"
 		int "Application workqueue priority"
 		default SYSTEM_WORKQUEUE_PRIORITY
 
-
 	config UBX_CONTROLLER_LOG_LEVEL
 		int "Log level for the ESB PTX sample"
 		default 4
 
 endmenu # APPLICATION CODE
+
+
+menu "ERROR_HANDLER"
+rsource "src/modules/error_handler/Kconfig"
+endmenu # ERROR_HANDLER
 
 menu "FW_UPGRADE"
 rsource "src/modules/fw_upgrade/Kconfig"
