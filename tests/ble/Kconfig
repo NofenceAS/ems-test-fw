@@ -4,10 +4,6 @@ menu "BLE"
 rsource "./../../src/modules/ble/Kconfig"
 endmenu # BLE
 
-menu "MSG"
-rsource "./../../src/modules/msg/Kconfig"
-endmenu # BLE
-
 menu "Zephyr Kernel"
 source "Kconfig.zephyr"
 endmenu
