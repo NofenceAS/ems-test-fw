@@ -3,42 +3,87 @@
  */
 
 #include <ztest.h>
-#include "cellular_controller.h.h"
+#include "cellular_controller.h"
+#include "cellular_helpers_header.h"
 #include "cellular_controller_events.h"
 
-/* Variable used to compare the output from dfu module. The sequence should
- * be AS_IS (-1) -> IDLE (0) -> IN_PROGRESS (1) -> REBOOT_SCHEDULED (2).
- */
-static int dfu_status_sequence = -1;
 
 /* semaphores to check publishing of the cellular controller events. */
 static K_SEM_DEFINE(cellular_ack, 0, 1);
 static K_SEM_DEFINE(cellular_proto_in, 0, 1);
 static K_SEM_DEFINE(cellular_error, 0, 1);
 
+/*
 enum test_event_id {
 	TEST_EVENT_APPLY_DFU = 0,
 	TEST_EVENT_EXCEED_SIZE = 1,
 	TEST_EVENT_INIT = 2
 };
+
+
 static enum test_event_id cur_id = TEST_EVENT_INIT;
 
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
  */
+
+/*
 BUILD_ASSERT(!IS_ENABLED(CONFIG_ASSERT_NO_FILE_INFO));
 void assert_post_action(const char *file, unsigned int line)
 {
 	printk("assert_post_action - file: %s (line: %u)\n", file, line);
 }
+*/
 
 void test_init(void)
 {
 	ztest_returns_value(dfu_target_reset, 0);
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
-	zassert_false(fw_upgrade_module_init(),
-		      "Error when initializing firmware upgrade module");
+	zassert_false(cellular_controller_init(),
+		      "Error when initializing cellular controller module");
+}
+
+void test_publish_event_with_a_received_msg(void) /* happy scenario - msg
+ * received from server is pushed to messaging module! */
+{
+
+}
+
+void test_messaging_module_publishes_a_msg_to_send(void) /* happy scenario -
+ * msg published by the messaging module is sent to server! */
+{
+
+}
+
+void test_gsm_device_not_ready(void)
+{
+
+}
+
+void test_socket_connect_fails(void)
+{
+
+}
+
+void test_socket_rcv_fails(void)
+{
+
+}
+
+void test_socket_send_fails(void)
+{
+
+}
+
+void test_failure_to_get_messaging_module_ack(void)
+{
+
+}
+
+void test_connection_lost(void)
+{
+
 }
 
 void test_main(void)
@@ -86,4 +131,5 @@ static bool event_handler(const struct event_header *eh)
 }
 
 EVENT_LISTENER(test_main, event_handler);
-EVENT_SUBSCRIBE(test_main, dfu_status_event);
+EVENT_SUBSCRIBE(test_main, messaging_ack_event);
+EVENT_SUBSCRIBE(test_main, messaging_proto_out_event);

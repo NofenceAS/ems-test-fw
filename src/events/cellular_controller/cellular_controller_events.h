@@ -52,7 +52,8 @@ enum cause {
     SOCKET_CLOSE = 2,
     SOCKET_CONNECT = 3,
     SOCKET_SEND = 4,
-    SOCKET_RECV =5,
+    SOCKET_RECV = 5,
+    CONNECTION_LOST = 6,
 };
 
 /** @brief Error event published by the cellular controller to when it
@@ -61,7 +62,7 @@ enum cause {
 struct cellular_error_event {
     struct event_header header;
     enum cause cause;
-    uint8_t err_code;
+    int8_t err_code;
 };
 
 EVENT_TYPE_DECLARE(cellular_error_event);

@@ -16,3 +16,7 @@ int dfu_target_init(int result, size_t file_size, dfu_target_callback_t cb);
 int dfu_target_write(uint8_t *data, size_t len);
 
 int dfu_target_done(bool status);
+
+uint8_t receive_tcp(struct data *data);
+
+size_t recv(int sock, void *buf, size_t, int flags);
