@@ -47,7 +47,7 @@ zephyr_include_directories(include
 zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-
+zephyr_include_directories(${PROJECT_BINARY_DIR}/include/generated)
 
 # Appplication directories
 add_subdirectory(src/eeprom)
