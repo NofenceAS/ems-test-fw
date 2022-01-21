@@ -1,4 +1,4 @@
 tests:
-  ble.beacon_scanner_test:
+  ble.test:
     platform_allow: native_posix
-    tags: ble_test
+    tags: ble
