@@ -9,7 +9,7 @@
 #include <zephyr.h>
 
 /** @brief Enum for different electric pulse status */
-enum ep_status_flag { EP_ENABLE = 0, EP_DISABLE = 1, EP_TRIGGER = 2 };
+enum ep_status_flag { EP_INIT = 0, EP_ENABLE = 1, EP_DISABLE = 2 };
 
 /** @brief Struct containg status messages regarding electric pulse events. */
 struct ep_status_event {

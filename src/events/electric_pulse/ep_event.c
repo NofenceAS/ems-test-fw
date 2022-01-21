@@ -21,8 +21,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_EP_LOG_LEVEL);
 static int log_ep_status_event(const struct event_header *eh, char *buf,
 			       size_t buf_len)
 {
-	struct dfu_status_event *event = cast_dfu_status_event(eh);
-	return snprintf(buf, buf_len, "DFU_status=%d", event->dfu_status);
+	struct ep_status_event *event = cast_ep_status_event(eh);
+	return snprintf(buf, buf_len, "EP_status=%d", event->ep_status);
 }
 
 EVENT_TYPE_DEFINE(ep_status_event, IS_ENABLED(CONFIG_LOG_EP_EVENT),
