@@ -49,35 +49,41 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 zephyr_include_directories(${PROJECT_BINARY_DIR}/include/generated)
 
-# Appplication directories
-add_subdirectory(src/eeprom)
 # These are common files used by both hardware test and the real app
 set(APP_SOURCES
         src/ble/nf_ble.c        
         src/ble/beacon_processor.c
-        )
+)
 
 if (HARDWARE_TEST)
-    set(APP_MAIN src/main_hardware_test.c)
+        set(APP_MAIN src/main_hardware_test.c)
 else ()
-    set(APP_MAIN src/main.c)
+        set(APP_MAIN src/main.c)
 endif ()
 
-add_dependencies(app collar_protocol_headers)
+if (CONFIG_COLLAR_PROTOCOL)
+        add_dependencies(app collar_protocol_headers)
+endif ()
 
 # Added as zephyr library
 zephyr_library_include_directories(
-  src/modules/fw_upgrade
-)
-add_subdirectory(src/modules/fw_upgrade)
-
-zephyr_library_include_directories(
-  src/modules/diagnostics
-)
-add_subdirectory(src/modules/diagnostics)
-
-
-
+        src/modules/fw_upgrade
+        src/events
+  	src/modules/error_handler
+  	src/events/error_handler
+  	src/modules/diagnostics
+  	src/events/diagnostics)
+        
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
-        )
+)       
+        
+# Application sources
+add_subdirectory(src/events/ble)
+add_subdirectory(src/modules/ble)
+add_subdirectory(src/modules/fw_upgrade)
+add_subdirectory(src/eeprom)
+
+add_subdirectory(src/events/messaging)
+add_subdirectory(src/modules/messaging)
+add_subdirectory(src/modules/diagnostics)

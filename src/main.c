@@ -1,17 +1,21 @@
 
-#include "ble/nf_ble.h"
-#include "nf_eeprom.h"
+#include <devicetree.h>
+#include <event_manager.h>
+#include <logging/log.h>
 #include <sys/printk.h>
 #include <zephyr.h>
-#include <event_manager.h>
-#include <devicetree.h>
-#include "fw_upgrade_events.h"
-#include "fw_upgrade.h"
-#include "diagnostics.h"
-#include <logging/log.h>
 
-#define LOG_MODULE_NAME main_app
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_LOG_DEFAULT_LEVEL);
+#include "diagnostics.h"
+#include "ble/nf_ble.h"
+#include "fw_upgrade.h"
+#include "fw_upgrade_events.h"
+#include "nf_eeprom.h"
+#include "ble_controller.h"
+
+#define MODULE main
+#include "module_state_event.h"
+
+LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 
 /**
  * The Nofence X3 main entry point. This is
@@ -19,8 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_LOG_DEFAULT_LEVEL);
  */
 void main(void)
 {
-	printk("main %p\n", k_current_get());
-	nf_ble_init();
+	LOG_INF("Starting Nofence application");
 	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
 	eep_init(eeprom_dev);
 
@@ -33,6 +36,10 @@ void main(void)
 	/* Initialize the event manager. */
 	if (event_manager_init()) {
 		LOG_ERR("Event manager could not initialize.");
+	}
+	/* Initialize BLE module. */
+	if (ble_module_init()) {
+		LOG_ERR("Could not initialize BLE module");
 	}
 	/* Initialize firmware upgrade module. */
 	if (fw_upgrade_module_init()) {
