@@ -4,6 +4,10 @@ menu "APPLICATION_CODE"
     rsource "src/modules/fw_upgrade/Kconfig"
 	endmenu # FW_UPGRADE
 
+	menu "CELLULAR_CONTROLLER"
+    rsource "src/modules/cellular_controller/Kconfig"
+	endmenu # CELLULAR_CONTROLLER
+
 	config UBX_CONTROLLER_LOG_LEVEL
 		int "Log level for the ESB PTX sample"
 		default 4

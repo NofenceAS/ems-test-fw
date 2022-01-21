@@ -1,5 +1,4 @@
 #include "cellular_controller_events.h"
-#include "cellular_helpers.h"
 
 EVENT_TYPE_DEFINE(cellular_ack_event,      /* Unique event name. */
                   true,              /* Event logged by default. */
@@ -21,7 +20,7 @@ EVENT_TYPE_DEFINE(cellular_proto_in_event,
                   NULL,
                   NULL);
 
-EVENT_TYPE_DEFINE(cellular_sending_error_event,
+EVENT_TYPE_DEFINE(cellular_error_event,
                   true,
                   NULL,
                   NULL);

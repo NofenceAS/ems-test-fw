@@ -70,7 +70,7 @@ zephyr_library_include_directories(
   src/modules/fw_upgrade
 )
 add_subdirectory(src/modules/fw_upgrade)
-
+add_subdirectory(src/modules/cellular_controller)
 
 
 target_sources(app PRIVATE ${APP_MAIN}

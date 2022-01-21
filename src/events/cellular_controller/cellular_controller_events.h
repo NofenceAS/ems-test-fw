@@ -46,11 +46,22 @@ struct cellular_proto_in_event {
 
 EVENT_TYPE_DECLARE(cellular_proto_in_event);
 
+enum cause {
+    OTHER = 0,
+    SOCKET_OPEN = 1,
+    SOCKET_CLOSE = 2,
+    SOCKET_CONNECT = 3,
+    SOCKET_SEND = 4,
+    SOCKET_RECV =5,
+};
+
 /** @brief Error event published by the cellular controller to when it
  * fails to send a message to the server. */
 
-struct cellular_sending_error_event {
+struct cellular_error_event {
     struct event_header header;
+    enum cause cause;
+    uint8_t err_code;
 };
 
-EVENT_TYPE_DECLARE(cellular_sending_error_event);
+EVENT_TYPE_DECLARE(cellular_error_event);
