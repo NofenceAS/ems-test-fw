@@ -75,16 +75,29 @@ void test_request_api_functions()
 
 static void simulate_dummy_fencedata(struct request_fencedata_event *ev)
 {
+	fence_coordinate_t *coord = ev->fence->p_c;
 	/* Here we can check which test we're on, so we can have multiple tests
 	 * with multiple dummy FENCE/GNSS data fields.
 	 */
 	if (cur_id == TEST_EVENT_INITIALIZE) {
-		for (int i = 0; i < ev->len; i++) {
-			memset(ev->data + i, 0xDE, sizeof(uint8_t));
+		/* Simulate 45 points. */
+		ev->fence->n_points = 45;
+
+		/* Write DEAD to 45 points on x and y coords. */
+		for (int i = 0; i < 45; i++) {
+			coord->s_x_dm = 1337;
+			coord->s_y_dm = 1337;
+			coord++;
 		}
 	} else if (cur_id == TEST_EVENT_API_REQ_FUNCTIONS) {
-		for (int i = 0; i < ev->len; i++) {
-			memset(ev->data + i, 0xAD, sizeof(uint8_t));
+		/* Simulate 13 points. */
+		ev->fence->n_points = 13;
+
+		/* Write DEAD to 13 points on x and y coords. */
+		for (int i = 0; i < 13; i++) {
+			coord->s_x_dm = 1337;
+			coord->s_y_dm = 1337;
+			coord++;
 		}
 	}
 
@@ -100,13 +113,11 @@ static void simulate_dummy_gnssdata(struct request_gnssdata_event *ev)
 	 * with multiple dummy FENCE/GNSS data fields.
 	 */
 	if (cur_id == TEST_EVENT_INITIALIZE) {
-		for (int i = 0; i < ev->len; i++) {
-			memset(ev->data + i, 0xDE, sizeof(uint8_t));
-		}
+		ev->gnss->lat = 1337;
+		ev->gnss->lon = 1337;
 	} else if (cur_id == TEST_EVENT_API_REQ_FUNCTIONS) {
-		for (int i = 0; i < ev->len; i++) {
-			memset(ev->data + i, 0xAD, sizeof(uint8_t));
-		}
+		ev->gnss->lat = 1337;
+		ev->gnss->lon = 1337;
 	}
 
 	/* Submit ACK here since data has been written to given pointer area. */

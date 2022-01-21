@@ -21,7 +21,8 @@ static int log_request_fencedata_event(const struct event_header *eh, char *buf,
 	struct request_fencedata_event *event =
 		cast_request_fencedata_event(eh);
 
-	return snprintf(buf, buf_len, "Fencedata len available=%d", event->len);
+	return snprintf(buf, buf_len, "Fencedata request to adr %p",
+			event->fence);
 }
 
 EVENT_TYPE_DEFINE(request_fencedata_event, true, log_request_fencedata_event,
@@ -41,7 +42,8 @@ static int log_request_gnssdata_event(const struct event_header *eh, char *buf,
 {
 	struct request_gnssdata_event *event = cast_request_gnssdata_event(eh);
 
-	return snprintf(buf, buf_len, "GNSS data len available=%d", event->len);
+	return snprintf(buf, buf_len, "GNSS data request to adr %p",
+			event->gnss);
 }
 
 EVENT_TYPE_DEFINE(request_gnssdata_event, true, log_request_gnssdata_event,

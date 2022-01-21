@@ -8,6 +8,9 @@
 #include "event_manager.h"
 #include <zephyr.h>
 
+/* Include the header file that contain fence data struct and GNSS struct. */
+#include "amc_handler.h"
+
 /** @brief Request fence data from the storage module. This should be cached on
  *         RAM, so we send a pointer to a location in the AMC module
  *         so that the storage module can memcpy the data to this pointer
@@ -16,8 +19,12 @@
 struct request_fencedata_event {
 	struct event_header header;
 
-	uint8_t *data;
-	size_t len;
+	/** Pointer to where the cached 
+	 *  fence header data should be written to as well as the coordinates.
+	 *  The module writing to this area must use fence->p_c to get
+	 *  the pointer of the cached coordinate location.
+	 */
+	fence_header_t *fence;
 };
 
 /** @brief Request gnss data from the GNSS module. See comment in
@@ -27,8 +34,8 @@ struct request_fencedata_event {
 struct request_gnssdata_event {
 	struct event_header header;
 
-	uint8_t *data;
-	size_t len;
+	/** Pointer to where the cached gps area is found. */
+	gnss_struct_t *gnss;
 };
 
 enum amc_request_events { AMC_REQ_FENCEDATA = 0, AMC_REQ_GNSSDATA = 1 };
