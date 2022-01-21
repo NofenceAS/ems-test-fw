@@ -23,7 +23,7 @@ enum sound_event_type {
 	SND_CATTLE = 7,
 	SND_SHORT_200 = 8,
 	SND_SHORT_100 = 9,
-	SND_SND_FIND_ME = 10
+	SND_FIND_ME = 10
 };
 
 /** @brief Struct containg status messages regarding the firmware upgrade. */

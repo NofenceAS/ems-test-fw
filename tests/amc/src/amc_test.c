@@ -9,9 +9,12 @@
 
 enum test_event_id {
 	TEST_EVENT_INITIALIZE = 0,
-	TEST_EVENT_API_REQ_FUNCTIONS = 1
+	TEST_EVENT_API_REQ_FUNCTIONS = 1,
+	TEST_STRESS_GNSS_REQUEST = 2
 };
 static enum test_event_id cur_id = TEST_EVENT_INITIALIZE;
+
+static bool toggle_stress_request = false;
 
 static K_SEM_DEFINE(sound_event_sem, 0, 1);
 
@@ -73,6 +76,31 @@ void test_request_api_functions()
 	zassert_equal(err, 0, "Test hanged waiting for sound event.");
 }
 
+#define STRESS_TEST_REQUESTS 50
+#define STRESS_TEST_HZ 10
+
+static int stress_test_counter = 0;
+
+void test_stress_gnss_request()
+{
+	for (int i = 0; i < STRESS_TEST_REQUESTS; i++) {
+		/* For each gnss request, we do one calculation where in our
+		 * case we expect sound ack and gnss ack, so wait for those
+		 * semaphores before sending next request.
+		 */
+		submit_request_gnssdata();
+
+		int err = k_sem_take(&ack_gnssdata_sem, K_SECONDS(30));
+		zassert_equal(err, 0, "Test hanged waiting for gnssdata.");
+
+		err = k_sem_take(&sound_event_sem, K_SECONDS(30));
+		zassert_equal(err, 0, "Test hanged waiting for sound event.");
+		k_sleep(K_MSEC(1000 / STRESS_TEST_HZ));
+	}
+	zassert_equal(stress_test_counter, STRESS_TEST_REQUESTS,
+		      "Missed request events.");
+}
+
 static void simulate_dummy_fencedata(struct request_fencedata_event *ev)
 {
 	fence_coordinate_t *coord = ev->fence->p_c;
@@ -118,6 +146,14 @@ static void simulate_dummy_gnssdata(struct request_gnssdata_event *ev)
 	} else if (cur_id == TEST_EVENT_API_REQ_FUNCTIONS) {
 		ev->gnss->lat = 1337;
 		ev->gnss->lon = 1337;
+	} else if (cur_id == TEST_STRESS_GNSS_REQUEST) {
+		if (toggle_stress_request) {
+			ev->gnss->lat = 123;
+			ev->gnss->lon = 123;
+		} else {
+			ev->gnss->lat = 1337;
+			ev->gnss->lon = 1337;
+		}
 	}
 
 	/* Submit ACK here since data has been written to given pointer area. */
@@ -185,6 +221,23 @@ static bool event_handler(const struct event_header *eh)
 			 * and prepare for next test with cur_id. 
 			 */
 			k_sem_give(&sound_event_sem);
+			cur_id = TEST_STRESS_GNSS_REQUEST;
+		}
+	} else if (cur_id == TEST_STRESS_GNSS_REQUEST) {
+		if (is_sound_event(eh)) {
+			stress_test_counter++;
+			struct sound_event *ev = cast_sound_event(eh);
+			if (toggle_stress_request) {
+				zassert_equal(
+					ev->type, SND_FIND_ME,
+					"Unexpected sound event type received");
+			} else {
+				zassert_equal(
+					ev->type, SND_WELCOME,
+					"Unexpected sound event type received");
+			}
+			toggle_stress_request = !toggle_stress_request;
+			k_sem_give(&sound_event_sem);
 		}
 	}
 	return false;
@@ -193,7 +246,8 @@ static bool event_handler(const struct event_header *eh)
 void test_main(void)
 {
 	ztest_test_suite(amc_tests, ztest_unit_test(test_init),
-			 ztest_unit_test(test_request_api_functions));
+			 ztest_unit_test(test_request_api_functions),
+			 ztest_unit_test(test_stress_gnss_request));
 	ztest_run_test_suite(amc_tests);
 }
 
