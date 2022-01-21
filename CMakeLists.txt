@@ -23,6 +23,8 @@ list(APPEND ZEPHYR_EXTRA_MODULES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/collar_protocol
         )
 
+list(APPEND DTS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
+
 # Re-direct the directory where the 'boards' directory is found from
 # $ZEPHYR_BASE to this directory.
 set(BOARD_ROOT ${CMAKE_CURRENT_LIST_DIR})
@@ -84,3 +86,7 @@ add_subdirectory(src/eeprom)
 
 add_subdirectory(src/events/messaging)
 add_subdirectory(src/modules/messaging)
+
+add_subdirectory(src/events/electric_pulse)
+add_subdirectory(src/modules/electric_pulse)
+

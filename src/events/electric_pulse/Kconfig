@@ -9,4 +9,7 @@ comment "Initially logged events"
 config LOG_EP_EVENT
 	bool "BLE data event"
 	default y
+
+endmenu
+
 endif

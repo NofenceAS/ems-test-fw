@@ -6,9 +6,6 @@
 #include <logging/log.h>
 #include <stdio.h>
 
-#define LOG_MODULE_NAME ep_event
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_EP_LOG_LEVEL);
-
 /**
  * @brief Electric Pulse status event function for debugging/information. 
  *        Uses the log to make it easier to

@@ -16,10 +16,6 @@
 		eeprom = &eeprom0;
 	};
 
-	/* Electric pulse */
-	zap_ctrl: node {
-		gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
-	};
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -38,6 +34,13 @@
 
 &gpio0 {
 	status = "okay";
+
+	/* Electric pulse */
+	zap_ctrl {
+		compatible = "nofence,zap";
+		gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+		label = "ZAP CTRL";
+	};
 	
 };
 

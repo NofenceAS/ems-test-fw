@@ -10,6 +10,7 @@
 #include "fw_upgrade_events.h"
 #include "nf_eeprom.h"
 #include "ble_controller.h"
+#include "ep_module.h"
 
 #define MODULE main
 #include "module_state_event.h"
@@ -23,8 +24,8 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 void main(void)
 {
 	LOG_INF("Starting Nofence application");
-	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
-	eep_init(eeprom_dev);
+	//const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
+	//eep_init(eeprom_dev);
 	/* Initialize the event manager. */
 	if (event_manager_init()) {
 		LOG_ERR("Event manager could not initialize.");
@@ -37,4 +38,6 @@ void main(void)
 	if (fw_upgrade_module_init()) {
 		LOG_ERR("Could not initialize firmware upgrade module");
 	}
+	ep_module_init();
+	ep_module_enable(true);
 }
