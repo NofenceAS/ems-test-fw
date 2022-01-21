@@ -7,6 +7,7 @@
 #include <devicetree.h>
 #include "fw_upgrade_events.h"
 #include "fw_upgrade.h"
+#include "diagnostics.h"
 #include <logging/log.h>
 
 #define LOG_MODULE_NAME main_app
@@ -23,6 +24,12 @@ void main(void)
 	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
 	eep_init(eeprom_dev);
 
+	/* Initialize diagnostics module. */
+#if CONFIG_DIAGNOSTICS
+	if (diagnostics_module_init()) {
+		LOG_ERR("Could not initialize diagnostics module");
+	}
+#endif
 	/* Initialize the event manager. */
 	if (event_manager_init()) {
 		LOG_ERR("Event manager could not initialize.");

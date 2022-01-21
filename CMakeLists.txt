@@ -71,6 +71,11 @@ zephyr_library_include_directories(
 )
 add_subdirectory(src/modules/fw_upgrade)
 
+zephyr_library_include_directories(
+  src/modules/diagnostics
+)
+add_subdirectory(src/modules/diagnostics)
+
 
 
 target_sources(app PRIVATE ${APP_MAIN}

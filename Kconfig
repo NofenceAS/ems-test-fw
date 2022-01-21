@@ -1,5 +1,9 @@
 menu "APPLICATION_CODE"
 
+	menu "DIAGNOSTICS"
+    rsource "src/modules/diagnostics/Kconfig"
+	endmenu # DIAGNOSTICS
+
 	menu "FW_UPGRADE"
     rsource "src/modules/fw_upgrade/Kconfig"
 	endmenu # FW_UPGRADE
