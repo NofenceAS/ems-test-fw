@@ -7,12 +7,8 @@
 #include "sound_event.h"
 #include "request_events.h"
 
-enum test_event_id {
-	TEST_EVENT_INITIALIZE = 0,
-	TEST_EVENT_API_REQ_FUNCTIONS = 1,
-	TEST_STRESS_GNSS_REQUEST = 2
-};
-static enum test_event_id cur_id = TEST_EVENT_INITIALIZE;
+enum test_event_id { TEST_EVENT_REQUEST_GNSS = 0, TEST_EVENT_STRESS_GNSS = 1 };
+static enum test_event_id cur_id = TEST_EVENT_REQUEST_GNSS;
 
 static bool toggle_stress_request = false;
 
@@ -28,6 +24,43 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_ASSERT_NO_FILE_INFO));
 void assert_post_action(const char *file, unsigned int line)
 {
 	printk("assert_post_action - file: %s (line: %u)\n", file, line);
+}
+
+static void simulate_dummy_pasture(struct request_pasture_event *ev)
+{
+	fence_coordinate_t *coord = ev->fence->p_c;
+	/* Simulate 13 points. */
+	ev->fence->n_points = 13;
+
+	/* Write DEAD to 13 points on x and y coords. */
+	for (int i = 0; i < 13; i++) {
+		coord->s_x_dm = 1337;
+		coord->s_y_dm = 1337;
+		coord++;
+	}
+
+	/* Submit ACK here since data has been written to given pointer area. */
+	struct ack_pasture_event *ack_e = new_ack_pasture_event();
+	EVENT_SUBMIT(ack_e);
+}
+
+static void simulate_dummy_gnssdata(gnss_struct_t *gnss_out)
+{
+	/* Here we can check which test we're on, so we can have multiple tests
+	 * with multiple dummy FENCE/GNSS data fields.
+	 */
+	if (cur_id == TEST_EVENT_REQUEST_GNSS) {
+		gnss_out->lat = 1337;
+		gnss_out->lon = 1337;
+	} else if (cur_id == TEST_EVENT_STRESS_GNSS) {
+		if (toggle_stress_request) {
+			gnss_out->lat = 123;
+			gnss_out->lon = 123;
+		} else {
+			gnss_out->lat = 1337;
+			gnss_out->lon = 1337;
+		}
+	}
 }
 
 void test_init(void)
@@ -48,38 +81,32 @@ void test_init(void)
 	 * as the sound event.
 	 */
 	int err = k_sem_take(&ack_fencedata_sem, K_SECONDS(30));
-	zassert_equal(err, 0, "Test hanged waiting for fencedata.");
-
-	err = k_sem_take(&ack_gnssdata_sem, K_SECONDS(30));
-	zassert_equal(err, 0, "Test hanged waiting for gnssdata.");
-
-	err = k_sem_take(&sound_event_sem, K_SECONDS(30));
-	zassert_equal(err, 0, "Test hanged waiting for sound event.");
+	zassert_equal(err, 0, "Test hanged waiting for pasture ack.");
 }
 
-void test_request_api_functions()
+void test_update_pasture()
 {
-	submit_request_fencedata();
-	submit_request_gnssdata();
+	struct pasture_ready_event *event = new_pasture_ready_event();
+	EVENT_SUBMIT(event);
 
-	/* Wait for event_handler to finish it zasserts.
-	 * We expect to get an ack for both the fencedata and GNSS data as well
-	 * as the sound event.
-	 */
 	int err = k_sem_take(&ack_fencedata_sem, K_SECONDS(30));
-	zassert_equal(err, 0, "Test hanged waiting for fencedata.");
-
-	err = k_sem_take(&ack_gnssdata_sem, K_SECONDS(30));
-	zassert_equal(err, 0, "Test hanged waiting for gnssdata.");
-
-	err = k_sem_take(&sound_event_sem, K_SECONDS(30));
-	zassert_equal(err, 0, "Test hanged waiting for sound event.");
+	zassert_equal(err, 0, "Test hanged waiting for pasture ack.");
 }
 
 #define STRESS_TEST_REQUESTS 50
 #define STRESS_TEST_HZ 10
 
 static int stress_test_counter = 0;
+
+void test_update_gnssdata()
+{
+	struct gnssdata_event *event = new_gnssdata_event();
+	simulate_dummy_gnssdata(&event->gnss);
+	EVENT_SUBMIT(event);
+
+	int err = k_sem_take(&sound_event_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "Test hanged waiting for sound event.");
+}
 
 void test_stress_gnss_request()
 {
@@ -88,12 +115,11 @@ void test_stress_gnss_request()
 		 * case we expect sound ack and gnss ack, so wait for those
 		 * semaphores before sending next request.
 		 */
-		submit_request_gnssdata();
+		struct gnssdata_event *event = new_gnssdata_event();
+		simulate_dummy_gnssdata(&event->gnss);
+		EVENT_SUBMIT(event);
 
-		int err = k_sem_take(&ack_gnssdata_sem, K_SECONDS(30));
-		zassert_equal(err, 0, "Test hanged waiting for gnssdata.");
-
-		err = k_sem_take(&sound_event_sem, K_SECONDS(30));
+		int err = k_sem_take(&sound_event_sem, K_SECONDS(30));
 		zassert_equal(err, 0, "Test hanged waiting for sound event.");
 		k_sleep(K_MSEC(1000 / STRESS_TEST_HZ));
 	}
@@ -101,107 +127,29 @@ void test_stress_gnss_request()
 		      "Missed request events.");
 }
 
-static void simulate_dummy_fencedata(struct request_fencedata_event *ev)
-{
-	fence_coordinate_t *coord = ev->fence->p_c;
-	/* Here we can check which test we're on, so we can have multiple tests
-	 * with multiple dummy FENCE/GNSS data fields.
-	 */
-	if (cur_id == TEST_EVENT_INITIALIZE) {
-		/* Simulate 45 points. */
-		ev->fence->n_points = 45;
-
-		/* Write DEAD to 45 points on x and y coords. */
-		for (int i = 0; i < 45; i++) {
-			coord->s_x_dm = 1337;
-			coord->s_y_dm = 1337;
-			coord++;
-		}
-	} else if (cur_id == TEST_EVENT_API_REQ_FUNCTIONS) {
-		/* Simulate 13 points. */
-		ev->fence->n_points = 13;
-
-		/* Write DEAD to 13 points on x and y coords. */
-		for (int i = 0; i < 13; i++) {
-			coord->s_x_dm = 1337;
-			coord->s_y_dm = 1337;
-			coord++;
-		}
-	}
-
-	/* Submit ACK here since data has been written to given pointer area. */
-	struct amc_ack_event *ack_e = new_amc_ack_event();
-	ack_e->type = AMC_REQ_FENCEDATA;
-	EVENT_SUBMIT(ack_e);
-}
-
-static void simulate_dummy_gnssdata(struct request_gnssdata_event *ev)
-{
-	/* Here we can check which test we're on, so we can have multiple tests
-	 * with multiple dummy FENCE/GNSS data fields.
-	 */
-	if (cur_id == TEST_EVENT_INITIALIZE) {
-		ev->gnss->lat = 1337;
-		ev->gnss->lon = 1337;
-	} else if (cur_id == TEST_EVENT_API_REQ_FUNCTIONS) {
-		ev->gnss->lat = 1337;
-		ev->gnss->lon = 1337;
-	} else if (cur_id == TEST_STRESS_GNSS_REQUEST) {
-		if (toggle_stress_request) {
-			ev->gnss->lat = 123;
-			ev->gnss->lon = 123;
-		} else {
-			ev->gnss->lat = 1337;
-			ev->gnss->lon = 1337;
-		}
-	}
-
-	/* Submit ACK here since data has been written to given pointer area. */
-	struct amc_ack_event *ack_e = new_amc_ack_event();
-	ack_e->type = AMC_REQ_GNSSDATA;
-	EVENT_SUBMIT(ack_e);
-}
-
 static bool event_handler(const struct event_header *eh)
 {
 	/* Regardless of test, if it is of type request event, we simulate its
 	 * contents with our writing dummy function.
 	 */
-	if (is_request_fencedata_event(eh)) {
-		struct request_fencedata_event *ev =
-			cast_request_fencedata_event(eh);
+	if (is_request_pasture_event(eh)) {
+		struct request_pasture_event *ev =
+			cast_request_pasture_event(eh);
 
 		/* Write our own dummy 
-		 * data to fencedata that got requested. 
+		 * data to pasture that got requested. 
 		 */
-		simulate_dummy_fencedata(ev);
+		simulate_dummy_pasture(ev);
 	}
-	if (is_request_gnssdata_event(eh)) {
-		struct request_gnssdata_event *ev =
-			cast_request_gnssdata_event(eh);
-
-		/* Write our own dummy 
-		* data to gnss data that got requested. */
-		simulate_dummy_gnssdata(ev);
-	}
-	/* Give ack semaphores for its respective request type. */
-	if (is_amc_ack_event(eh)) {
-		struct amc_ack_event *ev = cast_amc_ack_event(eh);
-		if (ev->type == AMC_REQ_FENCEDATA) {
-			k_sem_give(&ack_fencedata_sem);
-		} else if (ev->type == AMC_REQ_GNSSDATA) {
-			k_sem_give(&ack_gnssdata_sem);
-		} else {
-			zassert_unreachable("Unexpected ack ID.");
-		}
+	if (is_ack_pasture_event(eh)) {
+		k_sem_give(&ack_fencedata_sem);
 	}
 
 	/* Checking the sound- and zap events that amc_module outputs based on 
 	 * cur_id to check that the amc_module has performed the correct
-	 * calculations from our simulated GNSS and FENCE data. For now
-	 * both our dummy data results in the SND_WELCOME sound being played.
+	 * calculations from our simulated GNSS and FENCE data.
 	 */
-	if (cur_id == TEST_EVENT_INITIALIZE) {
+	if (cur_id == TEST_EVENT_REQUEST_GNSS) {
 		if (is_sound_event(eh)) {
 			struct sound_event *ev = cast_sound_event(eh);
 			zassert_equal(ev->type, SND_WELCOME,
@@ -210,20 +158,9 @@ static bool event_handler(const struct event_header *eh)
 			 * and prepare for next test with cur_id. 
 			 */
 			k_sem_give(&sound_event_sem);
-			cur_id = TEST_EVENT_API_REQ_FUNCTIONS;
+			cur_id = TEST_EVENT_STRESS_GNSS;
 		}
-	} else if (cur_id == TEST_EVENT_API_REQ_FUNCTIONS) {
-		if (is_sound_event(eh)) {
-			struct sound_event *ev = cast_sound_event(eh);
-			zassert_equal(ev->type, SND_WELCOME,
-				      "Unexpected sound event type received");
-			/* Test went through, notify test with k_sem_give
-			 * and prepare for next test with cur_id. 
-			 */
-			k_sem_give(&sound_event_sem);
-			cur_id = TEST_STRESS_GNSS_REQUEST;
-		}
-	} else if (cur_id == TEST_STRESS_GNSS_REQUEST) {
+	} else if (cur_id == TEST_EVENT_STRESS_GNSS) {
 		if (is_sound_event(eh)) {
 			stress_test_counter++;
 			struct sound_event *ev = cast_sound_event(eh);
@@ -246,13 +183,14 @@ static bool event_handler(const struct event_header *eh)
 void test_main(void)
 {
 	ztest_test_suite(amc_tests, ztest_unit_test(test_init),
-			 ztest_unit_test(test_request_api_functions),
+			 ztest_unit_test(test_update_pasture),
+			 ztest_unit_test(test_update_gnssdata),
 			 ztest_unit_test(test_stress_gnss_request));
 	ztest_run_test_suite(amc_tests);
 }
 
 EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, sound_event);
-EVENT_SUBSCRIBE(test_main, request_fencedata_event);
-EVENT_SUBSCRIBE(test_main, request_gnssdata_event);
-EVENT_SUBSCRIBE(test_main, amc_ack_event);
+EVENT_SUBSCRIBE(test_main, request_pasture_event);
+EVENT_SUBSCRIBE(test_main, gnssdata_event);
+EVENT_SUBSCRIBE(test_main, ack_pasture_event);
