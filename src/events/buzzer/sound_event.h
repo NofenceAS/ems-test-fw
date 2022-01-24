@@ -8,10 +8,6 @@
 #include "event_manager.h"
 #include <zephyr.h>
 
-/** @brief Enum for error severity. Can be replaced with error level in the
- *         future corresponding to integer values instead.
- *         See https://gitlab.com/nofence/nofence/-/blob/master/NofenceEmbedded/NoFence/Buzzer.h
- */
 enum sound_event_type {
 	SND_WELCOME = 0,
 	SND_SOLAR_TEST = 1,
@@ -26,7 +22,7 @@ enum sound_event_type {
 	SND_FIND_ME = 10
 };
 
-/** @brief Struct containg status messages regarding the firmware upgrade. */
+/** @brief Sound event struct containg information of which sound to play. */
 struct sound_event {
 	struct event_header header;
 
