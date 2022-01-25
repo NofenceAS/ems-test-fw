@@ -6,6 +6,8 @@ cmake_minimum_required(VERSION 3.20.0)
 # Print out build type
 message(STATUS "Build type: ${BUILD_TYPE} 🚀")
 
+list(APPEND DTS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
+
 # Define configuration files.
 if (HARDWARE_TEST)
 list(APPEND CONF_FILE
@@ -23,7 +25,7 @@ list(APPEND ZEPHYR_EXTRA_MODULES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/collar_protocol
         )
 
-list(APPEND DTS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
+
 
 # Re-direct the directory where the 'boards' directory is found from
 # $ZEPHYR_BASE to this directory.

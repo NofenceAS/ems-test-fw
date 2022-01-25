@@ -11,9 +11,26 @@
 	model = "Nofence X2.5";
 	compatible = "nofence,x25";
 
+
+	/* Electric pulse */
+	ep {
+		compatible = "nofence,electric-pulse";
+		ep_ctrl: ep_0 {
+			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+			label = "EP CTRL";
+		};
+
+		ep_detect: ep_1 {
+			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+			label = "EP DETECT";
+		};
+	};
+	
 	/* Convenience aliases */
 	aliases {
 		eeprom = &eeprom0;
+		ep-ctrl = &ep_ctrl;
+		ep-detect = &ep_detect;
 	};
 
 	chosen {
@@ -34,14 +51,6 @@
 
 &gpio0 {
 	status = "okay";
-
-	/* Electric pulse */
-	zap_ctrl {
-		compatible = "nofence,zap";
-		gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
-		label = "ZAP CTRL";
-	};
-	
 };
 
 &gpio1 {
