@@ -9,16 +9,13 @@
 #include <zephyr.h>
 
 /** @brief Enum for different electric pulse status */
-enum ep_status_flag { EP_INIT = 0, EP_RELEASE = 1 };
+enum ep_status_flag { EP_RELEASE = 0 };
 
 /** @brief Struct containg status messages regarding electric pulse events. */
 struct ep_status_event {
 	struct event_header header;
 
 	enum ep_status_flag ep_status;
-
-	/** If an error occurs this is not 0. */
-	int ep_error;
 };
 
 EVENT_TYPE_DECLARE(ep_status_event);

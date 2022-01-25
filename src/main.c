@@ -24,8 +24,11 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 void main(void)
 {
 	LOG_INF("Starting Nofence application");
-	//const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
-	//eep_init(eeprom_dev);
+/* Not all boards have eeprom */
+#if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
+	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
+	eep_init(eeprom_dev);
+#endif
 	/* Initialize the event manager. */
 	if (event_manager_init()) {
 		LOG_ERR("Event manager could not initialize.");
@@ -38,6 +41,7 @@ void main(void)
 	if (fw_upgrade_module_init()) {
 		LOG_ERR("Could not initialize firmware upgrade module");
 	}
-	ep_module_init();
-	ep_module_enable(true);
+	if (ep_module_init()) {
+		LOG_ERR("Could not initialize electric pulse module");
+	}
 }
