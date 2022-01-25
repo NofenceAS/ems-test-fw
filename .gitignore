@@ -45,6 +45,8 @@ doc/doc.warnings
 hide-defaults-note
 venv
 .venv
+*.code-workspace
+.clang-format
 
 # Tag files
 GPATH

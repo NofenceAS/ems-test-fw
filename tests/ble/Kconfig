@@ -1,17 +1,17 @@
-# Config options for logger sample app
-#
-# Copyright (c) 2019 Nordic Semiconductor ASA
-#
-# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
-#
 
-mainmenu "Example unity test"
 
-menu "Unit under test configuration"
+menu "BLE"
+rsource "./../../src/modules/ble/Kconfig"
+endmenu # BLE
 
-config UUT_PARAM_CHECK
-	bool "Enabled function parameter check"
-
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
 endmenu
 
-source "Kconfig.zephyr"
+config BT_DEVICE_NAME
+    string "Bluetooth device name"
+    default "Zephyr"
+
+config BT_L2CAP_TX_MTU
+    int "MTU size"
+    default 247

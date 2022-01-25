@@ -1,0 +1,17 @@
+#
+# Copyright (c) 2022 Nofence
+#
+
+if LOG
+
+menu "Event options"
+
+comment "Initially logged events"
+
+config LOG_LTE_DATA_EVENT
+	bool "BLE data event"
+	default y
+
+endmenu
+
+endif
