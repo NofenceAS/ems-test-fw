@@ -15,12 +15,12 @@
 	/* Electric pulse */
 	ep {
 		compatible = "nofence,electric-pulse";
-		ep_ctrl: ep_0 {
+		ep_ctrl: ep_ctrl {
 			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 			label = "EP CTRL";
 		};
 
-		ep_detect: ep_1 {
+		ep_detect: ep_detect {
 			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 			label = "EP DETECT";
 		};
