@@ -8,6 +8,9 @@
 #include "event_manager.h"
 #include "flash_memory.h"
 
+/** Used to tell storage controller which region to read/write to. */
+typedef enum { FLASH_REGION_LOG = 0, FLASH_REGION_ANO = 1 } flash_regions_t;
+
 /** 
  * @brief Writes a pointer to given memrec struct to a given region.
  */
@@ -47,8 +50,17 @@ struct stg_read_memrec_event {
 	flash_regions_t region;
 };
 
+/** 
+ * @brief Ack for when the requested module has consumed the data, in which
+ *        case we can update the pointer to data written.
+ */
+struct stg_ack_read_memrec_event {
+	struct event_header header;
+};
+
 EVENT_TYPE_DECLARE(stg_write_memrec_event);
 EVENT_TYPE_DECLARE(stg_read_memrec_event);
 
 EVENT_TYPE_DECLARE(stg_ack_write_memrec_event);
+EVENT_TYPE_DECLARE(stg_ack_read_memrec_event);
 #endif /* _STORAGE_EVENT_H_ */
