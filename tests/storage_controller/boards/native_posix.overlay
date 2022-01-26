@@ -15,7 +15,7 @@
                 };
                 partition@10000 {
                         label = "ano_partition";
-                        reg = <0x00010000 0x000F0000>;
+                        reg = <0x00010000 0x00020000>;
                 };
         };
 };

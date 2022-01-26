@@ -9,7 +9,7 @@
 #include "flash_memory.h"
 
 /** Used to tell storage controller which region to read/write to. */
-typedef enum { FLASH_REGION_LOG = 0, FLASH_REGION_ANO = 1 } flash_regions_t;
+typedef enum { STG_PARTITION_LOG = 0, STG_PARTITION_ANO = 1 } flash_partition_t;
 
 /** 
  * @brief Writes a pointer to given memrec struct to a given region.
@@ -23,7 +23,7 @@ struct stg_write_memrec_event {
          *  Which in turn means the messaging module can free up the data.
         */
 	mem_rec *new_rec;
-	flash_regions_t region;
+	flash_partition_t partition;
 };
 
 /** 
@@ -47,7 +47,7 @@ struct stg_read_memrec_event {
          *  reading while the contents are being written.
         */
 	mem_rec *new_rec;
-	flash_regions_t region;
+	flash_partition_t partition;
 };
 
 /** 
