@@ -143,16 +143,16 @@ gnss_uart: &uart1 {
 	sck-pin = <19>;
 	io-pins = <20>, <23>, <24>, <21>;
 	csn-pins = <18>;
-	mx25r64: mx25r6435f@0 {
+	mx25u64: mx25u6432f@0 {
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
-		/* MX24R64 supports only pp and pp4io */
+		/* MX24U64 supports only pp and pp4io */
 		writeoc = "pp4io";
-		/* MX24R64 supports all readoc options */
+		/* MX24U64 supports all readoc options */
 		readoc = "read4io";
 		sck-frequency = <8000000>;
-		label = "MX25R64";
-		jedec-id = [c2 28 17];
+		label = "MX25U64";
+		jedec-id = [c2 25 37];
 		sfdp-bfp = [
 			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
 			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52

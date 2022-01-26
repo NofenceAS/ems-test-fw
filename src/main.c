@@ -43,9 +43,9 @@ void main(void)
 		LOG_ERR("Event manager could not initialize.");
 	}
 	/* Initialize BLE module. */
-	if (ble_module_init()) {
+	/*if (ble_module_init()) {
 		LOG_ERR("Could not initialize BLE module");
-	}
+	}*/
 	/* Initialize firmware upgrade module. */
 	if (fw_upgrade_module_init()) {
 		LOG_ERR("Could not initialize firmware upgrade module");

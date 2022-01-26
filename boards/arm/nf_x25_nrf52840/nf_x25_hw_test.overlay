@@ -3,7 +3,7 @@
  */
 
 &uart0 {
-    status = "disabled";
+    status = "okay";
     sara_r4 {
         status = "disabled";
     };
@@ -26,7 +26,7 @@
 };*/
 
 &qspi {
-    mx25r6435f@0 {
-        status = "disabled";
+    mx25u6432f@0 {
+        status = "okay";
     };
 };
