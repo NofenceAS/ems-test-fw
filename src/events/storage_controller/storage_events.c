@@ -16,7 +16,7 @@ static int log_stg_write_memrec_event(const struct event_header *eh, char *buf,
 				      size_t buf_len)
 {
 	struct stg_write_memrec_event *event = cast_stg_write_memrec_event(eh);
-	return snprintf(buf, buf_len, "%s", get_evt_type_str(event->type));
+	return snprintf(buf, buf_len, "Write memrec event: %p", event);
 }
 
 EVENT_TYPE_DEFINE(stg_write_memrec_event, IS_ENABLED(CONFIG_STORAGE_EVENTS_LOG),
@@ -34,7 +34,7 @@ static int log_stg_ack_write_memrec_event(const struct event_header *eh,
 {
 	struct stg_ack_write_memrec_event *event =
 		cast_stg_ack_write_memrec_event(eh);
-	return snprintf(buf, buf_len, "%s", get_evt_type_str(event->type));
+	return snprintf(buf, buf_len, "Ack write memrec event: %p", event);
 }
 
 EVENT_TYPE_DEFINE(stg_ack_write_memrec_event,
@@ -52,7 +52,7 @@ static int log_stg_read_memrec_event(const struct event_header *eh, char *buf,
 				     size_t buf_len)
 {
 	struct stg_read_memrec_event *event = cast_stg_read_memrec_event(eh);
-	return snprintf(buf, buf_len, "%s", get_evt_type_str(event->type));
+	return snprintf(buf, buf_len, "Read memrec event: %p", event);
 }
 
 EVENT_TYPE_DEFINE(stg_read_memrec_event, IS_ENABLED(CONFIG_STORAGE_EVENTS_LOG),
@@ -70,7 +70,7 @@ static int log_stg_ack_read_memrec_event(const struct event_header *eh,
 {
 	struct stg_ack_read_memrec_event *event =
 		cast_stg_ack_read_memrec_event(eh);
-	return snprintf(buf, buf_len, "%s", get_evt_type_str(event->type));
+	return snprintf(buf, buf_len, "Ack read memrec event: %p", event);
 }
 
 EVENT_TYPE_DEFINE(stg_ack_read_memrec_event,

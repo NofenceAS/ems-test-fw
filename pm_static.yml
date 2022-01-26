@@ -1,12 +1,12 @@
 external_flash:
   address: 0x0
-  end_address: 0x800000
-  device: MX25U64
   region: external_flash
   size: 0x800000
-
-fcb_storage:
+log_partition:
   address: 0x0
   region: external_flash
-  device: MX25U64
   size: 0x80000
+ano_partition:
+  address: 0x80000
+  region: external_flash
+  size: 0x20000

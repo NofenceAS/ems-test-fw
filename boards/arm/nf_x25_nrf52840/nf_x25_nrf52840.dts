@@ -160,6 +160,23 @@
 		has-dpd;
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <35000>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* 512KB */
+			log_partition: partition@0 {
+				label = "log-storage";
+				reg = <0x0000000 0x00080000>;
+			};
+
+			/* 128KB */
+			ano_partition: partition@80000 {
+				label = "ano-storage";
+				reg = <0x0080000 0x000A0000>;
+			};
+		};
 	};
 };
 

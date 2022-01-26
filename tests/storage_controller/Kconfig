@@ -1,0 +1,10 @@
+
+menu "APPLICATION_CODE"
+	menu "Storage controller"
+    	rsource "./../../src/modules/storage_controller/Kconfig"
+	endmenu # Storage controller
+endmenu # APPLICATION CODE
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu
