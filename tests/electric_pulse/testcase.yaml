@@ -1,0 +1,4 @@
+tests:
+  electric_pulse.test:
+    platform_allow: native_posix
+    tags: event_manager
