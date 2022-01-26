@@ -1,43 +1,40 @@
 #include <ztest.h>
 #include <mock_cellular_helpers.h>
-#include "cellular_helpers_header.h"
 
-uint8_t receive_tcp(struct data *data)
-{
+uint8_t mock_cellular_controller_init(){
     return ztest_get_return_value();
 }
 
-//uint8_t recv(int sock, void *buf, size_t, int flags)
+//uint8_t receive_tcp(struct data *data)
 //{
 //    return ztest_get_return_value();
 //}
 
-int dfu_target_reset(void)
+uint8_t socket_receive(struct data* socket_data)
 {
-	return ztest_get_return_value();
+    return ztest_get_return_value();
 }
 
-int dfu_target_mcuboot_set_buf(uint8_t *data, size_t len)
+int8_t socket_connect(struct data *dummy_data, struct sockaddr *dummy_add,
+                      size_t dummy_len)
 {
-	return ztest_get_return_value();
+    return ztest_get_return_value();
 }
 
-int dfu_target_img_type(uint8_t *data, size_t len)
-{
-	return ztest_get_return_value();
+void stop_tcp(void){
+    return;
+};
+
+int8_t send_tcp(char* dummy, size_t dummy_len){
+    return ztest_get_return_value();
 }
 
-int dfu_target_init(int result, size_t file_size, dfu_target_callback_t cb)
+int8_t lteInit(void)
 {
-	return ztest_get_return_value();
+    return ztest_get_return_value();
 }
 
-int dfu_target_write(uint8_t *data, size_t len)
+bool lteIsReady(void)
 {
-	return ztest_get_return_value();
-}
-
-int dfu_target_done(bool status)
-{
-	return ztest_get_return_value();
+    return ztest_get_return_value();
 }

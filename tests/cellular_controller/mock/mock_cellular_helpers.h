@@ -1,22 +1,22 @@
 
 #include <zephyr.h>
+//#include "cellular_helpers_header.h"
 
-enum dfu_target_evt_id { DFU_TARGET_EVT_TIMEOUT, DFU_TARGET_EVT_ERASE_DONE };
+struct data {};
+struct sockaddr {};
 
-typedef void (*dfu_target_callback_t)(enum dfu_target_evt_id evt_id);
+uint8_t mock_cellular_controller_init();
 
-int dfu_target_reset(void);
+uint8_t socket_receive(struct data *);
 
-int dfu_target_mcuboot_set_buf(uint8_t *data, size_t len);
+void stop_tcp(void);
 
-int dfu_target_img_type(uint8_t *data, size_t len);
+int8_t send_tcp(char*, size_t);
 
-int dfu_target_init(int result, size_t file_size, dfu_target_callback_t cb);
+int8_t socket_connect(struct data *, struct sockaddr *,
+                      size_t);
 
-int dfu_target_write(uint8_t *data, size_t len);
+int8_t lteInit(void);
 
-int dfu_target_done(bool status);
-
-uint8_t receive_tcp(struct data *data);
-
-size_t recv(int sock, void *buf, size_t, int flags);
+bool lteIsReady(void);
+//uint8_t receive_tcp(struct data *);
