@@ -1,0 +1,10 @@
+
+menu "APPLICATION_CODE"
+	menu "MESSAGING"
+    	rsource "./../../src/modules/messaging/Kconfig"
+	endmenu # MESSAGING
+endmenu # APPLICATION CODE
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu
