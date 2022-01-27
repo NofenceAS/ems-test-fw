@@ -18,6 +18,9 @@ menu "APPLICATION_CODE"
 
 endmenu # APPLICATION CODE
 
+menu "AMC_MODULE"
+rsource "src/modules/amc/Kconfig"
+endmenu # AMC_MODULE
 
 menu "ERROR_HANDLER"
 rsource "src/modules/error_handler/Kconfig"
@@ -35,12 +38,12 @@ menu "BLE Events"
 rsource "src/events/ble/Kconfig"
 endmenu
 
-menu "Zephyr Kernel"
-source "Kconfig.zephyr"
-
 menu "Messaging"
 rsource "src/modules/messaging/Kconfig"
 rsource "src/events/messaging/Kconfig"
 endmenu
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
 
 endmenu
