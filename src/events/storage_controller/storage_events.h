@@ -32,6 +32,7 @@ struct stg_write_memrec_event {
  */
 struct stg_ack_write_memrec_event {
 	struct event_header header;
+	flash_partition_t partition;
 };
 
 /** 
@@ -56,6 +57,7 @@ struct stg_read_memrec_event {
  */
 struct stg_ack_read_memrec_event {
 	struct event_header header;
+	flash_partition_t partition;
 };
 
 EVENT_TYPE_DECLARE(stg_write_memrec_event);
