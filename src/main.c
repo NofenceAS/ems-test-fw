@@ -10,7 +10,12 @@
 #include "fw_upgrade_events.h"
 #include "nf_eeprom.h"
 #include "ble_controller.h"
+<<<<<<< HEAD
 #include "ep_module.h"
+=======
+#include "amc_handler.h"
+#include "nf_eeprom.h"
+>>>>>>> origin/main
 
 #define MODULE main
 #include "module_state_event.h"
@@ -28,7 +33,6 @@ void main(void)
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
 	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
 	eep_init(eeprom_dev);
-#endif
 	/* Initialize the event manager. */
 	if (event_manager_init()) {
 		LOG_ERR("Event manager could not initialize.");
@@ -44,4 +48,6 @@ void main(void)
 	if (ep_module_init()) {
 		LOG_ERR("Could not initialize electric pulse module");
 	}
+	/* Initialize animal monitor control module. */
+	amc_module_init();
 }
