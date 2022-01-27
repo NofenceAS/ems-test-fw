@@ -47,6 +47,14 @@ rsource "src/modules/messaging/Kconfig"
 rsource "src/events/messaging/Kconfig"
 endmenu
 
+menu "PWR Events"
+rsource "src/events/power_manager/Kconfig"
+endmenu
+
+menu "PWR Module"
+rsource "src/modules/power_manager/Kconfig"
+endmenu
+
 menu "Zephyr Kernel"
 source "Kconfig.zephyr" 
 endmenu

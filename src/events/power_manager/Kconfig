@@ -1,0 +1,15 @@
+# Copyright (c) 2021 Nofence AS
+ 
+if LOG
+
+menu "Event options"
+
+comment "Initially logged events"
+
+config CONFIG_LOG_PWR_EVENT
+	bool "PWR state status event"
+	default y
+
+endmenu
+
+endif

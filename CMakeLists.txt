@@ -88,6 +88,9 @@ add_subdirectory(src/modules/fw_upgrade)
 add_subdirectory(src/eeprom)
 add_subdirectory(src/modules/amc)
 
+add_subdirectory(src/modules/power_manager)
+add_subdirectory(src/events/power_manager)
+
 add_subdirectory(src/events/messaging)
 add_subdirectory(src/modules/messaging)
 
