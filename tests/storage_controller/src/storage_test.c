@@ -16,8 +16,6 @@ static K_SEM_DEFINE(write_ano_ack_sem, 0, 1);
 static K_SEM_DEFINE(read_ano_ack_sem, 0, 1);
 static K_SEM_DEFINE(consumed_ano_ack_sem, 0, 1);
 
-mem_rec cached_mem_rec;
-
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
  */
