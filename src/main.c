@@ -10,6 +10,8 @@
 #include "fw_upgrade_events.h"
 #include "nf_eeprom.h"
 #include "ble_controller.h"
+#include "amc_handler.h"
+#include "nf_eeprom.h"
 
 #define MODULE main
 #include "module_state_event.h"
@@ -38,4 +40,6 @@ void main(void)
 	if (fw_upgrade_module_init()) {
 		LOG_ERR("Could not initialize firmware upgrade module");
 	}
+	/* Initialize animal monitor control module. */
+	amc_module_init();
 }

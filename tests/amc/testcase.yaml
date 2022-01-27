@@ -1,0 +1,4 @@
+tests:
+  animal_monitor_control.test:
+    platform_allow: native_posix
+    tags: event_manager
