@@ -20,6 +20,7 @@ target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE ${APP_SOURCE})
 
 zephyr_library_include_directories(
+  src/
   mock/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/storage_controller

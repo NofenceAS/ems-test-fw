@@ -60,9 +60,19 @@ struct stg_ack_read_memrec_event {
 	flash_partition_t partition;
 };
 
+/** 
+ * @brief Schedules a rotation on flash circual buffer on given partition.
+ */
+struct stg_data_consumed_event {
+	struct event_header header;
+	flash_partition_t partition;
+};
+
 EVENT_TYPE_DECLARE(stg_write_memrec_event);
 EVENT_TYPE_DECLARE(stg_read_memrec_event);
 
 EVENT_TYPE_DECLARE(stg_ack_write_memrec_event);
 EVENT_TYPE_DECLARE(stg_ack_read_memrec_event);
+
+EVENT_TYPE_DECLARE(stg_data_consumed_event);
 #endif /* _STORAGE_EVENT_H_ */

@@ -1,0 +1,40 @@
+
+#include <ztest.h>
+#include "storage.h"
+#include "storage_events.h"
+#include "flash_memory.h"
+#include "storage_helper.h"
+
+void request_data(flash_partition_t partition)
+{
+	struct stg_read_memrec_event *ev = new_stg_read_memrec_event();
+
+	ev->new_rec = &cached_mem_rec;
+	ev->partition = partition;
+
+	EVENT_SUBMIT(ev);
+}
+
+void consume_data(flash_partition_t partition)
+{
+	zassert_equal(cached_mem_rec.header.ID, 1337, "Contents not equal.");
+
+	/* After contents have been consumed successfully, 
+	 * notify the storage controller to continue walk process if there
+         * are any new entries.
+	 */
+	struct stg_data_consumed_event *ev = new_stg_data_consumed_event();
+	ev->partition = partition;
+	EVENT_SUBMIT(ev);
+}
+
+void write_data(flash_partition_t partition)
+{
+	mem_rec dummy_data;
+	dummy_data.header.ID = 1337;
+
+	struct stg_write_memrec_event *ev = new_stg_write_memrec_event();
+	ev->new_rec = &dummy_data;
+	ev->partition = partition;
+	EVENT_SUBMIT(ev);
+}
