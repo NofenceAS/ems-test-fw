@@ -15,6 +15,7 @@ FILE(GLOB app_sources
         mock/*.c 
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/cellular_controller/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/cellular_controller/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging/*.c
 )
 target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE ${APP_SOURCE})
@@ -24,5 +25,5 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/cellular_controller
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/cellular_controller/helpers
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/cellular_controller
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messa
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging
 )

@@ -5,15 +5,7 @@ EVENT_TYPE_DEFINE(cellular_ack_event,      /* Unique event name. */
                   NULL,  /* Callback Function. */
                   NULL);             /* No event info provided. */
 
-EVENT_TYPE_DEFINE(messaging_ack_event,
-                  true,
-                  NULL,
-                  NULL);
 
-EVENT_TYPE_DEFINE(messaging_proto_out_event,
-                  true,
-                  NULL,
-                  NULL);
 
 EVENT_TYPE_DEFINE(cellular_proto_in_event,
                   true,
