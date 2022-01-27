@@ -14,4 +14,6 @@ void request_data(flash_partition_t partition);
 void consume_data(flash_partition_t partition);
 void write_data(flash_partition_t partition);
 
+extern int consumed_entries_counter;
+
 #endif /* _STORAGE_HELPER_H_ */

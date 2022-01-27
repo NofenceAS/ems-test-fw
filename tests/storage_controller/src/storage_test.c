@@ -16,6 +16,8 @@ static K_SEM_DEFINE(write_ano_ack_sem, 0, 1);
 static K_SEM_DEFINE(read_ano_ack_sem, 0, 1);
 static K_SEM_DEFINE(consumed_ano_ack_sem, 0, 1);
 
+int consumed_entries_counter = 0;
+
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
  */
@@ -31,7 +33,7 @@ void test_event_manager_init(void)
 		      "Error when initializing event manager");
 }
 
-void test_storage_init(void)
+void test_init(void)
 {
 	zassert_false(init_storage_controller(),
 		      "Error when initializing storage controller.");
@@ -39,7 +41,7 @@ void test_storage_init(void)
 	k_sleep(K_SECONDS(30));
 }
 
-void test_storage_append_log_data(void)
+void test_append_log_data(void)
 {
 	write_data(STG_PARTITION_LOG);
 	int err = k_sem_take(&write_log_ack_sem, K_SECONDS(30));
@@ -47,7 +49,24 @@ void test_storage_append_log_data(void)
 		      "Test execution hanged waiting for write log ack.");
 }
 
-void test_storage_read_log_data(void)
+void test_empty_walk(void)
+{
+	/* Expect semaphore to hang, since we do not get any callbacks. */
+	request_data(STG_PARTITION_LOG);
+
+	int err = k_sem_take(&read_log_ack_sem, K_SECONDS(30));
+	zassert_not_equal(
+		err, 0, "Test execution should hang waiting for read log ack.");
+
+	/* We process the data further in event_handler. */
+
+	err = k_sem_take(&consumed_log_ack_sem, K_SECONDS(30));
+	zassert_not_equal(
+		err, 0,
+		"Test execution should hang waiting for consumed log ack.");
+}
+
+void test_read_log_data(void)
 {
 	/* First we request, then we get callback in event_handler when
 	 * data is ready. There might be multiple entries since
@@ -70,83 +89,258 @@ void test_storage_read_log_data(void)
 	/* We know at this stage that we do not have more entries, test done. */
 }
 
-/** @brief Writes 3 log messages, then 5 ano messages. Then we read to verify.
- */
-//void test_multiple_writes_and_reads(void)
-//{
-//	int log_writes = 3;
-//	int ano_writes = 5;
-//	mem_rec dummy_data;
-//
-//	for (int i = 0; i < log_writes; i++) {
-//		memset(&dummy_memrec, 0, sizeof(mem_rec));
-//		dummy_memrec.header.ID = 1337;
-//
-//		struct stg_write_memrec_event *ev =
-//			new_stg_write_memrec_event();
-//		ev->new_rec = &dummy_memrec;
-//		ev->partition = STG_PARTITION_LOG;
-//		EVENT_SUBMIT(ev);
-//
-//		int err = k_sem_take(&write_log_ack_sem, K_SECONDS(30));
-//		zassert_equal(
-//			err, 0,
-//			"Test execution hanged waiting for write log ack.");
-//	}
-//
-//	for (int i = 0; i < ano_writes; i++) {
-//		memset(&dummy_memrec, 0, sizeof(mem_rec));
-//		dummy_memrec.header.ID = 1337;
-//
-//		struct stg_write_memrec_event *ev =
-//			new_stg_write_memrec_event();
-//		ev->new_rec = &dummy_memrec;
-//		ev->partition = STG_PARTITION_ANO;
-//		EVENT_SUBMIT(ev);
-//
-//		int err = k_sem_take(&write_ano_ack_sem, K_SECONDS(30));
-//		zassert_equal(
-//			err, 0,
-//			"Test execution hanged waiting for write ano ack.");
-//	}
-//	/* Submit read request, will trigger walk function to walk over
-//	 * all the new entries given. Stores entries left in
-//	 * entries left variable.
-//	 */
-//	mem_rec out_data;
-//
-//	struct stg_read_memrec_event *ev = new_stg_read_memrec_event();
-//	ev->new_rec = &out_data;
-//	ev->partition = STG_PARTITION_LOG;
-//	EVENT_SUBMIT(ev);
-//	/* We only get this semaphore if data is read. Compare contents. */
-//	int err = k_sem_take(&read_log_ack_sem, K_SECONDS(30));
-//	zassert_equal(err, 0,
-//		      "Test execution hanged waiting for read log ack.");
-//
-//	while (current_entries_left > 0) {
-//		mem_rec expected;
-//		memset(&expected, 2, sizeof(mem_rec));
-//		zassert_mem_equal(&out_data, &expected, sizeof(mem_rec),
-//				  "Memory contents are not equal.");
-//
-//		/* After contents have been consumed successfully,
-//		 * notify the storage controller that we have consumed the data.
-//		 */
-//		struct stg_data_consumed_event *ev_consumed =
-//			new_stg_data_consumed_event();
-//		ev_consumed->partition = STG_PARTITION_LOG;
-//		EVENT_SUBMIT(ev_consumed);
-//	}
-//}
+void setup_multiple_reads(void)
+{
+	consumed_entries_counter = 0;
+}
+
+void test_multiple_writes_and_verify(void)
+{
+	/* Writes 14 log sectors, and 8 ano 
+	 * sectors based on DEFINES in storage_helper.h. 
+	 */
+	int log_writes = 14;
+	int ano_writes = 8;
+
+	int err;
+
+	/* LOG entires. */
+	for (int i = 0; i < log_writes; i++) {
+		write_data(STG_PARTITION_LOG);
+
+		err = k_sem_take(&write_log_ack_sem, K_SECONDS(30));
+		zassert_equal(
+			err, 0,
+			"Test execution hanged waiting for write log ack.");
+	}
+
+	/* ANO entires. */
+	for (int i = 0; i < ano_writes; i++) {
+		write_data(STG_PARTITION_ANO);
+
+		err = k_sem_take(&write_ano_ack_sem, K_SECONDS(30));
+		zassert_equal(
+			err, 0,
+			"Test execution hanged waiting for write ano ack.");
+	}
+
+	consumed_entries_counter = 0;
+	/* Walk LOG data entries. */
+	request_data(STG_PARTITION_LOG);
+
+	/* Wait until the consume_data function triggered in event_handler
+	 * is finished with all the entries. We know how many
+	 * consumed_event acks we can expect.
+	 */
+	for (int i = 0; i < log_writes; i++) {
+		err = k_sem_take(&consumed_log_ack_sem, K_SECONDS(30));
+		zassert_equal(
+			err, 0,
+			"Test hanged waiting for multiple consumed log ack.");
+	}
+	/* Wait for event handler thread to process last consume_data. */
+	k_sleep(K_SECONDS(60));
+
+	/* Check if the consumed logic was processed 
+	 * the correct number of times. The content is checked with zasserts
+	 * within the consume_data function itself.
+	 */
+	zassert_equal(consumed_entries_counter, log_writes,
+		      "Mismatched consumed log entries.");
+
+	/* Perpare for walk ANO data entries. */
+	consumed_entries_counter = 0;
+
+	request_data(STG_PARTITION_ANO);
+	for (int i = 0; i < ano_writes; i++) {
+		err = k_sem_take(&consumed_ano_ack_sem, K_SECONDS(30));
+		zassert_equal(
+			err, 0,
+			"Test hanged waiting for multiple consumed ano ack.");
+	}
+	/* Wait for event handler thread to process last consume_data. */
+	k_sleep(K_SECONDS(60));
+	zassert_equal(consumed_entries_counter, ano_writes,
+		      "Mismatched consumed ano entries.");
+}
+
+void test_append_too_many(void)
+{
+	/* Used as ID written on each sector. */
+	consumed_entries_counter = 0;
+
+	/* It's difficult to calculate precicely how many reads
+	 * will be performed, due to padding within the FLASH_AREA partition.
+	 * Assume we have mem_rec structure, which consists of 264 bytes and we
+	 * have 0x20000 (128kb) memory, we can estimate 496.484848 - 1 reads,
+	 * however, FCB adds padding inbetween entries as well as header,
+	 * since the correct number of reads with mem_rec seems to be around 
+	 * 470.
+	 */
+	int num_log_sectors = 1024;
+	int num_ano_sectors = 256;
+
+	int err;
+
+	for (int i = 0; i < num_log_sectors; i++) {
+		write_data(STG_PARTITION_LOG);
+		err = k_sem_take(&write_log_ack_sem, K_SECONDS(30));
+		zassert_equal(
+			err, 0,
+			"Test execution hanged waiting for write log ack.");
+	}
+
+	/* Used as ID written on each sector. */
+	consumed_entries_counter = 0;
+
+	for (int i = 0; i < num_ano_sectors; i++) {
+		write_data(STG_PARTITION_ANO);
+		err = k_sem_take(&write_ano_ack_sem, K_SECONDS(30));
+		zassert_equal(
+			err, 0,
+			"Test execution hanged waiting for write ano ack.");
+	}
+}
+
+/** @brief Checks what happens if we try to read after there's a long time
+*          since we've read previously.
+*/
+void test_read_too_many(void)
+{
+	/* It's difficult to calculate precicely how many reads
+	 * will be performed, due to padding within the FLASH_AREA partition.
+	 * Assume we have mem_rec structure, which consists of 264 bytes and we
+	 * have 0x20000 (128kb) memory, we can estimate 496.484848 - 1 reads,
+	 * however, FCB adds padding inbetween entries as well as header,
+	 * since the correct number of reads with mem_rec seems to be around 
+	 * 470.
+	 */
+	int log_writes = 1024;
+	int ano_writes = 256;
+
+	int err;
+
+	consumed_entries_counter = 0;
+	/* Walk LOG data entries. */
+	request_data(STG_PARTITION_LOG);
+
+	/* Wait until the consume_data function triggered in event_handler
+	 * is finished with all the entries. We know how many
+	 * consumed_event acks we can expect.
+	 */
+	for (int i = 0; i < log_writes; i++) {
+		err = k_sem_take(&consumed_log_ack_sem, K_SECONDS(30));
+		zassert_equal(
+			err, 0,
+			"Test hanged waiting for multiple consumed log ack.");
+	}
+	/* Wait for event handler thread to process last consume_data. */
+	k_sleep(K_SECONDS(60));
+
+	/* Check if the consumed logic was processed 
+	 * the correct number of times. The content is checked with zasserts
+	 * within the consume_data function itself.
+	 */
+	zassert_equal(consumed_entries_counter, log_writes,
+		      "Mismatched consumed log entries.");
+
+	/* Perpare for walk ANO data entries. */
+	consumed_entries_counter = 0;
+
+	request_data(STG_PARTITION_ANO);
+	for (int i = 0; i < ano_writes; i++) {
+		err = k_sem_take(&consumed_ano_ack_sem, K_SECONDS(30));
+		zassert_equal(
+			err, 0,
+			"Test hanged waiting for multiple consumed ano ack.");
+	}
+	/* Wait for event handler thread to process last consume_data. */
+	k_sleep(K_SECONDS(60));
+	zassert_equal(consumed_entries_counter, ano_writes,
+		      "Mismatched consumed ano entries.");
+}
+
+void test_clear_fcbs(void)
+{
+	int err;
+
+	zassert_equal(clear_fcb_sectors(STG_PARTITION_LOG), 0, "");
+	zassert_equal(clear_fcb_sectors(STG_PARTITION_ANO), 0, "");
+
+	k_sleep(K_SECONDS(60));
+
+	/* Read and see that the semaphores lock, since we do not get
+	 * callbacks due to empty FCBs.
+	 */
+	request_data(STG_PARTITION_LOG);
+	err = k_sem_take(&read_log_ack_sem, K_SECONDS(30));
+	zassert_not_equal(err, 0, "");
+	err = k_sem_take(&consumed_log_ack_sem, K_SECONDS(30));
+	zassert_not_equal(err, 0, "");
+
+	request_data(STG_PARTITION_ANO);
+	err = k_sem_take(&read_log_ack_sem, K_SECONDS(30));
+	zassert_not_equal(err, 0, "");
+	err = k_sem_take(&consumed_log_ack_sem, K_SECONDS(30));
+	zassert_not_equal(err, 0, "");
+}
+
+void setup_take_semaphores_reset_counter(void)
+{
+	/* Used when counting entries in walks. */
+	consumed_entries_counter = 0;
+
+	/* Take semaphores to ensure they are 
+	 * taken prior to the tests that need them. 
+	 */
+	k_sem_take(&read_log_ack_sem, K_SECONDS(30));
+	k_sem_take(&read_ano_ack_sem, K_SECONDS(30));
+
+	k_sem_take(&consumed_log_ack_sem, K_SECONDS(30));
+	k_sem_take(&consumed_ano_ack_sem, K_SECONDS(30));
+
+	k_sem_take(&write_log_ack_sem, K_SECONDS(30));
+	k_sem_take(&write_ano_ack_sem, K_SECONDS(30));
+}
+
+void teardown_tidy_threads(void)
+{
+	/* Ensure other threads in use have time to finish what they're doing.
+	 * This does makes no difference to threads that are coopartive (<-1)
+	 */
+	k_sleep(K_SECONDS(60));
+}
 
 void test_main(void)
 {
-	ztest_test_suite(storage_controller_tests,
-			 ztest_unit_test(test_event_manager_init),
-			 ztest_unit_test(test_storage_init),
-			 ztest_unit_test(test_storage_append_log_data),
-			 ztest_unit_test(test_storage_read_log_data));
+	ztest_test_suite(
+		storage_controller_tests,
+		ztest_unit_test(test_event_manager_init),
+		ztest_unit_test(test_init),
+		ztest_unit_test_setup_teardown(
+			test_empty_walk, setup_take_semaphores_reset_counter,
+			teardown_tidy_threads),
+		ztest_unit_test_setup_teardown(
+			test_append_log_data,
+			setup_take_semaphores_reset_counter,
+			teardown_tidy_threads),
+		ztest_unit_test_setup_teardown(
+			test_read_log_data, setup_take_semaphores_reset_counter,
+			teardown_tidy_threads),
+		ztest_unit_test_setup_teardown(
+			test_multiple_writes_and_verify,
+			setup_take_semaphores_reset_counter,
+			teardown_tidy_threads),
+		ztest_unit_test_setup_teardown(
+			test_append_too_many,
+			setup_take_semaphores_reset_counter,
+			teardown_tidy_threads),
+		ztest_unit_test_setup_teardown(
+			test_read_too_many, setup_take_semaphores_reset_counter,
+			teardown_tidy_threads),
+		ztest_unit_test_setup_teardown(
+			test_clear_fcbs, setup_take_semaphores_reset_counter,
+			teardown_tidy_threads));
 	ztest_run_test_suite(storage_controller_tests);
 }
 
@@ -161,7 +355,6 @@ static bool event_handler(const struct event_header *eh)
 		} else if (ev->partition == STG_PARTITION_ANO) {
 			k_sem_give(&write_ano_ack_sem);
 		} else {
-			printk("is %i", ev->partition);
 			zassert_unreachable(
 				"Unexpected ack write partition recieved.");
 		}
@@ -204,8 +397,7 @@ static bool event_handler(const struct event_header *eh)
 }
 
 EVENT_LISTENER(test_main, event_handler);
-EVENT_SUBSCRIBE(test_main, stg_write_memrec_event);
+
 EVENT_SUBSCRIBE(test_main, stg_ack_write_memrec_event);
-EVENT_SUBSCRIBE(test_main, stg_read_memrec_event);
 EVENT_SUBSCRIBE(test_main, stg_ack_read_memrec_event);
 EVENT_SUBSCRIBE(test_main, stg_data_consumed_event);

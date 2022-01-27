@@ -30,11 +30,11 @@ void consume_data(flash_partition_t partition)
 	struct stg_data_consumed_event *ev = new_stg_data_consumed_event();
 	ev->partition = partition;
 	EVENT_SUBMIT(ev);
+	consumed_entries_counter++;
 }
 
 void write_data(flash_partition_t partition)
 {
-	//memset(&cached_mem_rec_write, 0, sizeof(mem_rec));
 	cached_mem_rec_write.header.ID = 1337;
 
 	struct stg_write_memrec_event *ev = new_stg_write_memrec_event();
