@@ -29,12 +29,12 @@ int8_t send_tcp(char* dummy, size_t dummy_len){
     return ztest_get_return_value();
 }
 
-int8_t lteInit(void)
+int8_t lte_init(void)
 {
     return ztest_get_return_value();
 }
 
-bool lteIsReady(void)
+bool lte_is_ready(void)
 {
     return ztest_get_return_value();
 }

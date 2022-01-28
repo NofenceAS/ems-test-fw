@@ -19,8 +19,8 @@ void test_init(void)
 {
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
-    ztest_returns_value(lteInit,1);
-    ztest_returns_value(lteIsReady,true);
+    ztest_returns_value(lte_init,1);
+    ztest_returns_value(lte_is_ready,true);
     ztest_returns_value(socket_connect,0);
 //    ztest_returns_value(socket_receive,0);
 
@@ -106,8 +106,8 @@ void test_gsm_device_not_ready(void)
 
 void test_socket_connect_fails(void)
 {
-    ztest_returns_value(lteInit, 1);
-    ztest_returns_value(lteIsReady, true);
+    ztest_returns_value(lte_init, 1);
+    ztest_returns_value(lte_is_ready, true);
     ztest_returns_value(socket_connect, -1);
 
     int8_t err = cellular_controller_init();

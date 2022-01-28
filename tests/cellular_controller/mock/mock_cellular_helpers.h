@@ -16,7 +16,7 @@ int8_t send_tcp(char*, size_t);
 int8_t socket_connect(struct data *, struct sockaddr *,
                       size_t);
 
-int8_t lteInit(void);
+int8_t lte_init(void);
 
-bool lteIsReady(void);
+bool lte_is_ready(void);
 //uint8_t receive_tcp(struct data *);
