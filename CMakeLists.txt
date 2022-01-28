@@ -70,8 +70,11 @@ zephyr_library_include_directories(
         src/modules/amc
         src/modules/fw_upgrade
         src/events
-  	src/modules/error_handler
-  	src/events/error_handler)
+  	    src/modules/error_handler
+  	    src/events/error_handler
+        src/modules/cellular_controller
+        src/events/cellular_controller
+)
         
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
