@@ -316,7 +316,7 @@ void teardown_tidy_threads(void)
 
 void test_main(void)
 {
-	ztest_test_suite(
+	/*ztest_test_suite(
 		storage_controller_tests,
 		ztest_unit_test(test_event_manager_init),
 		ztest_unit_test(test_init),
@@ -344,13 +344,14 @@ void test_main(void)
 		ztest_unit_test_setup_teardown(
 			test_clear_fcbs, setup_take_semaphores_reset_counter,
 			teardown_tidy_threads));
-	ztest_run_test_suite(storage_controller_tests);
+	ztest_run_test_suite(storage_controller_tests);*/
 
 	ztest_test_suite(storage_controller_test_pasture,
 			 ztest_unit_test(test_event_manager_init),
 			 ztest_unit_test(test_init),
 			 ztest_unit_test(test_pasture_write),
-			 ztest_unit_test(test_pasture_read));
+			 ztest_unit_test(test_pasture_read),
+			 ztest_unit_test(test_pasture_extended_write_read));
 	ztest_run_test_suite(storage_controller_test_pasture);
 }
 
@@ -374,8 +375,10 @@ static bool event_handler(const struct event_header *eh)
 
 		if (ev->partition == STG_PARTITION_LOG) {
 			k_sem_give(&read_log_ack_sem);
+			consume_data(ev->partition);
 		} else if (ev->partition == STG_PARTITION_ANO) {
 			k_sem_give(&read_ano_ack_sem);
+			consume_data(ev->partition);
 		} else if (ev->partition != STG_PARTITION_PASTURE) {
 			zassert_unreachable(
 				"Unexpected ack write partition recieved.");
@@ -384,7 +387,6 @@ static bool event_handler(const struct event_header *eh)
 		 * once we're done with the data. This continues the walk
 		 * process and can trigger further read acks.
 		 */
-		consume_data(ev->partition);
 		return false;
 	}
 	if (is_stg_consumed_read_event(eh)) {

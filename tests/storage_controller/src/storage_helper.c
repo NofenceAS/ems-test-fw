@@ -23,6 +23,11 @@ int log_read_index_value = 0;
 int ano_write_index_value = 0;
 int ano_read_index_value = 0;
 
+/* We don't need a read value check for this, as we always expect the fence
+ * to be the newest data anyways.
+ */
+int pasture_write_index_value = 0;
+
 void request_data(flash_partition_t partition)
 {
 	struct stg_read_event *ev = new_stg_read_event();
@@ -68,9 +73,10 @@ void consume_data(flash_partition_t partition)
 		ano_read_index_value++;
 	} else if (partition == STG_PARTITION_PASTURE) {
 		printk("Consuming real log data %i, expects %i\n",
-		       fence_cache_read.header.us_id, 5);
-		zassert_equal(fence_cache_read.header.us_id, 5,
-			      "Contents not equal.");
+		       fence_cache_read.header.us_id,
+		       pasture_write_index_value);
+		zassert_equal(fence_cache_read.header.us_id,
+			      pasture_write_index_value, "Contents not equal.");
 	} else {
 		zassert_unreachable("Unknown partition given.");
 		return;
@@ -105,8 +111,9 @@ void write_data(flash_partition_t partition)
 		ano_write_index_value++;
 		ev->rotate = false;
 	} else if (partition == STG_PARTITION_PASTURE) {
-		printk("Writes pasture data %i\n", 5);
-		fence_cache_write.header.us_id = 5;
+		pasture_write_index_value++;
+		printk("Writes pasture data %i\n", pasture_write_index_value);
+		fence_cache_write.header.us_id = pasture_write_index_value;
 
 		struct_ptr = &fence_cache_write;
 		ev->rotate = true;

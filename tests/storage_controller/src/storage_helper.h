@@ -17,5 +17,6 @@ extern int consumed_entries_counter;
 
 void test_pasture_write(void);
 void test_pasture_read(void);
+void test_pasture_extended_write_read(void);
 
 #endif /* _STORAGE_HELPER_H_ */

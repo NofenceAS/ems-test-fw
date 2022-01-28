@@ -46,6 +46,34 @@ void test_pasture_read(void)
 	/* We know at this stage that we do not have more entries, test done. */
 }
 
+void test_pasture_extended_write_read(void)
+{
+	/* Update fence three times before reading, and then read. 
+	 * This should never happen but its good to have a test for it.
+	 */
+	int fence_updates = 3;
+	for (int i = 0; i < fence_updates; i++) {
+		write_data(STG_PARTITION_PASTURE);
+		int err = k_sem_take(&write_pasture_ack_sem, K_SECONDS(30));
+		zassert_equal(
+			err, 0,
+			"Test execution hanged waiting for write log ack.");
+	}
+	request_data(STG_PARTITION_PASTURE);
+
+	int err = k_sem_take(&read_pasture_ack_sem, K_SECONDS(30));
+	zassert_equal(err, 0,
+		      "Test execution hanged waiting for read log ack.");
+
+	/* We process the data further in event_handler. */
+
+	err = k_sem_take(&consumed_pasture_ack_sem, K_SECONDS(30));
+	zassert_equal(err, 0,
+		      "Test execution hanged waiting for consumed log ack.");
+
+	/* We know at this stage that we do not have more entries, test done. */
+}
+
 static bool event_handler(const struct event_header *eh)
 {
 	if (is_stg_ack_write_event(eh)) {
