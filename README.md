@@ -1,50 +1,24 @@
-# x3-fw-app
+# Cellular controller
 
-The X3  nRF52840 firmware, using Nordic Connect SDK and Zephyr RTOS.
+   * Handles the cellular communication by being the only entry point to the 
+sara modem. It has a handle of the network interface initiated in the modem 
+     driver, to be able to control TCP socket create/connect/stop.
+  * When receiving a binary message from the server, it publishes an event 
+    'cellular_proto_in', which will be consumed by the messaging module.
+   * For outbound messages to the server, the messaging module will encode 
+     the proto message, publish an event 'messaging_proto_out_event' and 
+     this will be consumed by the cellular controller, which will send the 
+     binary message to the server and publish an acknowledge event (when 
+     receiving a response from the server).
+     
+**Next steps:
+  * Since http_downloader needs to access the modem's network interface; 
+so slight re-arrangement needs to be made to avoid conflicts in socket 
+management.
+   * Listening socket will be handled here, to notify the messaging module 
+     to send out a poll message on demand. This requires the +USOLI 
+     command to be implemented in the sara-r4 driver.
 
-
-## Getting started
-
-*Note*: Although Nordic Connect SDK is available for Windows and Mac, we
-strongly recommend to use Linux Ubuntu 20.1 for development. Some of the features in
-the build system will not be available on windows (mainly due to POSIX compliance)
-
-1. Install the Nordic Connect SDK **manually** as described in https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/gs_installing.html
-   Only install west and the GNU ARM Embedded Toolchain.
-
-2. Create a top level directory `x3` placed somewhere inside your home directory structure, 
-then fetch the repo:
-   ```
-   mkdir x3
-   cd x3
-   git clone git@gitlab.com:nofence/x3-fw-app
-   ```
-3. Fetch the Nordic connect SDK and Zephyr
-   ```
-   cd x3-fw-app
-   git pull
-   west init -l .
-   west update
-   ```
-
-4. Install the protobuf compiler:
-   ```
-   wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.1/protobuf-all-3.19.1.tar.gz
-   tar -xvf protobuf-all-3.19.1.tar.gz
-   cd protobuf-all-3.19.1
-   ./configure
-   make
-   (sudo) make install
-   (sudo) ldconfig
-   ```
-
-
-You can now try to build the hardware-test application or the main Zephyr app. 
-
-To build the hardware-test:
-```
-west build -b nf_x25_nrf52840 -- -DHARDWARE_TEST=1
-```
 
 To build the real X3 app:
 ```
@@ -54,6 +28,7 @@ west build -b nf_x25_nrf52840
 # Unit test with twister
 Run the following command to run unit tests in folder 'twister_output'. The ./scripts/twister command path must be correct corresponding to your path of where the twister script is located
 ```
-./scripts/twister -T . -O twister_output -c
+./scripts/twister -T . --test  
+tests/cellular_controller/cellular_controller.test -O twister_output
 ```
 
