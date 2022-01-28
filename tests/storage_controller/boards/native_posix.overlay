@@ -17,5 +17,9 @@
                         label = "ano_partition";
                         reg = <0x00080000 0x00020000>;
                 };
+                pasture_partition: partition@a0000 {
+                        label = "pasture_partition";
+                        reg = <0x000a0000 0x00020000>;
+                };
         };
 };

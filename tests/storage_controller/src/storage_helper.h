@@ -15,4 +15,7 @@ void write_data(flash_partition_t partition);
 
 extern int consumed_entries_counter;
 
+void test_pasture_write(void);
+void test_pasture_read(void);
+
 #endif /* _STORAGE_HELPER_H_ */

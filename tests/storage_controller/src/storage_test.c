@@ -345,6 +345,13 @@ void test_main(void)
 			test_clear_fcbs, setup_take_semaphores_reset_counter,
 			teardown_tidy_threads));
 	ztest_run_test_suite(storage_controller_tests);
+
+	ztest_test_suite(storage_controller_test_pasture,
+			 ztest_unit_test(test_event_manager_init),
+			 ztest_unit_test(test_init),
+			 ztest_unit_test(test_pasture_write),
+			 ztest_unit_test(test_pasture_read));
+	ztest_run_test_suite(storage_controller_test_pasture);
 }
 
 static bool event_handler(const struct event_header *eh)
@@ -356,7 +363,7 @@ static bool event_handler(const struct event_header *eh)
 			k_sem_give(&write_log_ack_sem);
 		} else if (ev->partition == STG_PARTITION_ANO) {
 			k_sem_give(&write_ano_ack_sem);
-		} else {
+		} else if (ev->partition != STG_PARTITION_PASTURE) {
 			zassert_unreachable(
 				"Unexpected ack write partition recieved.");
 		}
@@ -369,9 +376,9 @@ static bool event_handler(const struct event_header *eh)
 			k_sem_give(&read_log_ack_sem);
 		} else if (ev->partition == STG_PARTITION_ANO) {
 			k_sem_give(&read_ano_ack_sem);
-		} else {
+		} else if (ev->partition != STG_PARTITION_PASTURE) {
 			zassert_unreachable(
-				"Unexpected ack read partition recieved.");
+				"Unexpected ack write partition recieved.");
 		}
 		/* Consume the data, where we also publish consumed events
 		 * once we're done with the data. This continues the walk
@@ -388,7 +395,7 @@ static bool event_handler(const struct event_header *eh)
 			k_sem_give(&consumed_log_ack_sem);
 		} else if (ev->partition == STG_PARTITION_ANO) {
 			k_sem_give(&consumed_ano_ack_sem);
-		} else {
+		} else if (ev->partition != STG_PARTITION_PASTURE) {
 			zassert_unreachable(
 				"Unexpected ack read partition recieved.");
 		}

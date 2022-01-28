@@ -10,3 +10,7 @@ ano_partition:
   address: 0x80000
   region: external_flash
   size: 0x20000
+pasture_partition:
+  address: 0xA0000
+  region: external_flash
+  size: 0x20000

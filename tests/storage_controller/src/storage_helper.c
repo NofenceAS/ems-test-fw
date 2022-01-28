@@ -8,11 +8,14 @@
 #include "log_structure.h"
 #include "pasture_structure.h"
 
-ano_rec ano_cache_read;
-ano_rec ano_cache_write;
+ano_rec_t ano_cache_read;
+ano_rec_t ano_cache_write;
 
-log_rec log_cache_read;
-log_rec log_cache_write;
+log_rec_t log_cache_read;
+log_rec_t log_cache_write;
+
+fence_t fence_cache_read;
+fence_t fence_cache_write;
 
 int log_write_index_value = 0;
 int log_read_index_value = 0;
@@ -26,8 +29,16 @@ void request_data(flash_partition_t partition)
 	void *struct_ptr;
 	if (partition == STG_PARTITION_LOG) {
 		struct_ptr = &log_cache_read;
+		ev->rotate = true;
+		ev->newest_entry_only = false;
 	} else if (partition == STG_PARTITION_ANO) {
 		struct_ptr = &ano_cache_read;
+		ev->rotate = true;
+		ev->newest_entry_only = false;
+	} else if (partition == STG_PARTITION_PASTURE) {
+		struct_ptr = &fence_cache_read;
+		ev->rotate = false;
+		ev->newest_entry_only = true;
 	} else {
 		zassert_unreachable("Unknown partition given.");
 		return;
@@ -35,8 +46,6 @@ void request_data(flash_partition_t partition)
 
 	ev->data = struct_ptr;
 	ev->partition = partition;
-	ev->rotate = true;
-	ev->newest_entry_only = false;
 
 	EVENT_SUBMIT(ev);
 }
@@ -57,8 +66,14 @@ void consume_data(flash_partition_t partition)
 		zassert_equal(ano_cache_read.header.len, ano_read_index_value,
 			      "Contents not equal.");
 		ano_read_index_value++;
+	} else if (partition == STG_PARTITION_PASTURE) {
+		printk("Consuming real log data %i, expects %i\n",
+		       fence_cache_read.header.us_id, 5);
+		zassert_equal(fence_cache_read.header.us_id, 5,
+			      "Contents not equal.");
 	} else {
 		zassert_unreachable("Unknown partition given.");
+		return;
 	}
 
 	/* After contents have been consumed successfully, 
@@ -81,12 +96,20 @@ void write_data(flash_partition_t partition)
 
 		struct_ptr = &log_cache_write;
 		log_write_index_value++;
+		ev->rotate = false;
 	} else if (partition == STG_PARTITION_ANO) {
 		printk("Writes ano data %i\n", ano_write_index_value);
 		ano_cache_write.header.len = ano_write_index_value;
 
 		struct_ptr = &ano_cache_write;
 		ano_write_index_value++;
+		ev->rotate = false;
+	} else if (partition == STG_PARTITION_PASTURE) {
+		printk("Writes pasture data %i\n", 5);
+		fence_cache_write.header.us_id = 5;
+
+		struct_ptr = &fence_cache_write;
+		ev->rotate = true;
 	} else {
 		zassert_unreachable("Unknown partition given.");
 		return;
@@ -98,6 +121,5 @@ void write_data(flash_partition_t partition)
          */
 	ev->data = struct_ptr;
 	ev->partition = partition;
-	ev->rotate = false;
 	EVENT_SUBMIT(ev);
 }

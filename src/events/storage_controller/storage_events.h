@@ -8,7 +8,11 @@
 #include "event_manager.h"
 
 /** Used to tell storage controller which region to read/write to. */
-typedef enum { STG_PARTITION_LOG = 0, STG_PARTITION_ANO = 1 } flash_partition_t;
+typedef enum {
+	STG_PARTITION_LOG = 0,
+	STG_PARTITION_ANO = 1,
+	STG_PARTITION_PASTURE = 2
+} flash_partition_t;
 
 /** 
  * @brief Writes a pointer to given data to a given region.
