@@ -21,10 +21,11 @@ typedef enum {
  *             module requesting a write keeps the data available
  *             until a write ack is received.
  * @param partition type of partition to write to.
- * @param rotate bool, if false or undefined, rotation to the newest 
- *               (this entry) will not happen. Rotates the read pointer
+ * @param rotate_to_this bool, rotates the read pointer
  *               to this entry if true after its written.
- *               MUST BE SET to avoid garbage data.
+ *               MUST BE SET to avoid garbage data. 
+ *               If false, rotation to the newest 
+ *               (this entry) will not happen. 
  *               
  */
 struct stg_write_event {
@@ -41,7 +42,7 @@ struct stg_write_event {
 	uint8_t *data;
 	flash_partition_t partition;
 
-	bool rotate;
+	bool rotate_to_this;
 };
 
 /** 
@@ -77,7 +78,6 @@ struct stg_read_event {
 	 *       which partition we read from, we also know which struct it is.
         */
 	uint8_t *data;
-	bool newest_entry_only;
 	bool rotate;
 
 	flash_partition_t partition;

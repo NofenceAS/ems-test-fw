@@ -316,7 +316,7 @@ void teardown_tidy_threads(void)
 
 void test_main(void)
 {
-	/*ztest_test_suite(
+	ztest_test_suite(
 		storage_controller_tests,
 		ztest_unit_test(test_event_manager_init),
 		ztest_unit_test(test_init),
@@ -344,7 +344,7 @@ void test_main(void)
 		ztest_unit_test_setup_teardown(
 			test_clear_fcbs, setup_take_semaphores_reset_counter,
 			teardown_tidy_threads));
-	ztest_run_test_suite(storage_controller_tests);*/
+	ztest_run_test_suite(storage_controller_tests);
 
 	ztest_test_suite(storage_controller_test_pasture,
 			 ztest_unit_test(test_event_manager_init),
