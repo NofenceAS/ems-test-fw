@@ -29,6 +29,8 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/messaging/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/lte
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/cellular_controller
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging
 )
 
 
