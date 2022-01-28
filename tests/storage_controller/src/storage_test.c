@@ -5,8 +5,11 @@
 #include <ztest.h>
 #include "storage.h"
 #include "storage_events.h"
-#include "flash_memory.h"
 #include "storage_helper.h"
+
+#include "ano_structure.h"
+#include "log_structure.h"
+#include "pasture_structure.h"
 
 static K_SEM_DEFINE(write_log_ack_sem, 0, 1);
 static K_SEM_DEFINE(read_log_ack_sem, 0, 1);
@@ -346,9 +349,8 @@ void test_main(void)
 
 static bool event_handler(const struct event_header *eh)
 {
-	if (is_stg_ack_write_memrec_event(eh)) {
-		struct stg_ack_write_memrec_event *ev =
-			cast_stg_ack_write_memrec_event(eh);
+	if (is_stg_ack_write_event(eh)) {
+		struct stg_ack_write_event *ev = cast_stg_ack_write_event(eh);
 
 		if (ev->partition == STG_PARTITION_LOG) {
 			k_sem_give(&write_log_ack_sem);
@@ -360,9 +362,8 @@ static bool event_handler(const struct event_header *eh)
 		}
 		return false;
 	}
-	if (is_stg_ack_read_memrec_event(eh)) {
-		struct stg_ack_read_memrec_event *ev =
-			cast_stg_ack_read_memrec_event(eh);
+	if (is_stg_ack_read_event(eh)) {
+		struct stg_ack_read_event *ev = cast_stg_ack_read_event(eh);
 
 		if (ev->partition == STG_PARTITION_LOG) {
 			k_sem_give(&read_log_ack_sem);
@@ -379,9 +380,9 @@ static bool event_handler(const struct event_header *eh)
 		consume_data(ev->partition);
 		return false;
 	}
-	if (is_stg_data_consumed_event(eh)) {
-		struct stg_data_consumed_event *ev =
-			cast_stg_data_consumed_event(eh);
+	if (is_stg_consumed_read_event(eh)) {
+		struct stg_consumed_read_event *ev =
+			cast_stg_consumed_read_event(eh);
 
 		if (ev->partition == STG_PARTITION_LOG) {
 			k_sem_give(&consumed_log_ack_sem);
@@ -398,6 +399,6 @@ static bool event_handler(const struct event_header *eh)
 
 EVENT_LISTENER(test_main, event_handler);
 
-EVENT_SUBSCRIBE(test_main, stg_ack_write_memrec_event);
-EVENT_SUBSCRIBE(test_main, stg_ack_read_memrec_event);
-EVENT_SUBSCRIBE(test_main, stg_data_consumed_event);
+EVENT_SUBSCRIBE(test_main, stg_ack_write_event);
+EVENT_SUBSCRIBE(test_main, stg_ack_read_event);
+EVENT_SUBSCRIBE(test_main, stg_consumed_read_event);

@@ -163,8 +163,8 @@ struct ack_pasture_event {
 };
 
 EVENT_TYPE_DECLARE(request_pasture_event);
-EVENT_TYPE_DECLARE(gnssdata_event);
 EVENT_TYPE_DECLARE(pasture_ready_event);
+EVENT_TYPE_DECLARE(gnssdata_event);
 EVENT_TYPE_DECLARE(ack_pasture_event);
 
 #endif /*_REQUEST_EVENTS_H_ */
