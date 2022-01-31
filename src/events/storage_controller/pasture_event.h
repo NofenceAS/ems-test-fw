@@ -2,8 +2,8 @@
  * Copyright (c) 2022 Nofence AS
  */
 
-#ifndef _REQUEST_EVENTS_H_
-#define _REQUEST_EVENTS_H_
+#ifndef _PASTURE_EVENT_H_
+#define _PASTURE_EVENT_H_
 
 #include "event_manager.h"
 #include <zephyr.h>
@@ -18,4 +18,4 @@ struct pasture_ready_event {
 
 EVENT_TYPE_DECLARE(pasture_ready_event);
 
-#endif /*_REQUEST_EVENTS_H_ */
+#endif /*_PASTURE_EVENT_H_ */

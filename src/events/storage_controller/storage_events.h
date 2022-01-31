@@ -58,10 +58,11 @@ struct stg_ack_write_event {
 /** 
  * @brief Gives out a pointer to a memory record where the storage controller
  *        needs to memcpy its data from flash_read based on region requested.
+ *        There's no need for a read_newest_entry flag, as if the write
+ *        request has rotate_to_this=true will only have that entry
+ *        available.
  * 
  * @param data pointer to where the data should be read and memcpy-ed to
- * @param newest_entry_only bool, only reads the newest entry if true,
- *                          MUST BE SET to avoid garbage data.
  * @param rotate Whether to rotate the entries (delete) them once they're read,
  *               MUST BE SET to avoid garbage data.
  * @param partition type of partition to write to.

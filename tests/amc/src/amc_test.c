@@ -6,6 +6,9 @@
 #include "amc_handler.h"
 #include "sound_event.h"
 #include "request_events.h"
+#include "pasture_event.h"
+#include "pasture_structure.h"
+#include "storage_events.h"
 
 enum test_event_id { TEST_EVENT_REQUEST_GNSS = 0, TEST_EVENT_STRESS_GNSS = 1 };
 static enum test_event_id cur_id = TEST_EVENT_REQUEST_GNSS;
@@ -26,22 +29,24 @@ void assert_post_action(const char *file, unsigned int line)
 	printk("assert_post_action - file: %s (line: %u)\n", file, line);
 }
 
-static void simulate_dummy_pasture(struct request_pasture_event *ev)
+static void simulate_dummy_pasture(struct stg_read_event *ev)
 {
-	fence_coordinate_t *coord = ev->fence->p_c;
+	fence_t *fence = (fence_t *)ev->data;
 	/* Simulate 13 points. */
-	ev->fence->n_points = 13;
+	fence->header.n_points = 13;
 
 	/* Write DEAD to 13 points on x and y coords. */
 	for (int i = 0; i < 13; i++) {
-		coord->s_x_dm = 1337;
-		coord->s_y_dm = 1337;
-		coord++;
+		fence->p_c[i].s_x_dm = 1337;
+		fence->p_c[i].s_y_dm = 1337;
 	}
 
-	/* Submit ACK here since data has been written to given pointer area. */
-	struct ack_pasture_event *ack_e = new_ack_pasture_event();
-	EVENT_SUBMIT(ack_e);
+	/* Publish read ack event and wait for consumed ack, 
+	 * only then do we read the next entry in the walk process.
+	 */
+	struct stg_ack_read_event *event = new_stg_ack_read_event();
+	event->partition = ev->partition;
+	EVENT_SUBMIT(event);
 }
 
 static void simulate_dummy_gnssdata(gnss_struct_t *gnss_out)
@@ -132,16 +137,15 @@ static bool event_handler(const struct event_header *eh)
 	/* Regardless of test, if it is of type request event, we simulate its
 	 * contents with our writing dummy function.
 	 */
-	if (is_request_pasture_event(eh)) {
-		struct request_pasture_event *ev =
-			cast_request_pasture_event(eh);
+	if (is_stg_read_event(eh)) {
+		struct stg_read_event *ev = cast_stg_read_event(eh);
 
 		/* Write our own dummy 
 		 * data to pasture that got requested. 
 		 */
 		simulate_dummy_pasture(ev);
 	}
-	if (is_ack_pasture_event(eh)) {
+	if (is_stg_consumed_read_event(eh)) {
 		k_sem_give(&ack_fencedata_sem);
 	}
 
@@ -191,6 +195,7 @@ void test_main(void)
 
 EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, sound_event);
-EVENT_SUBSCRIBE(test_main, request_pasture_event);
 EVENT_SUBSCRIBE(test_main, gnssdata_event);
-EVENT_SUBSCRIBE(test_main, ack_pasture_event);
+
+EVENT_SUBSCRIBE(test_main, stg_read_event);
+EVENT_SUBSCRIBE(test_main, stg_consumed_read_event);
