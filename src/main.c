@@ -13,6 +13,7 @@
 #include "ep_module.h"
 #include "amc_handler.h"
 #include "nf_eeprom.h"
+#include "pwr_module.h"
 
 #define MODULE main
 #include "module_state_event.h"
@@ -48,4 +49,6 @@ void main(void)
 	}
 	/* Initialize animal monitor control module. */
 	amc_module_init();
+
+	fetch_periodic_battery_voltage();
 }

@@ -25,6 +25,13 @@
 			label = "EP DETECT";
 		};
 	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 1>;
+		output-ohms = <5600000>;
+		full-ohms = <(5600000 + 10000000)>;
+	};
 	
 	/* Convenience aliases */
 	aliases {
