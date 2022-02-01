@@ -11,12 +11,6 @@
 	model = "Nofence X2.5";
 	compatible = "nofence,x25";
 
-	/* Convenience aliases */
-	aliases {
-		eeprom = &eeprom0;
-		pwm-buzzer = &pwm0;
-	};
-
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -30,6 +24,20 @@
 		regulator-name = "periph-pwr-ctrl";
 		enable-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
+	};
+
+
+	pwm_buzzer {
+		compatible = "pwm-buzzer";
+		pwm_buzzer: pwm_buzzer {
+			pwms = <&pwm0 14>;
+		};
+	};
+
+	/* Convenience aliases */
+	aliases {
+		eeprom = &eeprom0;
+		pwm-buzzer = &pwm_buzzer;
 	};
 
 };
@@ -96,7 +104,6 @@ gnss_uart: &uart1 {
 &pwm0 {
 	status = "okay";
 	ch0-pin = <14>;
-	ch0-inverted;
 };
 
 &spi0 {

@@ -14,6 +14,8 @@
 #include "nf_eeprom.h"
 #include "buzzer.h"
 
+#include "sound_event.h"
+
 #define MODULE main
 #include "module_state_event.h"
 
@@ -47,4 +49,6 @@ void main(void)
 	if (buzzer_module_init()) {
 		LOG_ERR("Could not initialize buzzer module and pins.");
 	}
+
+	play_type(SND_WELCOME);
 }
