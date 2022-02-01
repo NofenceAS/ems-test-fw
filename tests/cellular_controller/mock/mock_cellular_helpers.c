@@ -1,6 +1,8 @@
 #include <ztest.h>
 #include <mock_cellular_helpers.h>
 
+extern bool simulate_modem_down;
+
 uint8_t mock_cellular_controller_init(){
     return ztest_get_return_value();
 }
@@ -20,7 +22,6 @@ int8_t socket_connect(struct data *dummy_data, struct sockaddr *dummy_add,
 {
     return ztest_get_return_value();
 }
-
 void stop_tcp(void){
     return;
 };
@@ -37,4 +38,14 @@ int8_t lte_init(void)
 bool lte_is_ready(void)
 {
     return ztest_get_return_value();
+}
+
+const struct device dummy_device;
+const struct device* bind_modem(void)
+{
+    if(simulate_modem_down)
+    {
+        return NULL;
+    }
+    return &dummy_device;
 }

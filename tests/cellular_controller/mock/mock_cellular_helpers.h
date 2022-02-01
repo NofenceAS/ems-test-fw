@@ -1,6 +1,7 @@
 
 #include <zephyr.h>
-//#include "cellular_helpers_header.h"
+#include <device.h>
+#include <devicetree.h>
 
 struct data {};
 struct sockaddr {};
@@ -19,4 +20,5 @@ int8_t socket_connect(struct data *, struct sockaddr *,
 int8_t lte_init(void);
 
 bool lte_is_ready(void);
-//uint8_t receive_tcp(struct data *);
+
+const struct device* bind_modem(void);
