@@ -12,6 +12,7 @@
 #include "ble_controller.h"
 #include "amc_handler.h"
 #include "nf_eeprom.h"
+#include "buzzer.h"
 
 #define MODULE main
 #include "module_state_event.h"
@@ -42,4 +43,8 @@ void main(void)
 	}
 	/* Initialize animal monitor control module. */
 	amc_module_init();
+
+	if (buzzer_module_init()) {
+		LOG_ERR("Could not initialize buzzer module and pins.");
+	}
 }

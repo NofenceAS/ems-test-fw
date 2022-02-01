@@ -6,6 +6,8 @@ cmake_minimum_required(VERSION 3.20.0)
 # Print out build type
 message(STATUS "Build type: ${BUILD_TYPE} 🚀")
 
+list(APPEND DTS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
+
 # Define configuration files.
 if (HARDWARE_TEST)
 list(APPEND CONF_FILE
@@ -71,6 +73,7 @@ zephyr_library_include_directories(
         src/modules/fw_upgrade
         src/events
   	src/modules/error_handler
+  	src/modules/buzzer
   	src/events/error_handler)
         
 target_sources(app PRIVATE ${APP_MAIN}
@@ -83,6 +86,8 @@ add_subdirectory(src/modules/ble)
 add_subdirectory(src/modules/fw_upgrade)
 add_subdirectory(src/eeprom)
 add_subdirectory(src/modules/amc)
+
+add_subdirectory(src/modules/buzzer)
 
 add_subdirectory(src/events/messaging)
 add_subdirectory(src/modules/messaging)

@@ -1,0 +1,10 @@
+
+menu "APPLICATION_CODE"
+	menu "BUZZER_MODULE"
+    	rsource "./../../src/modules/buzzer/Kconfig"
+	endmenu # BUZZER_MODULE
+endmenu # APPLICATION CODE
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu
