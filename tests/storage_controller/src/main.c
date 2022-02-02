@@ -183,26 +183,28 @@ void test_main(void)
 	/* Test log partition and read/write/consumes. */
 	ztest_test_suite(
 		storage_log_test,
-		ztest_unit_test_setup_teardown(test_append_log_data,
-					       setup_common, teardown_common),
-		ztest_unit_test_setup_teardown(test_read_log_data, setup_common,
+		ztest_unit_test_setup_teardown(test_log_write, setup_common,
 					       teardown_common),
-		ztest_unit_test_setup_teardown(test_append_too_many_log,
+		ztest_unit_test_setup_teardown(test_log_read, setup_common,
+					       teardown_common),
+		ztest_unit_test_setup_teardown(test_write_log_exceed,
 					       setup_common, teardown_common),
-		ztest_unit_test_setup_teardown(test_read_too_many_log,
+		ztest_unit_test_setup_teardown(test_read_log_exceed,
+					       setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_reboot_persistent_log,
 					       setup_common, teardown_common));
 	ztest_run_test_suite(storage_log_test);
 
 	/* Test ano partition and read/write/consumes. */
-	/*ztest_test_suite(
+	ztest_test_suite(
 		storage_ano_test,
-		ztest_unit_test_setup_teardown(test_pasture_write, setup_common,
+		ztest_unit_test_setup_teardown(test_ano_write, setup_common,
 					       teardown_common),
-		ztest_unit_test_setup_teardown(test_pasture_read, setup_common,
+		ztest_unit_test_setup_teardown(test_ano_read, setup_common,
 					       teardown_common),
-		ztest_unit_test_setup_teardown(test_pasture_extended_write_read,
+		ztest_unit_test_setup_teardown(test_reboot_persistent_ano,
 					       setup_common, teardown_common));
-	ztest_run_test_suite(storage_ano_test);*/
+	ztest_run_test_suite(storage_ano_test);
 
 	/* Test pasture partition and read/write/consumes. */
 	ztest_test_suite(
@@ -211,6 +213,8 @@ void test_main(void)
 					       teardown_common),
 		ztest_unit_test_setup_teardown(test_pasture_read, setup_common,
 					       teardown_common),
+		ztest_unit_test_setup_teardown(test_reboot_persistent_pasture,
+					       setup_common, teardown_common),
 		ztest_unit_test_setup_teardown(test_pasture_extended_write_read,
 					       setup_common, teardown_common));
 	ztest_run_test_suite(storage_pasture_test);

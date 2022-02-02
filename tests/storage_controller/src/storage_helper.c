@@ -40,7 +40,7 @@ void request_ano_data()
 	k_sleep(K_SECONDS(10));
 	struct stg_read_event *ev = new_stg_read_event();
 
-	ev->rotate = true;
+	ev->rotate = false;
 	ev->partition = STG_PARTITION_ANO;
 	EVENT_SUBMIT(ev);
 }
@@ -192,7 +192,7 @@ void write_ano_data()
 	ev->data = write_ano_ptr;
 	ev->partition = STG_PARTITION_ANO;
 	ev->len = len;
-	ev->rotate_to_this = false;
+	ev->rotate_to_this = true;
 
 	EVENT_SUBMIT(ev);
 	/* When we get write_ack, free the data. */

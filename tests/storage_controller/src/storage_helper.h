@@ -68,14 +68,19 @@ extern int ano_read_index_value;
 void test_pasture_write(void);
 void test_pasture_read(void);
 void test_pasture_extended_write_read(void);
+void test_reboot_persistent_pasture(void);
 
 /* Log tests. */
-void test_append_log_data(void);
-void test_read_log_data(void);
-void test_append_too_many_log(void);
-void test_read_too_many_log(void);
+void test_log_write(void);
+void test_log_read(void);
+void test_reboot_persistent_log(void);
+void test_write_log_exceed(void);
+void test_read_log_exceed(void);
 
 /* Ano tests. */
+void test_ano_write(void);
+void test_ano_read(void);
+void test_reboot_persistent_ano(void);
 
 typedef enum {
 	TEST_ID_NORMAL = 0,

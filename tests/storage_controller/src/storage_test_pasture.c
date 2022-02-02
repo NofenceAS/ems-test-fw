@@ -19,7 +19,7 @@ void test_pasture_write(void)
 	write_pasture_data(13);
 	int err = k_sem_take(&write_pasture_ack_sem, K_SECONDS(30));
 	zassert_equal(err, 0,
-		      "Test execution hanged waiting for write log ack.");
+		      "Test execution hanged waiting for write pasture ack.");
 }
 
 void test_pasture_read(void)
@@ -34,13 +34,14 @@ void test_pasture_read(void)
 
 	int err = k_sem_take(&read_pasture_ack_sem, K_SECONDS(30));
 	zassert_equal(err, 0,
-		      "Test execution hanged waiting for read log ack.");
+		      "Test execution hanged waiting for read pasture ack.");
 
 	/* We process the data further in event_handler. */
 
 	err = k_sem_take(&consumed_pasture_ack_sem, K_SECONDS(30));
-	zassert_equal(err, 0,
-		      "Test execution hanged waiting for consumed log ack.");
+	zassert_equal(
+		err, 0,
+		"Test execution hanged waiting for consumed pasture ack.");
 
 	/* We know at this stage that we do not have more entries, test done. */
 }
@@ -91,4 +92,30 @@ void test_pasture_extended_write_read(void)
 		"Test execution hanged waiting for consumed pasture ack.");
 
 	cur_test_id = TEST_ID_NORMAL;
+}
+
+void test_reboot_persistent_pasture(void)
+{
+	/* Write something. */
+	write_pasture_data(13);
+	int err = k_sem_take(&write_pasture_ack_sem, K_SECONDS(30));
+	zassert_equal(err, 0,
+		      "Test execution hanged waiting for write pasture ack.");
+
+	/* Reset FCB, pretending to reboot. Checks if persistent storage
+	 * works. Should get the expected read value from the written one above.
+	 */
+	err = stg_fcb_reset_and_init();
+	zassert_equal(err, 0, "Error simulating reboot and FCB resets.");
+
+	/* Read something. */
+	request_pasture_data();
+
+	err = k_sem_take(&read_pasture_ack_sem, K_SECONDS(30));
+	zassert_equal(err, 0,
+		      "Test execution hanged waiting for read pasture ack.");
+	err = k_sem_take(&consumed_pasture_ack_sem, K_SECONDS(30));
+	zassert_equal(
+		err, 0,
+		"Test execution hanged waiting for consumed pasture ack.");
 }

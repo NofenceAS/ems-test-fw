@@ -23,7 +23,7 @@ bool rotated_log = false;
  */
 #define LOG_ENTRY_COUNT PM_LOG_PARTITION_SIZE / sizeof(log_rec_t)
 
-void test_append_log_data(void)
+void test_log_write(void)
 {
 	write_log_data();
 	int err = k_sem_take(&write_log_ack_sem, K_SECONDS(30));
@@ -31,7 +31,7 @@ void test_append_log_data(void)
 		      "Test execution hanged waiting for write log ack.");
 }
 
-void test_read_log_data(void)
+void test_log_read(void)
 {
 	/* First we request, then we get callback in event_handler when
 	 * data is ready. There might be multiple entries since
@@ -51,7 +51,7 @@ void test_read_log_data(void)
 		      "Test execution hanged waiting for consumed log ack.");
 }
 
-void test_append_too_many_log(void)
+void test_write_log_exceed(void)
 {
 	/* We can calculate the minimum amount of entries needed
 	 * to fill up the sectors, so add 1 to exceed the limit and
@@ -65,9 +65,7 @@ void test_append_too_many_log(void)
 	for (int i = 0; i < num_log_sectors; i++) {
 		write_log_data();
 		err = k_sem_take(&write_log_ack_sem, K_SECONDS(30));
-		zassert_equal(
-			err, 0,
-			"Test execution hanged waiting for write log ack.");
+		zassert_equal(err, 0, "Test hanged waiting for write log ack.");
 		k_sleep(K_MSEC(50));
 	}
 }
@@ -75,7 +73,7 @@ void test_append_too_many_log(void)
 /** @brief Checks what happens if we try to read after there's a long time
 *          since we've read previously.
 */
-void test_read_too_many_log(void)
+void test_read_log_exceed(void)
 {
 	cur_test_id = TEST_ID_MASS_LOG_WRITES;
 	first_log_read = true;
@@ -88,9 +86,8 @@ void test_read_too_many_log(void)
 	/* Walk LOG data entries. */
 	request_log_data();
 
-	/* Wait until the consume_data function triggered in event_handler
-	 * is finished with all the entries. We know how many
-	 * consumed_event acks we can expect.
+	/* Reset FCB, pretending to reboot. Checks if persistent storage
+	 * works. Should get the expected read value from the written one above.
 	 */
 	for (int i = 0; i < log_writes; i++) {
 		err = k_sem_take(&consumed_log_ack_sem, K_SECONDS(30));
@@ -104,4 +101,35 @@ void test_read_too_many_log(void)
 	cur_test_id = TEST_ID_NORMAL;
 
 	k_sleep(K_SECONDS(30));
+}
+
+void test_reboot_persistent_log(void)
+{
+	int err;
+
+	/* Write 5 logs. */
+	for (int i = 0; i < 5; i++) {
+		write_log_data();
+		err = k_sem_take(&write_log_ack_sem, K_SECONDS(30));
+		zassert_equal(err, 0, "Test hanged waiting for write log ack.");
+		k_sleep(K_MSEC(50));
+	}
+
+	/* Reset FCB, pretending to reboot the device. Checks persistent storage
+	 * works. Should get the expected read value from the written one above.
+	 */
+
+	err = stg_fcb_reset_and_init();
+	zassert_equal(err, 0, "Error simulating reboot and FCB resets.");
+
+	/* Read something, expect 5 semaphores being given. */
+	request_log_data();
+
+	for (int i = 0; i < 5; i++) {
+		err = k_sem_take(&consumed_log_ack_sem, K_SECONDS(30));
+		zassert_equal(
+			err, 0,
+			"Test hanged waiting for multiple consumed log ack.");
+		k_sleep(K_MSEC(50));
+	}
 }
