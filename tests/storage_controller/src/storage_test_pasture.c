@@ -14,6 +14,8 @@
 #include "pm_config.h"
 #include <stdlib.h>
 
+#define MAX_PASTURE_ENTRIES PM_PASTURE_PARTITION_SIZE / sizeof(fence_t)
+
 void test_pasture_write(void)
 {
 	write_pasture_data(13);
@@ -53,8 +55,10 @@ void test_pasture_extended_write_read(void)
 	/* Set random seed. */
 	srand(k_uptime_get_32());
 
-	/* Update fence 300 times before reading, and then read. 
-	 * This should never happen but its good to have a test for it.
+	/* Update fence 300 times before reading. 
+	 * This should never happen but its good to have a test for it. Here 
+	 * we test that we can exceed the FCB, and still read out the 
+	 * needed expected fence.
 	 */
 	int fence_updates = 300;
 	for (int i = 0; i < fence_updates; i++) {
@@ -83,9 +87,6 @@ void test_pasture_extended_write_read(void)
 	int err = k_sem_take(&read_pasture_ack_sem, K_SECONDS(30));
 	zassert_equal(err, 0,
 		      "Test execution hanged waiting for read pasture ack.");
-
-	/* We process the data further in event_handler. */
-
 	err = k_sem_take(&consumed_pasture_ack_sem, K_SECONDS(30));
 	zassert_equal(
 		err, 0,

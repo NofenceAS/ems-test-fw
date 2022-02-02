@@ -23,8 +23,6 @@ K_SEM_DEFINE(write_pasture_ack_sem, 0, 1);
 K_SEM_DEFINE(read_pasture_ack_sem, 0, 1);
 K_SEM_DEFINE(consumed_pasture_ack_sem, 0, 1);
 
-int num_log_rotations = 0;
-
 /* Used to check which partition was used, to release the correct semaphore. */
 flash_partition_t cur_partition;
 
@@ -79,31 +77,6 @@ void test_clear_fcbs(void)
 	zassert_not_equal(err, 0, "");
 
 	request_pasture_data();
-	err = k_sem_take(&read_pasture_ack_sem, K_SECONDS(30));
-	zassert_not_equal(err, 0, "");
-	err = k_sem_take(&consumed_pasture_ack_sem, K_SECONDS(30));
-	zassert_not_equal(err, 0, "");
-}
-
-void test_empty_walk(void)
-{
-	/* Expect semaphore to hang, since we do not get any callbacks due
-	 * to our clear_fcbs test earlier.
-	 */
-	request_log_data();
-	request_ano_data();
-	request_pasture_data();
-
-	int err = k_sem_take(&read_log_ack_sem, K_SECONDS(30));
-	zassert_not_equal(err, 0, "");
-	err = k_sem_take(&consumed_log_ack_sem, K_SECONDS(30));
-	zassert_not_equal(err, 0, "");
-
-	err = k_sem_take(&read_ano_ack_sem, K_SECONDS(30));
-	zassert_not_equal(err, 0, "");
-	err = k_sem_take(&consumed_ano_ack_sem, K_SECONDS(30));
-	zassert_not_equal(err, 0, "");
-
 	err = k_sem_take(&read_pasture_ack_sem, K_SECONDS(30));
 	zassert_not_equal(err, 0, "");
 	err = k_sem_take(&consumed_pasture_ack_sem, K_SECONDS(30));
@@ -181,30 +154,32 @@ void test_main(void)
 	ztest_run_test_suite(storage_init);
 
 	/* Test log partition and read/write/consumes. */
-	//ztest_test_suite(
-	//	storage_log_test,
-	//	ztest_unit_test_setup_teardown(test_log_write, setup_common,
-	//				       teardown_common),
-	//	ztest_unit_test_setup_teardown(test_log_read, setup_common,
-	//				       teardown_common),
-	//	ztest_unit_test_setup_teardown(test_write_log_exceed,
-	//				       setup_common, teardown_common),
-	//	ztest_unit_test_setup_teardown(test_read_log_exceed,
-	//				       setup_common, teardown_common),
-	//	ztest_unit_test_setup_teardown(test_reboot_persistent_log,
-	//				       setup_common, teardown_common));
-	//ztest_run_test_suite(storage_log_test);
+	ztest_test_suite(
+		storage_log_test,
+		ztest_unit_test_setup_teardown(test_log_write, setup_common,
+					       teardown_common),
+		ztest_unit_test_setup_teardown(test_log_read, setup_common,
+					       teardown_common),
+		ztest_unit_test_setup_teardown(test_write_log_exceed,
+					       setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_read_log_exceed,
+					       setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_empty_walk_log,
+					       setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_reboot_persistent_log,
+					       setup_common, teardown_common));
+	ztest_run_test_suite(storage_log_test);
 
 	/* Test ano partition and read/write/consumes. */
-	//ztest_test_suite(
-	//	storage_ano_test,
-	//	ztest_unit_test_setup_teardown(test_ano_write, setup_common,
-	//				       teardown_common),
-	//	ztest_unit_test_setup_teardown(test_ano_read, setup_common,
-	//				       teardown_common),
-	//	ztest_unit_test_setup_teardown(test_reboot_persistent_ano,
-	//				       setup_common, teardown_common));
-	//ztest_run_test_suite(storage_ano_test);
+	ztest_test_suite(
+		storage_ano_test,
+		ztest_unit_test_setup_teardown(test_ano_write, setup_common,
+					       teardown_common),
+		ztest_unit_test_setup_teardown(test_ano_read, setup_common,
+					       teardown_common),
+		ztest_unit_test_setup_teardown(test_reboot_persistent_ano,
+					       setup_common, teardown_common));
+	ztest_run_test_suite(storage_ano_test);
 
 	/* Test pasture partition and read/write/consumes. */
 	ztest_test_suite(
@@ -224,16 +199,14 @@ void test_main(void)
 	/* Integration testing of all partitions and multiple read/write/consume
 	 * across all partitions and all FCBs. 
 	 */
-	//ztest_test_suite(
-	//	storage_integration,
-	//	ztest_unit_test_setup_teardown(test_clear_fcbs, setup_common,
-	//				       teardown_common),
-	//	ztest_unit_test_setup_teardown(test_empty_walk, setup_common,
-	//				       teardown_common),
-	//	ztest_unit_test_setup_teardown(test_pasture_log_ano_write_read,
-	//				       setup_common, teardown_common));
-	//ztest_run_test_suite(storage_integration);
-} //
+	ztest_test_suite(
+		storage_integration,
+		ztest_unit_test_setup_teardown(test_clear_fcbs, setup_common,
+					       teardown_common),
+		ztest_unit_test_setup_teardown(test_pasture_log_ano_write_read,
+					       setup_common, teardown_common));
+	ztest_run_test_suite(storage_integration);
+}
 
 static bool event_handler(const struct event_header *eh)
 {

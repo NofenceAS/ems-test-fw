@@ -77,6 +77,7 @@ void test_log_read(void);
 void test_reboot_persistent_log(void);
 void test_write_log_exceed(void);
 void test_read_log_exceed(void);
+void test_empty_walk_log(void);
 
 /* Ano tests. */
 void test_ano_write(void);

@@ -23,6 +23,9 @@ typedef enum {
  * @param partition type of partition to write to.
  * @param len Length of the data written, this is just sizeof(struct), if we're
  *            bytecasting entire structs.
+ * 
+ * @param[out] rotate_to_this, bool if we want the FCB to clear all previous
+ *                             FCB entries.
  *               
  */
 struct stg_write_event {
@@ -35,6 +38,8 @@ struct stg_write_event {
         */
 	uint8_t *data;
 	size_t len;
+
+	bool rotate_to_this;
 
 	flash_partition_t partition;
 };
@@ -66,6 +71,7 @@ struct stg_ack_write_event {
  *                         from the newest everytime. Does not rotate/skip
  *                         current entry.
  * @param partition type of partition to write to.
+ * @param rotate whether to clear the entries after reading or not
  */
 struct stg_read_event {
 	struct event_header header;
@@ -73,6 +79,8 @@ struct stg_read_event {
 	bool walk_all_entries;
 
 	flash_partition_t partition;
+
+	bool rotate;
 };
 
 /** 

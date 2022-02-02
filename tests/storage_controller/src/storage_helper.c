@@ -30,7 +30,7 @@ void request_log_data()
 	k_sleep(K_SECONDS(10));
 	struct stg_read_event *ev = new_stg_read_event();
 
-	ev->walk_all_entries = true;
+	ev->rotate = true;
 	ev->partition = STG_PARTITION_LOG;
 	EVENT_SUBMIT(ev);
 }
@@ -40,7 +40,7 @@ void request_ano_data()
 	k_sleep(K_SECONDS(10));
 	struct stg_read_event *ev = new_stg_read_event();
 
-	ev->walk_all_entries = false;
+	ev->rotate = false;
 	ev->partition = STG_PARTITION_ANO;
 	EVENT_SUBMIT(ev);
 }
@@ -50,7 +50,7 @@ void request_pasture_data()
 	k_sleep(K_SECONDS(10));
 	struct stg_read_event *ev = new_stg_read_event();
 
-	ev->walk_all_entries = false;
+	ev->rotate = false;
 	ev->partition = STG_PARTITION_PASTURE;
 	EVENT_SUBMIT(ev);
 }
@@ -173,6 +173,7 @@ void write_log_data()
 	write_log_ptr = (uint8_t *)get_simulated_log_data(&len);
 
 	ev->data = write_log_ptr;
+	ev->rotate_to_this = false;
 	ev->partition = STG_PARTITION_LOG;
 	ev->len = len;
 
@@ -188,6 +189,7 @@ void write_ano_data()
 	write_ano_ptr = (uint8_t *)get_simulated_ano_data(&len);
 
 	ev->data = write_ano_ptr;
+	ev->rotate_to_this = true;
 	ev->partition = STG_PARTITION_ANO;
 	ev->len = len;
 
@@ -204,6 +206,7 @@ void write_pasture_data(uint8_t num_points)
 		(uint8_t *)get_simulated_fence_data(num_points, &len);
 
 	ev->data = write_pasture_ptr;
+	ev->rotate_to_this = true;
 	ev->partition = STG_PARTITION_PASTURE;
 	ev->len = len;
 

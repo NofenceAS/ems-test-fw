@@ -103,6 +103,19 @@ void test_read_log_exceed(void)
 	k_sleep(K_SECONDS(30));
 }
 
+void test_empty_walk_log(void)
+{
+	/* Expect semaphore to hang, since we do not get any callbacks due
+	 * to entries being consumed on fcb_walk().
+	 */
+	request_log_data();
+
+	int err = k_sem_take(&read_log_ack_sem, K_SECONDS(30));
+	zassert_not_equal(err, 0, "");
+	err = k_sem_take(&consumed_log_ack_sem, K_SECONDS(30));
+	zassert_not_equal(err, 0, "");
+}
+
 void test_reboot_persistent_log(void)
 {
 	int err;
