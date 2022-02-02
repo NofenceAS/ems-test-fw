@@ -16,12 +16,12 @@
 	ep {
 		compatible = "nofence,electric-pulse";
 		ep_ctrl: ep_ctrl {
-			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
 			label = "EP CTRL";
 		};
 
 		ep_detect: ep_detect {
-			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
 			label = "EP DETECT";
 		};
 	};

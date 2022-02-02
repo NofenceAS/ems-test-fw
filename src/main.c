@@ -47,8 +47,9 @@ void main(void)
 	if (ep_module_init()) {
 		LOG_ERR("Could not initialize electric pulse module");
 	}
+	if (pwr_module_init()) {
+		LOG_ERR("Could not initialize the power module");
+	}
 	/* Initialize animal monitor control module. */
 	amc_module_init();
-
-	fetch_periodic_battery_voltage();
 }
