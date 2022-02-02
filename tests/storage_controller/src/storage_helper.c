@@ -18,6 +18,8 @@ int log_read_index_value = 0;
 int ano_write_index_value = 0;
 int ano_read_index_value = 0;
 
+bool first_log_read = false;
+
 /* We don't need a read value check for this, as we always expect the fence
  * to be the newest data anyways.
  */
@@ -58,9 +60,18 @@ void consume_data(struct stg_ack_read_event *ev)
 	if (ev->partition == STG_PARTITION_LOG) {
 		log_rec_t *rec = k_malloc(ev->len);
 		memcpy(rec, ev->data, ev->len);
-		zassert_equal(rec->header.len, log_read_index_value,
-			      "Contents not equal.");
-		log_read_index_value++;
+		if (first_log_read && cur_test_id == TEST_ID_MASS_LOG_WRITES) {
+			/* Update length based on contents since we cannot
+                         * verify what's on there due to rotate removing
+                         * data if it's full.
+                         */
+			log_read_index_value = rec->header.len + 1;
+			first_log_read = false;
+		} else {
+			zassert_equal(rec->header.len, log_read_index_value,
+				      "Contents not equal.");
+			log_read_index_value++;
+		}
 
 		k_free(rec);
 
@@ -78,7 +89,7 @@ void consume_data(struct stg_ack_read_event *ev)
 		zassert_equal(rec->header.us_id, pasture_write_index_value,
 			      "Contents not equal.");
 		pasture_write_index_value++;
-		if (cur_test_id == TEST_ID_DYNAMIC) {
+		if (cur_test_id == TEST_ID_PASTURE_DYNAMIC) {
 			/* Check if the last entry was the expected size of
                          * 100 fence points. Both using n_points from the
                          * header, but also sizeof(fence_t) calculation.
@@ -103,7 +114,6 @@ void consume_data(struct stg_ack_read_event *ev)
 	}
 
 	cur_partition = ev->partition;
-	consumed_entries_counter++;
 }
 
 /** @param[out] len output of allocated size

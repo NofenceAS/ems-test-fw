@@ -45,49 +45,9 @@ void test_pasture_read(void)
 	/* We know at this stage that we do not have more entries, test done. */
 }
 
-/** @brief Tests what happens when we mix up the request/write calls to
- *         the storage controller, which is bound to happen in the system
- *         since multiple modules operate simultaneously and will 
- *         both request and write at the same time.
- */
-void test_pasture_log_ano_write_read(void)
-{
-	/* Mix up the function calls, do not wait for semaphores.
-	 * You cannot submit the same event subsequently, especially 
-	 * not from the same thread since that would
-	 * make the event_handler thread not process any of the events
-	 * but the last. So duplicate calls is not performed in this test. 
-	 */
-	write_pasture_data(13);
-	write_log_data();
-	request_log_data();
-	write_ano_data();
-	request_ano_data();
-	request_pasture_data();
-
-	k_sleep(K_SECONDS(30));
-
-	/* Test finished when we've consumed all the data, these are
-	 * for log, ano and pasture data. However, we only need to check
-	 * if we've consumed the pasture data, since that is the last
-	 * function call. (Keep in mind that we also check the contents
-	 * of every other function call in storage_helper.c)
-	 * 
-	 * Since the storage controller runs on a separate thread and uses
-	 * message queue, we expect it to process all of the above, 
-	 * regardless of order.
-	 */
-	int err = k_sem_take(&consumed_pasture_ack_sem, K_SECONDS(30));
-	zassert_equal(
-		err, 0,
-		"Test execution hanged waiting for consumed pasture ack.");
-
-	k_sleep(K_SECONDS(30));
-}
-
 void test_pasture_extended_write_read(void)
 {
-	cur_test_id = TEST_ID_DYNAMIC;
+	cur_test_id = TEST_ID_PASTURE_DYNAMIC;
 
 	/* Set random seed. */
 	srand(k_uptime_get_32());
@@ -129,4 +89,6 @@ void test_pasture_extended_write_read(void)
 	zassert_equal(
 		err, 0,
 		"Test execution hanged waiting for consumed pasture ack.");
+
+	cur_test_id = TEST_ID_NORMAL;
 }

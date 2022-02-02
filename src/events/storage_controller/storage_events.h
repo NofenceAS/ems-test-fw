@@ -49,11 +49,17 @@ struct stg_write_event {
 /** 
  * @brief Ack struct sent out by the storage controller once it has 
  *        consumed the new mem_rec data.
+ * 
  * @param partition type of partition to write to.
+ * 
+ * @return rotated, bool whether the FCB was 
+ *         full and we had to rotate the buffer.
  */
 struct stg_ack_write_event {
 	struct event_header header;
 	flash_partition_t partition;
+
+	bool rotated;
 };
 
 /** 
