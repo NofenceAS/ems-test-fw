@@ -8,7 +8,9 @@
 #include "log_structure.h"
 #include "pasture_structure.h"
 
-uint8_t *write_ptr;
+uint8_t *write_log_ptr;
+uint8_t *write_ano_ptr;
+uint8_t *write_pasture_ptr;
 
 int log_write_index_value = 0;
 int log_read_index_value = 0;
@@ -21,23 +23,33 @@ int ano_read_index_value = 0;
  */
 uint16_t pasture_write_index_value = 0;
 
-void request_data(flash_partition_t partition)
+void request_log_data()
 {
-	struct stg_read_event *ev = new_stg_read_event();
 	k_sleep(K_SECONDS(10));
+	struct stg_read_event *ev = new_stg_read_event();
 
-	if (partition == STG_PARTITION_LOG) {
-		ev->rotate = true;
-	} else if (partition == STG_PARTITION_ANO) {
-		ev->rotate = true;
-	} else if (partition == STG_PARTITION_PASTURE) {
-		ev->rotate = false;
-	} else {
-		zassert_unreachable("Unknown partition given.");
-		return;
-	}
+	ev->rotate = true;
+	ev->partition = STG_PARTITION_LOG;
+	EVENT_SUBMIT(ev);
+}
 
-	ev->partition = partition;
+void request_ano_data()
+{
+	k_sleep(K_SECONDS(10));
+	struct stg_read_event *ev = new_stg_read_event();
+
+	ev->rotate = true;
+	ev->partition = STG_PARTITION_ANO;
+	EVENT_SUBMIT(ev);
+}
+
+void request_pasture_data()
+{
+	k_sleep(K_SECONDS(10));
+	struct stg_read_event *ev = new_stg_read_event();
+
+	ev->rotate = false;
+	ev->partition = STG_PARTITION_PASTURE;
 	EVENT_SUBMIT(ev);
 }
 
@@ -46,13 +58,6 @@ void consume_data(struct stg_ack_read_event *ev)
 	if (ev->partition == STG_PARTITION_LOG) {
 		log_rec_t *rec = k_malloc(ev->len);
 		memcpy(rec, ev->data, ev->len);
-
-		/** @note Printing size_t variable (which is long unsigned int)
-                 *        halts and stucks the test forever unless cast to
-                 *        printable (int) value %ul is used.
-                 */
-		printk("Consuming real log data %i, expects %i\n",
-		       (int)rec->header.len, log_read_index_value);
 		zassert_equal(rec->header.len, log_read_index_value,
 			      "Contents not equal.");
 		log_read_index_value++;
@@ -62,14 +67,6 @@ void consume_data(struct stg_ack_read_event *ev)
 	} else if (ev->partition == STG_PARTITION_ANO) {
 		ano_rec_t *rec = k_malloc(ev->len);
 		memcpy(rec, ev->data, ev->len);
-
-		/** @note Printing size_t variable (which is long unsigned int)
-                 *        halts and stucks the test forever unless cast to
-                 *        printable (int) value or %ul is used.
-                 */
-		printk("Consuming real ano data %i, expects %i\n",
-		       (int)rec->header.len, ano_read_index_value);
-
 		zassert_equal(rec->header.len, ano_read_index_value,
 			      "Contents not equal.");
 		ano_read_index_value++;
@@ -78,13 +75,27 @@ void consume_data(struct stg_ack_read_event *ev)
 	} else if (ev->partition == STG_PARTITION_PASTURE) {
 		fence_t *rec = k_malloc(ev->len);
 		memcpy(rec, ev->data, ev->len);
-
-		printk("Consuming real fence data %i, expects %i\n",
-		       rec->header.us_id, pasture_write_index_value);
 		zassert_equal(rec->header.us_id, pasture_write_index_value,
 			      "Contents not equal.");
 		pasture_write_index_value++;
-
+		if (cur_test_id == TEST_ID_DYNAMIC) {
+			/* Check if the last entry was the expected size of
+                         * 100 fence points. Both using n_points from the
+                         * header, but also sizeof(fence_t) calculation.
+                         */
+			zassert_equal(rec->header.n_points, 100, "");
+			int num_points = (ev->len - (sizeof(fence_t))) /
+					 sizeof(fence_coordinate_t);
+			zassert_equal(num_points, 100, "");
+		} else {
+			/* If not dynamic test, we always simulate 13 fence
+                         * points.
+                         */
+			zassert_equal(rec->header.n_points, 13, "");
+			int num_points = (ev->len - (sizeof(fence_t))) /
+					 sizeof(fence_coordinate_t);
+			zassert_equal(num_points, 13, "");
+		}
 		k_free(rec);
 	} else {
 		zassert_unreachable("Unknown partition given.");
@@ -92,14 +103,6 @@ void consume_data(struct stg_ack_read_event *ev)
 	}
 
 	cur_partition = ev->partition;
-
-	/* After contents have been consumed successfully, 
-	 * notify the storage controller to continue walk process if there
-         * are any new entries.
-	 */
-	struct stg_consumed_read_event *ev_read = new_stg_consumed_read_event();
-	EVENT_SUBMIT(ev_read);
-
 	consumed_entries_counter++;
 }
 
@@ -154,45 +157,49 @@ static inline fence_t *get_simulated_fence_data(uint8_t n_points, size_t *len)
 	return rec;
 }
 
-void write_data(flash_partition_t partition)
+void write_log_data()
 {
 	size_t len;
-	bool rotate_to_this;
 	struct stg_write_event *ev = new_stg_write_event();
+	write_log_ptr = (uint8_t *)get_simulated_log_data(&len);
 
-	if (partition == STG_PARTITION_LOG) {
-		/* Simulate log data. */
-		write_ptr = (uint8_t *)get_simulated_log_data(&len);
-
-		/* Setup event based on partition. */
-		rotate_to_this = false;
-	} else if (partition == STG_PARTITION_ANO) {
-		/* Simulate ano data. */
-		write_ptr = (uint8_t *)get_simulated_ano_data(&len);
-
-		/* Setup event based on partition. */
-		rotate_to_this = false;
-	} else if (partition == STG_PARTITION_PASTURE) {
-		/* Simulate fence data. */
-		int num_fence_pts = 13;
-		write_ptr = (uint8_t *)get_simulated_fence_data(num_fence_pts,
-								&len);
-
-		/* Setup event based on partition. */
-		rotate_to_this = true;
-	} else {
-		zassert_unreachable("Unknown partition given.");
-		return;
-	}
-
-	/* Everytime we write data, increment pointer so the ID changes,
-         * so we increment the read value for each read as well and rotate,
-         * which means the values should always be the same.
-         */
-	ev->data = write_ptr;
-	ev->partition = partition;
+	ev->data = write_log_ptr;
+	ev->partition = STG_PARTITION_LOG;
 	ev->len = len;
-	ev->rotate_to_this = rotate_to_this;
+	ev->rotate_to_this = false;
+
+	EVENT_SUBMIT(ev);
+	/* When we get write_ack, free the data. */
+	// k_free(write_ptr), which is done in event_handler
+}
+
+void write_ano_data()
+{
+	size_t len;
+	struct stg_write_event *ev = new_stg_write_event();
+	write_ano_ptr = (uint8_t *)get_simulated_ano_data(&len);
+
+	ev->data = write_ano_ptr;
+	ev->partition = STG_PARTITION_ANO;
+	ev->len = len;
+	ev->rotate_to_this = false;
+
+	EVENT_SUBMIT(ev);
+	/* When we get write_ack, free the data. */
+	// k_free(write_ptr), which is done in event_handler
+}
+
+void write_pasture_data(uint8_t num_points)
+{
+	size_t len;
+	struct stg_write_event *ev = new_stg_write_event();
+	write_pasture_ptr =
+		(uint8_t *)get_simulated_fence_data(num_points, &len);
+
+	ev->data = write_pasture_ptr;
+	ev->partition = STG_PARTITION_PASTURE;
+	ev->len = len;
+	ev->rotate_to_this = true;
 
 	EVENT_SUBMIT(ev);
 	/* When we get write_ack, free the data. */
