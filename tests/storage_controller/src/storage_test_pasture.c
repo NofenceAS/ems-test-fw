@@ -57,19 +57,20 @@ void test_pasture_extended_write_read(void)
 		int err = k_sem_take(&write_pasture_ack_sem, K_SECONDS(30));
 		zassert_equal(
 			err, 0,
-			"Test execution hanged waiting for write log ack.");
+			"Test execution hanged waiting for write pasture ack.");
 	}
 	request_data(STG_PARTITION_PASTURE);
 
 	int err = k_sem_take(&read_pasture_ack_sem, K_SECONDS(30));
 	zassert_equal(err, 0,
-		      "Test execution hanged waiting for read log ack.");
+		      "Test execution hanged waiting for read pasture ack.");
 
 	/* We process the data further in event_handler. */
 
 	err = k_sem_take(&consumed_pasture_ack_sem, K_SECONDS(30));
-	zassert_equal(err, 0,
-		      "Test execution hanged waiting for consumed log ack.");
+	zassert_equal(
+		err, 0,
+		"Test execution hanged waiting for consumed pasture ack.");
 
 	/* We know at this stage that we do not have more entries, test done. */
 }
@@ -93,15 +94,12 @@ static bool event_handler(const struct event_header *eh)
 			 * once we're done with the data. This continues the walk
 			 * process and can trigger further read acks.
 			 */
-			consume_data(ev->partition);
+			consume_data(ev);
 		}
 		return false;
 	}
 	if (is_stg_consumed_read_event(eh)) {
-		struct stg_consumed_read_event *ev =
-			cast_stg_consumed_read_event(eh);
-
-		if (ev->partition == STG_PARTITION_PASTURE) {
+		if (cur_partition == STG_PARTITION_PASTURE) {
 			k_sem_give(&consumed_pasture_ack_sem);
 		}
 		return false;

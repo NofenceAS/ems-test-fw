@@ -29,23 +29,37 @@ void assert_post_action(const char *file, unsigned int line)
 	printk("assert_post_action - file: %s (line: %u)\n", file, line);
 }
 
+fence_t *dummy_fence;
+
+static void free_dummy_pasture()
+{
+	k_free(dummy_fence);
+}
+
 static void simulate_dummy_pasture(struct stg_read_event *ev)
 {
-	fence_t *fence = (fence_t *)ev->data;
 	/* Simulate 13 points. */
-	fence->header.n_points = 13;
+	size_t len = sizeof(fence_t) + (13 * sizeof(fence_coordinate_t));
+	dummy_fence = k_malloc(len);
 
-	/* Write DEAD to 13 points on x and y coords. */
+	/* Write to 13 points on x and y coords. */
 	for (int i = 0; i < 13; i++) {
-		fence->p_c[i].s_x_dm = 1337;
-		fence->p_c[i].s_y_dm = 1337;
+		dummy_fence->p_c[i].s_x_dm = 1337;
+		dummy_fence->p_c[i].s_y_dm = 1337;
 	}
+
+	dummy_fence->header.n_points = 13;
+	dummy_fence->header.e_fence_type = 1;
+	dummy_fence->header.us_id = 3;
 
 	/* Publish read ack event and wait for consumed ack, 
 	 * only then do we read the next entry in the walk process.
 	 */
 	struct stg_ack_read_event *event = new_stg_ack_read_event();
-	event->partition = ev->partition;
+	event->partition = STG_PARTITION_PASTURE;
+	event->data = (uint8_t *)dummy_fence;
+	event->len = len;
+
 	EVENT_SUBMIT(event);
 }
 
@@ -146,6 +160,7 @@ static bool event_handler(const struct event_header *eh)
 		simulate_dummy_pasture(ev);
 	}
 	if (is_stg_consumed_read_event(eh)) {
+		free_dummy_pasture();
 		k_sem_give(&ack_fencedata_sem);
 	}
 

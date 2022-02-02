@@ -21,6 +21,8 @@ typedef enum {
  *             module requesting a write keeps the data available
  *             until a write ack is received.
  * @param partition type of partition to write to.
+ * @param len Length of the data written, this is just sizeof(struct), if we're
+ *            bytecasting entire structs.
  * @param rotate_to_this bool, rotates the read pointer
  *               to this entry if true after its written.
  *               MUST BE SET to avoid garbage data. 
@@ -35,11 +37,10 @@ struct stg_write_event {
          *  The messaging module keeps the data until it recieves 
          *  storage_data_ack_event sent from the storage controller.
          *  Which in turn means the messaging module can free up the data.
-	 * 
-	 * @note We do not need to give it a size, since when we know
-	 *       which partition we write to, we also know which struct it is.
         */
 	uint8_t *data;
+	size_t len;
+
 	flash_partition_t partition;
 
 	bool rotate_to_this;
@@ -65,20 +66,13 @@ struct stg_ack_write_event {
  * @param data pointer to where the data should be read and memcpy-ed to
  * @param rotate Whether to rotate the entries (delete) them once they're read,
  *               MUST BE SET to avoid garbage data.
+ * @param len Length of the data written, this is just sizeof(struct), if we're
+ *            bytecasting entire structs.
  * @param partition type of partition to write to.
  */
 struct stg_read_event {
 	struct event_header header;
 
-	/** Pointer to memory record where the storage controller shall memcpy
-         *  the mem_rec region contents. The module requesting the data
-         *  must control locking of the memory itself, to ensure it's not 
-         *  reading while the contents are being written.
-	 * 
-	 * @note We do not need to give it a size, if we know
-	 *       which partition we read from, we also know which struct it is.
-        */
-	uint8_t *data;
 	bool rotate;
 
 	flash_partition_t partition;
@@ -91,6 +85,15 @@ struct stg_read_event {
  */
 struct stg_ack_read_event {
 	struct event_header header;
+
+	/** Pointer to where the storage controller copy its flash contents to.
+	 *  The consumer/requester copy/consumes this data when it receives it,
+	 *  which in turn publishes the consume_event, telling the
+	 *  storage controller to de-allocate the cached contents.
+        */
+	uint8_t *data;
+	size_t len;
+
 	flash_partition_t partition;
 };
 
@@ -101,12 +104,9 @@ struct stg_ack_read_event {
  *               to rotate fcb after read so that the next read 
  *               will be the next entry. For fence/ano data this is not 
  *               the case in which case this needs to be true.
- * @param partition type of partition to write to.
  */
 struct stg_consumed_read_event {
 	struct event_header header;
-	flash_partition_t partition;
-	//bool do_not_rotate;
 };
 
 EVENT_TYPE_DECLARE(stg_write_event);

@@ -21,6 +21,9 @@ static K_SEM_DEFINE(consumed_ano_ack_sem, 0, 1);
 
 int consumed_entries_counter = 0;
 
+/* Used to check which partition was used, to release the correct semaphore. */
+flash_partition_t cur_partition;
+
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
  */
@@ -78,7 +81,6 @@ void test_read_log_data(void)
 	 * consume_event once we've consumed the data.
 	 */
 	request_data(STG_PARTITION_LOG);
-
 	int err = k_sem_take(&read_log_ack_sem, K_SECONDS(30));
 	zassert_equal(err, 0,
 		      "Test execution hanged waiting for read log ack.");
@@ -90,11 +92,6 @@ void test_read_log_data(void)
 		      "Test execution hanged waiting for consumed log ack.");
 
 	/* We know at this stage that we do not have more entries, test done. */
-}
-
-void setup_multiple_reads(void)
-{
-	consumed_entries_counter = 0;
 }
 
 void test_multiple_writes_and_verify(void)
@@ -347,8 +344,6 @@ void test_main(void)
 	ztest_run_test_suite(storage_controller_tests);
 
 	ztest_test_suite(storage_controller_test_pasture,
-			 ztest_unit_test(test_event_manager_init),
-			 ztest_unit_test(test_init),
 			 ztest_unit_test(test_pasture_write),
 			 ztest_unit_test(test_pasture_read),
 			 ztest_unit_test(test_pasture_extended_write_read));
@@ -359,7 +354,6 @@ static bool event_handler(const struct event_header *eh)
 {
 	if (is_stg_ack_write_event(eh)) {
 		struct stg_ack_write_event *ev = cast_stg_ack_write_event(eh);
-
 		if (ev->partition == STG_PARTITION_LOG) {
 			k_sem_give(&write_log_ack_sem);
 		} else if (ev->partition == STG_PARTITION_ANO) {
@@ -368,6 +362,7 @@ static bool event_handler(const struct event_header *eh)
 			zassert_unreachable(
 				"Unexpected ack write partition recieved.");
 		}
+		k_free(write_ptr);
 		return false;
 	}
 	if (is_stg_ack_read_event(eh)) {
@@ -375,10 +370,10 @@ static bool event_handler(const struct event_header *eh)
 
 		if (ev->partition == STG_PARTITION_LOG) {
 			k_sem_give(&read_log_ack_sem);
-			consume_data(ev->partition);
+			consume_data(ev);
 		} else if (ev->partition == STG_PARTITION_ANO) {
 			k_sem_give(&read_ano_ack_sem);
-			consume_data(ev->partition);
+			consume_data(ev);
 		} else if (ev->partition != STG_PARTITION_PASTURE) {
 			zassert_unreachable(
 				"Unexpected ack write partition recieved.");
@@ -390,14 +385,11 @@ static bool event_handler(const struct event_header *eh)
 		return false;
 	}
 	if (is_stg_consumed_read_event(eh)) {
-		struct stg_consumed_read_event *ev =
-			cast_stg_consumed_read_event(eh);
-
-		if (ev->partition == STG_PARTITION_LOG) {
+		if (cur_partition == STG_PARTITION_LOG) {
 			k_sem_give(&consumed_log_ack_sem);
-		} else if (ev->partition == STG_PARTITION_ANO) {
+		} else if (cur_partition == STG_PARTITION_ANO) {
 			k_sem_give(&consumed_ano_ack_sem);
-		} else if (ev->partition != STG_PARTITION_PASTURE) {
+		} else if (cur_partition != STG_PARTITION_PASTURE) {
 			zassert_unreachable(
 				"Unexpected ack read partition recieved.");
 		}
