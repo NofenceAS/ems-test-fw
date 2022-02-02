@@ -18,7 +18,7 @@ int num_new_entries = 0;
 bool rotated_log = false;
 
 /* Number of entries available from the partition we have emulated if no 
- * headers/padding is added, which it is. We use this number to ensure
+ * headers/paddings are added, which it is. We use this number to ensure
  * we exceed the partition size when we test to append too many entries.
  */
 #define LOG_ENTRY_COUNT PM_LOG_PARTITION_SIZE / sizeof(log_rec_t)

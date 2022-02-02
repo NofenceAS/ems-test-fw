@@ -14,8 +14,6 @@
 #include "pm_config.h"
 #include <stdlib.h>
 
-#define MAX_PASTURE_ENTRIES PM_PASTURE_PARTITION_SIZE / sizeof(fence_t)
-
 void test_pasture_write(void)
 {
 	write_pasture_data(13);

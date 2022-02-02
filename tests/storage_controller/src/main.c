@@ -227,8 +227,7 @@ static bool event_handler(const struct event_header *eh)
 			num_new_entries++;
 			if (ev->rotated) {
 				int removed_entries =
-					(int)(CONFIG_STORAGE_SECTOR_SIZE /
-					      sizeof(log_rec_t));
+					(int)(SECTOR_SIZE / sizeof(log_rec_t));
 				num_new_entries -= removed_entries;
 			}
 		} else if (ev->partition == STG_PARTITION_ANO) {
