@@ -69,6 +69,7 @@ void test_pasture_write(void);
 void test_pasture_read(void);
 void test_pasture_extended_write_read(void);
 void test_reboot_persistent_pasture(void);
+void test_request_pasture_twice(void);
 
 /* Log tests. */
 void test_log_write(void);

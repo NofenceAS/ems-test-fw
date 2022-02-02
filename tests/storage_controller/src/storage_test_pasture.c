@@ -119,3 +119,39 @@ void test_reboot_persistent_pasture(void)
 		err, 0,
 		"Test execution hanged waiting for consumed pasture ack.");
 }
+
+/** @brief Test to check that the fcb_offset_last_n function works
+ *         if there have been no writes between the requests.
+ */
+void test_request_pasture_twice(void)
+{
+	/* Write once, request twice. */
+	write_pasture_data(13);
+	int err = k_sem_take(&write_pasture_ack_sem, K_SECONDS(30));
+	zassert_equal(err, 0,
+		      "Test execution hanged waiting for write pasture ack.");
+
+	/* Read something. */
+	request_pasture_data();
+
+	err = k_sem_take(&read_pasture_ack_sem, K_SECONDS(30));
+	zassert_equal(err, 0,
+		      "Test execution hanged waiting for read pasture ack.");
+	err = k_sem_take(&consumed_pasture_ack_sem, K_SECONDS(30));
+	zassert_equal(
+		err, 0,
+		"Test execution hanged waiting for consumed pasture ack.");
+
+	k_sleep(K_SECONDS(5));
+
+	/* Read something. */
+	request_pasture_data();
+
+	err = k_sem_take(&read_pasture_ack_sem, K_SECONDS(30));
+	zassert_equal(err, 0,
+		      "Test execution hanged waiting for read pasture ack.");
+	err = k_sem_take(&consumed_pasture_ack_sem, K_SECONDS(30));
+	zassert_equal(
+		err, 0,
+		"Test execution hanged waiting for consumed pasture ack.");
+}

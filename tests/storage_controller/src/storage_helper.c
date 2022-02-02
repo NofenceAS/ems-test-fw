@@ -30,7 +30,7 @@ void request_log_data()
 	k_sleep(K_SECONDS(10));
 	struct stg_read_event *ev = new_stg_read_event();
 
-	ev->rotate = true;
+	ev->walk_all_entries = true;
 	ev->partition = STG_PARTITION_LOG;
 	EVENT_SUBMIT(ev);
 }
@@ -40,7 +40,7 @@ void request_ano_data()
 	k_sleep(K_SECONDS(10));
 	struct stg_read_event *ev = new_stg_read_event();
 
-	ev->rotate = false;
+	ev->walk_all_entries = false;
 	ev->partition = STG_PARTITION_ANO;
 	EVENT_SUBMIT(ev);
 }
@@ -50,7 +50,7 @@ void request_pasture_data()
 	k_sleep(K_SECONDS(10));
 	struct stg_read_event *ev = new_stg_read_event();
 
-	ev->rotate = false;
+	ev->walk_all_entries = false;
 	ev->partition = STG_PARTITION_PASTURE;
 	EVENT_SUBMIT(ev);
 }
@@ -86,9 +86,8 @@ void consume_data(struct stg_ack_read_event *ev)
 	} else if (ev->partition == STG_PARTITION_PASTURE) {
 		fence_t *rec = k_malloc(ev->len);
 		memcpy(rec, ev->data, ev->len);
-		zassert_equal(rec->header.us_id, pasture_write_index_value,
+		zassert_equal(rec->header.us_id, pasture_write_index_value - 1,
 			      "Contents not equal.");
-		pasture_write_index_value++;
 		if (cur_test_id == TEST_ID_PASTURE_DYNAMIC) {
 			/* Check if the last entry was the expected size of
                          * 100 fence points. Both using n_points from the
@@ -176,7 +175,6 @@ void write_log_data()
 	ev->data = write_log_ptr;
 	ev->partition = STG_PARTITION_LOG;
 	ev->len = len;
-	ev->rotate_to_this = false;
 
 	EVENT_SUBMIT(ev);
 	/* When we get write_ack, free the data. */
@@ -192,7 +190,6 @@ void write_ano_data()
 	ev->data = write_ano_ptr;
 	ev->partition = STG_PARTITION_ANO;
 	ev->len = len;
-	ev->rotate_to_this = true;
 
 	EVENT_SUBMIT(ev);
 	/* When we get write_ack, free the data. */
@@ -209,7 +206,8 @@ void write_pasture_data(uint8_t num_points)
 	ev->data = write_pasture_ptr;
 	ev->partition = STG_PARTITION_PASTURE;
 	ev->len = len;
-	ev->rotate_to_this = true;
+
+	pasture_write_index_value++;
 
 	EVENT_SUBMIT(ev);
 	/* When we get write_ack, free the data. */

@@ -23,11 +23,6 @@ typedef enum {
  * @param partition type of partition to write to.
  * @param len Length of the data written, this is just sizeof(struct), if we're
  *            bytecasting entire structs.
- * @param rotate_to_this bool, rotates the read pointer
- *               to this entry if true after its written.
- *               MUST BE SET to avoid garbage data. 
- *               If false, rotation to the newest 
- *               (this entry) will not happen. 
  *               
  */
 struct stg_write_event {
@@ -42,17 +37,15 @@ struct stg_write_event {
 	size_t len;
 
 	flash_partition_t partition;
-
-	bool rotate_to_this;
 };
 
 /** 
  * @brief Ack struct sent out by the storage controller once it has 
  *        consumed the new mem_rec data.
  * 
- * @param partition type of partition to write to.
+ * @param[in] partition type of partition to write to.
  * 
- * @return rotated, bool whether the FCB was 
+ * @param[out] rotated, bool whether the FCB was 
  *         full and we had to rotate the buffer.
  */
 struct stg_ack_write_event {
@@ -69,17 +62,15 @@ struct stg_ack_write_event {
  *        request has rotate_to_this=true will only have that entry
  *        available.
  * 
- * @param data pointer to where the data should be read and memcpy-ed to
- * @param rotate Whether to rotate the entries (delete) them once they're read,
- *               MUST BE SET to avoid garbage data.
- * @param len Length of the data written, this is just sizeof(struct), if we're
- *            bytecasting entire structs.
+ * @param walk_all_entries Whether to walk through all entries, or just read
+ *                         from the newest everytime. Does not rotate/skip
+ *                         current entry.
  * @param partition type of partition to write to.
  */
 struct stg_read_event {
 	struct event_header header;
 
-	bool rotate;
+	bool walk_all_entries;
 
 	flash_partition_t partition;
 };
@@ -105,11 +96,6 @@ struct stg_ack_read_event {
 
 /** 
  * @brief Notifies the storage controller that the data has been consumed.
- * 
- * @param do_not_rotate bool, false or not defined will tell storage controller 
- *               to rotate fcb after read so that the next read 
- *               will be the next entry. For fence/ano data this is not 
- *               the case in which case this needs to be true.
  */
 struct stg_consumed_read_event {
 	struct event_header header;

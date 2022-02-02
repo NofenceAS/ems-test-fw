@@ -181,30 +181,30 @@ void test_main(void)
 	ztest_run_test_suite(storage_init);
 
 	/* Test log partition and read/write/consumes. */
-	ztest_test_suite(
-		storage_log_test,
-		ztest_unit_test_setup_teardown(test_log_write, setup_common,
-					       teardown_common),
-		ztest_unit_test_setup_teardown(test_log_read, setup_common,
-					       teardown_common),
-		ztest_unit_test_setup_teardown(test_write_log_exceed,
-					       setup_common, teardown_common),
-		ztest_unit_test_setup_teardown(test_read_log_exceed,
-					       setup_common, teardown_common),
-		ztest_unit_test_setup_teardown(test_reboot_persistent_log,
-					       setup_common, teardown_common));
-	ztest_run_test_suite(storage_log_test);
+	//ztest_test_suite(
+	//	storage_log_test,
+	//	ztest_unit_test_setup_teardown(test_log_write, setup_common,
+	//				       teardown_common),
+	//	ztest_unit_test_setup_teardown(test_log_read, setup_common,
+	//				       teardown_common),
+	//	ztest_unit_test_setup_teardown(test_write_log_exceed,
+	//				       setup_common, teardown_common),
+	//	ztest_unit_test_setup_teardown(test_read_log_exceed,
+	//				       setup_common, teardown_common),
+	//	ztest_unit_test_setup_teardown(test_reboot_persistent_log,
+	//				       setup_common, teardown_common));
+	//ztest_run_test_suite(storage_log_test);
 
 	/* Test ano partition and read/write/consumes. */
-	ztest_test_suite(
-		storage_ano_test,
-		ztest_unit_test_setup_teardown(test_ano_write, setup_common,
-					       teardown_common),
-		ztest_unit_test_setup_teardown(test_ano_read, setup_common,
-					       teardown_common),
-		ztest_unit_test_setup_teardown(test_reboot_persistent_ano,
-					       setup_common, teardown_common));
-	ztest_run_test_suite(storage_ano_test);
+	//ztest_test_suite(
+	//	storage_ano_test,
+	//	ztest_unit_test_setup_teardown(test_ano_write, setup_common,
+	//				       teardown_common),
+	//	ztest_unit_test_setup_teardown(test_ano_read, setup_common,
+	//				       teardown_common),
+	//	ztest_unit_test_setup_teardown(test_reboot_persistent_ano,
+	//				       setup_common, teardown_common));
+	//ztest_run_test_suite(storage_ano_test);
 
 	/* Test pasture partition and read/write/consumes. */
 	ztest_test_suite(
@@ -216,22 +216,24 @@ void test_main(void)
 		ztest_unit_test_setup_teardown(test_reboot_persistent_pasture,
 					       setup_common, teardown_common),
 		ztest_unit_test_setup_teardown(test_pasture_extended_write_read,
+					       setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_request_pasture_twice,
 					       setup_common, teardown_common));
 	ztest_run_test_suite(storage_pasture_test);
 
 	/* Integration testing of all partitions and multiple read/write/consume
 	 * across all partitions and all FCBs. 
 	 */
-	ztest_test_suite(
-		storage_integration,
-		ztest_unit_test_setup_teardown(test_clear_fcbs, setup_common,
-					       teardown_common),
-		ztest_unit_test_setup_teardown(test_empty_walk, setup_common,
-					       teardown_common),
-		ztest_unit_test_setup_teardown(test_pasture_log_ano_write_read,
-					       setup_common, teardown_common));
-	ztest_run_test_suite(storage_integration);
-}
+	//ztest_test_suite(
+	//	storage_integration,
+	//	ztest_unit_test_setup_teardown(test_clear_fcbs, setup_common,
+	//				       teardown_common),
+	//	ztest_unit_test_setup_teardown(test_empty_walk, setup_common,
+	//				       teardown_common),
+	//	ztest_unit_test_setup_teardown(test_pasture_log_ano_write_read,
+	//				       setup_common, teardown_common));
+	//ztest_run_test_suite(storage_integration);
+} //
 
 static bool event_handler(const struct event_header *eh)
 {
