@@ -23,6 +23,13 @@
 		zephyr,code-partition = &slot0_partition;
 	};
 
+	gnss_flash_pwr: periph-pwr-ctrl {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "periph-pwr-ctrl";
+		regulator-name = "periph-pwr-ctrl";
+		enable-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
 };
 
 &adc {
