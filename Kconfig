@@ -17,14 +17,14 @@ menu "APPLICATION_CODE"
 		default 4
 		
 		config DOWNLOAD_HOST
-		string "172.31.36.11:5252"
+		string "host file path"
 		help
 		  Host part of URL to application update binary. For example
 		  if the file is stored in http://foo.bar/update.bin the value
 		  of this configuration should be 'foo.bar'
 	
 		config DOWNLOAD_FILE
-		string "firmware/x25/2000/app_signed.hex"
+		string "download file path"
 		help
 		  File part of URL to application update binary. For example
 		  if the file is stored in http://foo.bar/update.bin the value
