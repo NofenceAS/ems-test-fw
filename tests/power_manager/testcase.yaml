@@ -1,0 +1,4 @@
+tests:
+  power_manager.test:
+    platform_allow: native_posix
+    tags: event_manager
