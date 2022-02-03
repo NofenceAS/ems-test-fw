@@ -80,6 +80,7 @@ endif ()
 
 # Added as zephyr library
 zephyr_library_include_directories(
+        src/modules/amc
         src/modules/fw_upgrade
         src/events
   	src/modules/error_handler
@@ -96,6 +97,7 @@ add_subdirectory(src/events/ble)
 add_subdirectory(src/modules/ble)
 add_subdirectory(src/modules/fw_upgrade)
 add_subdirectory(src/eeprom)
+add_subdirectory(src/modules/amc)
 
 add_subdirectory(src/events/messaging)
 add_subdirectory(src/modules/messaging)

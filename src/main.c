@@ -11,6 +11,8 @@
 #include "fw_upgrade_events.h"
 #include "nf_eeprom.h"
 #include "ble_controller.h"
+#include "amc_handler.h"
+#include "nf_eeprom.h"
 
 #define MODULE main
 #include "module_state_event.h"
@@ -43,13 +45,13 @@ void main(void)
 		LOG_ERR("Event manager could not initialize.");
 	}
 	/* Initialize BLE module. */
-	/*if (ble_module_init()) {
+	if (ble_module_init()) {
 		LOG_ERR("Could not initialize BLE module");
-	}*/
+	}
 	/* Initialize firmware upgrade module. */
 	if (fw_upgrade_module_init()) {
 		LOG_ERR("Could not initialize firmware upgrade module");
 	}
-
-	
+	/* Initialize animal monitor control module. */
+	amc_module_init();
 }

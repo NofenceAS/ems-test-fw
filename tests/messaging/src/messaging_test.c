@@ -59,12 +59,10 @@ void test_event_poller(void)
 {
 	/* Allocate events. */
 	struct ble_ctrl_event *ev_ble_ctrl = new_ble_ctrl_event();
-	struct ble_data_event *ev_ble_data = new_ble_data_event();
 	struct lte_proto_event *ev_lte_proto = new_lte_proto_event();
 
 	/* Submit events. */
 	EVENT_SUBMIT(ev_ble_ctrl);
-	EVENT_SUBMIT(ev_ble_data);
 	EVENT_SUBMIT(ev_lte_proto);
 
 	/* Wait for semaphores. */
@@ -72,17 +70,40 @@ void test_event_poller(void)
 	zassert_equal(err, 0, "ble_ctrl_sem hanged.");
 
 	err = k_sem_take(&ble_data_sem, K_SECONDS(30));
-	zassert_equal(err, 0, "ble_data_sem hanged.");
+	zassert_not_equal(err, 0, "ble_data_sem should hang.");
 
 	err = k_sem_take(&lte_proto_sem, K_SECONDS(30));
 	zassert_equal(err, 0, "lte_proto_sem hanged.");
 }
 
+void setup_take_semaphores(void)
+{
+	/* Make sure semaphores are taken so we depend on waiting for them
+	 * from the poller thread. Remove this when we have proper
+	 * outputs from the messaging module we can monitor.
+	 */
+	k_sem_take(&ble_ctrl_sem, K_SECONDS(30));
+	k_sem_take(&ble_data_sem, K_SECONDS(30));
+	k_sem_take(&lte_proto_sem, K_SECONDS(30));
+}
+
+void teardown_clear_threads(void)
+{
+	/* Sleep test thread so other threads can finish what they're doing
+	 * before test terminates.
+	 */
+	k_sleep(K_SECONDS(30));
+}
+
 void test_main(void)
 {
 	ztest_test_suite(messaging_tests, ztest_unit_test(test_init),
-			 ztest_unit_test(test_event_contents),
-			 ztest_unit_test(test_event_poller));
+			 ztest_unit_test_setup_teardown(test_event_contents,
+							setup_take_semaphores,
+							teardown_clear_threads),
+			 ztest_unit_test_setup_teardown(
+				 test_event_poller, setup_take_semaphores,
+				 teardown_clear_threads));
 	ztest_run_test_suite(messaging_tests);
 }
 
