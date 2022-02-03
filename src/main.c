@@ -13,6 +13,8 @@
 #include "amc_handler.h"
 #include "nf_eeprom.h"
 
+#include "nf_version.h"
+
 #include <dfu/mcuboot.h>
 #include <dfu/dfu_target_mcuboot.h>
 #include <net/fota_download.h>
@@ -43,7 +45,9 @@ static void fota_dl_handler(const struct fota_download_evt *evt)
  */
 void main(void)
 {
-	LOG_INF("Starting Nofence application");
+	LOG_INF("Starting Nofence application with version %i",
+		NF_X25_VERSION_NUMBER);
+
 	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
 	eep_init(eeprom_dev);
 
@@ -62,14 +66,18 @@ void main(void)
 	/* Initialize animal monitor control module. */
 	amc_module_init();
 
-	int err = fota_download_init(fota_dl_handler);
-	if (err) {
-		LOG_ERR("fota_download_init() failed, err %d", err);
-	}
+	if (NF_X25_VERSION_NUMBER < 2001) {
+		int err = fota_download_init(fota_dl_handler);
+		if (err) {
+			LOG_ERR("fota_download_init() failed, err %d", err);
+		}
 
-	err = fota_download_start(CONFIG_DOWNLOAD_HOST, CONFIG_DOWNLOAD_FILE,
-				  -1, 0, 0);
-	if (err) {
-		LOG_ERR("fota_download_start() failed, err %d", err);
+		err = fota_download_start(CONFIG_DOWNLOAD_HOST,
+					  CONFIG_DOWNLOAD_FILE, -1, 0, 0);
+		if (err) {
+			LOG_ERR("fota_download_start() failed, err %d", err);
+		} else {
+			boot_write_img_confirmed();
+		}
 	}
 }

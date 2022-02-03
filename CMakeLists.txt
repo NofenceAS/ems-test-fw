@@ -74,6 +74,8 @@ zephyr_library_include_directories(
   	    src/events/error_handler
         src/modules/cellular_controller
         src/events/cellular_controller
+        .
+        ${PROJECT_BINARY_DIR}/include/generated/
 )
         
 target_sources(app PRIVATE ${APP_MAIN}
