@@ -15,6 +15,20 @@ menu "APPLICATION_CODE"
 	config UBX_CONTROLLER_LOG_LEVEL
 		int "Log level for the ESB PTX sample"
 		default 4
+		
+		config DOWNLOAD_HOST
+		string "172.31.36.11:5252"
+		help
+		  Host part of URL to application update binary. For example
+		  if the file is stored in http://foo.bar/update.bin the value
+		  of this configuration should be 'foo.bar'
+	
+		config DOWNLOAD_FILE
+		string "firmware/x25/2000/app_signed.hex"
+		help
+		  File part of URL to application update binary. For example
+		  if the file is stored in http://foo.bar/update.bin the value
+		  of this configuration should be 'update.bin'
 
 endmenu # APPLICATION CODE
 

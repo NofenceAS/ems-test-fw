@@ -13,10 +13,29 @@
 #include "amc_handler.h"
 #include "nf_eeprom.h"
 
+#include <dfu/mcuboot.h>
+#include <dfu/dfu_target_mcuboot.h>
+#include <net/fota_download.h>
+
 #define MODULE main
 #include "module_state_event.h"
 
 LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
+
+static void fota_dl_handler(const struct fota_download_evt *evt)
+{
+	switch (evt->id) {
+	case FOTA_DOWNLOAD_EVT_ERROR:
+		LOG_ERR("Received error from fota_download");
+		/* Fallthrough */
+	case FOTA_DOWNLOAD_EVT_FINISHED:
+		LOG_INF("Fota download finished.");
+		break;
+
+	default:
+		break;
+	}
+}
 
 /**
  * The Nofence X3 main entry point. This is
@@ -42,4 +61,15 @@ void main(void)
 	}
 	/* Initialize animal monitor control module. */
 	amc_module_init();
+
+	int err = fota_download_init(fota_dl_handler);
+	if (err) {
+		LOG_ERR("fota_download_init() failed, err %d", err);
+	}
+
+	err = fota_download_start(CONFIG_DOWNLOAD_HOST, CONFIG_DOWNLOAD_FILE,
+				  -1, 0, 0);
+	if (err) {
+		LOG_ERR("fota_download_start() failed, err %d", err);
+	}
 }
