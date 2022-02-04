@@ -122,7 +122,7 @@ gnss_uart: &uart1 {
 	mosi-pin = <41>;/* P1.09 */
 	miso-pin = <11>;/* P0.11 */
 	cs-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>, /* CS ACCELEROMETER */
-	           <&gpio0 30 GPIO_ACTIVE_LOW>, /* CS BAROMETER */
+	           <&gpio0 15 GPIO_ACTIVE_LOW>, /* CS BAROMETER */
 	           <&gpio0 12 GPIO_ACTIVE_LOW>; /* CS EEPROM */
 
 	movement_sensor: lis2dw12@0 {
