@@ -6,7 +6,7 @@
 #include <logging/log.h>
 #include <stdio.h>
 
-#define LOG_MODULE_NAME fw_upgrade_events
+#define LOG_MODULE_NAME error_events
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_ERROR_HANDLER_LOG_LEVEL);
 
 /**
@@ -58,7 +58,7 @@ static inline void submit_app_status(enum error_sender_module sender,
 	}
 
 	/* If not part of the ENUMs. */
-	if (sender < 0 || sender > ERR_SENDER_FW_UPGRADE) {
+	if (sender < 0 || sender > ERR_ELECTRIC_PULSE) {
 		return;
 	}
 

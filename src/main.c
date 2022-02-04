@@ -11,6 +11,7 @@
 #include "fw_upgrade_events.h"
 #include "nf_eeprom.h"
 #include "ble_controller.h"
+#include "ep_module.h"
 #include "amc_handler.h"
 #include "nf_eeprom.h"
 
@@ -26,6 +27,8 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 void main(void)
 {
 	LOG_INF("Starting Nofence application");
+/* Not all boards have eeprom */
+#if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
 	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
 	if (eeprom_dev == NULL) {
 		LOG_ERR("No EEPROM detected!");
@@ -33,6 +36,7 @@ void main(void)
 		LOG_ERR("EEPROM initialized!");
 	}
 	eep_init(eeprom_dev);
+#endif
 
 	/* Initialize diagnostics module. */
 #if CONFIG_DIAGNOSTICS
@@ -51,6 +55,9 @@ void main(void)
 	/* Initialize firmware upgrade module. */
 	if (fw_upgrade_module_init()) {
 		LOG_ERR("Could not initialize firmware upgrade module");
+	}
+	if (ep_module_init()) {
+		LOG_ERR("Could not initialize electric pulse module");
 	}
 	/* Initialize animal monitor control module. */
 	amc_module_init();
