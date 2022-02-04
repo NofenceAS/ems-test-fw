@@ -18,6 +18,7 @@
 #include <dfu/mcuboot.h>
 #include <dfu/dfu_target_mcuboot.h>
 #include <net/fota_download.h>
+#include "cellular_controller.h"
 
 #define MODULE main
 #include "module_state_event.h"
@@ -56,15 +57,20 @@ void main(void)
 		LOG_ERR("Event manager could not initialize.");
 	}
 	/* Initialize BLE module. */
-	if (ble_module_init()) {
-		LOG_ERR("Could not initialize BLE module");
-	}
+//	if (ble_module_init()) {
+//		LOG_ERR("Could not initialize BLE module");
+//	}
 	/* Initialize firmware upgrade module. */
 	if (fw_upgrade_module_init()) {
 		LOG_ERR("Could not initialize firmware upgrade module");
 	}
 	/* Initialize animal monitor control module. */
 	amc_module_init();
+
+        if (cellular_controller_init())
+        {
+                LOG_ERR("Could not initialize cellular controller!");
+        }
 
 	if (NF_X25_VERSION_NUMBER < 2001) {
 		int err = fota_download_init(fota_dl_handler);
