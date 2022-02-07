@@ -14,6 +14,8 @@
 #include "amc_handler.h"
 #include "nf_eeprom.h"
 
+#include "fw_upgrade.h"
+
 #define MODULE main
 #include "module_state_event.h"
 
@@ -48,4 +50,10 @@ void main(void)
 	}
 	/* Initialize animal monitor control module. */
 	amc_module_init();
+
+	/* Once EVERYTHING is initialized correctly and we get connection to
+	* server, we can mark the image as valid. If we do not mark it as valid,
+	* it will revert to the previous version on the next reboot that occurs.
+	*/
+	mark_new_application_as_valid();
 }

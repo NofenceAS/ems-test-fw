@@ -2,6 +2,7 @@
 menu "APPLICATION_CODE"
 	menu "FW_UPGRADE"
     	rsource "./../../src/modules/fw_upgrade/Kconfig"
+    	rsource "./../../src/events/fw_upgrade/Kconfig"
 	endmenu # FW_UPGRADE
 endmenu # APPLICATION CODE
 
