@@ -6,6 +6,19 @@
 #include <logging/log.h>
 #include <stdio.h>
 
+/** @brief Function to convert enum to string */
+static char *stringFromEnum(enum pwr_state_flag state)
+{
+	static char *strings[] = {
+		"PWR_NORMAL",
+		"PWR_LOW",
+		"PWR_CRITICAL",
+		"PWR_BATTERY",
+	};
+
+	return strings[state];
+}
+
 /**
  * @brief Power Manager status event function for debugging/information. 
  *        Uses the log to make it easier to
@@ -19,7 +32,8 @@ static int log_pwr_status_event(const struct event_header *eh, char *buf,
 				size_t buf_len)
 {
 	struct pwr_status_event *event = cast_pwr_status_event(eh);
-	return snprintf(buf, buf_len, "PWR_status=%d", event->pwr_state);
+	return snprintf(buf, buf_len, "PWR state: %s",
+			stringFromEnum(event->pwr_state));
 }
 
 EVENT_TYPE_DEFINE(pwr_status_event, IS_ENABLED(CONFIG_LOG_PWR_EVENT),
