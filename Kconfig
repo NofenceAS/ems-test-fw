@@ -59,5 +59,8 @@ endmenu
 
 menu "Zephyr Kernel"
 source "Kconfig.zephyr"
+endmenu
 
+menu "Nofence-modem-driver"
+rsource "src/nofence_modem_driver/Kconfig"
 endmenu

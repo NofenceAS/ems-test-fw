@@ -93,3 +93,4 @@ add_subdirectory(src/modules/cellular_controller)
 
 add_subdirectory(src/events/messaging)
 add_subdirectory(src/modules/messaging)
+add_subdirectory(src/nofence_modem_driver)
