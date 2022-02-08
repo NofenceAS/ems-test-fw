@@ -6,7 +6,7 @@ menu "Event options"
 
 comment "Initially logged events"
 
-config CONFIG_LOG_PWR_EVENT
+config LOG_PWR_EVENT
 	bool "PWR state status event"
 	default y
 
