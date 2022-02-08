@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 /** @brief Function to convert enum to string */
-static char *stringFromEnum(enum pwr_state_flag state)
+static char *string_from_enum(enum pwr_state_flag state)
 {
 	static char *strings[] = {
 		"PWR_NORMAL",
@@ -33,7 +33,7 @@ static int log_pwr_status_event(const struct event_header *eh, char *buf,
 {
 	struct pwr_status_event *event = cast_pwr_status_event(eh);
 	return snprintf(buf, buf_len, "PWR state: %s",
-			stringFromEnum(event->pwr_state));
+			string_from_enum(event->pwr_state));
 }
 
 EVENT_TYPE_DEFINE(pwr_status_event, IS_ENABLED(CONFIG_LOG_PWR_EVENT),
