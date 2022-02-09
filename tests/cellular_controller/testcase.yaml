@@ -1,4 +1,0 @@
-tests:
-  cellular_controller.test:
-    platform_allow: native_posix
-    tags: event_manager

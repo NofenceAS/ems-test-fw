@@ -6,6 +6,8 @@ cmake_minimum_required(VERSION 3.20.0)
 # Print out build type
 message(STATUS "Build type: ${BUILD_TYPE} 🚀")
 
+list(APPEND DTS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
+
 # Define configuration files.
 if (HARDWARE_TEST)
 list(APPEND CONF_FILE
@@ -22,6 +24,8 @@ list(APPEND ZEPHYR_EXTRA_MODULES
 list(APPEND ZEPHYR_EXTRA_MODULES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/collar_protocol
         )
+
+
 
 # Re-direct the directory where the 'boards' directory is found from
 # $ZEPHYR_BASE to this directory.
@@ -70,13 +74,8 @@ zephyr_library_include_directories(
         src/modules/amc
         src/modules/fw_upgrade
         src/events
-  	    src/modules/error_handler
-  	    src/events/error_handler
-        src/modules/cellular_controller
-        src/events/cellular_controller
-        .
-        ${PROJECT_BINARY_DIR}/include/generated/
-)
+  	src/modules/error_handler
+  	src/events/error_handler)
         
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
@@ -89,8 +88,9 @@ add_subdirectory(src/modules/fw_upgrade)
 add_subdirectory(src/eeprom)
 add_subdirectory(src/modules/amc)
 
-add_subdirectory(src/modules/cellular_controller)
-
 add_subdirectory(src/events/messaging)
 add_subdirectory(src/modules/messaging)
+
+add_subdirectory(src/events/electric_pulse)
+add_subdirectory(src/modules/electric_pulse)
 add_subdirectory(src/nofence_modem_driver)

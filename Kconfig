@@ -8,27 +8,9 @@ menu "APPLICATION_CODE"
 		int "Application workqueue priority"
 		default SYSTEM_WORKQUEUE_PRIORITY
 
-	menu "CELLULAR_CONTROLLER"
-    rsource "src/modules/cellular_controller/Kconfig"
-	endmenu # CELLULAR_CONTROLLER
-
 	config UBX_CONTROLLER_LOG_LEVEL
 		int "Log level for the ESB PTX sample"
 		default 4
-		
-		config DOWNLOAD_HOST
-		string "host file path"
-		help
-		  Host part of URL to application update binary. For example
-		  if the file is stored in http://foo.bar/update.bin the value
-		  of this configuration should be 'foo.bar'
-	
-		config DOWNLOAD_FILE
-		string "download file path"
-		help
-		  File part of URL to application update binary. For example
-		  if the file is stored in http://foo.bar/update.bin the value
-		  of this configuration should be 'update.bin'
 
 endmenu # APPLICATION CODE
 
@@ -52,13 +34,21 @@ menu "BLE Events"
 rsource "src/events/ble/Kconfig"
 endmenu
 
+menu "EP Module"
+rsource "src/modules/electric_pulse/Kconfig"
+endmenu
+
+menu "EP Events"
+rsource "src/events/electric_pulse/Kconfig"
+endmenu
+
 menu "Messaging"
 rsource "src/modules/messaging/Kconfig"
 rsource "src/events/messaging/Kconfig"
 endmenu
 
 menu "Zephyr Kernel"
-source "Kconfig.zephyr"
+source "Kconfig.zephyr" 
 endmenu
 
 menu "Nofence-modem-driver"
