@@ -1,1 +1,1 @@
-# Unit tests for messaging module
+# Unit tests for environment sensor

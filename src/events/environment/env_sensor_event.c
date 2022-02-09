@@ -6,7 +6,7 @@
 #include <logging/log.h>
 #include <stdio.h>
 
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_ENV_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(env_sensor_event, CONFIG_ENV_SENSOR_LOG_LEVEL);
 
 /**
  * @brief Env sensor event function for debugging/information. 

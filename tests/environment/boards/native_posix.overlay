@@ -1,0 +1,11 @@
+/* Copyright (c) 2022 Nofence AS
+ */
+
+&spi0 {
+        environment_sensor: bme280@1 {
+                compatible = "bosch,bme280";
+                label = "BME280_SPI";
+                reg = <1>;
+                spi-max-frequency = <1000000>;
+        };
+};

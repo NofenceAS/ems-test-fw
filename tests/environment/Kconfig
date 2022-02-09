@@ -1,8 +1,8 @@
 
 menu "APPLICATION_CODE"
-	menu "MESSAGING"
-    	rsource "./../../src/modules/messaging/Kconfig"
-	endmenu # MESSAGING
+	menu "ENV_SENSOR"
+    	rsource "./../../src/modules/environment/Kconfig"
+	endmenu # ENV_SENSOR
 endmenu # APPLICATION CODE
 
 menu "Zephyr Kernel"
