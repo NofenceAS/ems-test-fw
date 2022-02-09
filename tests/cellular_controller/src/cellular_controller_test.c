@@ -21,6 +21,7 @@ void test_init(void)
 		      "Error when initializing event manager");
     ztest_returns_value(lte_init,1);
     ztest_returns_value(lte_is_ready,true);
+    ztest_returns_value(eep_read_host_port  ,0);
     ztest_returns_value(socket_connect,0);
     int8_t err = cellular_controller_init();
     zassert_equal(err, 0, "Cellular controller initialization incomplete!");
@@ -92,6 +93,7 @@ void test_socket_connect_fails(void)
 {
     ztest_returns_value(lte_init, 1);
     ztest_returns_value(lte_is_ready, true);
+    ztest_returns_value(eep_read_host_port  ,0);
     ztest_returns_value(socket_connect, -1);
 
     int8_t err = cellular_controller_init();

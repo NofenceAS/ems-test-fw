@@ -49,3 +49,15 @@ const struct device* bind_modem(void)
     }
     return &dummy_device;
 }
+
+char mock_host_address[24] = "193.146.222.555:123456";
+int eep_read_host_port(char *host_port, size_t bufsize)
+{
+    memcpy(host_port, &mock_host_address[0], bufsize);
+    return ztest_get_return_value();
+}
+
+//int8_t cache_server_address(void)
+//{
+//    return ztest_get_return_value();
+//}
