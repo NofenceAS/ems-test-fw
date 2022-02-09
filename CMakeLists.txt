@@ -90,7 +90,3 @@ add_subdirectory(src/modules/amc)
 
 add_subdirectory(src/events/messaging)
 add_subdirectory(src/modules/messaging)
-
-add_subdirectory(src/events/electric_pulse)
-add_subdirectory(src/modules/electric_pulse)
-add_subdirectory(src/nofence_modem_driver)
