@@ -75,7 +75,9 @@ zephyr_library_include_directories(
         src/modules/fw_upgrade
         src/events
   	src/modules/error_handler
-  	src/events/error_handler)
+  	src/events/error_handler
+  	src/modules/environment
+  	src/events/environment)
         
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
@@ -93,4 +95,6 @@ add_subdirectory(src/modules/messaging)
 
 add_subdirectory(src/events/electric_pulse)
 add_subdirectory(src/modules/electric_pulse)
+
+add_subdirectory(src/modules/environment)
 
