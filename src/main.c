@@ -32,8 +32,6 @@ void main(void)
 	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
 	if (eeprom_dev == NULL) {
 		LOG_ERR("No EEPROM detected!");
-	} else {
-		LOG_ERR("EEPROM initialized!");
 	}
 	eep_init(eeprom_dev);
 #endif
