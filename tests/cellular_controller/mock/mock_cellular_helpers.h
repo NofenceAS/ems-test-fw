@@ -8,7 +8,7 @@ struct sockaddr {};
 
 uint8_t mock_cellular_controller_init();
 
-uint8_t socket_receive(struct data *);
+uint8_t socket_receive(struct data *, char **);
 
 void stop_tcp(void);
 

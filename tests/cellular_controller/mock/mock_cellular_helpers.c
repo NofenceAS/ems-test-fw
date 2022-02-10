@@ -11,9 +11,10 @@ uint8_t mock_cellular_controller_init(){
 //{
 //    return ztest_get_return_value();
 //}
-
-uint8_t socket_receive(struct data* socket_data)
+char dummy_msg[] = "1234243rafasdfertqw4reqwrewqwe";
+uint8_t socket_receive(struct data* socket_data, char** msg)
 {
+    *msg = &dummy_msg[0];
     return ztest_get_return_value();
 }
 

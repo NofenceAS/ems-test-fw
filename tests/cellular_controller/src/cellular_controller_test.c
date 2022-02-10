@@ -32,7 +32,7 @@ int8_t received;
 void test_publish_event_with_a_received_msg(void) /* happy scenario - msg
  * received from server is pushed to messaging module! */
 {
-    received = 123;
+    received = 30;
     struct messaging_proto_out_event *test_msgIn =
             new_messaging_proto_out_event();
     test_msgIn->buf = dummy_test_msg;
