@@ -29,6 +29,21 @@ struct dfu_status_event {
 	int dfu_error;
 };
 
+/** @brief Struct containg status messages regarding the firmware upgrade. */
+struct start_fota_event {
+	struct event_header header;
+
+	/** Set to true if we have another host/path directly from
+	 *  the protobuf message.
+	 */
+	bool override_default_host;
+	char host[CONFIG_FW_UPGRADE_HOST_LEN];
+	char path[CONFIG_FW_UPGRADE_PATH_LEN];
+
+	uint16_t version;
+};
+
 EVENT_TYPE_DECLARE(dfu_status_event);
+EVENT_TYPE_DECLARE(start_fota_event);
 
 #endif /* _FW_UPGRADE_EVENTS_H_ */

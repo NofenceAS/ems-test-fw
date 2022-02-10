@@ -1,0 +1,32 @@
+/* 
+ * Uses low-level drivers instead of component drivers.
+ */
+
+&uart0 {
+    status = "okay";
+    sara_r4 {
+        status = "disabled";
+    };
+};
+
+&uart1 {
+    status = "disabled";
+};
+/*
+&spi0 {
+    lis2dh12@0 {
+        status = "disabled";
+    };
+    bme280@1 {
+        status = "disabled";
+    };
+    eeprom@2 {
+        status = "disabled";
+    };
+};*/
+
+&qspi {
+    mx25u6432f@0 {
+        status = "okay";
+    };
+};
