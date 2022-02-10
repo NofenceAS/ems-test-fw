@@ -14,6 +14,8 @@
 #include "amc_handler.h"
 #include "nf_eeprom.h"
 
+#include "nf_version.h"
+
 #include "fw_upgrade.h"
 
 #define MODULE main
@@ -56,4 +58,6 @@ void main(void)
 	* it will revert to the previous version on the next reboot that occurs.
 	*/
 	mark_new_application_as_valid();
+
+	LOG_INF("Started NF application version %i", NF_X25_VERSION_NUMBER);
 }

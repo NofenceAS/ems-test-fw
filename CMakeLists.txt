@@ -76,7 +76,8 @@ zephyr_library_include_directories(
         src/events
   	src/modules/error_handler
   	src/events/error_handler
-        src/events/fw_upgrade)
+        src/events/fw_upgrade
+        ${PROJECT_BINARY_DIR}/include/generated/)
         
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
