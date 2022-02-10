@@ -3,6 +3,8 @@ menu "APPLICATION_CODE"
 	menu "MESSAGING"
     	rsource "./../../src/modules/messaging/Kconfig"
 	endmenu # MESSAGING
+    	rsource "./../../src/modules/fw_upgrade/Kconfig"
+    	rsource "./../../src/events/fw_upgrade/Kconfig"
 endmenu # APPLICATION CODE
 
 menu "Zephyr Kernel"

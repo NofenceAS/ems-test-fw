@@ -87,10 +87,12 @@ zephyr_library_include_directories(
         src/modules/amc
         src/modules/fw_upgrade
         src/events
-  	src/modules/error_handler
-  	src/events/error_handler
-  	src/modules/diagnostics
-  	src/events/diagnostics)
+        src/modules/error_handler
+        src/events/error_handler
+        src/modules/diagnostics
+        src/events/diagnostics
+        src/events/fw_upgrade
+        ${PROJECT_BINARY_DIR}/include/generated/)
         
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
