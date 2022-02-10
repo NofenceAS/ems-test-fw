@@ -36,6 +36,7 @@ list(APPEND ZEPHYR_EXTRA_MODULES
 
 list(APPEND ZEPHYR_EXTRA_MODULES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/collar_protocol
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/drivers/gnss
         )
 
 

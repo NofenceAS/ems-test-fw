@@ -1,0 +1,9 @@
+
+config GNSS_UBLOX_MIA_M10
+	bool "Enable u-blox MIA-M10 GNSS driver"
+	help
+	  Choose this setting to enable u-blox MIA-M10 GNSS driver.
+
+if GNSS_UBLOX_MIA_M10
+
+endif # GNSS_UBLOX_MIA_M10

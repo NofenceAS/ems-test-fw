@@ -1,0 +1,19 @@
+menuconfig GNSS
+	bool "GNSS Drivers"
+	help
+	  Enable config options for GNSS drivers.
+
+if GNSS
+	config GNSS_LOG_LEVEL
+		int "Log level for the GNSS driver"
+		default 4
+		
+	config GNSS_INIT_PRIORITY
+		int "GNSS init priority"
+		default 90
+		help
+		GNSS initialization priority.
+
+rsource "Kconfig.ublox-mia-m10"
+
+endif # GNSS
