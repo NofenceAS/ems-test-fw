@@ -15,6 +15,8 @@ FILE(GLOB app_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/amc/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/amc/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/storage_controller/*.c
 )
 target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE ${APP_SOURCE})
@@ -23,4 +25,7 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/amc/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/amc
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/storage_controller
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/include
 )

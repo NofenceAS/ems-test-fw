@@ -14,6 +14,10 @@ menu "APPLICATION_CODE"
 
 endmenu # APPLICATION CODE
 
+menu "DIAGNOSTICS"
+rsource "src/modules/diagnostics/Kconfig"
+endmenu # DIAGNOSTICS
+
 menu "AMC_MODULE"
 rsource "src/modules/amc/Kconfig"
 endmenu # AMC_MODULE
@@ -28,6 +32,10 @@ endmenu # FW_UPGRADE
 
 menu "BLE Modules"
 rsource "src/modules/ble/Kconfig"
+endmenu
+
+menu "Storage controller"
+rsource "src/modules/storage_controller/Kconfig"
 endmenu
 
 menu "BLE Events"

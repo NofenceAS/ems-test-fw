@@ -11,20 +11,24 @@
 struct env_sensor_event {
 	struct event_header header;
 
-	union {
-		int32_t temp_integer;
-		int32_t temp_frac;
-	};
+	/* These values follow struct sensor_values using
+	 * integer and fractional part, calculated using:
+	 * val1 + val2 * 10^(-6).
+	 */
+	struct {
+		int32_t integer;
+		int32_t frac;
+	} temp;
 
-	union {
-		int32_t press_integer;
-		int32_t press_frac;
-	};
+	struct {
+		int32_t integer;
+		int32_t frac;
+	} press;
 
-	union {
-		int32_t humidity_integer;
-		int32_t humidity_frac;
-	};
+	struct {
+		int32_t integer;
+		int32_t frac;
+	} humidity;
 };
 
 struct request_env_sensor_event {
