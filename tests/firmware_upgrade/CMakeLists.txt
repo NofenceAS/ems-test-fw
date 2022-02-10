@@ -16,6 +16,7 @@ FILE(GLOB app_sources
         mock/net/*.c 
         mock/power/*.c 
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/fw_upgrade/*.c
 )
 target_sources(app PRIVATE ${app_sources})
@@ -25,4 +26,5 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/mock/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/fw_upgrade
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/
 )

@@ -59,5 +59,6 @@ void main(void)
 	*/
 	mark_new_application_as_valid();
 
-	LOG_INF("Started NF application version %i", NF_X25_VERSION_NUMBER);
+	LOG_INF("Marked application firmware version %i as valid.",
+		NF_X25_VERSION_NUMBER);
 }
