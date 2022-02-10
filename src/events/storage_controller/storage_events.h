@@ -67,16 +67,11 @@ struct stg_ack_write_event {
  *        request has rotate_to_this=true will only have that entry
  *        available.
  * 
- * @param walk_all_entries Whether to walk through all entries, or just read
- *                         from the newest everytime. Does not rotate/skip
- *                         current entry.
  * @param partition type of partition to write to.
  * @param rotate whether to clear the entries after reading or not
  */
 struct stg_read_event {
 	struct event_header header;
-
-	bool walk_all_entries;
 
 	flash_partition_t partition;
 
