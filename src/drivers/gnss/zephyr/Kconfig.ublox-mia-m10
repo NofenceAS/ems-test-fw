@@ -6,4 +6,8 @@ config GNSS_UBLOX_MIA_M10
 
 if GNSS_UBLOX_MIA_M10
 
+	config GNSS_MIA_M10_BUFFER_SIZE
+		int "Memory to allocate for RX/TX buffers."
+		default 512
+
 endif # GNSS_UBLOX_MIA_M10
