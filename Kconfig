@@ -8,15 +8,15 @@ menu "APPLICATION_CODE"
 		int "Application workqueue priority"
 		default SYSTEM_WORKQUEUE_PRIORITY
 
-	menu "CELLULAR_CONTROLLER"
-    rsource "src/modules/cellular_controller/Kconfig"
-	endmenu # CELLULAR_CONTROLLER
-
 	config UBX_CONTROLLER_LOG_LEVEL
 		int "Log level for the ESB PTX sample"
 		default 4
 
 endmenu # APPLICATION CODE
+
+menu "DIAGNOSTICS"
+rsource "src/modules/diagnostics/Kconfig"
+endmenu # DIAGNOSTICS
 
 menu "AMC_MODULE"
 rsource "src/modules/amc/Kconfig"
@@ -50,6 +50,10 @@ menu "Messaging"
 rsource "src/modules/messaging/Kconfig"
 rsource "src/events/messaging/Kconfig"
 endmenu
+
+menu "CELLULAR_CONTROLLER"
+rsource "src/modules/cellular_controller/Kconfig"
+endmenu # CELLULAR_CONTROLLER
 
 menu "Zephyr Kernel"
 source "Kconfig.zephyr" 

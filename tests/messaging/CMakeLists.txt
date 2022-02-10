@@ -20,6 +20,7 @@ FILE(GLOB app_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/lte/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/messaging/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/*.c
 )
 target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE ${APP_SOURCE})
@@ -29,8 +30,7 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/messaging/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/lte
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/cellular_controller
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade
 )
 
 

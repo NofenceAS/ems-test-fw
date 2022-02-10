@@ -2,7 +2,12 @@
 menu "APPLICATION_CODE"
 	menu "FW_UPGRADE"
     	rsource "./../../src/modules/fw_upgrade/Kconfig"
+    	rsource "./../../src/events/fw_upgrade/Kconfig"
 	endmenu # FW_UPGRADE
+
+	menu "ERROR_HANDLER"
+    	rsource "./../../src/modules/error_handler/Kconfig"
+	endmenu
 endmenu # APPLICATION CODE
 
 menu "Zephyr Kernel"

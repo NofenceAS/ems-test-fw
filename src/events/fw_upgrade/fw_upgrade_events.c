@@ -26,3 +26,22 @@ static int log_dfu_status_event(const struct event_header *eh, char *buf,
 }
 
 EVENT_TYPE_DEFINE(dfu_status_event, true, log_dfu_status_event, NULL);
+
+/**
+ * @brief DFU status event function for debugging/information. 
+ *        Uses the log to make it easier to
+ *        debug what is happening on the event bus.
+ * 
+ * @param[in] ev event_header for given event.
+ * @param[in] buf triggered event's log event buffer.
+ * @param[in] buf_len length of the buffer received.
+ */
+static int log_start_fota_event(const struct event_header *eh, char *buf,
+				size_t buf_len)
+{
+	struct start_fota_event *event = cast_start_fota_event(eh);
+	return snprintf(buf, buf_len, "Start upgrade event to FW=%d",
+			event->version);
+}
+
+EVENT_TYPE_DEFINE(start_fota_event, true, log_start_fota_event, NULL);
