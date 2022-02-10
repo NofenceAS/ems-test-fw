@@ -5,6 +5,7 @@
 #include <sys/printk.h>
 #include <zephyr.h>
 
+#include "diagnostics.h"
 #include "ble/nf_ble.h"
 #include "fw_upgrade.h"
 #include "fw_upgrade_events.h"
@@ -33,7 +34,17 @@ void main(void)
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
 	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
+	if (eeprom_dev == NULL) {
+		LOG_ERR("No EEPROM detected!");
+	}
 	eep_init(eeprom_dev);
+#endif
+
+	/* Initialize diagnostics module. */
+#if CONFIG_DIAGNOSTICS
+	if (diagnostics_module_init()) {
+		LOG_ERR("Could not initialize diagnostics module");
+	}
 #endif
 	/* Initialize the event manager. */
 	if (event_manager_init()) {

@@ -46,7 +46,6 @@
 		enable-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 	};
-
 };
 
 &adc {
@@ -122,16 +121,15 @@ gnss_uart: &uart1 {
 	mosi-pin = <41>;/* P1.09 */
 	miso-pin = <11>;/* P0.11 */
 	cs-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>, /* CS ACCELEROMETER */
-	           <&gpio0 15 GPIO_ACTIVE_LOW>, /* CS BAROMETER */
-	           <&gpio0 12 GPIO_ACTIVE_LOW>; /* CS EEPROM */
-
+			<&gpio0 15 GPIO_ACTIVE_LOW>, /* CS BAROMETER */
+			<&gpio0 12 GPIO_ACTIVE_LOW>; /* CS EEPROM */
+	
 	movement_sensor: lis2dw12@0 {
 		status = "okay";
-		compatible = "st,lis2dh";
+		compatible = "st,lis2dw12";
 		reg = <0>; /* First defined chip select number*/
 		irq-gpios = <&gpio1 11 0>, <&gpio1 12 0>; /* INT1 and INT2 */
 		spi-max-frequency = <8000000>;
-		disconnect-sdo-sa0-pull-up; /* Disable pull up during init to save power */
 		label = "LIS2DW12-ACCEL";
 	};
 
