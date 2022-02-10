@@ -11,11 +11,27 @@
 	model = "Nofence X2.5";
 	compatible = "nofence,x25";
 
+
+	/* Electric pulse */
+	ep {
+		compatible = "nofence,electric-pulse";
+		ep_ctrl: ep_ctrl {
+			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+			label = "EP CTRL";
+		};
+
+		ep_detect: ep_detect {
+			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+			label = "EP DETECT";
+		};
+	};
+
 	/* Convenience aliases */
 	aliases {
 		eeprom = &eeprom0;
+		ep-ctrl = &ep_ctrl;
+		ep-detect = &ep_detect;
 	};
-
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -51,7 +67,7 @@
 
 /* u-blox SARA-R4 Modem */
 modem_uart: &uart0 {
-    compatible = "nordic,nrf-uarte";
+	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
 	status = "okay";
 	tx-pin = <4>; /* P0.04 */
@@ -106,9 +122,9 @@ gnss_uart: &uart1 {
 	mosi-pin = <41>;/* P1.09 */
 	miso-pin = <11>;/* P0.11 */
 	cs-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>, /* CS ACCELEROMETER */
-			   <&gpio0 30 GPIO_ACTIVE_LOW>, /* CS BAROMETER */
-			   <&gpio0 12 GPIO_ACTIVE_LOW>; /* CS EEPROM */
-	
+	           <&gpio0 15 GPIO_ACTIVE_LOW>, /* CS BAROMETER */
+	           <&gpio0 12 GPIO_ACTIVE_LOW>; /* CS EEPROM */
+
 	movement_sensor: lis2dw12@0 {
 		status = "okay";
 		compatible = "st,lis2dh";
@@ -118,7 +134,7 @@ gnss_uart: &uart1 {
 		disconnect-sdo-sa0-pull-up; /* Disable pull up during init to save power */
 		label = "LIS2DW12-ACCEL";
 	};
-	
+
 	environment_sensor: bme280@1 {
 		compatible = "bosch,bme280";
 		label = "BME280_SPI";
@@ -163,13 +179,8 @@ gnss_uart: &uart1 {
 		sck-frequency = <8000000>;
 		label = "MX25U64";
 		/* vin-supply = <&gnss_flash_pwr>; */
-		jedec-id = [c2 25 37];
-		sfdp-bfp = [
-			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
-			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
-			10 d8 00 ff  23 72 f5 00  82 ed 04 cc  44 83 68 44
-			30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
-		];
+		jedec-id = [ c2 25 37  ];
+		sfdp-bfp = [ e5 20 f1 ff ff ff ff 03 44 eb 08 6b 08 3b 04 bb ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 0f 52 10 d8 00 ff 23 72 f5 00 82 ed 04 cc 44 83 68 44 30 b0 30 b0 f7 c4 d5 5c 00 be 29 ff f0 d0 ff ff  ];
 		size = <67108864>;
 		has-dpd;
 		t-enter-dpd = <10000>;
