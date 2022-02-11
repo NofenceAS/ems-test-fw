@@ -14,6 +14,10 @@ menu "APPLICATION_CODE"
 
 endmenu # APPLICATION CODE
 
+menu "DIAGNOSTICS"
+rsource "src/modules/diagnostics/Kconfig"
+endmenu # DIAGNOSTICS
+
 menu "AMC_MODULE"
 rsource "src/modules/amc/Kconfig"
 endmenu # AMC_MODULE
@@ -46,6 +50,10 @@ menu "Messaging"
 rsource "src/modules/messaging/Kconfig"
 rsource "src/events/messaging/Kconfig"
 endmenu
+
+menu "CELLULAR_CONTROLLER"
+rsource "src/modules/cellular_controller/Kconfig"
+endmenu # CELLULAR_CONTROLLER
 
 menu "Zephyr Kernel"
 source "Kconfig.zephyr" 
