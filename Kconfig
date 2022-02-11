@@ -60,6 +60,6 @@ source "Kconfig.zephyr"
 endmenu
 
 menu "Nofence-modem-driver"
-rsource "src/nofence_modem_driver/Kconfig"
+rsource "src/drivers/nofence_modem_driver/Kconfig"
 endmenu
 
