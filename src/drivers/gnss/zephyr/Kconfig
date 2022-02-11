@@ -13,7 +13,11 @@ if GNSS
 		default 90
 		help
 		GNSS initialization priority.
+		
+	config GNSS_NMEA_PARSER
+		bool "Enable NMEA parser for GNSS data"
+		default n
 
-rsource "Kconfig.ublox-mia-m10"
+	rsource "Kconfig.ublox-mia-m10"
 
 endif # GNSS

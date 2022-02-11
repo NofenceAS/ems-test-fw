@@ -1,5 +1,6 @@
-
 #define DT_DRV_COMPAT u_blox_mia_m10
+
+#include "ublox-mia-m10.h"
 
 #include <init.h>
 #include <zephyr.h>
@@ -9,7 +10,7 @@
 #include <logging/log.h>
 
 #include "gnss.h"
-#include "ublox-mia-m10.h"
+#include "ublox_protocol.h"
 
 LOG_MODULE_REGISTER(MIA_M10, CONFIG_GNSS_LOG_LEVEL);
 
@@ -30,7 +31,7 @@ static uint8_t* gnss_tx_buffer = NULL;
 static struct ring_buf gnss_tx_ring_buf;
 
 static uint8_t* gnss_rx_buffer = NULL;
-static struct ring_buf gnss_rx_ring_buf;
+static uint32_t gnss_rx_cnt = 0;
 
 /**
  *
@@ -94,27 +95,21 @@ static void mia_m10_uart_handle_tx(const struct device *uart_dev)
  */
 static void mia_m10_uart_handle_rx(const struct device *uart_dev)
 {
-	int ret;
-	uint8_t* data;
+	uint32_t received;
+	uint32_t free_space;
+	
+	free_space = CONFIG_GNSS_MIA_M10_BUFFER_SIZE - gnss_rx_cnt;
 
-	uint32_t partial_size = 
-		ring_buf_put_claim(&gnss_rx_ring_buf, 
-				&data, 
-				CONFIG_GNSS_MIA_M10_BUFFER_SIZE);
-
-	if (partial_size == 0) {
+	if (free_space == 0) {
 		mia_m10_uart_flush(uart_dev);
 		return;
 	}
 
-	uint32_t received = uart_fifo_read(uart_dev, 
-					data, 
-					partial_size);
+	received = uart_fifo_read(uart_dev, 
+				  &gnss_rx_buffer[gnss_rx_cnt], 
+				  free_space);
 	
-	ret = ring_buf_put_finish(&gnss_rx_ring_buf, received);
-	if (ret != 0) {
-		LOG_ERR("Failed finishing GNSS RX buffer operation.");
-	}
+	gnss_rx_cnt += received;
 
 	if (received > 0) {
 		k_sem_give(&gnss_rx_sem);
@@ -142,27 +137,58 @@ static void mia_m10_uart_isr(const struct device *uart_dev,
 	}
 }
 
-static void mia_m10_parse_rx(void)
+static uint32_t mia_m10_parse_data(uint32_t offset)
 {
-	int err;
-	uint32_t size;
-	uint32_t sent;
-	uint8_t* data;
+	/* TODO - Check for NMEA, ignore if unused */
+	/* TODO - Check for Ublox M8 protocol */
+	return gnss_rx_cnt - offset;
+}
+
+static void mia_m10_rx_consume(uint32_t cnt)
+{
+	if (cnt < gnss_rx_cnt) {
+		for (uint32_t i = 0; i < cnt; i++) {
+			gnss_rx_buffer[i] = gnss_rx_buffer[cnt + i];
+		}
+	}
+	gnss_rx_cnt -= cnt;
+}
+
+static void mia_m10_handle_received_data(void* dev)
+{
+	const struct device *uart_dev = (const struct device *)dev;
+
+	bool is_parsing;
+	uint32_t total_parsed_cnt;
 
 	while (true) {
 		k_sem_take(&gnss_rx_sem, K_FOREVER);
 
-		size = ring_buf_get_claim(&gnss_rx_ring_buf, 
-						&data, 
-						CONFIG_GNSS_MIA_M10_BUFFER_SIZE);
-		
-		/* TODO - Parse received bytes */
-		sent = size; 
-		
-		err = ring_buf_get_finish(&gnss_rx_ring_buf, sent);
-		if (err != 0) {
-			LOG_ERR("Failed finishing GNSS RX buffer operation.");
+		total_parsed_cnt = 0;
+		is_parsing = true;
+		while (is_parsing) {
+			uint32_t parsed_cnt = 
+					mia_m10_parse_data(total_parsed_cnt);
+
+			if (parsed_cnt == 0) {
+				is_parsing = false;
+			}
+
+			total_parsed_cnt += parsed_cnt;
 		}
+
+		/* Consume data from buffer. It is necessary to block
+		 * UART RX interrupt to avoid concurrent update of counter
+		 * and buffer area. Preemption of thread must be disabled
+		 * to minimize the time UART RX interrupts are disabled. 
+		*/
+		k_sched_lock();
+		uart_irq_rx_disable(uart_dev);
+		
+		mia_m10_rx_consume(total_parsed_cnt);
+
+		uart_irq_rx_enable(uart_dev);
+		k_sched_unlock();
 	
 		k_yield();
 	}
@@ -189,9 +215,7 @@ static int mia_m10_init(const struct device *dev)
 		if (gnss_rx_buffer == NULL) {
 			return -ENOBUFS;
 		}
-		ring_buf_init(&gnss_rx_ring_buf, 
-			      CONFIG_GNSS_MIA_M10_BUFFER_SIZE, 
-			      gnss_rx_buffer);
+		gnss_rx_cnt = 0;
 	}
 	if (gnss_tx_buffer == NULL)
 	{
@@ -220,8 +244,9 @@ static int mia_m10_init(const struct device *dev)
 	/* Start RX thread */
 	k_thread_create(&gnss_rx_thread, gnss_rx_stack,
 			K_KERNEL_STACK_SIZEOF(gnss_rx_stack),
-			(k_thread_entry_t) mia_m10_parse_rx,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+			(k_thread_entry_t) mia_m10_handle_received_data,
+			(void*)uart_dev, NULL, NULL, 
+			K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	return 0;
 }

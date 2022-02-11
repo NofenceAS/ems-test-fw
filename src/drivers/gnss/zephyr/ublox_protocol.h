@@ -1,0 +1,9 @@
+
+#ifndef UBLOX_PROTOCOL_H_
+#define UBLOX_PROTOCOL_H_
+
+#define UBLOX_SYNC_CHAR_1	0xB5
+#define UBLOX_SYNC_CHAR_2	0x62
+
+
+#endif /* UBLOX_PROTOCOL_H_ */
