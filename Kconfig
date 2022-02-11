@@ -51,6 +51,10 @@ rsource "src/modules/messaging/Kconfig"
 rsource "src/events/messaging/Kconfig"
 endmenu
 
+menu "CELLULAR_CONTROLLER"
+rsource "src/modules/cellular_controller/Kconfig"
+endmenu # CELLULAR_CONTROLLER
+
 menu "Zephyr Kernel"
 source "Kconfig.zephyr" 
 endmenu

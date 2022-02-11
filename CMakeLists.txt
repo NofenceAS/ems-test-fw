@@ -92,6 +92,8 @@ zephyr_library_include_directories(
         src/modules/diagnostics
         src/events/diagnostics
         src/events/fw_upgrade
+	src/modules/cellular_controller
+        src/events/cellular_controller
         ${PROJECT_BINARY_DIR}/include/generated/)
         
 target_sources(app PRIVATE ${APP_MAIN}
@@ -104,6 +106,7 @@ add_subdirectory(src/modules/ble)
 add_subdirectory(src/modules/fw_upgrade)
 add_subdirectory(src/eeprom)
 add_subdirectory(src/modules/amc)
+add_subdirectory(src/modules/cellular_controller)
 
 add_subdirectory(src/events/messaging)
 add_subdirectory(src/modules/messaging)
