@@ -1,0 +1,12 @@
+# Copyright (c) 2022 Nofence AS
+ 
+menu "Event options"
+config FW_UPGRADE_PATH_LEN
+	int "Max length of firmware upgrade host name (ip address/port)"
+	default 64
+
+config FW_UPGRADE_HOST_LEN
+	int "Max length of firmware upgrade path name"
+	default 64
+
+endmenu

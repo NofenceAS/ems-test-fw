@@ -9,11 +9,24 @@ message(STATUS "Build type: ${BUILD_TYPE} 🚀")
 list(APPEND DTS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Define configuration files.
+#if (HARDWARE_TEST)
+#list(APPEND CONF_FILE
+#        ${CMAKE_CURRENT_SOURCE_DIR}/prj.conf
+#        ${CMAKE_CURRENT_SOURCE_DIR}/hw_test.conf
+#        )
+#endif()
+
+
+
 if (HARDWARE_TEST)
-list(APPEND CONF_FILE
-        ${CMAKE_CURRENT_SOURCE_DIR}/prj.conf
-        ${CMAKE_CURRENT_SOURCE_DIR}/hw_test.conf
-        )
+        if(DTC_OVERLAY_FILE)
+                set(DTC_OVERLAY_FILE
+                        "${DTC_OVERLAY_FILE};boards/arm/nf_x25_nrf52840/nf_x25_hw_test.overlay"
+                        CACHE STRING "" FORCE
+                        )
+        else()
+                set(DTC_OVERLAY_FILE boards/arm/nf_x25_nrf52840/nf_x25_hw_test.overlay)
+        endif()
 endif()
 
 # Out-of-tree driver for GNSS,
@@ -24,6 +37,8 @@ list(APPEND ZEPHYR_EXTRA_MODULES
 list(APPEND ZEPHYR_EXTRA_MODULES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/collar_protocol
         )
+
+
 
 # Re-direct the directory where the 'boards' directory is found from
 # $ZEPHYR_BASE to this directory.
@@ -49,7 +64,7 @@ zephyr_include_directories(include
 zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-
+zephyr_include_directories(${PROJECT_BINARY_DIR}/include/generated)
 
 # These are common files used by both hardware test and the real app
 set(APP_SOURCES
@@ -57,11 +72,11 @@ set(APP_SOURCES
         src/ble/beacon_processor.c
 )
 
-if (HARDWARE_TEST)
-        set(APP_MAIN src/main_hardware_test.c)
-else ()
+#if (HARDWARE_TEST)
+#        set(APP_MAIN src/main_hardware_test.c)
+#else ()
         set(APP_MAIN src/main.c)
-endif ()
+#endif ()
 
 if (CONFIG_COLLAR_PROTOCOL)
         add_dependencies(app collar_protocol_headers)
@@ -72,9 +87,15 @@ zephyr_library_include_directories(
         src/modules/amc
         src/modules/fw_upgrade
         src/events
-  	src/modules/error_handler
+        src/modules/error_handler
+        src/events/error_handler
+        src/modules/diagnostics
+        src/events/diagnostics
+        src/events/fw_upgrade
+	src/modules/cellular_controller
+        src/events/cellular_controller
   	src/modules/buzzer
-  	src/events/error_handler)
+        ${PROJECT_BINARY_DIR}/include/generated/)
         
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
@@ -86,8 +107,13 @@ add_subdirectory(src/modules/ble)
 add_subdirectory(src/modules/fw_upgrade)
 add_subdirectory(src/eeprom)
 add_subdirectory(src/modules/amc)
-
+add_subdirectory(src/modules/cellular_controller)
 add_subdirectory(src/modules/buzzer)
 
 add_subdirectory(src/events/messaging)
 add_subdirectory(src/modules/messaging)
+add_subdirectory(src/modules/diagnostics)
+
+add_subdirectory(src/events/electric_pulse)
+add_subdirectory(src/modules/electric_pulse)
+add_subdirectory(src//drivers/nofence_modem_driver)
