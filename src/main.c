@@ -16,6 +16,7 @@
 #include "nf_eeprom.h"
 
 #include "nf_version.h"
+#include "ble/nf_ble.h"
 
 #include "fw_upgrade.h"
 
@@ -72,4 +73,6 @@ void main(void)
 
 	LOG_INF("Marked application firmware version %i as valid.",
 		NF_X25_VERSION_NUMBER);
+
+	nf_ble_start_scan();
 }
