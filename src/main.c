@@ -70,12 +70,19 @@ void main(void)
 		LOG_ERR("Could not initialize buzzer module and pins.");
 	}
 
-	/*struct sound_event *ev = new_sound_event();
+	struct sound_event *ev = new_sound_event();
+	ev->type = SND_PERSPELMANN;
+	EVENT_SUBMIT(ev);
 
-	ev->type = SND_WELCOME;
+	/* Sleeps for 5 seconds WHILE song is playing, not after it played. 
+	 * FIXME!
+	 */
+	k_sleep(K_SECONDS(5));
 
-	EVENT_SUBMIT(ev);*/
-	play_type(SND_WELCOME);
+	struct sound_event *ev2 = new_sound_event();
+	ev2->type = SND_FIND_ME;
+	EVENT_SUBMIT(ev2);
+
 	LOG_INF("Marked application firmware version %i as valid.",
 		NF_X25_VERSION_NUMBER);
 }
