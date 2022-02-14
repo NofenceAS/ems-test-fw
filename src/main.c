@@ -55,10 +55,6 @@ void main(void)
 	if (ble_module_init()) {
 		LOG_ERR("Could not initialize BLE module");
 	}
-	/* Initialize firmware upgrade module. */
-	if (fw_upgrade_module_init()) {
-		LOG_ERR("Could not initialize firmware upgrade module");
-	}
 	if (ep_module_init()) {
 		LOG_ERR("Could not initialize electric pulse module");
 	}
@@ -74,6 +70,11 @@ void main(void)
 		LOG_ERR("Could not initialize buzzer module and pins.");
 	}
 
+	/*struct sound_event *ev = new_sound_event();
+
+	ev->type = SND_WELCOME;
+
+	EVENT_SUBMIT(ev);*/
 	play_type(SND_WELCOME);
 	LOG_INF("Marked application firmware version %i as valid.",
 		NF_X25_VERSION_NUMBER);
