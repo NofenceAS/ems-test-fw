@@ -84,7 +84,7 @@ modem_uart: &uart0 {
 /* u-blox MIA-M10 GNSS */
 gnss_uart: &uart1 {
 	compatible = "nordic,nrf-uarte";
-	current-speed = <115200>;
+	current-speed = <38400>;
 	status = "okay";
 	tx-pin = <6>; /* P0.06 */
 	rx-pin = <7>; /* P0.07 */

@@ -156,8 +156,14 @@ static uint32_t mia_m10_parse_data(uint32_t offset)
 			}
 		} else if (gnss_rx_buffer[i] == UBLOX_SYNC_CHAR_1) {
 			/* UBLOX */
-			if (remainder >= 2) {
-
+			uint32_t parsed = 
+				ublox_parse(&gnss_rx_buffer[i], remainder);
+			if (parsed == 0) {
+				/* Nothing parsed means not enough data yet */
+				break;
+			} else {
+				remainder -= parsed;
+				i += parsed;
 			}
 		} else {
 			remainder--;
