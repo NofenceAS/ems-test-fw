@@ -11,6 +11,7 @@
 
 #include "gnss.h"
 #include "ublox_protocol.h"
+#include "nmea_parser.h"
 
 LOG_MODULE_REGISTER(MIA_M10, CONFIG_GNSS_LOG_LEVEL);
 
@@ -139,9 +140,32 @@ static void mia_m10_uart_isr(const struct device *uart_dev,
 
 static uint32_t mia_m10_parse_data(uint32_t offset)
 {
-	/* TODO - Check for NMEA, ignore if unused */
-	/* TODO - Check for Ublox M8 protocol */
-	return gnss_rx_cnt - offset;
+	uint32_t i = offset;
+	uint32_t remainder = gnss_rx_cnt-i;
+	while(remainder > 0) {
+		if (gnss_rx_buffer[i] == NMEA_START_DELIMITER) {
+			/* NMEA */
+			uint32_t parsed = 
+				nmea_parse(&gnss_rx_buffer[i], remainder);
+			if (parsed == 0) {
+				/* Nothing parsed means not enough data yet */
+				break;
+			} else {
+				remainder -= parsed;
+				i += parsed;
+			}
+		} else if (gnss_rx_buffer[i] == UBLOX_SYNC_CHAR_1) {
+			/* UBLOX */
+			if (remainder >= 2) {
+
+			}
+		} else {
+			remainder--;
+			i++;
+		}
+	}
+
+	return i - offset;
 }
 
 static void mia_m10_rx_consume(uint32_t cnt)
