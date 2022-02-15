@@ -12,6 +12,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 FILE(GLOB app_sources 
         mock/*.c
+        mock/drivers/*.c
         src/*.c 
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/environment/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/environment/*.c

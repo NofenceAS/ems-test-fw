@@ -3,6 +3,8 @@
  */
 
 #include <ztest.h>
+#include <zephyr.h>
+#include <drivers/sensor.h>
 #include "env_sensor_event.h"
 
 K_SEM_DEFINE(env_data_sem, 0, 1);
@@ -24,6 +26,11 @@ void test_init(void)
 
 void test_event_contents(void)
 {
+	ztest_returns_value(sensor_sample_fetch, 0);
+	ztest_returns_value(sensor_channel_get, 0);
+	ztest_returns_value(sensor_channel_get, 0);
+	ztest_returns_value(sensor_channel_get, 0);
+
 	struct request_env_sensor_event *ev = new_request_env_sensor_event();
 	EVENT_SUBMIT(ev);
 
