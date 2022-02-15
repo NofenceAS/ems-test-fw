@@ -94,6 +94,8 @@ zephyr_library_include_directories(
         src/events/fw_upgrade
   	src/modules/environment
   	src/events/environment
+	src/modules/cellular_controller
+        src/events/cellular_controller
         ${PROJECT_BINARY_DIR}/include/generated/)
         
 target_sources(app PRIVATE ${APP_MAIN}
@@ -107,6 +109,7 @@ add_subdirectory(src/modules/fw_upgrade)
 add_subdirectory(src/modules/storage_controller)
 add_subdirectory(src/eeprom)
 add_subdirectory(src/modules/amc)
+add_subdirectory(src/modules/cellular_controller)
 
 add_subdirectory(src/events/messaging)
 add_subdirectory(src/modules/messaging)
@@ -114,6 +117,6 @@ add_subdirectory(src/modules/diagnostics)
 
 add_subdirectory(src/events/electric_pulse)
 add_subdirectory(src/modules/electric_pulse)
-
+add_subdirectory(src//drivers/nofence_modem_driver)
 add_subdirectory(src/modules/environment)
 
