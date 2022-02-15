@@ -281,6 +281,27 @@ static int mia_m10_init(const struct device *dev)
 	return 0;
 }
 
+int mia_m10_put(uint8_t* buffer, uint32_t size)
+{
+	ring_buf_put(&gnss_tx_ring_buf, buffer, size);
+	return 0;
+}
+
+int mia_m10_setup(void)
+{
+	uint32_t keys = 0xC000D000;
+	int ret = ublox_send_cfg_valget(DEFAULT_LAYER, 0, &keys, 1, mia_m10_put, NULL);
+	if (ret != 0)
+	{
+		return ret;
+	}
+
+	/* TODO - Wait for response */
+
+
+	return 0;
+}
+
 static struct mia_m10_dev_data mia_m10_data;
 
 static const struct mia_m10_dev_config mia_m10_config = {

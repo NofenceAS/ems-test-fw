@@ -2,7 +2,10 @@
 #ifndef UBLOX_PROTOCOL_H_
 #define UBLOX_PROTOCOL_H_
 
+#include "ublox_types.h"
+
 #include <stdint.h>
+#include <stdbool.h>
 
 #define UBLOX_SYNC_CHAR_1	0xB5
 #define UBLOX_SYNC_CHAR_2	0x62
@@ -20,6 +23,25 @@
 
 #define UBLOX_MIN_PACKET_SIZE 	(UBLOX_OFFS_PAYLOAD+UBLOX_CHK_SIZE)
 
+struct ublox_handler {
+	uint8_t msg_class;
+	uint8_t msg_id;
+	int (*handle)(void*,void*,uint32_t);
+	void* context;
+};
+
+void ublox_protocol_init(void);
+
+int ublox_register_handler(uint8_t msg_class, uint8_t msg_id, 
+			   int (*handle)(void*,void*,uint32_t), void* context);
+
 uint32_t ublox_parse(uint8_t* data, uint32_t size);
+
+int ublox_send_cfg_valget(enum ublox_cfg_val_layer layer, 
+			  uint16_t position, 
+			  uint32_t* keys, 
+			  uint8_t key_cnt,
+			  int (*put_fnc)(uint8_t*,uint32_t),
+			  int (*ack_cb)(bool));
 
 #endif /* UBLOX_PROTOCOL_H_ */

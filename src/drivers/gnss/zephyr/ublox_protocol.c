@@ -1,12 +1,91 @@
 #include "ublox_protocol.h"
 
-#include "ublox_types.h"
-
-#include <stdbool.h>
+#include "ublox_ids.h"
 
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(UBLOX_PROTOCOL, CONFIG_GNSS_LOG_LEVEL);
+
+#define UBLOX_MAX_HANDLERS 20
+
+static struct ublox_handler handlers[UBLOX_MAX_HANDLERS];
+static uint32_t callback_count = 0;
+
+void ublox_protocol_init(void)
+{
+	callback_count = 0;
+	memset(handlers, 0, sizeof(handlers));
+}
+
+static int ublox_resolve_handler(uint8_t msg_class, uint8_t msg_id,
+				 struct ublox_handler** handler)
+{
+	*handler = NULL;
+	for (uint32_t i = 0; i < UBLOX_MAX_HANDLERS; i++)
+	{
+		if ((handlers[i].msg_class == msg_class) && 
+			(handlers[i].msg_id == msg_id))
+		{
+			*handler = &handlers[i];
+			break;
+		}
+	}
+
+	if (*handler != NULL)
+	{
+		return -ENOMSG;
+	}
+
+	return 0;
+}
+
+int ublox_register_handler(uint8_t msg_class, uint8_t msg_id, 
+			   int (*handle)(void*,void*,uint32_t), void* context)
+{
+	struct ublox_handler* handler = NULL;
+	int ret = ublox_resolve_handler(msg_class, msg_id, &handler);
+	if (ret == 0)
+	{
+		/* Handler already registered */
+		if (handler == NULL)
+		{
+			/* Clear entry */
+			memset(handler, 0, 
+			       sizeof(*handler));
+		} else 
+		{
+			/* Update it */
+			handler->handle = handle;
+			handler->context = context;
+		}
+
+		return 0;
+	}
+
+	/* Iterate over all available slots, find empty */
+	for (uint32_t i = 0; i < UBLOX_MAX_HANDLERS; i++)
+	{
+		if ((handlers[i].msg_class == 0) && 
+		    (handlers[i].msg_id == 0))
+		{
+			handler = &handlers[i];
+			break;
+		}
+	}
+
+	if (handler == NULL)
+	{
+		return -ENOBUFS;
+	}
+
+	/* Register entry */
+	handler->msg_class = msg_class;
+	handler->msg_id = msg_id;
+	handler->handle = handle;
+	handler->context = context;
+
+	return 0;
+}
 
 /* UBX checksum is Fletcher's algorithm */
 static uint16_t ublox_calculate_checksum(uint8_t* data, uint16_t length)
@@ -26,12 +105,20 @@ static uint16_t ublox_calculate_checksum(uint8_t* data, uint16_t length)
 	return (ck_a + (ck_b<<8));
 }
 
-static int ublox_process_message(uint8_t class, uint8_t id, 
+static int ublox_process_message(uint8_t msg_class, uint8_t msg_id, 
 				 uint8_t* payload, uint16_t length)
 {
-	LOG_ERR("Process U-blox Message: %d, %d", class, id);
+	//LOG_ERR("Process U-blox Message: %d, %d", class, id);
+	
+	struct ublox_handler* handler = NULL;
+	int ret = ublox_resolve_handler(msg_class, msg_id, &handler);
+	if (ret == 0)
+	{
+		//LOG_ERR("Calling handler");
+		ret = handler->handle(handler->context, payload, length);
+	}
 
-	return 0;
+	return ret;
 }
 
 static uint16_t ublox_get_checksum(uint8_t* data, uint16_t length)
@@ -77,7 +164,7 @@ uint32_t ublox_parse(uint8_t* data, uint32_t size)
 
 	if (!ublox_is_checksum_correct(data, payload_length)) {
 		/* Wrong checksum, ignore data */
-		LOG_ERR("Checksum failed");
+		//LOG_ERR("Checksum failed");
 		return packet_length;
 	}
 
@@ -90,28 +177,96 @@ uint32_t ublox_parse(uint8_t* data, uint32_t size)
 				      msg_id, 
 				      &data[UBLOX_OFFS_PAYLOAD],
 				      payload_length) != 0) {
-		LOG_ERR("Failed processing message");
+		//LOG_ERR("Failed processing message");
 	}
 
 	return packet_length;
 }
 
-int ublox_build_cfg_valget(uint8_t* buffer, uint32_t* size, uint32_t max_size, 
-			   enum ublox_cfg_layer layer, 
-			   uint16_t position, 
-			   uint32_t* keys, 
-			   uint8_t key_cnt)
+static void ublox_checksum_add(uint8_t value, struct ublox_checksum* checksum)
 {
-	/* Buffer must be 32bit aligned */
-	if (((uint32_t)buffer%4) != 0) {
-		return -EFAULT;
+	checksum->ck_a = checksum->ck_a + value;
+	checksum->ck_b = checksum->ck_b + checksum->ck_a;
+}
+
+static void ublox_put_u8(uint8_t value, 
+			 int (*put_fnc)(uint8_t*,uint32_t),
+			 struct ublox_checksum* checksum)
+{
+	ublox_checksum_add(value, checksum);
+	put_fnc(&value, 1);
+}
+
+static void ublox_put_u16(uint16_t value, 
+			  int (*put_fnc)(uint8_t*,uint32_t),
+			  struct ublox_checksum* checksum)
+{
+	ublox_put_u8(value&0xFF, put_fnc, checksum);
+	ublox_put_u8((value>>8)&0xFF, put_fnc, checksum);
+}
+
+static void ublox_put_u32(uint32_t value, 
+			  int (*put_fnc)(uint8_t*,uint32_t),
+			  struct ublox_checksum* checksum)
+{
+	ublox_put_u8(value&0xFF, put_fnc, checksum);
+	ublox_put_u8((value>>8)&0xFF, put_fnc, checksum);
+	ublox_put_u8((value>>16)&0xFF, put_fnc, checksum);
+	ublox_put_u8((value>>24)&0xFF, put_fnc, checksum);
+}
+
+static int ublox_send_header(uint8_t msg_class, 
+			     uint8_t msg_id, 
+			     uint16_t length,
+			     int (*put_fnc)(uint8_t*,uint32_t),
+			     struct ublox_checksum* checksum)
+{
+	ublox_put_u8(msg_class, put_fnc, checksum);
+	ublox_put_u8(msg_id, put_fnc, checksum);
+	ublox_put_u16(length, put_fnc, checksum);
+
+	return 0;
+}
+
+int ublox_send_cfg_valget(enum ublox_cfg_val_layer layer, 
+			  uint16_t position, 
+			  uint32_t* keys, 
+			  uint8_t key_cnt,
+			  int (*put_fnc)(uint8_t*,uint32_t),
+			  int (*ack_cb)(bool))
+{
+	/* Validate input parameters */
+	if (key_cnt > 64)
+	{
+		return -EINVAL;
 	}
 
-	/* Calculate and validate packet length */
-	uint32_t packet_length = (UBLOX_MIN_PACKET_SIZE + 4 + key_cnt*4);
-	if (packet_length > max_size) {
-		return -ENOBUFS;
+	/* Calculate packet length */
+	uint32_t payload_length = 4 + key_cnt*4;
+
+	/* Send sync characters */
+	ublox_put_u8(UBLOX_SYNC_CHAR_1, put_fnc, NULL);
+	ublox_put_u8(UBLOX_SYNC_CHAR_2, put_fnc, NULL);
+
+	/* Reset checksum */
+	struct ublox_checksum checksum;
+	memset(&checksum, 0, sizeof(checksum));
+
+	/* Send header */
+	ublox_send_header(UBLOX_CFG, UBLOX_CFG_VALGET,
+			  payload_length, put_fnc, &checksum);
+
+	/* Send payload */
+	ublox_put_u8(0x00, put_fnc, &checksum);
+	ublox_put_u8((uint8_t) layer, put_fnc, &checksum);
+	ublox_put_u16(position, put_fnc, &checksum);
+	for (uint32_t i = 0; i < key_cnt; i++) {
+		ublox_put_u32(keys[i], put_fnc, &checksum);
 	}
+
+	/* Send checksum */
+	ublox_put_u8(checksum.ck_a, put_fnc, NULL);
+	ublox_put_u8(checksum.ck_b, put_fnc, NULL);
 
 	return 0;
 }
