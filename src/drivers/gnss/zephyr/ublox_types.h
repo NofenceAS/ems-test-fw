@@ -35,12 +35,27 @@ struct UBLOX_STORAGE_ATTR ublox_ack_ack {
 	uint8_t msgID;
 };
 
-
-struct UBLOX_STORAGE_ATTR ublox_cfg_valget {
+struct UBLOX_STORAGE_ATTR ublox_cfg_val {
 	uint8_t version;
 	uint8_t layer;
-	uint8_t reserved0[2];
+	uint16_t position;
 	uint32_t keys;
 };
+
+#define GET_LE8(x)	((x[0]<<0))
+#define GET_LE16(x)	((x[0]<<0)|\
+			 (x[1]<<8))
+#define GET_LE32(x)	((x[0]<<0)|\
+			 (x[1]<<8)|\
+			 (x[2]<<16)|\
+			 (x[3]<<24))
+#define GET_LE64(x)	(((uint64_t)x[0]<<0)|\
+			 ((uint64_t)x[1]<<8)|\
+			 ((uint64_t)x[2]<<16)|\
+			 ((uint64_t)x[3]<<24)|\
+			 ((uint64_t)x[4]<<32)|\
+			 ((uint64_t)x[5]<<40)|\
+			 ((uint64_t)x[6]<<48)|\
+			 ((uint64_t)x[7]<<56))
 
 #endif /* UBLOX_TYPES_H_ */

@@ -20,6 +20,6 @@ struct mia_m10_dev_config {
 	const char *uart_name;
 };
 
-int mia_m10_setup(void);
+int mia_m10_config_get(uint32_t key, uint8_t size, uint64_t* raw_value);
 
 #endif /* UBLOX_MIA_M10_H_ */

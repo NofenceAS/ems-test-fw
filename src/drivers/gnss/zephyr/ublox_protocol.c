@@ -237,51 +237,6 @@ uint32_t ublox_parse(uint8_t* data, uint32_t size)
 	return packet_length;
 }
 
-static void ublox_checksum_add(uint8_t value, struct ublox_checksum* checksum)
-{
-	checksum->ck_a = checksum->ck_a + value;
-	checksum->ck_b = checksum->ck_b + checksum->ck_a;
-}
-
-static void ublox_put_u8(uint8_t value, 
-			 int (*put_fnc)(uint8_t*,uint32_t),
-			 struct ublox_checksum* checksum)
-{
-	ublox_checksum_add(value, checksum);
-	put_fnc(&value, 1);
-}
-
-static void ublox_put_u16(uint16_t value, 
-			  int (*put_fnc)(uint8_t*,uint32_t),
-			  struct ublox_checksum* checksum)
-{
-	ublox_put_u8(value&0xFF, put_fnc, checksum);
-	ublox_put_u8((value>>8)&0xFF, put_fnc, checksum);
-}
-
-static void ublox_put_u32(uint32_t value, 
-			  int (*put_fnc)(uint8_t*,uint32_t),
-			  struct ublox_checksum* checksum)
-{
-	ublox_put_u8(value&0xFF, put_fnc, checksum);
-	ublox_put_u8((value>>8)&0xFF, put_fnc, checksum);
-	ublox_put_u8((value>>16)&0xFF, put_fnc, checksum);
-	ublox_put_u8((value>>24)&0xFF, put_fnc, checksum);
-}
-
-static int ublox_send_header(uint8_t msg_class, 
-			     uint8_t msg_id, 
-			     uint16_t length,
-			     int (*put_fnc)(uint8_t*,uint32_t),
-			     struct ublox_checksum* checksum)
-{
-	ublox_put_u8(msg_class, put_fnc, checksum);
-	ublox_put_u8(msg_id, put_fnc, checksum);
-	ublox_put_u16(length, put_fnc, checksum);
-
-	return 0;
-}
-
 int ublox_reset_response_handlers(void)
 {
 	if (k_mutex_lock(&cmd_mutex, K_MSEC(10)) == 0) {
@@ -321,22 +276,75 @@ int ublox_set_response_handlers(uint8_t* buffer,
 	return 0;
 }
 
-int ublox_build_cfg_valget(uint8_t* buffer, uint32_t* size, uint32_t max_size,
-			   enum ublox_cfg_val_layer layer, 
-			   uint16_t position, 
-			   uint32_t* keys, 
-			   uint8_t key_cnt)
+static uint8_t ublox_get_cfg_size(uint32_t key)
 {
-	int ret = 0;
+	uint8_t decoded_size = 0;
+	uint8_t size_field = ((key>>28)&7);
+	switch (size_field) {
+		case 1:
+		case 2:
+			decoded_size = 1;
+			break;
+		case 3:
+			decoded_size = 2;
+			break;
+		case 4:
+			decoded_size = 4;
+			break;
+		case 5:
+			decoded_size = 8;
+			break;
+		default:
+			break;
+	}
+	return decoded_size;
+}
 
-	/* Validate input parameters */
-	if (key_cnt > 64)
-	{
+int ublox_get_cfg_val(uint8_t* payload, uint32_t size, 
+		      uint8_t val_size, uint64_t* val)
+{
+	struct ublox_cfg_val* msg = (void*)payload;
+	if (size < offsetof(struct ublox_cfg_val, keys)) {
+		return -EINVAL;
+	}
+	size -= offsetof(struct ublox_cfg_val, keys);
+	uint8_t* cfgval = (uint8_t*)&msg->keys;
+
+	if (size < 5) {
 		return -EINVAL;
 	}
 
+	uint32_t key = GET_LE32(cfgval);
+	uint8_t* key_val = &cfgval[4];
+
+	uint8_t decoded_size = ublox_get_cfg_size(key);
+	if (decoded_size != val_size) {
+		return -ECOMM;
+	}
+	if (size < (4+val_size)) {
+		return -ENODATA;
+	}
+
+	if (val_size == 1) {
+		*val = GET_LE8(key_val);
+	} else if (val_size == 2) {
+		*val = GET_LE16(key_val);
+	} else if (val_size == 4) {
+		*val = GET_LE32(key_val);
+	} else if (val_size == 8) {
+		*val = GET_LE64(key_val);
+	} 
+
+	return 0;
+}
+
+int ublox_build_cfg_valget(uint8_t* buffer, uint32_t* size, uint32_t max_size,
+			   enum ublox_cfg_val_layer layer, 
+			   uint16_t position, 
+			   uint32_t key)
+{
 	/* Calculate packet length */
-	uint32_t payload_length = 4 + key_cnt*4;
+	uint32_t payload_length = 4 + 4;
 	uint32_t packet_length = UBLOX_OVERHEAD_SIZE + payload_length;
 
 	if (max_size < packet_length) {
@@ -346,17 +354,10 @@ int ublox_build_cfg_valget(uint8_t* buffer, uint32_t* size, uint32_t max_size,
 	uint8_t msg_class = UBX_CFG;
 	uint8_t msg_id = UBX_CFG_VALGET;
 
-	/* Register function waiting for poll data, and ack function */
-	ret = ublox_register_cmd_response_handlers(msg_class, msg_id, 
-						   poll_cb, ack_cb, context);
-	if (ret != 0) {
-		return ret;
-	}
-
 	/* Build data structure pointers */
 	struct ublox_header* header = (void*)buffer;
-	struct ublox_cfg_valget* cfg_valget = (void*)&buffer[sizeof(struct ublox_header)];
-	union ublox_checksum* checksum = (void*)&buffer[sizeof(struct ublox_header) + payload_length]
+	struct ublox_cfg_val* cfg_valget = (void*)&buffer[sizeof(struct ublox_header)];
+	union ublox_checksum* checksum = (void*)&buffer[sizeof(struct ublox_header) + payload_length];
 
 	/* Fill header */
 	header->sync1 = UBLOX_SYNC_CHAR_1;
@@ -371,9 +372,53 @@ int ublox_build_cfg_valget(uint8_t* buffer, uint32_t* size, uint32_t max_size,
 	cfg_valget->version = 0x00;
 	cfg_valget->layer = (uint8_t) layer;
 	cfg_valget->position = position;
-	uint32_t* keys_buf = (void*)&cfg_valget->keys;
-	for (uint32_t i = 0; i < key_cnt; i++) {
-		keys_buf[i] = keys[i];
+	cfg_valget->keys = key;
+
+	/* Calculate checksum */
+	checksum->ck = ublox_calculate_checksum(buffer, header->length);
+
+	return 0;
+}
+
+int ublox_build_cfg_valset(uint8_t* buffer, uint32_t* size, uint32_t max_size,
+			   enum ublox_cfg_val_layer layer, 
+			   uint32_t key,
+			   uint64_t value)
+{
+	uint8_t decoded_size = ublox_get_cfg_size(key);
+
+	/* Calculate packet length */
+	uint32_t payload_length = 4 + 4 + decoded_size;
+	uint32_t packet_length = UBLOX_OVERHEAD_SIZE + payload_length;
+
+	if (max_size < packet_length) {
+		return -ENOBUFS;
+	}
+
+	uint8_t msg_class = UBX_CFG;
+	uint8_t msg_id = UBX_CFG_VALSET;
+
+	/* Build data structure pointers */
+	struct ublox_header* header = (void*)buffer;
+	struct ublox_cfg_val* cfg_valset = (void*)&buffer[sizeof(struct ublox_header)];
+	union ublox_checksum* checksum = (void*)&buffer[sizeof(struct ublox_header) + payload_length];
+
+	/* Fill header */
+	header->sync1 = UBLOX_SYNC_CHAR_1;
+	header->sync2 = UBLOX_SYNC_CHAR_2;
+	header->msg_class = msg_class;
+	header->msg_id = msg_id;
+	header->length = payload_length;
+
+	/* Null payload first to account for reserved fields */
+	memset(cfg_valset, 0, payload_length);
+	/* Fill payload */
+	cfg_valset->version = 0x00;
+	cfg_valset->layer = (uint8_t) layer;
+	cfg_valset->keys = key;
+	uint8_t* key_val = (uint8_t*)&cfg_valset->keys;
+	for (uint8_t i = 0; i < decoded_size; i++) {
+		key_val[i] = (value>>(8*i))&0xFF;
 	}
 
 	/* Calculate checksum */

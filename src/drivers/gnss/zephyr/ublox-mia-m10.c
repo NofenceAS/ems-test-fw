@@ -31,8 +31,11 @@ static const struct device *mia_m10_uart_dev = GNSS_UART_DEV;
 
 /* Command / Response control structures for parsing */
 static struct k_mutex cmd_mutex;
-K_SEM_DEFINE(ack_sem, 0, 1);
-K_SEM_DEFINE(poll_sem, 0, 1);
+static struct k_sem cmd_ack_sem;
+static struct k_sem cmd_poll_sem;
+static bool cmd_ack = false;
+static uint8_t cmd_buf[256];
+static uint32_t cmd_size = 0;
 
 /* TODO - consider creating context struct */
 /* Semaphore for signalling thread about received data. */
@@ -240,7 +243,13 @@ static void mia_m10_test(void* dev)
 {
 	while (true) {
 		k_sleep(K_MSEC(10000));
-		mia_m10_setup();
+		uint64_t raw_value = 0;
+		int ret = mia_m10_config_get(UBX_CFG_MSGOUT_NMEA_ID_RMC_UART1,
+					     1, &raw_value);
+		if (ret != 0)
+		{
+
+		}
 	}
 }
 
@@ -251,6 +260,8 @@ static int mia_m10_init(const struct device *dev)
 	/* Initialize Ublox protocol parser */
 	ublox_protocol_init();
 	k_mutex_init(&cmd_mutex);
+	k_sem_init(&cmd_ack_sem, 0, 1);
+	k_sem_init(&cmd_poll_sem, 0, 1);
 
 	/* Check that UART device is available */
 	if (mia_m10_uart_dev == NULL) {
@@ -320,29 +331,32 @@ int mia_m10_send(uint8_t* buffer, uint32_t size)
 
 static int mia_m10_poll_cb(void* context, uint8_t msg_class, uint8_t msg_id, void* payload, uint32_t length)
 {
-	k_sem_give(&poll_sem);
-
-	/* TODO - Copy data */
+	if (length <= sizeof(cmd_buf)) {
+		cmd_size = length;
+		if (payload != NULL) {
+			memcpy(cmd_buf, payload, length);
+		}
+		k_sem_give(&cmd_poll_sem);
+	}
 
 	return 0;
 }
 
 static int mia_m10_ack_cb(void* context, uint8_t msg_class, uint8_t msg_id, bool ack)
 {
-	k_sem_give(&ack_sem);
-
-	/* TODO - Store ack/nak */
+	cmd_ack = ack;
+	k_sem_give(&cmd_ack_sem);
 
 	return 0;
 }
 
-static int mia_m10_send_ubx_cmd(uint8_t* buffer, uint32_t size)
+static int mia_m10_send_ubx_cmd(uint8_t* buffer, uint32_t size, bool wait_for_ack, bool wait_for_data)
 {
 	int ret = 0;
 
 	/* Reset command response parameters */
-	k_sem_reset(&ack_sem);
-	k_sem_reset(&poll_sem);
+	k_sem_reset(&cmd_ack_sem);
+	k_sem_reset(&cmd_poll_sem);
 	ublox_set_response_handlers(buffer,
 				    mia_m10_poll_cb, 
 				    mia_m10_ack_cb, 
@@ -356,41 +370,47 @@ static int mia_m10_send_ubx_cmd(uint8_t* buffer, uint32_t size)
 	}
 
 	/* Wait for response, poll and ack */
-	if (k_sem_take(&ack_sem, K_MSEC(500)) != 0) {
+	if (k_sem_take(&cmd_ack_sem, K_MSEC(500)) != 0) {
 		LOG_ERR("ACK timed out");
 		k_mutex_unlock(&cmd_mutex);
 		return -ETIME;
 	}
-	if (k_sem_take(&poll_sem, K_MSEC(500)) != 0) {
+	if (k_sem_take(&cmd_poll_sem, K_MSEC(500)) != 0) {
 		LOG_ERR("POLL timed out");
 		k_mutex_unlock(&cmd_mutex);
 		return -ETIME;
 	}
+
+	return 0;
 }
 
-uint8_t cmd_buf[256];
-uint32_t cmd_size; 
-
-int mia_m10_setup(void)
+int mia_m10_config_get(uint32_t key, uint8_t size, uint64_t* raw_value)
 {
+	int ret = 0;
+
 	LOG_ERR("CMD start");
 	if (k_mutex_lock(&cmd_mutex, K_MSEC(1000)) == 0) {
 
-		uint32_t keys = UBX_CFG_MSGOUT_NMEA_ID_RMC_UART1;
-		int ret = ublox_build_cfg_valget(cmd_buf, &cmd_size, 256,
-						 DEFAULT_LAYER, 0, &keys, 1);
+		ret = ublox_build_cfg_valget(cmd_buf, &cmd_size, 256,
+					     DEFAULT_LAYER, 0, 
+					     key);
 		if (ret != 0) {
 			k_mutex_unlock(&cmd_mutex);
 			return ret;
 		}
 
-		ret = mia_m10_send_ubx_cmd(cmd_buf, cmd_size);
+		ret = mia_m10_send_ubx_cmd(cmd_buf, cmd_size, true, true);
 		if (ret != 0) {
 			k_mutex_unlock(&cmd_mutex);
 			return ret;
 		}
 
-		/* TODO - Parse result payload */
+		/* Parse result payload */
+		ret = ublox_get_cfg_val(cmd_buf, cmd_size, size, raw_value);
+		if (ret != 0) {
+			k_mutex_unlock(&cmd_mutex);
+			return ret;
+		}
 
 		LOG_ERR("CMD OK");
 

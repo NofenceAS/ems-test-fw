@@ -47,10 +47,17 @@ int ublox_set_response_handlers(uint8_t* buffer,
 				int (*ack_cb)(void*,uint8_t,uint8_t,bool),
 				void* context);
 
+int ublox_get_cfg_val(uint8_t* payload, uint32_t size, 
+		      uint8_t val_size, uint64_t* val);
+
 int ublox_build_cfg_valget(uint8_t* buffer, uint32_t* size, uint32_t max_size,
 			   enum ublox_cfg_val_layer layer, 
 			   uint16_t position, 
-			   uint32_t* keys, 
-			   uint8_t key_cnt);
+			   uint32_t key);
+
+int ublox_build_cfg_valset(uint8_t* buffer, uint32_t* size, uint32_t max_size,
+			   enum ublox_cfg_val_layer layer, 
+			   uint32_t key,
+			   uint64_t value);
 
 #endif /* UBLOX_PROTOCOL_H_ */
