@@ -22,7 +22,7 @@
 
 #define UBLOX_CHK_SIZE		2
 
-#define UBLOX_MIN_PACKET_SIZE		(UBLOX_OFFS_PAYLOAD+UBLOX_CHK_SIZE)
+#define UBLOX_OVERHEAD_SIZE		(UBLOX_OFFS_PAYLOAD+UBLOX_CHK_SIZE)
 
 #define UBLOX_MSG_IDENTIFIER(c,i)	((c<<8)|(i))
 #define UBLOX_MSG_IDENTIFIER_EMPTY	0
@@ -41,15 +41,16 @@ int ublox_register_handler(uint8_t msg_class, uint8_t msg_id,
 
 uint32_t ublox_parse(uint8_t* data, uint32_t size);
 
-int ublox_reset_poll_and_ack(void);
+int ublox_reset_response_handlers(void);
+int ublox_set_response_handlers(uint8_t* buffer, 
+				int (*poll_cb)(void*,uint8_t,uint8_t,void*,uint32_t),
+				int (*ack_cb)(void*,uint8_t,uint8_t,bool),
+				void* context);
 
-int ublox_send_cfg_valget(enum ublox_cfg_val_layer layer, 
-			  uint16_t position, 
-			  uint32_t* keys, 
-			  uint8_t key_cnt,
-			  int (*put_fnc)(uint8_t*,uint32_t),
-			  int (*poll_cb)(void*,uint8_t,uint8_t,void*,uint32_t),
-			  int (*ack_cb)(void*,uint8_t,uint8_t,bool),
-			  void* context);
+int ublox_build_cfg_valget(uint8_t* buffer, uint32_t* size, uint32_t max_size,
+			   enum ublox_cfg_val_layer layer, 
+			   uint16_t position, 
+			   uint32_t* keys, 
+			   uint8_t key_cnt);
 
 #endif /* UBLOX_PROTOCOL_H_ */

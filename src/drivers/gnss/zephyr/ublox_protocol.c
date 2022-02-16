@@ -202,14 +202,14 @@ uint32_t ublox_parse(uint8_t* data, uint32_t size)
 		return 1;
 	}
 
-	if (size < UBLOX_MIN_PACKET_SIZE) {
+	if (size < UBLOX_OVERHEAD_SIZE) {
 		/* Not enough data for full packet yet */
 		return 0;
 	}
 
 	uint16_t payload_length = data[UBLOX_OFFS_LENGTH] + 
 			 	 (data[UBLOX_OFFS_LENGTH+1]<<8);
-	uint16_t packet_length = (UBLOX_MIN_PACKET_SIZE + payload_length);
+	uint16_t packet_length = (UBLOX_OVERHEAD_SIZE + payload_length);
 	
 	if (size < packet_length) {
 		/* Not enough data for packet with payload yet */
@@ -282,7 +282,7 @@ static int ublox_send_header(uint8_t msg_class,
 	return 0;
 }
 
-int ublox_reset_poll_and_ack(void)
+int ublox_reset_response_handlers(void)
 {
 	if (k_mutex_lock(&cmd_mutex, K_MSEC(10)) == 0) {
 		/* Remove class/id and function pointers for 
@@ -300,18 +300,18 @@ int ublox_reset_poll_and_ack(void)
 	return 0;
 }
 
-static int ublox_register_cmd_response_handlers(
-				uint8_t msg_class, 
-				uint8_t msg_id,
+int ublox_set_response_handlers(uint8_t* buffer,
 				int (*poll_cb)(void*,uint8_t,uint8_t,void*,uint32_t),
 				int (*ack_cb)(void*,uint8_t,uint8_t,bool),
 				void* context)
 {
+	struct ublox_header* header = (void*)buffer;
+
 	if (k_mutex_lock(&cmd_mutex, K_MSEC(10)) == 0) {
 		cmd_context = context;
 		cmd_poll_handle = poll_cb;
 		cmd_ack_handle = ack_cb;
-		cmd_identifier = UBLOX_MSG_IDENTIFIER(msg_class, msg_id);
+		cmd_identifier = UBLOX_MSG_IDENTIFIER(header->msg_class, header->msg_id);
 
 		k_mutex_unlock(&cmd_mutex);
 	} else {
@@ -321,14 +321,11 @@ static int ublox_register_cmd_response_handlers(
 	return 0;
 }
 
-int ublox_send_cfg_valget(enum ublox_cfg_val_layer layer, 
-			  uint16_t position, 
-			  uint32_t* keys, 
-			  uint8_t key_cnt,
-			  int (*put_fnc)(uint8_t*,uint32_t),
-			  int (*poll_cb)(void*,uint8_t,uint8_t,void*,uint32_t),
-			  int (*ack_cb)(void*,uint8_t,uint8_t,bool),
-			  void* context)
+int ublox_build_cfg_valget(uint8_t* buffer, uint32_t* size, uint32_t max_size,
+			   enum ublox_cfg_val_layer layer, 
+			   uint16_t position, 
+			   uint32_t* keys, 
+			   uint8_t key_cnt)
 {
 	int ret = 0;
 
@@ -336,6 +333,14 @@ int ublox_send_cfg_valget(enum ublox_cfg_val_layer layer,
 	if (key_cnt > 64)
 	{
 		return -EINVAL;
+	}
+
+	/* Calculate packet length */
+	uint32_t payload_length = 4 + key_cnt*4;
+	uint32_t packet_length = UBLOX_OVERHEAD_SIZE + payload_length;
+
+	if (max_size < packet_length) {
+		return -ENOBUFS;
 	}
 
 	uint8_t msg_class = UBX_CFG;
@@ -348,32 +353,31 @@ int ublox_send_cfg_valget(enum ublox_cfg_val_layer layer,
 		return ret;
 	}
 
-	/* Calculate packet length */
-	uint32_t payload_length = 4 + key_cnt*4;
+	/* Build data structure pointers */
+	struct ublox_header* header = (void*)buffer;
+	struct ublox_cfg_valget* cfg_valget = (void*)&buffer[sizeof(struct ublox_header)];
+	union ublox_checksum* checksum = (void*)&buffer[sizeof(struct ublox_header) + payload_length]
 
-	/* Send sync characters */
-	ublox_put_u8(UBLOX_SYNC_CHAR_1, put_fnc, NULL);
-	ublox_put_u8(UBLOX_SYNC_CHAR_2, put_fnc, NULL);
+	/* Fill header */
+	header->sync1 = UBLOX_SYNC_CHAR_1;
+	header->sync2 = UBLOX_SYNC_CHAR_2;
+	header->msg_class = msg_class;
+	header->msg_id = msg_id;
+	header->length = payload_length;
 
-	/* Reset checksum */
-	struct ublox_checksum checksum;
-	memset(&checksum, 0, sizeof(checksum));
-
-	/* Send header */
-	ublox_send_header(msg_class, msg_id,
-			  payload_length, put_fnc, &checksum);
-
-	/* Send payload */
-	ublox_put_u8(0x00, put_fnc, &checksum);
-	ublox_put_u8((uint8_t) layer, put_fnc, &checksum);
-	ublox_put_u16(position, put_fnc, &checksum);
+	/* Null payload first to account for reserved fields */
+	memset(cfg_valget, 0, payload_length);
+	/* Fill payload */
+	cfg_valget->version = 0x00;
+	cfg_valget->layer = (uint8_t) layer;
+	cfg_valget->position = position;
+	uint32_t* keys_buf = (void*)&cfg_valget->keys;
 	for (uint32_t i = 0; i < key_cnt; i++) {
-		ublox_put_u32(keys[i], put_fnc, &checksum);
+		keys_buf[i] = keys[i];
 	}
 
-	/* Send checksum */
-	ublox_put_u8(checksum.ck_a, put_fnc, NULL);
-	ublox_put_u8(checksum.ck_b, put_fnc, NULL);
+	/* Calculate checksum */
+	checksum->ck = ublox_calculate_checksum(buffer, header->length);
 
 	return 0;
 }

@@ -12,9 +12,12 @@ enum ublox_cfg_val_layer {
 
 #define UBLOX_STORAGE_ATTR __attribute__((packed,scalar_storage_order("little-endian"),aligned(1)))
 
-struct UBLOX_STORAGE_ATTR ublox_checksum {
-	uint8_t ck_a;
-	uint8_t ck_b;
+union UBLOX_STORAGE_ATTR ublox_checksum {
+	uint16_t ck;
+	struct {
+		uint8_t a;
+		uint8_t b;
+	} ck_val;
 };
 
 struct UBLOX_STORAGE_ATTR ublox_header {

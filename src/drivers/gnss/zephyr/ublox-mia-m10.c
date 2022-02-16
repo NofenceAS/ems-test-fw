@@ -311,7 +311,7 @@ static int mia_m10_init(const struct device *dev)
 	return 0;
 }
 
-int mia_m10_put(uint8_t* buffer, uint32_t size)
+int mia_m10_send(uint8_t* buffer, uint32_t size)
 {
 	ring_buf_put(&gnss_tx_ring_buf, buffer, size);
 	uart_irq_tx_enable(mia_m10_uart_dev);
@@ -336,39 +336,58 @@ static int mia_m10_ack_cb(void* context, uint8_t msg_class, uint8_t msg_id, bool
 	return 0;
 }
 
+static int mia_m10_send_ubx_cmd(uint8_t* buffer, uint32_t size)
+{
+	int ret = 0;
+
+	/* Reset command response parameters */
+	k_sem_reset(&ack_sem);
+	k_sem_reset(&poll_sem);
+	ublox_set_response_handlers(buffer,
+				    mia_m10_poll_cb, 
+				    mia_m10_ack_cb, 
+				    NULL);
+
+	/* Send command bytes */
+	ret = mia_m10_send(buffer, size);
+	if (ret != 0)
+	{
+		return ret;
+	}
+
+	/* Wait for response, poll and ack */
+	if (k_sem_take(&ack_sem, K_MSEC(500)) != 0) {
+		LOG_ERR("ACK timed out");
+		k_mutex_unlock(&cmd_mutex);
+		return -ETIME;
+	}
+	if (k_sem_take(&poll_sem, K_MSEC(500)) != 0) {
+		LOG_ERR("POLL timed out");
+		k_mutex_unlock(&cmd_mutex);
+		return -ETIME;
+	}
+}
+
+uint8_t cmd_buf[256];
+uint32_t cmd_size; 
+
 int mia_m10_setup(void)
 {
 	LOG_ERR("CMD start");
 	if (k_mutex_lock(&cmd_mutex, K_MSEC(1000)) == 0) {
 
-		/* Reset command response parameters */
-		k_sem_reset(&ack_sem);
-		k_sem_reset(&poll_sem);
-		ublox_reset_poll_and_ack();
-
-		/* Send command */
 		uint32_t keys = UBX_CFG_MSGOUT_NMEA_ID_RMC_UART1;
-		int ret = ublox_send_cfg_valget(DEFAULT_LAYER, 0, &keys, 1, 
-						mia_m10_put, 
-						mia_m10_poll_cb, 
-						mia_m10_ack_cb, 
-						NULL);
-		if (ret != 0)
-		{
+		int ret = ublox_build_cfg_valget(cmd_buf, &cmd_size, 256,
+						 DEFAULT_LAYER, 0, &keys, 1);
+		if (ret != 0) {
 			k_mutex_unlock(&cmd_mutex);
 			return ret;
 		}
 
-		/* Wait for response, poll and ack */
-		if (k_sem_take(&ack_sem, K_MSEC(500)) != 0) {
-			LOG_ERR("ACK timed out");
+		ret = mia_m10_send_ubx_cmd(cmd_buf, cmd_size);
+		if (ret != 0) {
 			k_mutex_unlock(&cmd_mutex);
-			return -ETIME;
-		}
-		if (k_sem_take(&poll_sem, K_MSEC(500)) != 0) {
-			LOG_ERR("POLL timed out");
-			k_mutex_unlock(&cmd_mutex);
-			return -ETIME;
+			return ret;
 		}
 
 		/* TODO - Parse result payload */
