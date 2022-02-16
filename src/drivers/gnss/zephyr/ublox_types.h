@@ -27,6 +27,12 @@ struct UBLOX_STORAGE_ATTR ublox_header {
 	uint16_t length;
 };
 
+struct UBLOX_STORAGE_ATTR ublox_ack_ack {
+	uint8_t clsID;
+	uint8_t msgID;
+};
+
+
 struct UBLOX_STORAGE_ATTR ublox_cfg_valget {
 	uint8_t version;
 	uint8_t layer;

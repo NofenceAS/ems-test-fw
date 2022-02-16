@@ -23,6 +23,17 @@ K_KERNEL_STACK_DEFINE(gnss_rx_stack,
 		      CONFIG_GNSS_MIA_M10_RX_STACK_SIZE);
 struct k_thread gnss_rx_thread;
 
+K_KERNEL_STACK_DEFINE(gnss_test_stack,
+		      CONFIG_GNSS_MIA_M10_RX_STACK_SIZE);
+struct k_thread gnss_test_thread;
+
+static const struct device *mia_m10_uart_dev = GNSS_UART_DEV;
+
+/* Command / Response control structures for parsing */
+static struct k_mutex cmd_mutex;
+K_SEM_DEFINE(ack_sem, 0, 1);
+K_SEM_DEFINE(poll_sem, 0, 1);
+
 /* TODO - consider creating context struct */
 /* Semaphore for signalling thread about received data. */
 struct k_sem gnss_rx_sem;
@@ -224,15 +235,28 @@ static void mia_m10_handle_received_data(void* dev)
 	}
 }
 
+
+static void mia_m10_test(void* dev)
+{
+	while (true) {
+		k_sleep(K_MSEC(10000));
+		mia_m10_setup();
+	}
+}
+
 static int mia_m10_init(const struct device *dev)
 {
-	const struct device *uart_dev = GNSS_UART_DEV;
+	mia_m10_uart_dev = GNSS_UART_DEV;
+
+	/* Initialize Ublox protocol parser */
+	ublox_protocol_init();
+	k_mutex_init(&cmd_mutex);
 
 	/* Check that UART device is available */
-	if (uart_dev == NULL) {
+	if (mia_m10_uart_dev == NULL) {
 		return -EIO;
 	}
-	if (!device_is_ready(uart_dev)) {
+	if (!device_is_ready(mia_m10_uart_dev)) {
 		return -EIO;
 	}
 	
@@ -263,19 +287,25 @@ static int mia_m10_init(const struct device *dev)
 	k_sem_init(&gnss_rx_sem, 0, 1);
 
 	/* Make sure interrupts are disabled */
-	uart_irq_rx_disable(uart_dev);
-	uart_irq_tx_disable(uart_dev);
+	uart_irq_rx_disable(mia_m10_uart_dev);
+	uart_irq_tx_disable(mia_m10_uart_dev);
 
 	/* Prepare UART for data reception */
-	mia_m10_uart_flush(uart_dev);
-	uart_irq_callback_set(uart_dev, mia_m10_uart_isr);
-	uart_irq_rx_enable(uart_dev);
+	mia_m10_uart_flush(mia_m10_uart_dev);
+	uart_irq_callback_set(mia_m10_uart_dev, mia_m10_uart_isr);
+	uart_irq_rx_enable(mia_m10_uart_dev);
 	
 	/* Start RX thread */
 	k_thread_create(&gnss_rx_thread, gnss_rx_stack,
 			K_KERNEL_STACK_SIZEOF(gnss_rx_stack),
 			(k_thread_entry_t) mia_m10_handle_received_data,
-			(void*)uart_dev, NULL, NULL, 
+			(void*)mia_m10_uart_dev, NULL, NULL, 
+			K_PRIO_COOP(7), 0, K_NO_WAIT);
+
+	k_thread_create(&gnss_test_thread, gnss_test_stack,
+			K_KERNEL_STACK_SIZEOF(gnss_test_stack),
+			(k_thread_entry_t) mia_m10_test,
+			(void*)mia_m10_uart_dev, NULL, NULL, 
 			K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	return 0;
@@ -284,20 +314,71 @@ static int mia_m10_init(const struct device *dev)
 int mia_m10_put(uint8_t* buffer, uint32_t size)
 {
 	ring_buf_put(&gnss_tx_ring_buf, buffer, size);
+	uart_irq_tx_enable(mia_m10_uart_dev);
+	return 0;
+}
+
+static int mia_m10_poll_cb(void* context, uint8_t msg_class, uint8_t msg_id, void* payload, uint32_t length)
+{
+	k_sem_give(&poll_sem);
+
+	/* TODO - Copy data */
+
+	return 0;
+}
+
+static int mia_m10_ack_cb(void* context, uint8_t msg_class, uint8_t msg_id, bool ack)
+{
+	k_sem_give(&ack_sem);
+
+	/* TODO - Store ack/nak */
+
 	return 0;
 }
 
 int mia_m10_setup(void)
 {
-	uint32_t keys = 0xC000D000;
-	int ret = ublox_send_cfg_valget(DEFAULT_LAYER, 0, &keys, 1, mia_m10_put, NULL);
-	if (ret != 0)
-	{
-		return ret;
+	LOG_ERR("CMD start");
+	if (k_mutex_lock(&cmd_mutex, K_MSEC(1000)) == 0) {
+
+		/* Reset command response parameters */
+		k_sem_reset(&ack_sem);
+		k_sem_reset(&poll_sem);
+		ublox_reset_poll_and_ack();
+
+		/* Send command */
+		uint32_t keys = UBX_CFG_MSGOUT_NMEA_ID_RMC_UART1;
+		int ret = ublox_send_cfg_valget(DEFAULT_LAYER, 0, &keys, 1, 
+						mia_m10_put, 
+						mia_m10_poll_cb, 
+						mia_m10_ack_cb, 
+						NULL);
+		if (ret != 0)
+		{
+			k_mutex_unlock(&cmd_mutex);
+			return ret;
+		}
+
+		/* Wait for response, poll and ack */
+		if (k_sem_take(&ack_sem, K_MSEC(500)) != 0) {
+			LOG_ERR("ACK timed out");
+			k_mutex_unlock(&cmd_mutex);
+			return -ETIME;
+		}
+		if (k_sem_take(&poll_sem, K_MSEC(500)) != 0) {
+			LOG_ERR("POLL timed out");
+			k_mutex_unlock(&cmd_mutex);
+			return -ETIME;
+		}
+
+		/* TODO - Parse result payload */
+
+		LOG_ERR("CMD OK");
+
+		k_mutex_unlock(&cmd_mutex);
+	} else {
+		return -EBUSY;
 	}
-
-	/* TODO - Wait for response */
-
 
 	return 0;
 }

@@ -1,7 +1,8 @@
 #include "ublox_protocol.h"
 
-#include "ublox_ids.h"
+#include "ubx_ids.h"
 
+#include <sys/mutex.h>
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(UBLOX_PROTOCOL, CONFIG_GNSS_LOG_LEVEL);
@@ -10,6 +11,12 @@ LOG_MODULE_REGISTER(UBLOX_PROTOCOL, CONFIG_GNSS_LOG_LEVEL);
 
 static struct ublox_handler handlers[UBLOX_MAX_HANDLERS];
 static uint32_t callback_count = 0;
+
+K_MUTEX_DEFINE(cmd_mutex);
+uint16_t cmd_identifier = UBLOX_MSG_IDENTIFIER_EMPTY;
+void* cmd_context = NULL;
+int (*cmd_poll_handle)(void*,uint8_t,uint8_t,void*,uint32_t) = NULL;
+int (*cmd_ack_handle)(void*,uint8_t,uint8_t,bool) = NULL;
 
 void ublox_protocol_init(void)
 {
@@ -31,7 +38,7 @@ static int ublox_resolve_handler(uint8_t msg_class, uint8_t msg_id,
 		}
 	}
 
-	if (*handler != NULL)
+	if (*handler == NULL)
 	{
 		return -ENOMSG;
 	}
@@ -109,7 +116,54 @@ static int ublox_process_message(uint8_t msg_class, uint8_t msg_id,
 				 uint8_t* payload, uint16_t length)
 {
 	//LOG_ERR("Process U-blox Message: %d, %d", class, id);
+	uint16_t msg_identifier = UBLOX_MSG_IDENTIFIER(msg_class, msg_id);
 	
+	if (k_mutex_lock(&cmd_mutex, K_MSEC(10)) == 0) {
+		/* Handle acknowledgements */
+		if (msg_class == UBX_ACK)
+		{
+			bool ack = msg_id == UBX_ACK_ACK;
+
+			struct ublox_ack_ack* msg_ack = (void*)payload;
+
+			msg_identifier = UBLOX_MSG_IDENTIFIER(msg_ack->clsID, msg_ack->msgID);
+
+			if (msg_identifier == cmd_identifier)
+			{
+				if (cmd_ack_handle != NULL)
+				{
+					cmd_ack_handle(cmd_context, msg_class, msg_id, ack);
+
+					/* Make sure to disable any further calls to 
+					* this, as the ack is a one-off */
+					cmd_ack_handle = NULL;
+
+					k_mutex_unlock(&cmd_mutex);
+					return 0;
+				}
+			}
+		}
+
+		/* Is this a message awaiting poll response? */
+		if (msg_identifier == cmd_identifier)
+		{
+			if (cmd_poll_handle != NULL)
+			{
+				cmd_poll_handle(cmd_context, msg_class, msg_id, (void*)payload, length);
+
+				/* Make sure to disable any further calls to this, 
+				* as the poll is a one-off */
+				cmd_poll_handle = NULL;
+
+				k_mutex_unlock(&cmd_mutex);
+				return 0;
+			}
+		}
+		
+		k_mutex_unlock(&cmd_mutex);
+	}
+
+	/* Check registered handlers for match */
 	struct ublox_handler* handler = NULL;
 	int ret = ublox_resolve_handler(msg_class, msg_id, &handler);
 	if (ret == 0)
@@ -228,17 +282,70 @@ static int ublox_send_header(uint8_t msg_class,
 	return 0;
 }
 
+int ublox_reset_poll_and_ack(void)
+{
+	if (k_mutex_lock(&cmd_mutex, K_MSEC(10)) == 0) {
+		/* Remove class/id and function pointers for 
+		 * awaiting poll and ack */
+		cmd_identifier = UBLOX_MSG_IDENTIFIER_EMPTY;
+		cmd_poll_handle = NULL;
+		cmd_ack_handle = NULL;
+		cmd_context = NULL;
+
+		k_mutex_unlock(&cmd_mutex);
+	} else {
+		return -EBUSY;
+	}
+
+	return 0;
+}
+
+static int ublox_register_cmd_response_handlers(
+				uint8_t msg_class, 
+				uint8_t msg_id,
+				int (*poll_cb)(void*,uint8_t,uint8_t,void*,uint32_t),
+				int (*ack_cb)(void*,uint8_t,uint8_t,bool),
+				void* context)
+{
+	if (k_mutex_lock(&cmd_mutex, K_MSEC(10)) == 0) {
+		cmd_context = context;
+		cmd_poll_handle = poll_cb;
+		cmd_ack_handle = ack_cb;
+		cmd_identifier = UBLOX_MSG_IDENTIFIER(msg_class, msg_id);
+
+		k_mutex_unlock(&cmd_mutex);
+	} else {
+		return -EBUSY;
+	}
+
+	return 0;
+}
+
 int ublox_send_cfg_valget(enum ublox_cfg_val_layer layer, 
 			  uint16_t position, 
 			  uint32_t* keys, 
 			  uint8_t key_cnt,
 			  int (*put_fnc)(uint8_t*,uint32_t),
-			  int (*ack_cb)(bool))
+			  int (*poll_cb)(void*,uint8_t,uint8_t,void*,uint32_t),
+			  int (*ack_cb)(void*,uint8_t,uint8_t,bool),
+			  void* context)
 {
+	int ret = 0;
+
 	/* Validate input parameters */
 	if (key_cnt > 64)
 	{
 		return -EINVAL;
+	}
+
+	uint8_t msg_class = UBX_CFG;
+	uint8_t msg_id = UBX_CFG_VALGET;
+
+	/* Register function waiting for poll data, and ack function */
+	ret = ublox_register_cmd_response_handlers(msg_class, msg_id, 
+						   poll_cb, ack_cb, context);
+	if (ret != 0) {
+		return ret;
 	}
 
 	/* Calculate packet length */
@@ -253,7 +360,7 @@ int ublox_send_cfg_valget(enum ublox_cfg_val_layer layer,
 	memset(&checksum, 0, sizeof(checksum));
 
 	/* Send header */
-	ublox_send_header(UBLOX_CFG, UBLOX_CFG_VALGET,
+	ublox_send_header(msg_class, msg_id,
 			  payload_length, put_fnc, &checksum);
 
 	/* Send payload */
