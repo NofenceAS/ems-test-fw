@@ -59,13 +59,13 @@ typedef struct {
 typedef struct {
 	int32_t lat;
 	int32_t lon;
-	uint32_t unix_timestamp;
-	uint16_t h_acc_d;
+	uint64_t unix_timestamp;
+	uint16_t h_acc_dm;
 	int16_t head_veh;
 	uint16_t head_acc;
 	uint8_t pvt_flags;
 	uint8_t num_sv;
-	uint16_t hdop;
+	uint16_t h_dop;
 	int16_t height;
 	int16_t baro_height;
 	uint32_t msss;
@@ -82,13 +82,16 @@ typedef struct {
  *
  * See gnss_position_fetch() for argument description
  */
+typedef int (*gnss_data_cb_t)(gnss_struct_t* data);
+typedef int (*gnss_lastfix_cb_t)(gnss_last_fix_struct_t* lastfix);
+
 typedef int (*gnss_setup_t)(const struct device *dev);
 typedef int (*gnss_reset_t)(const struct device *dev, uint8_t mask, uint8_t mode);
 
-typedef int (*gnss_set_data_cb_t)(const struct device *dev, int (*gnss_data_cb)(gnss_struct_t* data));
+//typedef int (*gnss_set_data_cb_t)(const struct device *dev, );
 
-typedef int (*gnss_set_data_cb_t)(const struct device *dev, int (*gnss_data_cb)(gnss_struct_t* data));
-typedef int (*gnss_set_lastfix_cb_t)(const struct device *dev, int (*gnss_lastfix_cb)(gnss_last_fix_struct_t* lastfix));
+typedef int (*gnss_set_data_cb_t)(const struct device *dev, gnss_data_cb_t gnss_data_cb);
+typedef int (*gnss_set_lastfix_cb_t)(const struct device *dev, gnss_lastfix_cb_t gnss_lastfix_cb);
 
 typedef int (*gnss_data_fetch_t)(const struct device *dev, gnss_struct_t* data);
 typedef int (*gnss_lastfix_fetch_t)(const struct device *dev, gnss_last_fix_struct_t* lastfix);

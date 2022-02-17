@@ -8,6 +8,7 @@
 #include <drivers/gpio.h>
 #include <drivers/uart.h>
 #include <logging/log.h>
+#include <sys/timeutil.h>
 
 #include "gnss.h"
 #include "ublox_protocol.h"
@@ -22,10 +23,6 @@ LOG_MODULE_REGISTER(MIA_M10, CONFIG_GNSS_LOG_LEVEL);
 K_KERNEL_STACK_DEFINE(gnss_rx_stack,
 		      CONFIG_GNSS_MIA_M10_RX_STACK_SIZE);
 struct k_thread gnss_rx_thread;
-
-K_KERNEL_STACK_DEFINE(gnss_test_stack,
-		      CONFIG_GNSS_MIA_M10_RX_STACK_SIZE);
-struct k_thread gnss_test_thread;
 
 static const struct device *mia_m10_uart_dev = GNSS_UART_DEV;
 
@@ -48,41 +45,166 @@ static struct ring_buf gnss_tx_ring_buf;
 static uint8_t* gnss_rx_buffer = NULL;
 static uint32_t gnss_rx_cnt = 0;
 
+
+#define GNSS_DATA_FLAG_NAV_DOP		(1<<0)
+#define GNSS_DATA_FLAG_NAV_PVT		(1<<1)
+#define GNSS_DATA_FLAG_NAV_STATUS	(1<<2)
+static uint32_t gnss_data_flags = 0;
+static gnss_struct_t gnss_data_in_progress;
+static uint32_t gnss_tow_in_progress = 0;
+static uint64_t gnss_unix_timestamp = 0;
+
+static bool gnss_data_is_valid = false;
+static gnss_struct_t gnss_data;
+
+static bool gnss_lastfix_is_valid = false;
+static gnss_last_fix_struct_t gnss_lastfix;
+
+static struct k_mutex gnss_data_mutex;
+static struct k_mutex gnss_cb_mutex;
+
+static gnss_data_cb_t data_cb = NULL;
+static gnss_lastfix_cb_t lastfix_cb = NULL;
+
 /**
  *
  */
 
-int mia_m10_nav_pvt_handler(void* context, void* payload, uint32_t size)
+static int mia_m10_sync_tow(uint32_t tow)
 {
-	LOG_ERR("Got NAV-PVT!");
+	if (tow != gnss_tow_in_progress) {
+		/* Mismatching TOW, reset flags and buffers */
+		memset(&gnss_data_in_progress, 0, sizeof(gnss_struct_t));
+		gnss_data_flags = 0;
+		gnss_tow_in_progress = tow;
+	}
 
+	return 0;
+}
+
+static int mia_m10_sync_complete(uint32_t flag)
+{
+	gnss_data_flags |= flag;
+
+	if (gnss_data_flags == (GNSS_DATA_FLAG_NAV_DOP|GNSS_DATA_FLAG_NAV_PVT|GNSS_DATA_FLAG_NAV_STATUS)) {
+
+		/* Copy data from "in progress" to "working", and call callbacks */
+		if (k_mutex_lock(&gnss_data_mutex, K_MSEC(10)) == 0) {
+			memcpy(&gnss_data, &gnss_data_in_progress, sizeof(gnss_struct_t));
+			gnss_data.age = 0;
+			gnss_data_is_valid = true;
+
+			if (gnss_data.pvt_flags&1) {
+				gnss_lastfix.h_acc_dm = gnss_data.h_acc_dm;
+				gnss_lastfix.lat = gnss_data.lat;
+				gnss_lastfix.lon = gnss_data.lon;
+				gnss_lastfix.unix_timestamp = gnss_unix_timestamp; 
+
+				gnss_lastfix.head_veh = gnss_data.head_veh;
+				gnss_lastfix.pvt_flags = gnss_data.pvt_flags;
+				gnss_lastfix.head_acc = gnss_data.head_acc;
+				gnss_lastfix.h_dop = gnss_data.h_dop;
+				gnss_lastfix.num_sv = gnss_data.num_sv;
+				gnss_lastfix.height = gnss_data.height;
+				/* TODO - Barometer data here?! */
+				gnss_lastfix.baro_height = 0;
+				
+				gnss_lastfix.msss = gnss_data.msss;
+
+				/* TODO - What to do?! */
+				gnss_lastfix.gps_mode = 0;
+
+				gnss_lastfix_is_valid = true;
+			}
+			
+			k_mutex_unlock(&gnss_data_mutex);
+		}
+
+		if (k_mutex_lock(&gnss_cb_mutex, K_MSEC(10)) == 0) {
+			if (data_cb != NULL) {
+				data_cb(&gnss_data);
+			}
+			if (gnss_data.pvt_flags&1) {
+				lastfix_cb(&gnss_lastfix);
+			}
+
+			k_mutex_unlock(&gnss_cb_mutex);
+		} else {
+			return -ETIME;
+		}
+	}
+
+	return 0;
+}
+
+static uint64_t mia_m10_nav_pvt_to_unix_time(struct ublox_nav_pvt* nav_pvt)
+{
+	struct tm now = { 0 };
+	/* tm_year is years since 1900 */
+	now.tm_year = nav_pvt->year - 1900;
+	/* tm_mon allowed values are 0-11 */
+	now.tm_mon = nav_pvt->month - 1;
+	now.tm_mday = nav_pvt->day;
+
+	now.tm_hour = nav_pvt->hour;
+	now.tm_min = nav_pvt->min;
+	now.tm_sec = nav_pvt->sec;
+
+	return timeutil_timegm64(&now);
+}
+
+static int mia_m10_nav_pvt_handler(void* context, void* payload, uint32_t size)
+{
 	struct ublox_nav_pvt* nav_pvt = payload;
 
-	LOG_ERR("   iTOW: %d", nav_pvt->iTOW);
-	LOG_ERR("   year: %d", nav_pvt->year);
-	LOG_ERR("   month: %d", nav_pvt->month);
-	LOG_ERR("   day: %d", nav_pvt->day);
-	LOG_ERR("   hour: %d", nav_pvt->hour);
-	LOG_ERR("   min: %d", nav_pvt->min);
-	LOG_ERR("   sec: %d", nav_pvt->sec);
-	LOG_ERR("   valid: %d", nav_pvt->valid);
-	LOG_ERR("   fixType: %d", nav_pvt->fixType);
-	LOG_ERR("   numSV: %d", nav_pvt->numSV);
-	LOG_ERR("   lon: %d", nav_pvt->lon);
-	LOG_ERR("   lat: %d", nav_pvt->lat);
+	mia_m10_sync_tow(nav_pvt->iTOW);
+
+	gnss_data_in_progress.pvt_flags = nav_pvt->flags;
+	gnss_data_in_progress.pvt_valid = nav_pvt->valid;
+	gnss_data_in_progress.lon = nav_pvt->lon;
+	gnss_data_in_progress.lat = nav_pvt->lat;
+	gnss_data_in_progress.num_sv = nav_pvt->numSV;
+	gnss_data_in_progress.speed = (uint16_t)nav_pvt->gSpeed;
+	gnss_data_in_progress.head_veh = (int16_t)(nav_pvt->headVeh/1000);
+	gnss_data_in_progress.head_acc = (int16_t)(nav_pvt->headAcc/1000);
+	/* Calculate from mm to dm, and within int16 limits */
+	gnss_data_in_progress.height = (int16_t) MIN(INT16_MAX, MAX(INT16_MIN, nav_pvt->height/100));
+	gnss_data_in_progress.h_acc_dm = (uint16_t) MIN(UINT16_MAX, nav_pvt->hAcc/100);
+	gnss_data_in_progress.v_acc_dm = (uint16_t) MIN(UINT16_MAX, nav_pvt->vAcc/100);
+
+	if (((nav_pvt->valid&0x7) == 0x7) && (nav_pvt->flags&1)) {
+		gnss_unix_timestamp = mia_m10_nav_pvt_to_unix_time(nav_pvt);
+	}
+
+	mia_m10_sync_complete(GNSS_DATA_FLAG_NAV_PVT);
 
 	return 0;
 }
 
 int mia_m10_nav_dop_handler(void* context, void* payload, uint32_t size)
 {
-	LOG_ERR("Got NAV-DOP!");
+	struct ublox_nav_dop* nav_dop = payload;
+
+	mia_m10_sync_tow(nav_dop->iTOW);
+	
+	gnss_data_in_progress.h_dop = nav_dop->hDOP;
+
+	mia_m10_sync_complete(GNSS_DATA_FLAG_NAV_DOP);
+
 	return 0;
 }
 
 int mia_m10_nav_status_handler(void* context, void* payload, uint32_t size)
 {
-	LOG_ERR("Got NAV-STATUS!");
+	struct ublox_nav_status* nav_status = payload;
+
+	mia_m10_sync_tow(nav_status->iTOW);
+	
+	gnss_data_in_progress.msss = nav_status->msss;
+	gnss_data_in_progress.ttff = nav_status->ttff;
+
+	mia_m10_sync_complete(GNSS_DATA_FLAG_NAV_STATUS);
+
 	return 0;
 }
 
@@ -136,25 +258,57 @@ static int mia_m10_reset(const struct device *dev, uint8_t mask, uint8_t mode)
 
 static int mia_m10_set_data_cb(const struct device *dev, int (*gnss_data_cb)(gnss_struct_t* data))
 {
-	/* TODO - Lock mutex while copying data */
+	if (k_mutex_lock(&gnss_cb_mutex, K_MSEC(1000)) == 0) {
+		data_cb = gnss_data_cb;
+		k_mutex_unlock(&gnss_cb_mutex);
+	} else {
+		return -ETIME;
+	}
 	return 0;
 }
 
 static int mia_m10_set_lastfix_cb(const struct device *dev, int (*gnss_lastfix_cb)(gnss_last_fix_struct_t* lastfix))
 {
-	/* TODO - Lock mutex while copying data */
+	if (k_mutex_lock(&gnss_cb_mutex, K_MSEC(1000)) == 0) {
+		lastfix_cb = gnss_lastfix_cb;
+		k_mutex_unlock(&gnss_cb_mutex);
+	} else {
+		return -ETIME;
+	}
 	return 0;
 }
 
 static int mia_m10_data_fetch(const struct device *dev, gnss_struct_t* data)
 {
-	/* TODO - Lock mutex while copying data */
+	if (k_mutex_lock(&gnss_data_mutex, K_MSEC(1000)) == 0) {
+
+		if (!gnss_data_is_valid) {
+			k_mutex_unlock(&gnss_data_mutex);
+			return -ENODATA;
+		}
+
+		memcpy(data, &gnss_data, sizeof(gnss_struct_t));
+
+		k_mutex_unlock(&gnss_data_mutex);
+	}
+	
 	return 0;
 }
 
 static int mia_m10_lastfix_fetch(const struct device *dev, gnss_last_fix_struct_t* lastfix)
 {
-	/* TODO - Lock mutex while copying data */
+	if (k_mutex_lock(&gnss_data_mutex, K_MSEC(1000)) == 0) {
+
+		if (!gnss_lastfix_is_valid) {
+			k_mutex_unlock(&gnss_data_mutex);
+			return -ENODATA;
+		}
+
+		memcpy(lastfix, &gnss_lastfix, sizeof(gnss_last_fix_struct_t));
+		
+		k_mutex_unlock(&gnss_data_mutex);
+	}
+
 	return 0;
 }
 
@@ -346,57 +500,6 @@ static void mia_m10_handle_received_data(void* dev)
 	}
 }
 
-#if 0
-static void mia_m10_test(void* dev)
-{
-	bool first_conf = true;
-	while (true) {
-		k_sleep(K_MSEC(10000));
-
-		if (first_conf) {
-			/* Disable NMEA output on UART */
-			mia_m10_config_set_u8(UBX_CFG_UART1OUTPRO_NMEA, 0);
-			/* Enable NAV-PVT output on UART */
-			mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_PVT_UART1, 1);
-
-			ublox_register_handler(UBX_NAV, UBX_NAV_PVT, 
-					       mia_m10_nav_pvt_handler, NULL);
-
-			first_conf = false;
-		}
-
-		uint8_t value = 0;
-		int ret = mia_m10_config_get_u8(UBX_CFG_MSGOUT_NMEA_ID_RMC_UART1,
-					     &value);
-		if (ret == 0)
-		{
-			LOG_ERR("UBX_CFG_MSGOUT_NMEA_ID_RMC_UART1=%d", value);
-		} else {
-			LOG_ERR("Failed getting UBX_CFG_MSGOUT_NMEA_ID_RMC_UART1=%d", ret);
-		}
-		
-		ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_NMEA_ID_RMC_UART1,
-						0);
-		if (ret == 0)
-		{
-			LOG_ERR("set UBX_CFG_MSGOUT_NMEA_ID_RMC_UART1=0");
-		} else {
-			LOG_ERR("Failed setting UBX_CFG_MSGOUT_NMEA_ID_RMC_UART1=%d", ret);
-		}
-
-		double datum = 0.0;
-		ret = mia_m10_config_get_f64(UBX_CFG_NAVSPG_USRDAT_MAJA,
-					     &datum);
-		if (ret == 0)
-		{
-			LOG_ERR("UBX_CFG_NAVSPG_USRDAT_MAJA=%f", datum);
-		} else {
-			LOG_ERR("Failed getting UBX_CFG_NAVSPG_USRDAT_MAJA=%d", ret);
-		}
-	}
-}
-#endif
-
 static int mia_m10_init(const struct device *dev)
 {
 	mia_m10_uart_dev = GNSS_UART_DEV;
@@ -406,6 +509,9 @@ static int mia_m10_init(const struct device *dev)
 	k_mutex_init(&cmd_mutex);
 	k_sem_init(&cmd_ack_sem, 0, 1);
 	k_sem_init(&cmd_poll_sem, 0, 1);
+
+	k_mutex_init(&gnss_data_mutex);
+	k_mutex_init(&gnss_cb_mutex);
 
 	/* Check that UART device is available */
 	if (mia_m10_uart_dev == NULL) {
@@ -457,13 +563,6 @@ static int mia_m10_init(const struct device *dev)
 			(void*)mia_m10_uart_dev, NULL, NULL, 
 			K_PRIO_COOP(7), 0, K_NO_WAIT);
 
-#if 0
-	k_thread_create(&gnss_test_thread, gnss_test_stack,
-			K_KERNEL_STACK_SIZEOF(gnss_test_stack),
-			(k_thread_entry_t) mia_m10_test,
-			(void*)mia_m10_uart_dev, NULL, NULL, 
-			K_PRIO_COOP(7), 0, K_NO_WAIT);
-#endif
 	return 0;
 }
 

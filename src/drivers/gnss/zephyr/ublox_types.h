@@ -42,6 +42,17 @@ struct UBLOX_STORAGE_ATTR ublox_cfg_val {
 	uint32_t keys;
 };
 
+struct UBLOX_STORAGE_ATTR ublox_nav_dop {
+	uint32_t iTOW;
+	uint16_t gDOP;
+	uint16_t pDOP;
+	uint16_t tDOP;
+	uint16_t vDOP;
+	uint16_t hDOP;
+	uint16_t nDOP;
+	uint16_t eDOP;
+};
+
 struct UBLOX_STORAGE_ATTR ublox_nav_pvt {
 	uint32_t iTOW;
 	uint16_t year;
@@ -76,6 +87,16 @@ struct UBLOX_STORAGE_ATTR ublox_nav_pvt {
 	int32_t headVeh;
 	int16_t magDec;
 	uint16_t magAcc;
+};
+
+struct UBLOX_STORAGE_ATTR ublox_nav_status {
+	uint32_t iTOW;
+	uint8_t gpsFix;
+	uint8_t flags;
+	uint8_t fixStat;
+	uint8_t flags2;
+	uint32_t ttff;
+	uint32_t msss;
 };
 
 #define GET_LE8(x)	((x[0]<<0))
