@@ -31,4 +31,6 @@ int mia_m10_config_set(uint32_t key, uint64_t raw_value);
 
 int mia_m10_send_reset(uint16_t mask, uint8_t mode);
 
+int mia_m10_send_assist_data(uint8_t* data, uint32_t size);
+
 #endif /* UBLOX_MIA_M10_H_ */

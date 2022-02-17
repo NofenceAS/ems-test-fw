@@ -261,6 +261,21 @@ static int mia_m10_reset(const struct device *dev, uint16_t mask, uint8_t mode)
 	return 0;
 }
 
+static int mia_m10_upload_assist_data(const struct device *dev, uint8_t* data, uint32_t size)
+{
+	int ret = 0;
+
+	if (size != 76) {
+		return -EINVAL;
+	}
+
+	ret = mia_m10_send_assist_data(data, size);
+	if (ret != 0) {
+		return ret;
+	}
+	return 0;
+}
+
 static int mia_m10_set_rate(const struct device *dev, uint16_t rate)
 {
 	int ret = 0;
@@ -346,6 +361,8 @@ static int mia_m10_lastfix_fetch(const struct device *dev, gnss_last_fix_struct_
 static const struct gnss_driver_api mia_m10_api_funcs = {
 	.gnss_setup = mia_m10_setup,
 	.gnss_reset = mia_m10_reset,
+
+	.gnss_upload_assist_data = mia_m10_upload_assist_data,
 
 	.gnss_set_rate = mia_m10_set_rate,
 	.gnss_get_rate = mia_m10_get_rate,
@@ -806,6 +823,33 @@ int mia_m10_send_reset(uint16_t mask, uint8_t mode)
 		}
 
 		ret = mia_m10_send_ubx_cmd(cmd_buf, cmd_size, false, false);
+		if (ret != 0) {
+			k_mutex_unlock(&cmd_mutex);
+			return ret;
+		}
+
+		k_mutex_unlock(&cmd_mutex);
+	} else {
+		return -EBUSY;
+	}
+
+	return ret;
+}
+
+int mia_m10_send_assist_data(uint8_t* data, uint32_t size)
+{
+	int ret = 0;
+
+	if (k_mutex_lock(&cmd_mutex, K_MSEC(1000)) == 0) {
+
+		ret = ublox_build_mga_ano(cmd_buf, &cmd_size, 256,
+					  data, size);
+		if (ret != 0) {
+			k_mutex_unlock(&cmd_mutex);
+			return ret;
+		}
+
+		ret = mia_m10_send_ubx_cmd(cmd_buf, cmd_size, true, false);
 		if (ret != 0) {
 			k_mutex_unlock(&cmd_mutex);
 			return ret;

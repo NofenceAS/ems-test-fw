@@ -109,9 +109,13 @@ int ublox_build_cfg_valset(uint8_t* buffer, uint32_t* size, uint32_t max_size,
 			   enum ublox_cfg_val_layer layer, 
 			   uint32_t key,
 			   uint64_t value);
-			   
+
 int ublox_build_cfg_rst(uint8_t* buffer, uint32_t* size, uint32_t max_size,
 			uint16_t mask,
 			uint8_t mode);
+
+int ublox_build_mga_ano(uint8_t* buffer, uint32_t* size, uint32_t max_size,
+			uint8_t* data,
+			uint32_t data_size);
 
 #endif /* UBLOX_PROTOCOL_H_ */

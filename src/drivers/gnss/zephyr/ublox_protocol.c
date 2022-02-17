@@ -471,3 +471,46 @@ int ublox_build_cfg_rst(uint8_t* buffer, uint32_t* size, uint32_t max_size,
 
 	return 0;
 }
+
+int ublox_build_mga_ano(uint8_t* buffer, uint32_t* size, uint32_t max_size,
+			uint8_t* data,
+			uint32_t data_size)
+{
+	/* Verify data size from interface description document */
+	if (data_size != 76) {
+		return -EINVAL;
+	}
+
+	/* Calculate packet length */
+	uint32_t payload_length = data_size;
+	uint32_t packet_length = UBLOX_OVERHEAD_SIZE + payload_length;
+
+	if (max_size < packet_length) {
+		return -ENOBUFS;
+	}
+
+	uint8_t msg_class = UBX_MGA;
+	uint8_t msg_id = UBX_MGA_ANO;
+
+	/* Build data structure pointers */
+	struct ublox_header* header = (void*)buffer;
+	uint8_t* payload = (void*)&buffer[sizeof(struct ublox_header)];
+	union ublox_checksum* checksum = (void*)&buffer[sizeof(struct ublox_header) + payload_length];
+
+	/* Fill header */
+	header->sync1 = UBLOX_SYNC_CHAR_1;
+	header->sync2 = UBLOX_SYNC_CHAR_2;
+	header->msg_class = msg_class;
+	header->msg_id = msg_id;
+	header->length = payload_length;
+
+	/* Fill payload */
+	memcpy(payload, data, payload_length);
+
+	/* Calculate checksum */
+	checksum->ck = ublox_calculate_checksum(buffer, header->length);
+
+	*size = packet_length;
+
+	return 0;
+}

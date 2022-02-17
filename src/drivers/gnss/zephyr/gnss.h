@@ -95,6 +95,8 @@ typedef int (*gnss_lastfix_cb_t)(gnss_last_fix_struct_t* lastfix);
 typedef int (*gnss_setup_t)(const struct device *dev);
 typedef int (*gnss_reset_t)(const struct device *dev, uint16_t mask, uint8_t mode);
 
+typedef int (*gnss_upload_assist_data_t)(const struct device *dev, uint8_t* data, uint32_t size);
+
 typedef int (*gnss_set_rate_t)(const struct device *dev, uint16_t rate);
 typedef int (*gnss_get_rate_t)(const struct device *dev, uint16_t* rate);
 
@@ -109,6 +111,8 @@ typedef int (*gnss_lastfix_fetch_t)(const struct device *dev, gnss_last_fix_stru
 __subsystem struct gnss_driver_api {
 	gnss_setup_t gnss_setup;
 	gnss_reset_t gnss_reset;
+
+	gnss_upload_assist_data_t gnss_upload_assist_data;
 
 	gnss_set_rate_t gnss_set_rate;
 	gnss_get_rate_t gnss_get_rate;
@@ -145,6 +149,14 @@ static inline int gnss_reset(const struct device *dev, uint16_t mask, uint8_t mo
 		(const struct gnss_driver_api *)dev->api;
 
 	return api->gnss_reset(dev, mask, mode);
+}
+
+static inline int gnss_upload_assist_data(const struct device *dev, uint8_t* data, uint32_t size)
+{
+	const struct gnss_driver_api *api =
+		(const struct gnss_driver_api *)dev->api;
+
+	return api->gnss_upload_assist_data(dev, data, size);
 }
 
 static inline int gnss_get_rate(const struct device *dev, uint16_t* rate)
