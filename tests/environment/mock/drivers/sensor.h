@@ -29,4 +29,7 @@ int sensor_channel_get(const struct device *dev, enum sensor_channel chan,
 
 #define environment_sensor spi0
 
+typedef enum { TEST_SANITY_PASS, TEST_SANITY_FAIL } test_id_t;
+extern test_id_t cur_test;
+
 #endif /* _SENSOR_H_ */

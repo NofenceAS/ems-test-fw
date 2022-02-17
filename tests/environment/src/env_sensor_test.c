@@ -6,8 +6,11 @@
 #include <zephyr.h>
 #include <drivers/sensor.h>
 #include "env_sensor_event.h"
+#include "error_event.h"
 
 K_SEM_DEFINE(env_data_sem, 0, 1);
+
+test_id_t cur_test = TEST_SANITY_PASS;
 
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
@@ -26,6 +29,8 @@ void test_init(void)
 
 void test_event_contents(void)
 {
+	/* We want to test and say that sanity should pass. */
+	cur_test = TEST_SANITY_PASS;
 	ztest_returns_value(sensor_sample_fetch, 0);
 	ztest_returns_value(sensor_channel_get, 0);
 	ztest_returns_value(sensor_channel_get, 0);
@@ -38,10 +43,28 @@ void test_event_contents(void)
 	zassert_equal(err, 0, "");
 }
 
+void test_event_contents_sanity_fail(void)
+{
+	/* We want to test and say that sanity should pass. */
+	cur_test = TEST_SANITY_FAIL;
+	ztest_returns_value(sensor_sample_fetch, 0);
+	ztest_returns_value(sensor_channel_get, 0);
+	ztest_returns_value(sensor_channel_get, 0);
+	ztest_returns_value(sensor_channel_get, 0);
+
+	struct request_env_sensor_event *ev = new_request_env_sensor_event();
+	EVENT_SUBMIT(ev);
+
+	/* Should hang since it never submits the event since sanity fails. */
+	int err = k_sem_take(&env_data_sem, K_SECONDS(30));
+	zassert_not_equal(err, 0, "");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(env_sensor_tests, ztest_unit_test(test_init),
-			 ztest_unit_test(test_event_contents));
+			 ztest_unit_test(test_event_contents),
+			 ztest_unit_test(test_event_contents_sanity_fail));
 	ztest_run_test_suite(env_sensor_tests);
 }
 
@@ -50,8 +73,27 @@ static bool event_handler(const struct event_header *eh)
 	if (is_env_sensor_event(eh)) {
 		k_sem_give(&env_data_sem);
 	}
+	if (is_error_event(eh)) {
+		struct error_event *ev = cast_error_event(eh);
+		zassert_equal(ev->sender, ERR_SENDER_ENV_SENSOR,
+			      "Mismatched sender.");
+
+		zassert_equal(ev->severity, ERR_SEVERITY_ERROR,
+			      "Mismatched severity.");
+
+		zassert_equal(ev->code, -ERANGE, "Mismatched error code.");
+
+		char *expected_message = "Sanity check failed for pressure.";
+
+		zassert_equal(ev->dyndata.size, strlen(expected_message),
+			      "Mismatched message length.");
+
+		zassert_mem_equal(ev->dyndata.data, expected_message,
+				  ev->dyndata.size, "Mismatched user message.");
+	}
 	return false;
 }
 
 EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, env_sensor_event);
+EVENT_SUBSCRIBE(test_main, error_event);

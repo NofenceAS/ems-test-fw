@@ -8,12 +8,50 @@ int sensor_sample_fetch(const struct device *dev)
 	return ztest_get_return_value();
 }
 
+void simulate_sensor_values(enum sensor_channel chan, struct sensor_value *val)
+{
+	if (cur_test == TEST_SANITY_PASS) {
+		switch (chan) {
+		case SENSOR_CHAN_AMBIENT_TEMP:
+			val->val1 = 25;
+			val->val2 = 13532;
+			break;
+		case SENSOR_CHAN_PRESS:
+			val->val1 = 95;
+			val->val2 = 12500;
+			break;
+		case SENSOR_CHAN_HUMIDITY:
+			val->val1 = 11;
+			val->val2 = 10532;
+			break;
+		default:
+			break;
+		}
+	} else if (cur_test == TEST_SANITY_FAIL) {
+		switch (chan) {
+		case SENSOR_CHAN_AMBIENT_TEMP:
+			val->val1 = 22;
+			val->val2 = 21552;
+			break;
+		case SENSOR_CHAN_PRESS:
+			/* Pressure should fail this sanity check. */
+			val->val1 = 3423454;
+			val->val2 = 22510;
+			break;
+		case SENSOR_CHAN_HUMIDITY:
+			val->val1 = 15;
+			val->val2 = 20315;
+			break;
+		default:
+			break;
+		}
+	}
+}
+
 int sensor_channel_get(const struct device *dev, enum sensor_channel chan,
 		       struct sensor_value *val)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(chan);
-	val->val1 = 12;
-	val->val2 = 13000;
+	simulate_sensor_values(chan, val);
 	return ztest_get_return_value();
 }

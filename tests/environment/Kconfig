@@ -3,6 +3,10 @@ menu "APPLICATION_CODE"
 	menu "ENV_SENSOR"
     	rsource "./../../src/modules/environment/Kconfig"
 	endmenu # ENV_SENSOR
+
+	menu "ERROR_HANDLER"
+    	rsource "./../../src/modules/error_handler/Kconfig"
+	endmenu
 endmenu # APPLICATION CODE
 
 menu "Zephyr Kernel"
