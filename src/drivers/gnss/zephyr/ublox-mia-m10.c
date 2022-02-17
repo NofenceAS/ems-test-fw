@@ -31,7 +31,7 @@ static struct k_mutex cmd_mutex;
 static struct k_sem cmd_ack_sem;
 static struct k_sem cmd_poll_sem;
 static bool cmd_ack = false;
-static uint8_t cmd_buf[256];
+static uint8_t cmd_buf[CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE];
 static uint32_t cmd_size = 0;
 
 /* TODO - consider creating context struct */
@@ -69,6 +69,32 @@ static gnss_lastfix_cb_t lastfix_cb = NULL;
 /**
  *
  */
+
+
+static int mia_m10_set_uart_baudrate(uint32_t baudrate)
+{
+	int ret = 0;
+	struct uart_config cfg;
+
+	if (baudrate == 0) {
+		return -EINVAL;
+	}
+	ret = uart_config_get(mia_m10_uart_dev, &cfg);
+	if (ret != 0) {
+		return -EIO;
+	}
+	if (cfg.baudrate == baudrate) {
+		return 0;
+	}
+
+	cfg.baudrate = baudrate;
+	ret = uart_configure(mia_m10_uart_dev, &cfg);
+	if (ret != 0) {
+		return -EIO;
+	}
+
+	return ret;
+}
 
 static int mia_m10_sync_tow(uint32_t tow)
 {
@@ -211,6 +237,48 @@ int mia_m10_nav_status_handler(void* context, void* payload, uint32_t size)
 static int mia_m10_setup(const struct device *dev)
 {
 	int ret = 0;
+
+	/* TODO - Could this wait be removed somehow? */
+	/* Wait to assure startup */
+	k_sleep(K_MSEC(500));
+
+
+	/* Try with default baudrate first */
+	ret = mia_m10_set_uart_baudrate(MIA_M10_DEFAULT_BAUDRATE);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Check if communication is working on default baudrate 
+	 * by sending dummy command */
+	uint32_t gnss_baudrate = 0;
+	ret = mia_m10_config_get_u32(UBX_CFG_UART1_BAUDRATE, &gnss_baudrate);
+	if (ret != 0) {
+		/* Communication failed, try configured baudrate and retry */
+		ret = mia_m10_set_uart_baudrate(CONFIG_GNSS_MIA_M10_UART_BAUDRATE);
+		if (ret != 0) {
+			return ret;
+		}
+
+		ret = mia_m10_config_get_u32(UBX_CFG_UART1OUTPRO_NMEA, &gnss_baudrate);
+		if (ret != 0) {
+			return -EIO;
+		}
+	}
+
+	/* Change UART baudrate if required */
+	if (gnss_baudrate != CONFIG_GNSS_MIA_M10_UART_BAUDRATE) {
+		/* TODO - The ACK will use the new baudrate... Need to wait for TX buffer to empty, then change UART baudrate ASAP */
+		ret = mia_m10_config_set_u32(UBX_CFG_UART1_BAUDRATE, CONFIG_GNSS_MIA_M10_UART_BAUDRATE);
+		if (ret != 0) {
+			return ret;
+		}
+		ret = mia_m10_set_uart_baudrate(CONFIG_GNSS_MIA_M10_UART_BAUDRATE);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
 	/* Disable NMEA output on UART */
 	ret = mia_m10_config_set_u8(UBX_CFG_UART1OUTPRO_NMEA, 0);
 	if (ret != 0) {
@@ -666,14 +734,14 @@ static int mia_m10_send_ubx_cmd(uint8_t* buffer, uint32_t size, bool wait_for_ac
 
 	/* Wait for response, poll and ack */
 	if (wait_for_ack) {
-		if (k_sem_take(&cmd_ack_sem, K_MSEC(500)) != 0) {
+		if (k_sem_take(&cmd_ack_sem, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) != 0) {
 			LOG_ERR("ACK timed out");
 			k_mutex_unlock(&cmd_mutex);
 			return -ETIME;
 		}
 	}
 	if (wait_for_data) {
-		if (k_sem_take(&cmd_poll_sem, K_MSEC(500)) != 0) {
+		if (k_sem_take(&cmd_poll_sem, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) != 0) {
 			LOG_ERR("POLL timed out");
 			k_mutex_unlock(&cmd_mutex);
 			return -ETIME;
@@ -709,6 +777,19 @@ int mia_m10_config_get_u16(uint32_t key, uint16_t* value)
 	return 0;
 }
 
+int mia_m10_config_get_u32(uint32_t key, uint32_t* value)
+{
+	uint64_t raw_value;
+	int ret = mia_m10_config_get(key, 4, &raw_value);
+	if (ret != 0) {
+		return ret;
+	}
+
+	*value = raw_value&0xFFFF;
+
+	return 0;
+}
+
 int mia_m10_config_get_f64(uint32_t key, double* value)
 {
 	uint64_t raw_value;
@@ -727,9 +808,9 @@ int mia_m10_config_get(uint32_t key, uint8_t size, uint64_t* raw_value)
 {
 	int ret = 0;
 
-	if (k_mutex_lock(&cmd_mutex, K_MSEC(1000)) == 0) {
+	if (k_mutex_lock(&cmd_mutex, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) == 0) {
 
-		ret = ublox_build_cfg_valget(cmd_buf, &cmd_size, 256,
+		ret = ublox_build_cfg_valget(cmd_buf, &cmd_size, CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE,
 					     0, 0, 
 					     key);
 		if (ret != 0) {
@@ -776,13 +857,19 @@ int mia_m10_config_set_u16(uint32_t key, uint16_t value)
 	return mia_m10_config_set(key, raw_value);
 }
 
+int mia_m10_config_set_u32(uint32_t key, uint32_t value)
+{
+	uint64_t raw_value = value;
+	return mia_m10_config_set(key, raw_value);
+}
+
 int mia_m10_config_set(uint32_t key, uint64_t raw_value)
 {
 	int ret = 0;
 
-	if (k_mutex_lock(&cmd_mutex, K_MSEC(1000)) == 0) {
+	if (k_mutex_lock(&cmd_mutex, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) == 0) {
 
-		ret = ublox_build_cfg_valset(cmd_buf, &cmd_size, 256,
+		ret = ublox_build_cfg_valset(cmd_buf, &cmd_size, CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE,
 					     3, 
 					     key, raw_value);
 		if (ret != 0) {
@@ -813,9 +900,9 @@ int mia_m10_send_reset(uint16_t mask, uint8_t mode)
 {
 	int ret = 0;
 
-	if (k_mutex_lock(&cmd_mutex, K_MSEC(1000)) == 0) {
+	if (k_mutex_lock(&cmd_mutex, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) == 0) {
 
-		ret = ublox_build_cfg_rst(cmd_buf, &cmd_size, 256,
+		ret = ublox_build_cfg_rst(cmd_buf, &cmd_size, CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE,
 					  mask, mode);
 		if (ret != 0) {
 			k_mutex_unlock(&cmd_mutex);
@@ -840,9 +927,9 @@ int mia_m10_send_assist_data(uint8_t* data, uint32_t size)
 {
 	int ret = 0;
 
-	if (k_mutex_lock(&cmd_mutex, K_MSEC(1000)) == 0) {
+	if (k_mutex_lock(&cmd_mutex, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) == 0) {
 
-		ret = ublox_build_mga_ano(cmd_buf, &cmd_size, 256,
+		ret = ublox_build_mga_ano(cmd_buf, &cmd_size, CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE,
 					  data, size);
 		if (ret != 0) {
 			k_mutex_unlock(&cmd_mutex);

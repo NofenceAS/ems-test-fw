@@ -6,6 +6,18 @@ config GNSS_UBLOX_MIA_M10
 
 if GNSS_UBLOX_MIA_M10
 
+	config GNSS_MIA_M10_UART_BAUDRATE
+		int "Baudrate to use for communication. Will be initiated during setup."
+		default 115200
+		
+	config GNSS_MIA_M10_CMD_RESP_TIMEOUT
+		int "Duration in milliseconds to wait for response after command."
+		default 250
+
+	config GNSS_MIA_M10_CMD_MAX_SIZE
+		int "Memory to allocate for command/response buffer."
+		default 256
+
 	config GNSS_MIA_M10_BUFFER_SIZE
 		int "Memory to allocate for RX/TX buffers."
 		default 512
