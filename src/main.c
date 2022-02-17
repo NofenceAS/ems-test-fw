@@ -15,6 +15,8 @@
 #include "amc_handler.h"
 #include "nf_eeprom.h"
 
+#include "gnss.h"
+
 #include "nf_version.h"
 
 #include "fw_upgrade.h"
@@ -40,6 +42,12 @@ void main(void)
 	eep_init(eeprom_dev);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay)
+	LOG_ERR("HAS GNSS!");
+	const struct device *gnss_dev = DEVICE_DT_GET(DT_ALIAS(gnss));
+	gnss_setup(gnss_dev);
+#endif
+
 	/* Initialize diagnostics module. */
 #if CONFIG_DIAGNOSTICS
 	if (diagnostics_module_init()) {
@@ -51,9 +59,9 @@ void main(void)
 		LOG_ERR("Event manager could not initialize.");
 	}
 	/* Initialize BLE module. */
-	if (ble_module_init()) {
+	/*if (ble_module_init()) {
 		LOG_ERR("Could not initialize BLE module");
-	}
+	}*/
 	/* Initialize firmware upgrade module. */
 	if (fw_upgrade_module_init()) {
 		LOG_ERR("Could not initialize firmware upgrade module");

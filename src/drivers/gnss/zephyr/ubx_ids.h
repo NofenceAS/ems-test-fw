@@ -12,6 +12,8 @@
 #define UBX_CFG_VALSET		0x8A
 
 #define UBX_NAV			0x01
+#define UBX_NAV_DOP		0x04
 #define UBX_NAV_PVT		0x07
+#define UBX_NAV_STATUS		0x03
 
 #endif /* UBX_IDS_H_ */

@@ -52,13 +52,121 @@ static uint32_t gnss_rx_cnt = 0;
  *
  */
 
-static int mia_m10_position_fetch(const struct device *dev)
+int mia_m10_nav_pvt_handler(void* context, void* payload, uint32_t size)
 {
+	LOG_ERR("Got NAV-PVT!");
+
+	struct ublox_nav_pvt* nav_pvt = payload;
+
+	LOG_ERR("   iTOW: %d", nav_pvt->iTOW);
+	LOG_ERR("   year: %d", nav_pvt->year);
+	LOG_ERR("   month: %d", nav_pvt->month);
+	LOG_ERR("   day: %d", nav_pvt->day);
+	LOG_ERR("   hour: %d", nav_pvt->hour);
+	LOG_ERR("   min: %d", nav_pvt->min);
+	LOG_ERR("   sec: %d", nav_pvt->sec);
+	LOG_ERR("   valid: %d", nav_pvt->valid);
+	LOG_ERR("   fixType: %d", nav_pvt->fixType);
+	LOG_ERR("   numSV: %d", nav_pvt->numSV);
+	LOG_ERR("   lon: %d", nav_pvt->lon);
+	LOG_ERR("   lat: %d", nav_pvt->lat);
+
+	return 0;
+}
+
+int mia_m10_nav_dop_handler(void* context, void* payload, uint32_t size)
+{
+	LOG_ERR("Got NAV-DOP!");
+	return 0;
+}
+
+int mia_m10_nav_status_handler(void* context, void* payload, uint32_t size)
+{
+	LOG_ERR("Got NAV-STATUS!");
+	return 0;
+}
+
+static int mia_m10_setup(const struct device *dev)
+{
+	int ret = 0;
+	/* Disable NMEA output on UART */
+	ret = mia_m10_config_set_u8(UBX_CFG_UART1OUTPRO_NMEA, 0);
+	if (ret != 0) {
+		return ret;
+	}
+	/* Enable NAV-PVT output on UART */
+	ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_PVT_UART1, 1);
+	if (ret != 0) {
+		return ret;
+	}
+	ret = ublox_register_handler(UBX_NAV, UBX_NAV_PVT, 
+				     mia_m10_nav_pvt_handler, NULL);
+	if (ret != 0) {
+		return ret;
+	}
+	/* Enable NAV-DOP output on UART */
+	ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_DOP_UART1, 1);
+	if (ret != 0) {
+		return ret;
+	}
+	ret = ublox_register_handler(UBX_NAV, UBX_NAV_DOP, 
+				     mia_m10_nav_dop_handler, NULL);
+	if (ret != 0) {
+		return ret;
+	}
+	/* Enable NAV-STATUS output on UART */
+	ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_STATUS_UART1, 1);
+	if (ret != 0) {
+		return ret;
+	}
+	ret = ublox_register_handler(UBX_NAV, UBX_NAV_STATUS, 
+				     mia_m10_nav_status_handler, NULL);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
+static int mia_m10_reset(const struct device *dev, uint8_t mask, uint8_t mode)
+{
+	/* TODO - Send CFG-RST */
+	return 0;
+}
+
+static int mia_m10_set_data_cb(const struct device *dev, int (*gnss_data_cb)(gnss_struct_t* data))
+{
+	/* TODO - Lock mutex while copying data */
+	return 0;
+}
+
+static int mia_m10_set_lastfix_cb(const struct device *dev, int (*gnss_lastfix_cb)(gnss_last_fix_struct_t* lastfix))
+{
+	/* TODO - Lock mutex while copying data */
+	return 0;
+}
+
+static int mia_m10_data_fetch(const struct device *dev, gnss_struct_t* data)
+{
+	/* TODO - Lock mutex while copying data */
+	return 0;
+}
+
+static int mia_m10_lastfix_fetch(const struct device *dev, gnss_last_fix_struct_t* lastfix)
+{
+	/* TODO - Lock mutex while copying data */
 	return 0;
 }
 
 static const struct gnss_driver_api mia_m10_api_funcs = {
-	.position_fetch = mia_m10_position_fetch,
+	.gnss_setup = mia_m10_setup,
+	.gnss_reset = mia_m10_reset,
+
+	.gnss_set_data_cb = mia_m10_set_data_cb,
+	.gnss_set_lastfix_cb = mia_m10_set_lastfix_cb,
+
+	.gnss_data_fetch = mia_m10_data_fetch,
+	.gnss_lastfix_fetch = mia_m10_lastfix_fetch
 };
 
 /**
@@ -238,28 +346,7 @@ static void mia_m10_handle_received_data(void* dev)
 	}
 }
 
-int mia_m10_nav_pvt_handler(void* context, void* payload, uint32_t size)
-{
-	LOG_ERR("Got NAV-PVT!");
-
-	struct ublox_nav_pvt* nav_pvt = payload;
-
-	LOG_ERR("   iTOW: %d", nav_pvt->iTOW);
-	LOG_ERR("   year: %d", nav_pvt->year);
-	LOG_ERR("   month: %d", nav_pvt->month);
-	LOG_ERR("   day: %d", nav_pvt->day);
-	LOG_ERR("   hour: %d", nav_pvt->hour);
-	LOG_ERR("   min: %d", nav_pvt->min);
-	LOG_ERR("   sec: %d", nav_pvt->sec);
-	LOG_ERR("   valid: %d", nav_pvt->valid);
-	LOG_ERR("   fixType: %d", nav_pvt->fixType);
-	LOG_ERR("   numSV: %d", nav_pvt->numSV);
-	LOG_ERR("   lon: %d", nav_pvt->lon);
-	LOG_ERR("   lat: %d", nav_pvt->lat);
-
-	return 0;
-}
-
+#if 0
 static void mia_m10_test(void* dev)
 {
 	bool first_conf = true;
@@ -308,6 +395,7 @@ static void mia_m10_test(void* dev)
 		}
 	}
 }
+#endif
 
 static int mia_m10_init(const struct device *dev)
 {
@@ -369,12 +457,13 @@ static int mia_m10_init(const struct device *dev)
 			(void*)mia_m10_uart_dev, NULL, NULL, 
 			K_PRIO_COOP(7), 0, K_NO_WAIT);
 
+#if 0
 	k_thread_create(&gnss_test_thread, gnss_test_stack,
 			K_KERNEL_STACK_SIZEOF(gnss_test_stack),
 			(k_thread_entry_t) mia_m10_test,
 			(void*)mia_m10_uart_dev, NULL, NULL, 
 			K_PRIO_COOP(7), 0, K_NO_WAIT);
-
+#endif
 	return 0;
 }
 

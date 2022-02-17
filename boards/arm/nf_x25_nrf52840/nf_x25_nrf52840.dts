@@ -28,6 +28,7 @@
 
 	/* Convenience aliases */
 	aliases {
+		gnss = &gnss;
 		eeprom = &eeprom0;
 		ep-ctrl = &ep_ctrl;
 		ep-detect = &ep_detect;
@@ -88,7 +89,7 @@ gnss_uart: &uart1 {
 	status = "okay";
 	tx-pin = <6>; /* P0.06 */
 	rx-pin = <7>; /* P0.07 */
-	mia_m10 {
+	gnss: mia_m10 {
 		compatible = "u-blox,mia-m10";
 		label = "ublox-mia-m10";
 		status = "okay";
