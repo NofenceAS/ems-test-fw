@@ -127,6 +127,8 @@ static bool event_handler(const struct event_header *eh)
 			expected_message = "Sanity check failed for pressure.";
 		} else if (cur_test == TEST_SANITY_FAIL_HUMIDITY) {
 			expected_message = "Sanity check failed for humidity.";
+		} else {
+			expected_message = "Unreachable.";
 		}
 
 		zassert_equal(ev->dyndata.size, strlen(expected_message),
