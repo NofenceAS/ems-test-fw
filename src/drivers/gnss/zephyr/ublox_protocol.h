@@ -4,6 +4,7 @@
 
 #include "ublox_types.h"
 #include "ubx_cfg_ids.h"
+#include "ubx_ids.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -49,6 +50,55 @@ int ublox_set_response_handlers(uint8_t* buffer,
 
 int ublox_get_cfg_val(uint8_t* payload, uint32_t size, 
 		      uint8_t val_size, uint64_t* val);
+
+inline uint8_t ublox_get_cfg_val_u8(uint8_t* payload, uint32_t size)
+{
+	uint64_t val;
+	ublox_get_cfg_val(payload, size, 1, &val);
+	return val&0xFF;
+}
+
+inline uint16_t ublox_get_cfg_val_u16(uint8_t* payload, uint32_t size)
+{
+	uint64_t val;
+	ublox_get_cfg_val(payload, size, 2, &val);
+	return val&0xFFFF;
+}
+
+inline uint32_t ublox_get_cfg_val_u32(uint8_t* payload, uint32_t size)
+{
+	uint64_t val;
+	ublox_get_cfg_val(payload, size, 4, &val);
+	return val&0xFFFFFFFF;
+}
+
+inline uint64_t ublox_get_cfg_val_u64(uint8_t* payload, uint32_t size)
+{
+	uint64_t val;
+	ublox_get_cfg_val(payload, size, 8, &val);
+	return val;
+}
+
+inline float ublox_get_cfg_val_f32(uint8_t* payload, uint32_t size)
+{
+	uint64_t val;
+	ublox_get_cfg_val(payload, size, 4, &val);
+	float* result = (void*)&val;
+	return *result;
+}
+
+inline double ublox_get_cfg_val_f64(uint8_t* payload, uint32_t size)
+{
+	uint64_t val;
+	ublox_get_cfg_val(payload, size, 8, &val);
+	double* result = (void*)&val;
+	return *result;
+}
+
+#define ublox_get_cfg_val_i8(p,s)	((int8_t)ublox_get_cfg_val_u8(p,s))
+#define ublox_get_cfg_val_i16(p,s)	((int16_t)ublox_get_cfg_val_u16(p,s))
+#define ublox_get_cfg_val_i32(p,s)	((int32_t)ublox_get_cfg_val_u32(p,s))
+#define ublox_get_cfg_val_i64(p,s)	((int64_t)ublox_get_cfg_val_u64(p,s))
 
 int ublox_build_cfg_valget(uint8_t* buffer, uint32_t* size, uint32_t max_size,
 			   enum ublox_cfg_val_layer layer, 

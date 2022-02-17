@@ -377,6 +377,8 @@ int ublox_build_cfg_valget(uint8_t* buffer, uint32_t* size, uint32_t max_size,
 	/* Calculate checksum */
 	checksum->ck = ublox_calculate_checksum(buffer, header->length);
 
+	*size = packet_length;
+
 	return 0;
 }
 
@@ -416,13 +418,15 @@ int ublox_build_cfg_valset(uint8_t* buffer, uint32_t* size, uint32_t max_size,
 	cfg_valset->version = 0x00;
 	cfg_valset->layer = (uint8_t) layer;
 	cfg_valset->keys = key;
-	uint8_t* key_val = (uint8_t*)&cfg_valset->keys;
+	uint8_t* key_val = &((uint8_t*)&cfg_valset->keys)[sizeof(key)];
 	for (uint8_t i = 0; i < decoded_size; i++) {
 		key_val[i] = (value>>(8*i))&0xFF;
 	}
 
 	/* Calculate checksum */
 	checksum->ck = ublox_calculate_checksum(buffer, header->length);
+
+	*size = packet_length;
 
 	return 0;
 }

@@ -238,17 +238,73 @@ static void mia_m10_handle_received_data(void* dev)
 	}
 }
 
+int mia_m10_nav_pvt_handler(void* context, void* payload, uint32_t size)
+{
+	LOG_ERR("Got NAV-PVT!");
+
+	struct ublox_nav_pvt* nav_pvt = payload;
+
+	LOG_ERR("   iTOW: %d", nav_pvt->iTOW);
+	LOG_ERR("   year: %d", nav_pvt->year);
+	LOG_ERR("   month: %d", nav_pvt->month);
+	LOG_ERR("   day: %d", nav_pvt->day);
+	LOG_ERR("   hour: %d", nav_pvt->hour);
+	LOG_ERR("   min: %d", nav_pvt->min);
+	LOG_ERR("   sec: %d", nav_pvt->sec);
+	LOG_ERR("   valid: %d", nav_pvt->valid);
+	LOG_ERR("   fixType: %d", nav_pvt->fixType);
+	LOG_ERR("   numSV: %d", nav_pvt->numSV);
+	LOG_ERR("   lon: %d", nav_pvt->lon);
+	LOG_ERR("   lat: %d", nav_pvt->lat);
+
+	return 0;
+}
 
 static void mia_m10_test(void* dev)
 {
+	bool first_conf = true;
 	while (true) {
 		k_sleep(K_MSEC(10000));
-		uint64_t raw_value = 0;
-		int ret = mia_m10_config_get(UBX_CFG_MSGOUT_NMEA_ID_RMC_UART1,
-					     1, &raw_value);
-		if (ret != 0)
-		{
 
+		if (first_conf) {
+			/* Disable NMEA output on UART */
+			mia_m10_config_set_u8(UBX_CFG_UART1OUTPRO_NMEA, 0);
+			/* Enable NAV-PVT output on UART */
+			mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_PVT_UART1, 1);
+
+			ublox_register_handler(UBX_NAV, UBX_NAV_PVT, 
+					       mia_m10_nav_pvt_handler, NULL);
+
+			first_conf = false;
+		}
+
+		uint8_t value = 0;
+		int ret = mia_m10_config_get_u8(UBX_CFG_MSGOUT_NMEA_ID_RMC_UART1,
+					     &value);
+		if (ret == 0)
+		{
+			LOG_ERR("UBX_CFG_MSGOUT_NMEA_ID_RMC_UART1=%d", value);
+		} else {
+			LOG_ERR("Failed getting UBX_CFG_MSGOUT_NMEA_ID_RMC_UART1=%d", ret);
+		}
+		
+		ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_NMEA_ID_RMC_UART1,
+						0);
+		if (ret == 0)
+		{
+			LOG_ERR("set UBX_CFG_MSGOUT_NMEA_ID_RMC_UART1=0");
+		} else {
+			LOG_ERR("Failed setting UBX_CFG_MSGOUT_NMEA_ID_RMC_UART1=%d", ret);
+		}
+
+		double datum = 0.0;
+		ret = mia_m10_config_get_f64(UBX_CFG_NAVSPG_USRDAT_MAJA,
+					     &datum);
+		if (ret == 0)
+		{
+			LOG_ERR("UBX_CFG_NAVSPG_USRDAT_MAJA=%f", datum);
+		} else {
+			LOG_ERR("Failed getting UBX_CFG_NAVSPG_USRDAT_MAJA=%d", ret);
 		}
 	}
 }
@@ -370,16 +426,47 @@ static int mia_m10_send_ubx_cmd(uint8_t* buffer, uint32_t size, bool wait_for_ac
 	}
 
 	/* Wait for response, poll and ack */
-	if (k_sem_take(&cmd_ack_sem, K_MSEC(500)) != 0) {
-		LOG_ERR("ACK timed out");
-		k_mutex_unlock(&cmd_mutex);
-		return -ETIME;
+	if (wait_for_ack) {
+		if (k_sem_take(&cmd_ack_sem, K_MSEC(500)) != 0) {
+			LOG_ERR("ACK timed out");
+			k_mutex_unlock(&cmd_mutex);
+			return -ETIME;
+		}
 	}
-	if (k_sem_take(&cmd_poll_sem, K_MSEC(500)) != 0) {
-		LOG_ERR("POLL timed out");
-		k_mutex_unlock(&cmd_mutex);
-		return -ETIME;
+	if (wait_for_data) {
+		if (k_sem_take(&cmd_poll_sem, K_MSEC(500)) != 0) {
+			LOG_ERR("POLL timed out");
+			k_mutex_unlock(&cmd_mutex);
+			return -ETIME;
+		}
 	}
+
+	return 0;
+}
+
+int mia_m10_config_get_u8(uint32_t key, uint8_t* value)
+{
+	uint64_t raw_value;
+	int ret = mia_m10_config_get(key, 1, &raw_value);
+	if (ret != 0) {
+		return ret;
+	}
+
+	*value = raw_value&0xFF;
+
+	return 0;
+}
+
+int mia_m10_config_get_f64(uint32_t key, double* value)
+{
+	uint64_t raw_value;
+	int ret = mia_m10_config_get(key, 8, &raw_value);
+	if (ret != 0) {
+		return ret;
+	}
+
+	double* val = (void*)&raw_value;
+	*value = *val;
 
 	return 0;
 }
@@ -388,11 +475,10 @@ int mia_m10_config_get(uint32_t key, uint8_t size, uint64_t* raw_value)
 {
 	int ret = 0;
 
-	LOG_ERR("CMD start");
 	if (k_mutex_lock(&cmd_mutex, K_MSEC(1000)) == 0) {
 
 		ret = ublox_build_cfg_valget(cmd_buf, &cmd_size, 256,
-					     DEFAULT_LAYER, 0, 
+					     0, 0, 
 					     key);
 		if (ret != 0) {
 			k_mutex_unlock(&cmd_mutex);
@@ -405,6 +491,12 @@ int mia_m10_config_get(uint32_t key, uint8_t size, uint64_t* raw_value)
 			return ret;
 		}
 
+		/* Check ACK */
+		if (!cmd_ack) {
+			k_mutex_unlock(&cmd_mutex);
+			return -ECONNREFUSED;
+		}
+
 		/* Parse result payload */
 		ret = ublox_get_cfg_val(cmd_buf, cmd_size, size, raw_value);
 		if (ret != 0) {
@@ -412,14 +504,51 @@ int mia_m10_config_get(uint32_t key, uint8_t size, uint64_t* raw_value)
 			return ret;
 		}
 
-		LOG_ERR("CMD OK");
+		k_mutex_unlock(&cmd_mutex);
+	} else {
+		return -EBUSY;
+	}
+
+	return ret;
+}
+
+int mia_m10_config_set_u8(uint32_t key, uint8_t value)
+{
+	uint64_t raw_value = value;
+	return mia_m10_config_set(key, raw_value);
+}
+
+int mia_m10_config_set(uint32_t key, uint64_t raw_value)
+{
+	int ret = 0;
+
+	if (k_mutex_lock(&cmd_mutex, K_MSEC(1000)) == 0) {
+
+		ret = ublox_build_cfg_valset(cmd_buf, &cmd_size, 256,
+					     3, 
+					     key, raw_value);
+		if (ret != 0) {
+			k_mutex_unlock(&cmd_mutex);
+			return ret;
+		}
+
+		ret = mia_m10_send_ubx_cmd(cmd_buf, cmd_size, true, false);
+		if (ret != 0) {
+			k_mutex_unlock(&cmd_mutex);
+			return ret;
+		}
+
+		/* Check ACK */
+		if (!cmd_ack) {
+			ret = -ECONNREFUSED;
+		}
 
 		k_mutex_unlock(&cmd_mutex);
 	} else {
 		return -EBUSY;
 	}
 
-	return 0;
+	return ret;
 }
 
 static struct mia_m10_dev_data mia_m10_data;
