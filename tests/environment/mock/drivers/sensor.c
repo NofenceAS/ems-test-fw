@@ -27,19 +27,52 @@ void simulate_sensor_values(enum sensor_channel chan, struct sensor_value *val)
 		default:
 			break;
 		}
-	} else if (cur_test == TEST_SANITY_FAIL) {
+	} else if (cur_test == TEST_SANITY_FAIL_TEMP) {
 		switch (chan) {
 		case SENSOR_CHAN_AMBIENT_TEMP:
-			val->val1 = 22;
+			val->val1 = -7653;
 			val->val2 = 21552;
 			break;
 		case SENSOR_CHAN_PRESS:
-			/* Pressure should fail this sanity check. */
-			val->val1 = 3423454;
+			val->val1 = 96;
 			val->val2 = 22510;
 			break;
 		case SENSOR_CHAN_HUMIDITY:
 			val->val1 = 15;
+			val->val2 = 20315;
+			break;
+		default:
+			break;
+		}
+	} else if (cur_test == TEST_SANITY_FAIL_PRESSURE) {
+		switch (chan) {
+		case SENSOR_CHAN_AMBIENT_TEMP:
+			val->val1 = 25;
+			val->val2 = 21552;
+			break;
+		case SENSOR_CHAN_PRESS:
+			val->val1 = 150;
+			val->val2 = 22510;
+			break;
+		case SENSOR_CHAN_HUMIDITY:
+			val->val1 = 15;
+			val->val2 = 20315;
+			break;
+		default:
+			break;
+		}
+	} else if (cur_test == TEST_SANITY_FAIL_HUMIDITY) {
+		switch (chan) {
+		case SENSOR_CHAN_AMBIENT_TEMP:
+			val->val1 = 25;
+			val->val2 = 21552;
+			break;
+		case SENSOR_CHAN_PRESS:
+			val->val1 = 96;
+			val->val2 = 22510;
+			break;
+		case SENSOR_CHAN_HUMIDITY:
+			val->val1 = -5;
 			val->val2 = 20315;
 			break;
 		default:
