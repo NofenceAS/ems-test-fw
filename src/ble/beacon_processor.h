@@ -54,8 +54,8 @@ void beac_init(void);
 
 void beac_reset(void);
 
-bool beac_process_event(uint32_t now_ms, const bt_addr_le_t *addr, int8_t rssi_sample_value,
-			adv_data_t *p_adv_data);
+bool beac_process_event(uint32_t now_ms, const bt_addr_le_t *addr,
+			int8_t rssi_sample_value, adv_data_t *p_adv_data);
 
 SingleBeaconInfo_t *beac_get_nearest_beacon(uint32_t minTimestamp);
 
