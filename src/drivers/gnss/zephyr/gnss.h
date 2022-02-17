@@ -122,8 +122,6 @@ __subsystem struct gnss_driver_api {
 	
 	gnss_data_fetch_t gnss_data_fetch;
 	gnss_lastfix_fetch_t gnss_lastfix_fetch;
-
-	/* TODO - ANO Data */
 };
 
 /**
