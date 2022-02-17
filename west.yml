@@ -14,4 +14,4 @@ manifest:
     - name: collar-protocol
       remote: nofence
       repo-path: collar-protocol
-      revision: initial_copy
+      revision: proto_update

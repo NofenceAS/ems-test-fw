@@ -7,6 +7,8 @@
 
 #include "ble/nf_ble.h"
 #include "fw_upgrade.h"
+#include "cellular_controller.h"
+#include "messaging.h"
 #include "fw_upgrade_events.h"
 #include "nf_eeprom.h"
 #include "ble_controller.h"
@@ -48,4 +50,6 @@ void main(void)
 	}
 	/* Initialize animal monitor control module. */
 	amc_module_init();
+	cellular_controller_init();
+	messaging_module_init();
 }

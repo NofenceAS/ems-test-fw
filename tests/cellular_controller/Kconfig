@@ -1,0 +1,10 @@
+
+menu "APPLICATION_CODE"
+	menu "CELL_CTRL"
+    	rsource "./../../src/modules/cellular_controller/Kconfig"
+	endmenu # FCELL_CTRL
+endmenu # APPLICATION CODE
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu
