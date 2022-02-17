@@ -14,6 +14,10 @@ menu "APPLICATION_CODE"
 
 endmenu # APPLICATION CODE
 
+menu "DIAGNOSTICS"
+rsource "src/modules/diagnostics/Kconfig"
+endmenu # DIAGNOSTICS
+
 menu "AMC_MODULE"
 rsource "src/modules/amc/Kconfig"
 endmenu # AMC_MODULE
@@ -54,7 +58,15 @@ endmenu
 menu "PWR Module"
 rsource "src/modules/power_manager/Kconfig"
 endmenu
+menu "CELLULAR_CONTROLLER"
+rsource "src/modules/cellular_controller/Kconfig"
+endmenu # CELLULAR_CONTROLLER
 
 menu "Zephyr Kernel"
 source "Kconfig.zephyr" 
 endmenu
+
+menu "Nofence-modem-driver"
+rsource "src/drivers/nofence_modem_driver/Kconfig"
+endmenu
+
