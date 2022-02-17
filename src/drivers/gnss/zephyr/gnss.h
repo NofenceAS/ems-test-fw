@@ -76,6 +76,13 @@ typedef struct {
 #define GNSS_RESET_MASK_WARM	0x0001
 #define GNSS_RESET_MASK_COLD	0xFFFF
 
+#define GNSS_RESET_MODE_HW_IMMEDIATELY		0x00
+#define GNSS_RESET_MODE_SW			0x01
+#define GNSS_RESET_MODE_SW_GNSS_ONLY		0x02
+#define GNSS_RESET_MODE_HW_SHDN			0x04
+#define GNSS_RESET_MODE_GNSS_STOP		0x08
+#define GNSS_RESET_MODE_GNSS_START		0x09
+
 /**
  * @typedef gnss_position_fetch_t
  * @brief Callback API for getting a reading from GNSS
@@ -86,7 +93,10 @@ typedef int (*gnss_data_cb_t)(gnss_struct_t* data);
 typedef int (*gnss_lastfix_cb_t)(gnss_last_fix_struct_t* lastfix);
 
 typedef int (*gnss_setup_t)(const struct device *dev);
-typedef int (*gnss_reset_t)(const struct device *dev, uint8_t mask, uint8_t mode);
+typedef int (*gnss_reset_t)(const struct device *dev, uint16_t mask, uint8_t mode);
+
+typedef int (*gnss_set_rate_t)(const struct device *dev, uint16_t rate);
+typedef int (*gnss_get_rate_t)(const struct device *dev, uint16_t* rate);
 
 //typedef int (*gnss_set_data_cb_t)(const struct device *dev, );
 
@@ -99,6 +109,9 @@ typedef int (*gnss_lastfix_fetch_t)(const struct device *dev, gnss_last_fix_stru
 __subsystem struct gnss_driver_api {
 	gnss_setup_t gnss_setup;
 	gnss_reset_t gnss_reset;
+
+	gnss_set_rate_t gnss_set_rate;
+	gnss_get_rate_t gnss_get_rate;
 
 	gnss_set_data_cb_t gnss_set_data_cb;
 	gnss_set_lastfix_cb_t gnss_set_lastfix_cb;
@@ -126,12 +139,28 @@ static inline int gnss_setup(const struct device *dev)
 	return api->gnss_setup(dev);
 }
 
-static inline int gnss_reset(const struct device *dev, uint8_t mask, uint8_t mode)
+static inline int gnss_reset(const struct device *dev, uint16_t mask, uint8_t mode)
 {
 	const struct gnss_driver_api *api =
 		(const struct gnss_driver_api *)dev->api;
 
 	return api->gnss_reset(dev, mask, mode);
+}
+
+static inline int gnss_get_rate(const struct device *dev, uint16_t* rate)
+{
+	const struct gnss_driver_api *api =
+		(const struct gnss_driver_api *)dev->api;
+
+	return api->gnss_get_rate(dev, rate);
+}
+
+static inline int gnss_set_rate(const struct device *dev, uint16_t rate)
+{
+	const struct gnss_driver_api *api =
+		(const struct gnss_driver_api *)dev->api;
+
+	return api->gnss_set_rate(dev, rate);
 }
 
 static inline int gnss_set_data_cb(const struct device *dev, int (*gnss_data_cb)(gnss_struct_t* data))

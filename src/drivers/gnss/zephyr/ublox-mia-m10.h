@@ -21,10 +21,14 @@ struct mia_m10_dev_config {
 };
 
 int mia_m10_config_get_u8(uint32_t key, uint8_t* value);
+int mia_m10_config_get_u16(uint32_t key, uint16_t* value);
 int mia_m10_config_get_f64(uint32_t key, double* value);
 int mia_m10_config_get(uint32_t key, uint8_t size, uint64_t* raw_value);
 
 int mia_m10_config_set_u8(uint32_t key, uint8_t value);
+int mia_m10_config_set_u16(uint32_t key, uint16_t value);
 int mia_m10_config_set(uint32_t key, uint64_t raw_value);
+
+int mia_m10_send_reset(uint16_t mask, uint8_t mode);
 
 #endif /* UBLOX_MIA_M10_H_ */

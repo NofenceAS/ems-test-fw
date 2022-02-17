@@ -250,9 +250,40 @@ static int mia_m10_setup(const struct device *dev)
 	return 0;
 }
 
-static int mia_m10_reset(const struct device *dev, uint8_t mask, uint8_t mode)
+static int mia_m10_reset(const struct device *dev, uint16_t mask, uint8_t mode)
 {
-	/* TODO - Send CFG-RST */
+	int ret = 0;
+
+	ret = mia_m10_send_reset(mask, mode);
+	if (ret != 0) {
+		return ret;
+	}
+	return 0;
+}
+
+static int mia_m10_set_rate(const struct device *dev, uint16_t rate)
+{
+	int ret = 0;
+
+	if (rate < 25) {
+		return -EINVAL;
+	}
+
+	ret = mia_m10_config_set_u16(UBX_CFG_RATE_MEAS, rate);
+	if (ret != 0) {
+		return ret;
+	}
+	return 0;
+}
+
+static int mia_m10_get_rate(const struct device *dev, uint16_t* rate)
+{
+	int ret = 0;
+
+	ret = mia_m10_config_get_u16(UBX_CFG_RATE_MEAS, rate);
+	if (ret != 0) {
+		return ret;
+	}
 	return 0;
 }
 
@@ -315,6 +346,9 @@ static int mia_m10_lastfix_fetch(const struct device *dev, gnss_last_fix_struct_
 static const struct gnss_driver_api mia_m10_api_funcs = {
 	.gnss_setup = mia_m10_setup,
 	.gnss_reset = mia_m10_reset,
+
+	.gnss_set_rate = mia_m10_set_rate,
+	.gnss_get_rate = mia_m10_get_rate,
 
 	.gnss_set_data_cb = mia_m10_set_data_cb,
 	.gnss_set_lastfix_cb = mia_m10_set_lastfix_cb,
@@ -645,6 +679,19 @@ int mia_m10_config_get_u8(uint32_t key, uint8_t* value)
 	return 0;
 }
 
+int mia_m10_config_get_u16(uint32_t key, uint16_t* value)
+{
+	uint64_t raw_value;
+	int ret = mia_m10_config_get(key, 2, &raw_value);
+	if (ret != 0) {
+		return ret;
+	}
+
+	*value = raw_value&0xFFFF;
+
+	return 0;
+}
+
 int mia_m10_config_get_f64(uint32_t key, double* value)
 {
 	uint64_t raw_value;
@@ -706,6 +753,12 @@ int mia_m10_config_set_u8(uint32_t key, uint8_t value)
 	return mia_m10_config_set(key, raw_value);
 }
 
+int mia_m10_config_set_u16(uint32_t key, uint16_t value)
+{
+	uint64_t raw_value = value;
+	return mia_m10_config_set(key, raw_value);
+}
+
 int mia_m10_config_set(uint32_t key, uint64_t raw_value)
 {
 	int ret = 0;
@@ -729,6 +782,33 @@ int mia_m10_config_set(uint32_t key, uint64_t raw_value)
 		/* Check ACK */
 		if (!cmd_ack) {
 			ret = -ECONNREFUSED;
+		}
+
+		k_mutex_unlock(&cmd_mutex);
+	} else {
+		return -EBUSY;
+	}
+
+	return ret;
+}
+
+int mia_m10_send_reset(uint16_t mask, uint8_t mode)
+{
+	int ret = 0;
+
+	if (k_mutex_lock(&cmd_mutex, K_MSEC(1000)) == 0) {
+
+		ret = ublox_build_cfg_rst(cmd_buf, &cmd_size, 256,
+					  mask, mode);
+		if (ret != 0) {
+			k_mutex_unlock(&cmd_mutex);
+			return ret;
+		}
+
+		ret = mia_m10_send_ubx_cmd(cmd_buf, cmd_size, false, false);
+		if (ret != 0) {
+			k_mutex_unlock(&cmd_mutex);
+			return ret;
 		}
 
 		k_mutex_unlock(&cmd_mutex);

@@ -65,6 +65,14 @@ void main(void)
 	gnss_setup(gnss_dev);
 	gnss_set_data_cb(gnss_dev, gnss_data_cb);
 	gnss_set_lastfix_cb(gnss_dev, gnss_lastfix_cb);
+	gnss_set_rate(gnss_dev, 1000);
+	uint16_t rate = 0;
+	gnss_get_rate(gnss_dev, &rate);
+	LOG_ERR("GNSS rate=%d", rate);
+
+	k_sleep(K_MSEC(10000));
+
+	gnss_reset(gnss_dev, GNSS_RESET_MASK_COLD, GNSS_RESET_MODE_SW);
 #endif
 
 	/* Initialize diagnostics module. */

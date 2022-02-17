@@ -430,3 +430,44 @@ int ublox_build_cfg_valset(uint8_t* buffer, uint32_t* size, uint32_t max_size,
 
 	return 0;
 }
+
+int ublox_build_cfg_rst(uint8_t* buffer, uint32_t* size, uint32_t max_size,
+			uint16_t mask,
+			uint8_t mode)
+{
+	/* Calculate packet length */
+	uint32_t payload_length = 4;
+	uint32_t packet_length = UBLOX_OVERHEAD_SIZE + payload_length;
+
+	if (max_size < packet_length) {
+		return -ENOBUFS;
+	}
+
+	uint8_t msg_class = UBX_CFG;
+	uint8_t msg_id = UBX_CFG_RST;
+
+	/* Build data structure pointers */
+	struct ublox_header* header = (void*)buffer;
+	struct ublox_cfg_rst* cfg_rst = (void*)&buffer[sizeof(struct ublox_header)];
+	union ublox_checksum* checksum = (void*)&buffer[sizeof(struct ublox_header) + payload_length];
+
+	/* Fill header */
+	header->sync1 = UBLOX_SYNC_CHAR_1;
+	header->sync2 = UBLOX_SYNC_CHAR_2;
+	header->msg_class = msg_class;
+	header->msg_id = msg_id;
+	header->length = payload_length;
+
+	/* Null payload first to account for reserved fields */
+	memset(cfg_rst, 0, payload_length);
+	/* Fill payload */
+	cfg_rst->navBbrMask = mask;
+	cfg_rst->resetMode = mode;
+
+	/* Calculate checksum */
+	checksum->ck = ublox_calculate_checksum(buffer, header->length);
+
+	*size = packet_length;
+
+	return 0;
+}

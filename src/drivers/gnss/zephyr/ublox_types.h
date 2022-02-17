@@ -42,6 +42,12 @@ struct UBLOX_STORAGE_ATTR ublox_cfg_val {
 	uint32_t keys;
 };
 
+struct UBLOX_STORAGE_ATTR ublox_cfg_rst {
+	uint16_t navBbrMask;
+	uint8_t resetMode;
+	uint8_t reserved0;
+};
+
 struct UBLOX_STORAGE_ATTR ublox_nav_dop {
 	uint32_t iTOW;
 	uint16_t gDOP;
