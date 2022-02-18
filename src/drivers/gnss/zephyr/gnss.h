@@ -92,7 +92,7 @@ typedef struct {
 typedef int (*gnss_data_cb_t)(gnss_struct_t* data);
 typedef int (*gnss_lastfix_cb_t)(gnss_last_fix_struct_t* lastfix);
 
-typedef int (*gnss_setup_t)(const struct device *dev);
+typedef int (*gnss_setup_t)(const struct device *dev, bool try_default_baud_first);
 typedef int (*gnss_reset_t)(const struct device *dev, uint16_t mask, uint8_t mode);
 
 typedef int (*gnss_upload_assist_data_t)(const struct device *dev, uint8_t* data, uint32_t size);
@@ -133,12 +133,12 @@ __subsystem struct gnss_driver_api {
  * @return 0 if successful, negative errno code if failure.
  */
 
-static inline int gnss_setup(const struct device *dev)
+static inline int gnss_setup(const struct device *dev, bool try_default_baud_first)
 {
 	const struct gnss_driver_api *api =
 		(const struct gnss_driver_api *)dev->api;
 
-	return api->gnss_setup(dev);
+	return api->gnss_setup(dev, try_default_baud_first);
 }
 
 static inline int gnss_reset(const struct device *dev, uint16_t mask, uint8_t mode)

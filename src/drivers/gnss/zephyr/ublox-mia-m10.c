@@ -45,6 +45,8 @@ static struct ring_buf gnss_tx_ring_buf;
 static uint8_t* gnss_rx_buffer = NULL;
 static uint32_t gnss_rx_cnt = 0;
 
+static atomic_t mia_m10_baudrate_change_req = ATOMIC_INIT(0x0);
+static uint32_t mia_m10_baudrate = MIA_M10_DEFAULT_BAUDRATE;
 
 #define GNSS_DATA_FLAG_NAV_DOP		(1<<0)
 #define GNSS_DATA_FLAG_NAV_PVT		(1<<1)
@@ -234,7 +236,7 @@ int mia_m10_nav_status_handler(void* context, void* payload, uint32_t size)
 	return 0;
 }
 
-static int mia_m10_setup(const struct device *dev)
+static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 {
 	int ret = 0;
 
@@ -242,20 +244,23 @@ static int mia_m10_setup(const struct device *dev)
 	/* Wait to assure startup */
 	k_sleep(K_MSEC(500));
 
-
-	/* Try with default baudrate first */
-	ret = mia_m10_set_uart_baudrate(MIA_M10_DEFAULT_BAUDRATE);
-	if (ret != 0) {
-		return ret;
+	if (try_default_baud_first) {
+		/* Try with default baudrate first */
+		ret = mia_m10_set_uart_baudrate(MIA_M10_DEFAULT_BAUDRATE);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 
-	/* Check if communication is working on default baudrate 
-	 * by sending dummy command */
+	/* Check if communication is working by sending dummy command */
 	uint32_t gnss_baudrate = 0;
 	ret = mia_m10_config_get_u32(UBX_CFG_UART1_BAUDRATE, &gnss_baudrate);
 	if (ret != 0) {
-		/* Communication failed, try configured baudrate and retry */
-		ret = mia_m10_set_uart_baudrate(CONFIG_GNSS_MIA_M10_UART_BAUDRATE);
+		/* Communication failed, try other baudrate */
+		gnss_baudrate = try_default_baud_first ? 
+				    CONFIG_GNSS_MIA_M10_UART_BAUDRATE : 
+				    MIA_M10_DEFAULT_BAUDRATE;
+		ret = mia_m10_set_uart_baudrate(gnss_baudrate);
 		if (ret != 0) {
 			return ret;
 		}
@@ -268,12 +273,12 @@ static int mia_m10_setup(const struct device *dev)
 
 	/* Change UART baudrate if required */
 	if (gnss_baudrate != CONFIG_GNSS_MIA_M10_UART_BAUDRATE) {
-		/* TODO - The ACK will use the new baudrate... Need to wait for TX buffer to empty, then change UART baudrate ASAP */
-		ret = mia_m10_config_set_u32(UBX_CFG_UART1_BAUDRATE, CONFIG_GNSS_MIA_M10_UART_BAUDRATE);
-		if (ret != 0) {
-			return ret;
-		}
-		ret = mia_m10_set_uart_baudrate(CONFIG_GNSS_MIA_M10_UART_BAUDRATE);
+		/* Requested baudrate change will be performed by ISR on 
+		 * completed transaction of command */
+		mia_m10_baudrate = CONFIG_GNSS_MIA_M10_UART_BAUDRATE;
+		atomic_set_bit(&mia_m10_baudrate_change_req, 0);
+
+		ret = mia_m10_config_set_u32(UBX_CFG_UART1_BAUDRATE, mia_m10_baudrate);
 		if (ret != 0) {
 			return ret;
 		}
@@ -478,9 +483,21 @@ static void mia_m10_uart_handle_tx(const struct device *uart_dev)
 	if (err != 0) {
 		LOG_ERR("Failed finishing GNSS TX buffer operation.");
 	}
-	
+}
+
+/**
+ * @brief Handles completion of UART transaction. 
+ * 
+ * @param[in] uart_dev UART device to send to. 
+ */
+static void mia_m10_uart_handle_complete(const struct device *uart_dev)
+{	
 	if (ring_buf_is_empty(&gnss_tx_ring_buf)) {
 		uart_irq_tx_disable(uart_dev);
+
+		if (atomic_test_and_clear_bit(&mia_m10_baudrate_change_req, 0)) {
+			mia_m10_set_uart_baudrate(mia_m10_baudrate);
+		}
 	}
 }
 
@@ -525,6 +542,10 @@ static void mia_m10_uart_isr(const struct device *uart_dev,
 		
 		if (uart_irq_tx_ready(uart_dev)) {
 			mia_m10_uart_handle_tx(uart_dev);
+		}
+
+		if (uart_irq_tx_complete(uart_dev)) {
+			mia_m10_uart_handle_complete(uart_dev);
 		}
 
 		if (uart_irq_rx_ready(uart_dev)) {

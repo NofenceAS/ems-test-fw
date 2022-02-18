@@ -62,7 +62,7 @@ void main(void)
 #if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay)
 	LOG_ERR("HAS GNSS!");
 	const struct device *gnss_dev = DEVICE_DT_GET(DT_ALIAS(gnss));
-	gnss_setup(gnss_dev);
+	gnss_setup(gnss_dev, false);
 	gnss_set_data_cb(gnss_dev, gnss_data_cb);
 	gnss_set_lastfix_cb(gnss_dev, gnss_lastfix_cb);
 	gnss_set_rate(gnss_dev, 1000);
