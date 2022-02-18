@@ -51,17 +51,22 @@ void main(void)
 	if (event_manager_init()) {
 		LOG_ERR("Event manager could not initialize.");
 	}
+
 	/* Initialize BLE module. */
 	if (ble_module_init()) {
 		LOG_ERR("Could not initialize BLE module");
 	}
+
 	if (ep_module_init()) {
 		LOG_ERR("Could not initialize electric pulse module");
 	}
+
+	if (buzzer_module_init()) {
+		LOG_ERR("Could not initialize buzzer module.");
+	}
+
 	/* Initialize animal monitor control module. */
 	amc_module_init();
-
-	init_sound_controller();
 
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	* server, we can mark the image as valid. If we do not mark it as valid,

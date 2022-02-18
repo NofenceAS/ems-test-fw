@@ -8,6 +8,7 @@
 #include <event_manager.h>
 #include <stdio.h>
 #include <string.h>
+#include <drivers/pwm.h>
 
 void test_init_event_manager(void)
 {
@@ -16,6 +17,8 @@ void test_init_event_manager(void)
 }
 void test_init_buzzer(void)
 {
+	ztest_returns_value(pwm_get_cycles_per_sec, 0);
+	//ztest_returns_value(pwm_pin_set_usec, 0);
 	zassert_false(buzzer_module_init(), "Error when initializing buzzer");
 }
 

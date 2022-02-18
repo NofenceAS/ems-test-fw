@@ -1,13 +1,5 @@
 / {
-
         aliases {
-                pwm-buzzer = &pwm0;
+                dummy-buzzer = &gpio0;
         };
-
-};
-
-&pwm0 {
-        status = "okay";
-        ch0-pin = <14>;
-        ch0-inverted;
 };
