@@ -38,11 +38,12 @@ void test_perspelmann(void)
 		ztest_returns_value(pwm_pin_set_usec, 0);
 		ztest_expect_value(pwm_pin_set_usec, pulse, freq / 2);
 		ztest_expect_value(pwm_pin_set_usec, period, freq);
+
+		/* Expect to set to 0 again. */
+		ztest_returns_value(pwm_pin_set_usec, 0);
+		ztest_expect_value(pwm_pin_set_usec, pulse, 0);
+		ztest_expect_value(pwm_pin_set_usec, period, 0);
 	}
-	/* Check that we also disable PWM (set pin to 0). */
-	ztest_returns_value(pwm_pin_set_usec, 0);
-	ztest_expect_value(pwm_pin_set_usec, pulse, 0);
-	ztest_expect_value(pwm_pin_set_usec, period, 0);
 
 	struct sound_event *ev = new_sound_event();
 	ev->type = SND_PERSPELMANN;
@@ -68,11 +69,12 @@ void test_priority_second_prio(void)
 		ztest_returns_value(pwm_pin_set_usec, 0);
 		ztest_expect_value(pwm_pin_set_usec, pulse, freq / 2);
 		ztest_expect_value(pwm_pin_set_usec, period, freq);
+
+		/* Expect to set to 0 again. */
+		ztest_returns_value(pwm_pin_set_usec, 0);
+		ztest_expect_value(pwm_pin_set_usec, pulse, 0);
+		ztest_expect_value(pwm_pin_set_usec, period, 0);
 	}
-	/* Check that we also disable PWM (set pin to 0). */
-	ztest_returns_value(pwm_pin_set_usec, 0);
-	ztest_expect_value(pwm_pin_set_usec, pulse, 0);
-	ztest_expect_value(pwm_pin_set_usec, period, 0);
 
 	struct sound_event *ev = new_sound_event();
 	ev->type = SND_PERSPELMANN;
@@ -110,11 +112,12 @@ void test_priority_first_prio(void)
 		ztest_returns_value(pwm_pin_set_usec, 0);
 		ztest_expect_value(pwm_pin_set_usec, pulse, freq / 2);
 		ztest_expect_value(pwm_pin_set_usec, period, freq);
+
+		/* Expect to set to 0 again. */
+		ztest_returns_value(pwm_pin_set_usec, 0);
+		ztest_expect_value(pwm_pin_set_usec, pulse, 0);
+		ztest_expect_value(pwm_pin_set_usec, period, 0);
 	}
-	/* Check that we also disable PWM (set pin to 0). */
-	ztest_returns_value(pwm_pin_set_usec, 0);
-	ztest_expect_value(pwm_pin_set_usec, pulse, 0);
-	ztest_expect_value(pwm_pin_set_usec, period, 0);
 
 	struct sound_event *ev_find_me = new_sound_event();
 	ev_find_me->type = SND_FIND_ME;
