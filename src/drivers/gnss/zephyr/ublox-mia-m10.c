@@ -375,7 +375,7 @@ static int mia_m10_get_rate(const struct device *dev, uint16_t* rate)
 	return 0;
 }
 
-static int mia_m10_set_data_cb(const struct device *dev, int (*gnss_data_cb)(gnss_struct_t* data))
+static int mia_m10_set_data_cb(const struct device *dev, gnss_data_cb_t gnss_data_cb)
 {
 	if (k_mutex_lock(&gnss_cb_mutex, K_MSEC(1000)) == 0) {
 		data_cb = gnss_data_cb;
@@ -386,7 +386,7 @@ static int mia_m10_set_data_cb(const struct device *dev, int (*gnss_data_cb)(gns
 	return 0;
 }
 
-static int mia_m10_set_lastfix_cb(const struct device *dev, int (*gnss_lastfix_cb)(gnss_last_fix_struct_t* lastfix))
+static int mia_m10_set_lastfix_cb(const struct device *dev, gnss_lastfix_cb_t gnss_lastfix_cb)
 {
 	if (k_mutex_lock(&gnss_cb_mutex, K_MSEC(1000)) == 0) {
 		lastfix_cb = gnss_lastfix_cb;

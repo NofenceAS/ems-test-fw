@@ -26,7 +26,7 @@
 
 LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 
-static int gnss_data_cb(gnss_struct_t* data)
+static int gnss_data_cb(const gnss_struct_t* data)
 {
 	LOG_ERR("Got GNSS data!");
 	LOG_ERR("Lat=%d", data->lat);
@@ -36,7 +36,7 @@ static int gnss_data_cb(gnss_struct_t* data)
 	return 0;
 }
 
-static int gnss_lastfix_cb(gnss_last_fix_struct_t* lastfix)
+static int gnss_lastfix_cb(const gnss_last_fix_struct_t* lastfix)
 {
 	LOG_ERR("Got GNSS LastFix data!");
 	LOG_ERR("Unix timestamp is %d", (uint32_t)lastfix->unix_timestamp);
