@@ -45,8 +45,8 @@ typedef struct {
 	/** UBX-NAV-PVT valid flags as copies.*/
 	uint8_t pvt_valid;
 
-	/** Milliseconds since position report from UBX.*/
-	uint16_t age;
+	/** Milliseconds system time when data was updated from GNSS.*/
+	uint32_t updated_at;
 
 	/** UBX-NAV-SOL milliseconds since receiver start or reset.*/
 	uint32_t msss;

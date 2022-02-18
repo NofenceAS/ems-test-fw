@@ -119,7 +119,7 @@ static int mia_m10_sync_complete(uint32_t flag)
 		/* Copy data from "in progress" to "working", and call callbacks */
 		if (k_mutex_lock(&gnss_data_mutex, K_MSEC(10)) == 0) {
 			memcpy(&gnss_data, &gnss_data_in_progress, sizeof(gnss_struct_t));
-			gnss_data.age = 0;
+			gnss_data.updated_at = k_uptime_get_32();
 			gnss_data_is_valid = true;
 
 			if (gnss_data.pvt_flags&1) {
