@@ -9,17 +9,19 @@
 #include <zephyr.h>
 
 enum sound_event_type {
-	SND_WELCOME = 0,
-	SND_SOLAR_TEST = 1,
-	SND_WARN = 2,
-	SND_OFF = 3,
-	SND_MAX = 4,
-	SND_SETUPMODE = 5,
-	SND_PERSPELMANN = 6,
-	SND_CATTLE = 7,
-	SND_SHORT_200 = 8,
-	SND_SHORT_100 = 9,
-	SND_FIND_ME = 10
+	SND_OFF = 0,
+	SND_FIND_ME,
+	SND_MAX,
+	SND_WARN,
+	SND_WELCOME,
+	SND_SETUPMODE,
+	SND_PERSPELMANN,
+	SND_CATTLE,
+	SND_SOLAR_TEST,
+	SND_SHORT_100,
+	SND_SHORT_200,
+	/* Set once the sound finishes playing, should always be last enum. */
+	SND_READY_FOR_NEXT_TYPE
 };
 
 /** @brief Sound event struct containg information of which sound to play. */

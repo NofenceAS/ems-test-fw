@@ -61,27 +61,13 @@ void main(void)
 	/* Initialize animal monitor control module. */
 	amc_module_init();
 
+	init_sound_controller();
+
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	* server, we can mark the image as valid. If we do not mark it as valid,
 	* it will revert to the previous version on the next reboot that occurs.
 	*/
 	mark_new_application_as_valid();
-	if (buzzer_module_init()) {
-		LOG_ERR("Could not initialize buzzer module and pins.");
-	}
-
-	struct sound_event *ev = new_sound_event();
-	ev->type = SND_PERSPELMANN;
-	EVENT_SUBMIT(ev);
-
-	/* Sleeps for 5 seconds WHILE song is playing, not after it played. 
-	 * FIXME!
-	 */
-	k_sleep(K_SECONDS(5));
-
-	struct sound_event *ev2 = new_sound_event();
-	ev2->type = SND_FIND_ME;
-	EVENT_SUBMIT(ev2);
 
 	LOG_INF("Marked application firmware version %i as valid.",
 		NF_X25_VERSION_NUMBER);
