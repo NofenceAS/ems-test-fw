@@ -3,6 +3,8 @@ if(CONFIG_GNSS)
 	zephyr_include_directories(.)
 
 	zephyr_library()
+	
+	zephyr_library_sources(gnss_uart.c)
 
 	if(CONFIG_GNSS_NMEA_PARSER)
 		zephyr_library_sources(nmea_parser.c)

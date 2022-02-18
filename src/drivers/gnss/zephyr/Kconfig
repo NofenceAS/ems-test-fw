@@ -18,6 +18,10 @@ if GNSS
 		bool "Enable NMEA parser for GNSS data"
 		default n
 
+	config GNSS_COMM_BUFFER_SIZE
+		int "Memory to allocate for RX/TX buffers."
+		default 512
+
 	rsource "Kconfig.ublox-mia-m10"
 
 endif # GNSS

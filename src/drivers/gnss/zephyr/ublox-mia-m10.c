@@ -11,46 +11,50 @@
 #include <sys/timeutil.h>
 
 #include "gnss.h"
+#include "gnss_uart.h"
 #include "ublox_protocol.h"
 #include "nmea_parser.h"
 
 LOG_MODULE_REGISTER(MIA_M10, CONFIG_GNSS_LOG_LEVEL);
 
+/* GNSS UART device */
 #define GNSS_UART_NODE			DT_INST_BUS(0)
 #define GNSS_UART_DEV			DEVICE_DT_GET(GNSS_UART_NODE)
 
-/* RX thread structures */
-K_KERNEL_STACK_DEFINE(gnss_rx_stack,
-		      CONFIG_GNSS_MIA_M10_RX_STACK_SIZE);
-struct k_thread gnss_rx_thread;
-
 static const struct device *mia_m10_uart_dev = GNSS_UART_DEV;
 
-/* Command / Response control structures for parsing */
+#define MIA_M10_DEFAULT_BAUDRATE	38400
+
+/* Parser thread structures */
+K_KERNEL_STACK_DEFINE(gnss_parse_stack,
+		      CONFIG_GNSS_MIA_M10_PARSE_STACK_SIZE);
+struct k_thread gnss_parse_thread;
+
+/* Command / Response control structures and buffer. 
+ * Buffer is used for building command before sending, and will also be 
+ * populated with the response data when applicable.
+ */
 static struct k_mutex cmd_mutex;
 static struct k_sem cmd_ack_sem;
-static struct k_sem cmd_poll_sem;
+static struct k_sem cmd_data_sem;
 static bool cmd_ack = false;
 static uint8_t cmd_buf[CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE];
 static uint32_t cmd_size = 0;
 
-/* TODO - consider creating context struct */
 /* Semaphore for signalling thread about received data. */
 struct k_sem gnss_rx_sem;
 
-/* GNSS buffers for sending and receiving data. */
-static uint8_t* gnss_tx_buffer = NULL;
-static struct ring_buf gnss_tx_ring_buf;
-
-static uint8_t* gnss_rx_buffer = NULL;
-static uint32_t gnss_rx_cnt = 0;
-
-static atomic_t mia_m10_baudrate_change_req = ATOMIC_INIT(0x0);
-static uint32_t mia_m10_baudrate = MIA_M10_DEFAULT_BAUDRATE;
-
+/* GNSS data is aggregated from three messages; NAV-PVT, NAV-DOP and 
+ * NAV-STATUS. The time of week in the messages is used to find what
+ * data belongs together. When a new TOW is encountered, the flags 
+ * and buffers are reset. Data is copied and flag is set for each
+ * incoming message. When all flags are set, a new GNSS data packet
+ * is ready for use. 
+ */
 #define GNSS_DATA_FLAG_NAV_DOP		(1<<0)
 #define GNSS_DATA_FLAG_NAV_PVT		(1<<1)
 #define GNSS_DATA_FLAG_NAV_STATUS	(1<<2)
+
 static uint32_t gnss_data_flags = 0;
 static gnss_struct_t gnss_data_in_progress;
 static uint32_t gnss_tow_in_progress = 0;
@@ -69,35 +73,13 @@ static gnss_data_cb_t data_cb = NULL;
 static gnss_lastfix_cb_t lastfix_cb = NULL;
 
 /**
+ * @brief Synchronizes on time of week (TOW). If a new TOW is encountered, 
+ *        flags and buffers are cleared. 
  *
+ * @param[in] tow Time of week from GNSS data.
+ * 
+ * @return 0 if everything was ok, error code otherwise
  */
-
-
-static int mia_m10_set_uart_baudrate(uint32_t baudrate)
-{
-	int ret = 0;
-	struct uart_config cfg;
-
-	if (baudrate == 0) {
-		return -EINVAL;
-	}
-	ret = uart_config_get(mia_m10_uart_dev, &cfg);
-	if (ret != 0) {
-		return -EIO;
-	}
-	if (cfg.baudrate == baudrate) {
-		return 0;
-	}
-
-	cfg.baudrate = baudrate;
-	ret = uart_configure(mia_m10_uart_dev, &cfg);
-	if (ret != 0) {
-		return -EIO;
-	}
-
-	return ret;
-}
-
 static int mia_m10_sync_tow(uint32_t tow)
 {
 	if (tow != gnss_tow_in_progress) {
@@ -110,6 +92,14 @@ static int mia_m10_sync_tow(uint32_t tow)
 	return 0;
 }
 
+/**
+ * @brief Register new piece of the GNSS data, (PVT, DOP or STATUS). 
+ *        Data is signalled as ready for use when all pieces are registered. 
+ *
+ * @param[in] flag Flag of current piece of data. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
 static int mia_m10_sync_complete(uint32_t flag)
 {
 	gnss_data_flags |= flag;
@@ -165,6 +155,13 @@ static int mia_m10_sync_complete(uint32_t flag)
 	return 0;
 }
 
+/**
+ * @brief Convert date from NAV-PVT message to unix epoch time. 
+ *
+ * @param[in] nav_pvt NAV-PVT message.
+ * 
+ * @return Unix epoch time.
+ */
 static uint64_t mia_m10_nav_pvt_to_unix_time(struct ublox_nav_pvt* nav_pvt)
 {
 	struct tm now = { 0 };
@@ -181,6 +178,15 @@ static uint64_t mia_m10_nav_pvt_to_unix_time(struct ublox_nav_pvt* nav_pvt)
 	return timeutil_timegm64(&now);
 }
 
+/**
+ * @brief Handler for incoming NAV-PVT message. 
+ *
+ * @param[in] context Context is unused. 
+ * @param[in] payload Payload containing NAV-PVT data. 
+ * @param[in] size Size of payload. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
 static int mia_m10_nav_pvt_handler(void* context, void* payload, uint32_t size)
 {
 	struct ublox_nav_pvt* nav_pvt = payload;
@@ -209,6 +215,15 @@ static int mia_m10_nav_pvt_handler(void* context, void* payload, uint32_t size)
 	return 0;
 }
 
+/**
+ * @brief Handler for incoming NAV-DOP message. 
+ *
+ * @param[in] context Context is unused. 
+ * @param[in] payload Payload containing NAV-DOP data. 
+ * @param[in] size Size of payload. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
 int mia_m10_nav_dop_handler(void* context, void* payload, uint32_t size)
 {
 	struct ublox_nav_dop* nav_dop = payload;
@@ -222,6 +237,15 @@ int mia_m10_nav_dop_handler(void* context, void* payload, uint32_t size)
 	return 0;
 }
 
+/**
+ * @brief Handler for incoming NAV-STATUS message. 
+ *
+ * @param[in] context Context is unused. 
+ * @param[in] payload Payload containing NAV-STATUS data. 
+ * @param[in] size Size of payload. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
 int mia_m10_nav_status_handler(void* context, void* payload, uint32_t size)
 {
 	struct ublox_nav_status* nav_status = payload;
@@ -236,6 +260,15 @@ int mia_m10_nav_status_handler(void* context, void* payload, uint32_t size)
 	return 0;
 }
 
+/**
+ * @brief Perform setup of GNSS. 
+ *
+ * @param[in] dev Device context. 
+ * @param[in] try_default_baud_first Set baudrate to default for GNSS. Before 
+ *                                   performing setup.
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
 static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 {
 	int ret = 0;
@@ -246,7 +279,7 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 
 	if (try_default_baud_first) {
 		/* Try with default baudrate first */
-		ret = mia_m10_set_uart_baudrate(MIA_M10_DEFAULT_BAUDRATE);
+		ret = gnss_uart_set_baudrate(MIA_M10_DEFAULT_BAUDRATE, true);
 		if (ret != 0) {
 			return ret;
 		}
@@ -260,7 +293,7 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 		gnss_baudrate = try_default_baud_first ? 
 				    CONFIG_GNSS_MIA_M10_UART_BAUDRATE : 
 				    MIA_M10_DEFAULT_BAUDRATE;
-		ret = mia_m10_set_uart_baudrate(gnss_baudrate);
+		ret = gnss_uart_set_baudrate(gnss_baudrate, true);
 		if (ret != 0) {
 			return ret;
 		}
@@ -273,12 +306,9 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 
 	/* Change UART baudrate if required */
 	if (gnss_baudrate != CONFIG_GNSS_MIA_M10_UART_BAUDRATE) {
-		/* Requested baudrate change will be performed by ISR on 
-		 * completed transaction of command */
-		mia_m10_baudrate = CONFIG_GNSS_MIA_M10_UART_BAUDRATE;
-		atomic_set_bit(&mia_m10_baudrate_change_req, 0);
+		gnss_uart_set_baudrate(CONFIG_GNSS_MIA_M10_UART_BAUDRATE, false);
 
-		ret = mia_m10_config_set_u32(UBX_CFG_UART1_BAUDRATE, mia_m10_baudrate);
+		ret = mia_m10_config_set_u32(UBX_CFG_UART1_BAUDRATE, CONFIG_GNSS_MIA_M10_UART_BAUDRATE);
 		if (ret != 0) {
 			return ret;
 		}
@@ -323,6 +353,15 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 	return 0;
 }
 
+/**
+ * @brief Resets GNSS. See GNSS API definition for details.
+ *
+ * @param[in] dev Device context. 
+ * @param[in] mask Mask of what to reset. 
+ * @param[in] mode Mode of reset. E.g. HW/SW. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
 static int mia_m10_reset(const struct device *dev, uint16_t mask, uint8_t mode)
 {
 	int ret = 0;
@@ -334,6 +373,15 @@ static int mia_m10_reset(const struct device *dev, uint16_t mask, uint8_t mode)
 	return 0;
 }
 
+/**
+ * @brief Uploads assistance data to GNSS. 
+ *
+ * @param[in] dev Device context. 
+ * @param[in] data Buffer of assistance data. 
+ * @param[in] size Size of data.
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
 static int mia_m10_upload_assist_data(const struct device *dev, uint8_t* data, uint32_t size)
 {
 	int ret = 0;
@@ -349,6 +397,14 @@ static int mia_m10_upload_assist_data(const struct device *dev, uint8_t* data, u
 	return 0;
 }
 
+/**
+ * @brief Set data rate of GNSS.
+ *
+ * @param[in] dev Device context. 
+ * @param[in] rate Rate to use. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
 static int mia_m10_set_rate(const struct device *dev, uint16_t rate)
 {
 	int ret = 0;
@@ -364,6 +420,14 @@ static int mia_m10_set_rate(const struct device *dev, uint16_t rate)
 	return 0;
 }
 
+/**
+ * @brief Get data rate of GNSS. 
+ *
+ * @param[in] dev Device context. 
+ * @param[out] rate Rate in use. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
 static int mia_m10_get_rate(const struct device *dev, uint16_t* rate)
 {
 	int ret = 0;
@@ -375,6 +439,14 @@ static int mia_m10_get_rate(const struct device *dev, uint16_t* rate)
 	return 0;
 }
 
+/**
+ * @brief Set callback to call when new GNSS data has been received. 
+ *
+ * @param[in] dev Device context. 
+ * @param[in] gnss_data_cb Function to call upon receiving GNSS data. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
 static int mia_m10_set_data_cb(const struct device *dev, gnss_data_cb_t gnss_data_cb)
 {
 	if (k_mutex_lock(&gnss_cb_mutex, K_MSEC(1000)) == 0) {
@@ -386,6 +458,15 @@ static int mia_m10_set_data_cb(const struct device *dev, gnss_data_cb_t gnss_dat
 	return 0;
 }
 
+/**
+ * @brief Set callback to call when new GNSS data with fix has been received. 
+ *
+ * @param[in] dev Device context. 
+ * @param[in] gnss_lastfix_cb Function to call upon receiving 
+ *                            GNSS data with fix. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
 static int mia_m10_set_lastfix_cb(const struct device *dev, gnss_lastfix_cb_t gnss_lastfix_cb)
 {
 	if (k_mutex_lock(&gnss_cb_mutex, K_MSEC(1000)) == 0) {
@@ -397,6 +478,14 @@ static int mia_m10_set_lastfix_cb(const struct device *dev, gnss_lastfix_cb_t gn
 	return 0;
 }
 
+/**
+ * @brief Get GNSS data. 
+ *
+ * @param[in] dev Device context. 
+ * @param[out] data GNSS data. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
 static int mia_m10_data_fetch(const struct device *dev, gnss_struct_t* data)
 {
 	if (k_mutex_lock(&gnss_data_mutex, K_MSEC(1000)) == 0) {
@@ -414,6 +503,14 @@ static int mia_m10_data_fetch(const struct device *dev, gnss_struct_t* data)
 	return 0;
 }
 
+/**
+ * @brief Get GNSS last fix data. 
+ *
+ * @param[in] dev Device context. 
+ * @param[out] data GNSS last fix data. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
 static int mia_m10_lastfix_fetch(const struct device *dev, gnss_last_fix_struct_t* lastfix)
 {
 	if (k_mutex_lock(&gnss_data_mutex, K_MSEC(1000)) == 0) {
@@ -448,173 +545,71 @@ static const struct gnss_driver_api mia_m10_api_funcs = {
 };
 
 /**
- * @brief Flushes all data from UART device. 
+ * @brief Parse data from GNSS. 
+ *
+ * @param[in] buffer Buffer with data. 
+ * @param[in] cnt Count of bytes in buffer. 
  * 
- * @param[in] uart_dev UART device to flush. 
+ * @return 0 if everything was ok, error code otherwise
  */
-static void mia_m10_uart_flush(const struct device *uart_dev)
+static uint32_t mia_m10_parse_data(uint8_t* buffer, uint32_t cnt)
 {
-	uint8_t c;
-
-	while (uart_fifo_read(uart_dev, &c, 1) > 0) {
-		continue;
-	}
-}
-
-/**
- * @brief Handles transmit operation to UART. 
- * 
- * @param[in] uart_dev UART device to send to. 
- */
-static void mia_m10_uart_handle_tx(const struct device *uart_dev)
-{
-	int err;
-	uint32_t size;
-	uint32_t sent;
-	uint8_t* data;
-
-	size = ring_buf_get_claim(&gnss_tx_ring_buf, 
-					&data, 
-					CONFIG_GNSS_MIA_M10_BUFFER_SIZE);
-	
-	sent = uart_fifo_fill(uart_dev, data, size);
-	
-	err = ring_buf_get_finish(&gnss_tx_ring_buf, sent);
-	if (err != 0) {
-		LOG_ERR("Failed finishing GNSS TX buffer operation.");
-	}
-}
-
-/**
- * @brief Handles completion of UART transaction. 
- * 
- * @param[in] uart_dev UART device to send to. 
- */
-static void mia_m10_uart_handle_complete(const struct device *uart_dev)
-{	
-	if (ring_buf_is_empty(&gnss_tx_ring_buf)) {
-		uart_irq_tx_disable(uart_dev);
-
-		if (atomic_test_and_clear_bit(&mia_m10_baudrate_change_req, 0)) {
-			mia_m10_set_uart_baudrate(mia_m10_baudrate);
-		}
-	}
-}
-
-/**
- * @brief Handles receive operation from UART. 
- * 
- * @param[in] uart_dev UART device to receive from. 
- */
-static void mia_m10_uart_handle_rx(const struct device *uart_dev)
-{
-	uint32_t received;
-	uint32_t free_space;
-	
-	free_space = CONFIG_GNSS_MIA_M10_BUFFER_SIZE - gnss_rx_cnt;
-
-	if (free_space == 0) {
-		mia_m10_uart_flush(uart_dev);
-		return;
-	}
-
-	received = uart_fifo_read(uart_dev, 
-				  &gnss_rx_buffer[gnss_rx_cnt], 
-				  free_space);
-	
-	gnss_rx_cnt += received;
-
-	if (received > 0) {
-		k_sem_give(&gnss_rx_sem);
-	}
-}
-
-/**
- * @brief Handles interrupts from UART device.
- * 
- * @param[in] uart_dev UART device to handle interrupts for. 
- */
-static void mia_m10_uart_isr(const struct device *uart_dev,
-				 void *user_data)
-{
-	while (uart_irq_update(uart_dev) &&
-	       uart_irq_is_pending(uart_dev)) {
-		
-		if (uart_irq_tx_ready(uart_dev)) {
-			mia_m10_uart_handle_tx(uart_dev);
-		}
-
-		if (uart_irq_tx_complete(uart_dev)) {
-			mia_m10_uart_handle_complete(uart_dev);
-		}
-
-		if (uart_irq_rx_ready(uart_dev)) {
-			mia_m10_uart_handle_rx(uart_dev);
-		}
-	}
-}
-
-static uint32_t mia_m10_parse_data(uint32_t offset)
-{
-	uint32_t i = offset;
-	uint32_t remainder = gnss_rx_cnt-i;
-	while(remainder > 0) {
-		if (gnss_rx_buffer[i] == NMEA_START_DELIMITER) {
+	uint32_t parsed = 0;
+	while((cnt - parsed) > 0) {
+		if (buffer[parsed] == NMEA_START_DELIMITER) {
 			/* NMEA */
-			uint32_t parsed = 
-				nmea_parse(&gnss_rx_buffer[i], remainder);
+			uint32_t i = nmea_parse(
+					&buffer[parsed], (cnt-parsed));
 			if (parsed == 0) {
 				/* Nothing parsed means not enough data yet */
 				break;
 			} else {
-				remainder -= parsed;
-				i += parsed;
+				parsed += i;
 			}
-		} else if (gnss_rx_buffer[i] == UBLOX_SYNC_CHAR_1) {
+		} else if (buffer[parsed] == UBLOX_SYNC_CHAR_1) {
 			/* UBLOX */
-			uint32_t parsed = 
-				ublox_parse(&gnss_rx_buffer[i], remainder);
+			uint32_t i = ublox_parse(
+					&buffer[parsed], (cnt-parsed));
 			if (parsed == 0) {
 				/* Nothing parsed means not enough data yet */
 				break;
 			} else {
-				remainder -= parsed;
-				i += parsed;
+				parsed += i;
 			}
 		} else {
-			remainder--;
-			i++;
+			parsed++;
 		}
 	}
 
-	return i - offset;
+	return parsed;
 }
 
-static void mia_m10_rx_consume(uint32_t cnt)
-{
-	if (cnt < gnss_rx_cnt) {
-		for (uint32_t i = 0; i < cnt; i++) {
-			gnss_rx_buffer[i] = gnss_rx_buffer[cnt + i];
-		}
-	}
-	gnss_rx_cnt -= cnt;
-}
-
+/**
+ * @brief Thread function for handling received data. 
+ *
+ * @param[in] dev Device context. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
 static void mia_m10_handle_received_data(void* dev)
 {
-	const struct device *uart_dev = (const struct device *)dev;
-
 	bool is_parsing;
 	uint32_t total_parsed_cnt;
 
 	while (true) {
 		k_sem_take(&gnss_rx_sem, K_FOREVER);
 
+		uint8_t* data_buffer;
+		uint32_t data_cnt;
+		gnss_uart_rx_get_data(&data_buffer, &data_cnt);
+
 		total_parsed_cnt = 0;
 		is_parsing = true;
 		while (is_parsing) {
 			uint32_t parsed_cnt = 
-					mia_m10_parse_data(total_parsed_cnt);
+				mia_m10_parse_data(
+						&data_buffer[total_parsed_cnt],
+						data_cnt-total_parsed_cnt);
 
 			if (parsed_cnt == 0) {
 				is_parsing = false;
@@ -623,23 +618,19 @@ static void mia_m10_handle_received_data(void* dev)
 			total_parsed_cnt += parsed_cnt;
 		}
 
-		/* Consume data from buffer. It is necessary to block
-		 * UART RX interrupt to avoid concurrent update of counter
-		 * and buffer area. Preemption of thread must be disabled
-		 * to minimize the time UART RX interrupts are disabled. 
-		*/
-		k_sched_lock();
-		uart_irq_rx_disable(uart_dev);
-		
-		mia_m10_rx_consume(total_parsed_cnt);
+		gnss_uart_rx_consume(total_parsed_cnt);
 
-		uart_irq_rx_enable(uart_dev);
-		k_sched_unlock();
-	
 		k_yield();
 	}
 }
 
+/**
+ * @brief Initialize driver. 
+ *
+ * @param[in] dev Device context. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
 static int mia_m10_init(const struct device *dev)
 {
 	mia_m10_uart_dev = GNSS_UART_DEV;
@@ -648,7 +639,7 @@ static int mia_m10_init(const struct device *dev)
 	ublox_protocol_init();
 	k_mutex_init(&cmd_mutex);
 	k_sem_init(&cmd_ack_sem, 0, 1);
-	k_sem_init(&cmd_poll_sem, 0, 1);
+	k_sem_init(&cmd_data_sem, 0, 1);
 
 	k_mutex_init(&gnss_data_mutex);
 	k_mutex_init(&gnss_cb_mutex);
@@ -661,44 +652,12 @@ static int mia_m10_init(const struct device *dev)
 		return -EIO;
 	}
 	
-	/* Allocate buffer if not already done */
-	if (gnss_rx_buffer == NULL)
-	{
-		gnss_rx_buffer = 
-			k_malloc(CONFIG_GNSS_MIA_M10_BUFFER_SIZE);
-
-		if (gnss_rx_buffer == NULL) {
-			return -ENOBUFS;
-		}
-		gnss_rx_cnt = 0;
-	}
-	if (gnss_tx_buffer == NULL)
-	{
-		gnss_tx_buffer = 
-			k_malloc(CONFIG_GNSS_MIA_M10_BUFFER_SIZE);
-
-		if (gnss_tx_buffer == NULL) {
-			return -ENOBUFS;
-		}
-		ring_buf_init(&gnss_tx_ring_buf, 
-			      CONFIG_GNSS_MIA_M10_BUFFER_SIZE, 
-			      gnss_tx_buffer);
-	}
-	
 	k_sem_init(&gnss_rx_sem, 0, 1);
-
-	/* Make sure interrupts are disabled */
-	uart_irq_rx_disable(mia_m10_uart_dev);
-	uart_irq_tx_disable(mia_m10_uart_dev);
-
-	/* Prepare UART for data reception */
-	mia_m10_uart_flush(mia_m10_uart_dev);
-	uart_irq_callback_set(mia_m10_uart_dev, mia_m10_uart_isr);
-	uart_irq_rx_enable(mia_m10_uart_dev);
+	gnss_uart_init(mia_m10_uart_dev, &gnss_rx_sem, MIA_M10_DEFAULT_BAUDRATE);
 	
-	/* Start RX thread */
-	k_thread_create(&gnss_rx_thread, gnss_rx_stack,
-			K_KERNEL_STACK_SIZEOF(gnss_rx_stack),
+	/* Start parser thread */
+	k_thread_create(&gnss_parse_thread, gnss_parse_stack,
+			K_KERNEL_STACK_SIZEOF(gnss_parse_stack),
 			(k_thread_entry_t) mia_m10_handle_received_data,
 			(void*)mia_m10_uart_dev, NULL, NULL, 
 			K_PRIO_COOP(7), 0, K_NO_WAIT);
@@ -706,27 +665,41 @@ static int mia_m10_init(const struct device *dev)
 	return 0;
 }
 
-int mia_m10_send(uint8_t* buffer, uint32_t size)
-{
-	ring_buf_put(&gnss_tx_ring_buf, buffer, size);
-	uart_irq_tx_enable(mia_m10_uart_dev);
-	return 0;
-}
-
-static int mia_m10_poll_cb(void* context, uint8_t msg_class, uint8_t msg_id, void* payload, uint32_t length)
+/**
+ * @brief Callback from protocol on receiving response data. 
+ *
+ * @param[in] context Context for callback. Unused.
+ * @param[in] msg_class Class of message. 
+ * @param[in] msg_id ID of message. 
+ * @param[in] payload Payload of response. 
+ * @param[in] length Payload length.
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
+static int mia_m10_resp_data_cb(void* context, uint8_t msg_class, uint8_t msg_id, void* payload, uint32_t length)
 {
 	if (length <= sizeof(cmd_buf)) {
 		cmd_size = length;
 		if (payload != NULL) {
 			memcpy(cmd_buf, payload, length);
 		}
-		k_sem_give(&cmd_poll_sem);
+		k_sem_give(&cmd_data_sem);
 	}
 
 	return 0;
 }
 
-static int mia_m10_ack_cb(void* context, uint8_t msg_class, uint8_t msg_id, bool ack)
+/**
+ * @brief Callback from protocol on receiving response ack/nak. 
+ *
+ * @param[in] context Context for callback. Unused.
+ * @param[in] msg_class Class of message. 
+ * @param[in] msg_id ID of message. 
+ * @param[in] ack True when ack, false when nak. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
+static int mia_m10_resp_ack_cb(void* context, uint8_t msg_class, uint8_t msg_id, bool ack)
 {
 	cmd_ack = ack;
 	k_sem_give(&cmd_ack_sem);
@@ -734,26 +707,36 @@ static int mia_m10_ack_cb(void* context, uint8_t msg_class, uint8_t msg_id, bool
 	return 0;
 }
 
+/**
+ * @brief Send U-blox protocol command. 
+ *
+ * @param[in] buffer Buffer with command to send.
+ * @param[in] size Size of buffer to send. 
+ * @param[in] wait_for_ack True when ack is expected. 
+ * @param[in] wait_for_data True when data is expected.
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
 static int mia_m10_send_ubx_cmd(uint8_t* buffer, uint32_t size, bool wait_for_ack, bool wait_for_data)
 {
 	int ret = 0;
 
 	/* Reset command response parameters */
 	k_sem_reset(&cmd_ack_sem);
-	k_sem_reset(&cmd_poll_sem);
+	k_sem_reset(&cmd_data_sem);
 	ublox_set_response_handlers(buffer,
-				    mia_m10_poll_cb, 
-				    mia_m10_ack_cb, 
+				    mia_m10_resp_data_cb, 
+				    mia_m10_resp_ack_cb, 
 				    NULL);
 
 	/* Send command bytes */
-	ret = mia_m10_send(buffer, size);
+	ret = gnss_uart_send(buffer, size);
 	if (ret != 0)
 	{
 		return ret;
 	}
 
-	/* Wait for response, poll and ack */
+	/* Wait for response, data and ack */
 	if (wait_for_ack) {
 		if (k_sem_take(&cmd_ack_sem, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) != 0) {
 			LOG_ERR("ACK timed out");
@@ -762,8 +745,8 @@ static int mia_m10_send_ubx_cmd(uint8_t* buffer, uint32_t size, bool wait_for_ac
 		}
 	}
 	if (wait_for_data) {
-		if (k_sem_take(&cmd_poll_sem, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) != 0) {
-			LOG_ERR("POLL timed out");
+		if (k_sem_take(&cmd_data_sem, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) != 0) {
+			LOG_ERR("DATA timed out");
 			k_mutex_unlock(&cmd_mutex);
 			return -ETIME;
 		}
@@ -971,12 +954,10 @@ int mia_m10_send_assist_data(uint8_t* data, uint32_t size)
 	return ret;
 }
 
-static struct mia_m10_dev_data mia_m10_data;
-
-static const struct mia_m10_dev_config mia_m10_config = {
-	.uart_name = DT_INST_BUS_LABEL(0),
-};
-
+/* Create device object. 
+ * Using NULL for data and config pointers since this is allocated statically 
+ * and not in use. 
+ */
 DEVICE_DT_INST_DEFINE(0, mia_m10_init, NULL,
-		    &mia_m10_data, &mia_m10_config, POST_KERNEL,
+		    NULL, NULL, POST_KERNEL,
 		    CONFIG_GNSS_INIT_PRIORITY, &mia_m10_api_funcs);
