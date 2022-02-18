@@ -2,7 +2,7 @@
 #ifndef NMEA_PARSER_H_
 #define NMEA_PARSER_H_
 
-/* NOT IMPLEMENTED */
+/* NOT IMPLEMENTED, ONLY USED FOR GRACEFULLY DISCARDING */
 
 #include <string.h>
 
@@ -12,7 +12,17 @@
 #define NMEA_END_DELIMITER_LEN	2
 
 #if CONFIG_GNSS_NMEA_PARSER
-uint32_t nmea_parse(uint8_t* char, uint32_t size);
+
+/**
+ * @brief Parses buffer as NMEA data. 
+ *
+ * @param[in] data Pointer to buffer containing data to parse.
+ * @param[in] size Number of bytes in buffer.
+ *
+ * @return Number of bytes parsed/consumed. 
+ */
+uint32_t nmea_parse(uint8_t* data, uint32_t size);
+
 #else
 /* Use dummy parser for NMEA data when not enabled. 
  * This will look for start and end to gracefully ignore data, 

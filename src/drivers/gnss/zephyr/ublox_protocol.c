@@ -7,23 +7,62 @@
 
 LOG_MODULE_REGISTER(UBLOX_PROTOCOL, CONFIG_GNSS_LOG_LEVEL);
 
-#define UBLOX_MAX_HANDLERS 20
+/* Constants and macros used for parsing U-blox messages */
+#define UBLOX_OFFS_SC_1		0
+#define UBLOX_OFFS_SC_2		1
+#define UBLOX_OFFS_CLASS	2
+#define UBLOX_OFFS_ID		3
+#define UBLOX_OFFS_LENGTH	4
+#define UBLOX_OFFS_PAYLOAD	6
+#define UBLOX_OFFS_CK_A(x)	(6+x)
+#define UBLOX_OFFS_CK_B(x)	(7+x)
 
+#define UBLOX_CHK_SIZE		2
+
+#define UBLOX_OVERHEAD_SIZE		(UBLOX_OFFS_PAYLOAD+UBLOX_CHK_SIZE)
+
+#define UBLOX_MSG_IDENTIFIER(c,i)	((c<<8)|(i))
+#define UBLOX_MSG_IDENTIFIER_EMPTY	0
+
+/* Registered handlers for periodic messages. 
+ * Links the message class/ids to callbacks.
+ */ 
+#define UBLOX_MAX_HANDLERS 20
+struct ublox_handler {
+	uint8_t msg_class;
+	uint8_t msg_id;
+	int (*handle)(void*,void*,uint32_t);
+	void* context;
+};
 static struct ublox_handler handlers[UBLOX_MAX_HANDLERS];
 static uint32_t callback_count = 0;
 
-K_MUTEX_DEFINE(cmd_mutex);
-uint16_t cmd_identifier = UBLOX_MSG_IDENTIFIER_EMPTY;
-void* cmd_context = NULL;
-int (*cmd_poll_handle)(void*,uint8_t,uint8_t,void*,uint32_t) = NULL;
-int (*cmd_ack_handle)(void*,uint8_t,uint8_t,bool) = NULL;
+/* Sending commands will often result in an acknowledgement and data response.
+ * These variables stores information of which command is awaiting response,
+ * and where to relay the ack/data. 
+ */
+static struct k_mutex cmd_mutex;
+static uint16_t cmd_identifier = UBLOX_MSG_IDENTIFIER_EMPTY;
+static void* cmd_context = NULL;
+static int (*cmd_poll_handle)(void*,uint8_t,uint8_t,void*,uint32_t) = NULL;
+static int (*cmd_ack_handle)(void*,uint8_t,uint8_t,bool) = NULL;
 
 void ublox_protocol_init(void)
 {
 	callback_count = 0;
 	memset(handlers, 0, sizeof(handlers));
+	k_mutex_init(&cmd_mutex);
 }
 
+/**
+ * @brief Function to find the correct handler for a specified class/id
+ *
+ * @param[in] msg_class Class of message according to U-blox protocol.
+ * @param[in] msg_id ID of message according to U-blox protocol. 
+ * @param[out] handler Resolved object registered with matching class and ID.
+ *
+ * @return 0 if handler was resolved, error code otherwise. 
+ */
 static int ublox_resolve_handler(uint8_t msg_class, uint8_t msg_id,
 				 struct ublox_handler** handler)
 {
@@ -94,7 +133,15 @@ int ublox_register_handler(uint8_t msg_class, uint8_t msg_id,
 	return 0;
 }
 
-/* UBX checksum is Fletcher's algorithm */
+/**
+ * @brief Function to calculate checksum of U-blox protocol message. 
+ *        This is Fletcher's algorithm
+ *
+ * @param[in] data Data to calculate checksum from. 
+ * @param[in] length Length of data.
+ *
+ * @return Calculated checksum. 
+ */
 static uint16_t ublox_calculate_checksum(uint8_t* data, uint16_t length)
 {
 	/* Checksum is calculated from and including message class up to 
@@ -112,6 +159,20 @@ static uint16_t ublox_calculate_checksum(uint8_t* data, uint16_t length)
 	return (ck_a + (ck_b<<8));
 }
 
+/**
+ * @brief Function to process an identified U-blox message. 
+ *        This function will first check if this is an ack for a command.
+ *        Secondly it will check if any command is awaiting data. 
+ *        And finally it will check if the class/id matches any registered
+ *        handlers. 
+ *
+ * @param[in] msg_class Class of message. 
+ * @param[in] msg_id ID of message.
+ * @param[in] payload Payload for message. 
+ * @param[in] length Length of payload. 
+ *
+ * @return 0 if message was processed, error code otherwise. 
+ */
 static int ublox_process_message(uint8_t msg_class, uint8_t msg_id, 
 				 uint8_t* payload, uint16_t length)
 {
@@ -126,16 +187,20 @@ static int ublox_process_message(uint8_t msg_class, uint8_t msg_id,
 
 			struct ublox_ack_ack* msg_ack = (void*)payload;
 
-			msg_identifier = UBLOX_MSG_IDENTIFIER(msg_ack->clsID, msg_ack->msgID);
+			msg_identifier = UBLOX_MSG_IDENTIFIER(msg_ack->clsID, 
+							      msg_ack->msgID);
 
 			if (msg_identifier == cmd_identifier)
 			{
 				if (cmd_ack_handle != NULL)
 				{
-					cmd_ack_handle(cmd_context, msg_class, msg_id, ack);
+					cmd_ack_handle(cmd_context, 
+						       msg_class, msg_id, 
+						       ack);
 
-					/* Make sure to disable any further calls to 
-					* this, as the ack is a one-off */
+					/* Make sure to disable any further 
+					 * calls to this, as the ack is a 
+					 * one-off */
 					cmd_ack_handle = NULL;
 
 					k_mutex_unlock(&cmd_mutex);
@@ -149,10 +214,12 @@ static int ublox_process_message(uint8_t msg_class, uint8_t msg_id,
 		{
 			if (cmd_poll_handle != NULL)
 			{
-				cmd_poll_handle(cmd_context, msg_class, msg_id, (void*)payload, length);
+				cmd_poll_handle(cmd_context, 
+						msg_class, msg_id, 
+						(void*)payload, length);
 
-				/* Make sure to disable any further calls to this, 
-				* as the poll is a one-off */
+				/* Make sure to disable any further calls to 
+				 * this,as the poll is a one-off */
 				cmd_poll_handle = NULL;
 
 				k_mutex_unlock(&cmd_mutex);
@@ -175,12 +242,29 @@ static int ublox_process_message(uint8_t msg_class, uint8_t msg_id,
 	return ret;
 }
 
+/**
+ * @brief Function that gets the checksum field of a U-blox message. 
+ *
+ * @param[in] data Data containing message. 
+ * @param[in] length Length of data. 
+ *
+ * @return Checksum of message.
+ */
 static uint16_t ublox_get_checksum(uint8_t* data, uint16_t length)
 {
 	return data[UBLOX_OFFS_CK_A(length)] +
 	      (data[UBLOX_OFFS_CK_B(length)]<<8);
 }
 
+/**
+ * @brief Checks if the checksum of a U-blox message matches the 
+ *        content of the message. 
+ *
+ * @param[in] data Data containing message. 
+ * @param[in] length Length of data. 
+ *
+ * @return Checksum of message.
+ */
 static bool ublox_is_checksum_correct(uint8_t* data, uint32_t length)
 {
 	uint16_t calc_checksum = ublox_calculate_checksum(data, length);
@@ -255,10 +339,11 @@ int ublox_reset_response_handlers(void)
 	return 0;
 }
 
-int ublox_set_response_handlers(uint8_t* buffer,
-				int (*poll_cb)(void*,uint8_t,uint8_t,void*,uint32_t),
-				int (*ack_cb)(void*,uint8_t,uint8_t,bool),
-				void* context)
+int ublox_set_response_handlers(
+			uint8_t* buffer,
+			int (*poll_cb)(void*,uint8_t,uint8_t,void*,uint32_t),
+			int (*ack_cb)(void*,uint8_t,uint8_t,bool),
+			void* context)
 {
 	struct ublox_header* header = (void*)buffer;
 
@@ -266,7 +351,8 @@ int ublox_set_response_handlers(uint8_t* buffer,
 		cmd_context = context;
 		cmd_poll_handle = poll_cb;
 		cmd_ack_handle = ack_cb;
-		cmd_identifier = UBLOX_MSG_IDENTIFIER(header->msg_class, header->msg_id);
+		cmd_identifier = UBLOX_MSG_IDENTIFIER(header->msg_class, 
+						      header->msg_id);
 
 		k_mutex_unlock(&cmd_mutex);
 	} else {
@@ -276,6 +362,13 @@ int ublox_set_response_handlers(uint8_t* buffer,
 	return 0;
 }
 
+/**
+ * @brief Calculates the data size from a configuration key.
+ *
+ * @param[in] key Key of configuration data.
+ *
+ * @return Size of data in bytes. 
+ */
 static uint8_t ublox_get_cfg_size(uint32_t key)
 {
 	uint8_t decoded_size = 0;
@@ -356,8 +449,11 @@ int ublox_build_cfg_valget(uint8_t* buffer, uint32_t* size, uint32_t max_size,
 
 	/* Build data structure pointers */
 	struct ublox_header* header = (void*)buffer;
-	struct ublox_cfg_val* cfg_valget = (void*)&buffer[sizeof(struct ublox_header)];
-	union ublox_checksum* checksum = (void*)&buffer[sizeof(struct ublox_header) + payload_length];
+	struct ublox_cfg_val* cfg_valget = 
+				(void*)&buffer[sizeof(struct ublox_header)];
+	union ublox_checksum* checksum = 
+				(void*)&buffer[sizeof(struct ublox_header) + \
+					       payload_length];
 
 	/* Fill header */
 	header->sync1 = UBLOX_SYNC_CHAR_1;
@@ -402,8 +498,11 @@ int ublox_build_cfg_valset(uint8_t* buffer, uint32_t* size, uint32_t max_size,
 
 	/* Build data structure pointers */
 	struct ublox_header* header = (void*)buffer;
-	struct ublox_cfg_val* cfg_valset = (void*)&buffer[sizeof(struct ublox_header)];
-	union ublox_checksum* checksum = (void*)&buffer[sizeof(struct ublox_header) + payload_length];
+	struct ublox_cfg_val* cfg_valset = 
+				(void*)&buffer[sizeof(struct ublox_header)];
+	union ublox_checksum* checksum = 
+				(void*)&buffer[sizeof(struct ublox_header) + \
+					       payload_length];
 
 	/* Fill header */
 	header->sync1 = UBLOX_SYNC_CHAR_1;
@@ -448,8 +547,11 @@ int ublox_build_cfg_rst(uint8_t* buffer, uint32_t* size, uint32_t max_size,
 
 	/* Build data structure pointers */
 	struct ublox_header* header = (void*)buffer;
-	struct ublox_cfg_rst* cfg_rst = (void*)&buffer[sizeof(struct ublox_header)];
-	union ublox_checksum* checksum = (void*)&buffer[sizeof(struct ublox_header) + payload_length];
+	struct ublox_cfg_rst* cfg_rst = 
+				(void*)&buffer[sizeof(struct ublox_header)];
+	union ublox_checksum* checksum = 
+				(void*)&buffer[sizeof(struct ublox_header) + \
+					       payload_length];
 
 	/* Fill header */
 	header->sync1 = UBLOX_SYNC_CHAR_1;
@@ -495,7 +597,9 @@ int ublox_build_mga_ano(uint8_t* buffer, uint32_t* size, uint32_t max_size,
 	/* Build data structure pointers */
 	struct ublox_header* header = (void*)buffer;
 	uint8_t* payload = (void*)&buffer[sizeof(struct ublox_header)];
-	union ublox_checksum* checksum = (void*)&buffer[sizeof(struct ublox_header) + payload_length];
+	union ublox_checksum* checksum = 
+				(void*)&buffer[sizeof(struct ublox_header) + \
+					       payload_length];
 
 	/* Fill header */
 	header->sync1 = UBLOX_SYNC_CHAR_1;
