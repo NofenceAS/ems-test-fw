@@ -34,6 +34,21 @@ struct sound_event {
 	enum sound_event_type type;
 };
 
+enum sound_event_status_type {
+	SND_STATUS_IDLE,
+	SND_STATUS_PLAYING,
+	/* EP can check if this enum is set in the sound status event. */
+	SND_STATUS_PLAYING_MAX
+};
+
+/** @brief Status event of which mode the buzzer is at. */
+struct sound_status_event {
+	struct event_header header;
+
+	enum sound_event_status_type status;
+};
+
 EVENT_TYPE_DECLARE(sound_event);
+EVENT_TYPE_DECLARE(sound_status_event);
 
 #endif /* _SOUND_EVENT_H_ */

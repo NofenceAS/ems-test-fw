@@ -8,9 +8,8 @@ int pwm_pin_set_usec(const struct device *dev, uint32_t pwm, uint32_t period,
 	ARG_UNUSED(pwm);
 	ARG_UNUSED(flags);
 
-	/* Unused for now. */
-	ARG_UNUSED(period);
-	ARG_UNUSED(pulse);
+	ztest_check_expected_value(period);
+	ztest_check_expected_value(pulse);
 
 	return ztest_get_return_value();
 }
