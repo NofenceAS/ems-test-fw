@@ -43,7 +43,9 @@ int gnss_uart_set_baudrate(uint32_t baudrate, bool immediate);
 int gnss_uart_send(uint8_t* buffer, uint32_t cnt);
 
 /**
- * @brief Get receive data. 
+ * @brief Get received data. Data is available from index 0 up to 
+ *        cnt number of bytes. Use gnss_uart_rx_consume to delete data 
+ *        that has been handled. 
  *
  * @param[out] buffer Buffer with received data. 
  * @param[out] cnt Number of bytes of data in buffer. 
@@ -53,7 +55,8 @@ int gnss_uart_send(uint8_t* buffer, uint32_t cnt);
 void gnss_uart_rx_get_data(uint8_t** buffer, uint32_t* cnt);
 
 /**
- * @brief Consume data from receive buffer. 
+ * @brief Consume data from receive buffer. Data will be deleted from start 
+ *        of buffer, and following data will be moved to start of buffer. 
  *
  * @param[in] cnt Number of bytes to consume. 
  * 

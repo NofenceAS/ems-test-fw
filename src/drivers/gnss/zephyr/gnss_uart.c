@@ -240,9 +240,9 @@ void gnss_uart_rx_consume(uint32_t cnt)
 	}
 
 	/* Consume data from buffer. It is necessary to block
-		* UART RX interrupt to avoid concurrent update of counter
-		* and buffer area. Preemption of thread must be disabled
-		* to minimize the time UART RX interrupts are disabled. 
+	* UART RX interrupt to avoid concurrent update of counter
+	* and buffer area. Preemption of thread must be disabled
+	* to minimize the time UART RX interrupts are disabled. 
 	*/
 	k_sched_lock();
 	uart_irq_rx_disable(gnss_uart_dev);
