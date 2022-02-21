@@ -560,7 +560,7 @@ static uint32_t mia_m10_parse_data(uint8_t* buffer, uint32_t cnt)
 			/* NMEA */
 			uint32_t i = nmea_parse(
 					&buffer[parsed], (cnt-parsed));
-			if (parsed == 0) {
+			if (i == 0) {
 				/* Nothing parsed means not enough data yet */
 				break;
 			} else {
@@ -570,7 +570,7 @@ static uint32_t mia_m10_parse_data(uint8_t* buffer, uint32_t cnt)
 			/* UBLOX */
 			uint32_t i = ublox_parse(
 					&buffer[parsed], (cnt-parsed));
-			if (parsed == 0) {
+			if (i == 0) {
 				/* Nothing parsed means not enough data yet */
 				break;
 			} else {
