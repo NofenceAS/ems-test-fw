@@ -18,8 +18,12 @@
 LOG_MODULE_REGISTER(MIA_M10, CONFIG_GNSS_LOG_LEVEL);
 
 /* GNSS UART device */
+#if !CONFIG_GNSS_MIA_M10_USE_DUMMY_UART
 #define GNSS_UART_NODE			DT_INST_BUS(0)
 #define GNSS_UART_DEV			DEVICE_DT_GET(GNSS_UART_NODE)
+#else
+#define GNSS_UART_DEV			NULL
+#endif
 
 static const struct device *mia_m10_uart_dev = GNSS_UART_DEV;
 
