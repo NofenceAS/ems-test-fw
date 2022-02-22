@@ -11,10 +11,16 @@ list(APPEND ZEPHYR_EXTRA_MODULES
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(gnss_testing)
 
-zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../include)
+zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR}
+                            ${CMAKE_CURRENT_BINARY_DIR}/mock)
 
-FILE(GLOB app_sources src/*.c)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../include
+                    ${CMAKE_CURRENT_SOURCE_DIR}/mock
+                    ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+FILE(GLOB app_sources 
+    src/*.c
+    mock/*.c)
 target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE ${APP_SOURCE})
 

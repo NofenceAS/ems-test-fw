@@ -24,8 +24,8 @@ if GNSS_UBLOX_MIA_M10
 		help
 		This stack is used by the u-blox MIA-M10 RX thread.
 
-	config GNSS_MIA_M10_USE_DUMMY_UART
-		bool "Using dummy UART will allow compiling and mocking for unit testing."
+	config GNSS_MIA_M10_UNIT_TESTING
+		bool "Workarounds for allowing unit testing."
 		default n
 
 endif # GNSS_UBLOX_MIA_M10

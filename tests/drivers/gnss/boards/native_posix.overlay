@@ -3,18 +3,10 @@
  */
 
 / {
+	aliases {
+		gnss = &gnss;
+	};
 
-};
-
-gnss_uart: &uart0 {
-	status = "okay";
-	compatible = "zephyr,native-posix-uart";
-	label = "UART_0";
-	/* Dummy current-speed entry to comply with serial
-		* DTS binding
-		*/
-	current-speed = <0>;
-	
 	gnss: mia_m10 {
 		compatible = "u-blox,mia-m10";
 		label = "ublox-mia-m10";
