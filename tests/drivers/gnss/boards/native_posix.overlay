@@ -6,7 +6,10 @@
 	aliases {
 		gnss = &gnss;
 	};
+};
 
+gnss_uart: &uart0 {
+	compatible = "nofence,mock-uart";
 	gnss: mia_m10 {
 		compatible = "u-blox,mia-m10";
 		label = "ublox-mia-m10";

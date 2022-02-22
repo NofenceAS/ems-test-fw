@@ -3,11 +3,7 @@
 
 #include <zephyr.h>
 #include <device.h>
-#if !CONFIG_GNSS_MIA_M10_UNIT_TESTING
 #include <drivers/uart.h>
-#else
-#include "mock_uart.h"
-#endif
 
 #include <stdint.h>
 #include <stdbool.h>

@@ -6,10 +6,6 @@
 #include <device.h>
 #include "gnss.h"
 
-#if CONFIG_GNSS_MIA_M10_UNIT_TESTING
-int mia_m10_unit_test_init(struct device *dev);
-#endif
-
 /**
  * @brief Get configuration data (uint8_t) for specified key. 
  *
