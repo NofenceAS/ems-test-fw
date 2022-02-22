@@ -2,7 +2,6 @@
 
 #include <zephyr.h>
 #include <sys/ring_buffer.h>
-#include <drivers/uart.h>
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(GNSS_UART, CONFIG_GNSS_LOG_LEVEL);

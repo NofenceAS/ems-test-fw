@@ -6,7 +6,6 @@
 #include <zephyr.h>
 #include <sys/ring_buffer.h>
 #include <drivers/gpio.h>
-#include <drivers/uart.h>
 #include <logging/log.h>
 #include <sys/timeutil.h>
 
@@ -18,8 +17,13 @@
 LOG_MODULE_REGISTER(MIA_M10, CONFIG_GNSS_LOG_LEVEL);
 
 /* GNSS UART device */
+#if !CONFIG_GNSS_MIA_M10_UNIT_TESTING
 #define GNSS_UART_NODE			DT_INST_BUS(0)
 #define GNSS_UART_DEV			DEVICE_DT_GET(GNSS_UART_NODE)
+#else
+extern struct device unit_test_uart_dev;
+#define GNSS_UART_DEV			&unit_test_uart_dev
+#endif
 
 static const struct device *mia_m10_uart_dev = GNSS_UART_DEV;
 
@@ -964,6 +968,17 @@ int mia_m10_send_assist_data(uint8_t* data, uint32_t size)
  * Using NULL for data and config pointers since this is allocated statically 
  * and not in use. 
  */
+#if !CONFIG_GNSS_MIA_M10_UNIT_TESTING
 DEVICE_DT_INST_DEFINE(0, mia_m10_init, NULL,
 		    NULL, NULL, POST_KERNEL,
 		    CONFIG_GNSS_INIT_PRIORITY, &mia_m10_api_funcs);
+#else
+int mia_m10_unit_test_init(struct device *dev)
+{
+	dev->api = &mia_m10_api_funcs;
+	dev->state->init_res = mia_m10_init(dev);
+	dev->state->initialized = dev->state->init_res == 0;
+
+	return dev->state->init_res;
+}
+#endif

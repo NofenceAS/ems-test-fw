@@ -1,0 +1,13 @@
+
+description: u-blox MIA-M10 GNSS
+
+compatible: "u-blox,mia-m10"
+
+properties:
+    label:
+      type: string
+      required: true
+
+    pps-gpios:
+      type: phandle-array
+      required: false

@@ -2,6 +2,9 @@
 #ifndef GNSS_H_
 #define GNSS_H_
 
+#include <zephyr.h>
+#include <device.h>
+
 /** @brief Struct containing GNSS data. */
 typedef struct {
 	int32_t lat;
