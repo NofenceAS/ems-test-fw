@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 void main(void)
 {
 	LOG_INF("Starting Nofence application...");
-	int err = init_storage_controller();
+	int err = stg_init_storage_controller();
 	if (err) {
 		LOG_ERR("Could not initialize storage controller, %i", err);
 		return;
@@ -78,7 +78,10 @@ void main(void)
 	 * controller to be initialized first since amc sends
 	 * a request for pasture data on init. 
 	 */
-	amc_module_init();
+	err = amc_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize AMC module. %d", err);
+	}
 
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,

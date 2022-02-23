@@ -4,7 +4,6 @@
 
 #include <ztest.h>
 #include "storage.h"
-#include "storage_events.h"
 #include "storage_helper.h"
 
 #include "ano_structure.h"
@@ -14,143 +13,108 @@
 #include "pm_config.h"
 #include <stdlib.h>
 
-void test_pasture_write(void)
+#include "storage.h"
+
+fence_t *dummy_fence;
+size_t dummy_fence_len;
+
+void fill_dummy_fence(void)
 {
-	write_pasture_data(13);
-	int err = k_sem_take(&write_pasture_ack_sem, K_SECONDS(30));
-	zassert_equal(err, 0,
-		      "Test execution hanged waiting for write pasture ack.");
+	dummy_fence_len = sizeof(fence_t) + (sizeof(fence_coordinate_t) * 4);
+	dummy_fence = (fence_t *)k_malloc(dummy_fence_len);
+	dummy_fence->header.n_points = 4;
+
+	dummy_fence->header.e_fence_type = 1;
+	dummy_fence->header.us_id = 128;
+
+	dummy_fence->p_c[0].s_x_dm = 0xDE;
+	dummy_fence->p_c[0].s_y_dm = 0xDE;
+
+	dummy_fence->p_c[1].s_x_dm = 0xAD;
+	dummy_fence->p_c[1].s_y_dm = 0xAD;
+
+	dummy_fence->p_c[2].s_x_dm = 0xBE;
+	dummy_fence->p_c[2].s_y_dm = 0xBE;
+
+	dummy_fence->p_c[3].s_x_dm = 0xEF;
+	dummy_fence->p_c[3].s_y_dm = 0xEF;
 }
 
-void test_pasture_read(void)
+int read_callback_pasture(uint8_t *data, size_t len)
 {
-	/* First we request, then we get callback in event_handler when
-	 * data is ready. There might be multiple entries since
-	 * last read, so the event_handler can trigger several times
-	 * with new entries. We just have to take care of the
-	 * consume_event once we've consumed the data.
-	 */
-	request_pasture_data();
+	zassert_equal(len, dummy_fence_len, "");
+	zassert_mem_equal((fence_t *)data, dummy_fence, len, "");
+	return 0;
+}
 
-	int err = k_sem_take(&read_pasture_ack_sem, K_SECONDS(30));
-	zassert_equal(err, 0,
-		      "Test execution hanged waiting for read pasture ack.");
-
-	/* We process the data further in event_handler. */
-
-	err = k_sem_take(&consumed_pasture_ack_sem, K_SECONDS(30));
-	zassert_equal(
-		err, 0,
-		"Test execution hanged waiting for consumed pasture ack.");
-
-	/* We know at this stage that we do not have more entries, test done. */
+void test_pasture(void)
+{
+	zassert_equal(stg_write_to_partition(STG_PARTITION_PASTURE,
+					     (uint8_t *)dummy_fence,
+					     dummy_fence_len),
+		      0, "Write pasture error.");
+	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0,
+		      "Read pasture error.");
 }
 
 void test_pasture_extended_write_read(void)
 {
-	cur_test_id = TEST_ID_PASTURE_DYNAMIC;
-
-	/* Set random seed. */
-	srand(k_uptime_get_32());
-
-	/* Update fence 300 times before reading. 
-	 * This should never happen but its good to have a test for it. Here 
-	 * we test that we can exceed the FCB, and still read out the 
-	 * needed expected fence.
-	 */
-	int fence_updates = 300;
-	for (int i = 0; i < fence_updates; i++) {
-		uint8_t num_fence_points = (uint8_t)(rand() % UINT8_MAX);
-
-		/* Our last write is the one we will read, set it to a custom
-		 * number we can check once we consume it.
-		 */
-		if (i == fence_updates - 1) {
-			num_fence_points = 100;
-		}
-
-		write_pasture_data(num_fence_points);
-		int err = k_sem_take(&write_pasture_ack_sem, K_SECONDS(30));
-		zassert_equal(
-			err, 0,
-			"Test execution hanged waiting for write pasture ack.");
-
-		/* Sleep so we have time to process all the duplicate event
-		 * submissions on the event_handler thread.
-		 */
-		k_sleep(K_MSEC(50));
+	for (int i = 0; i < 5; i++) {
+		zassert_equal(stg_write_to_partition(STG_PARTITION_PASTURE,
+						     (uint8_t *)dummy_fence,
+						     dummy_fence_len),
+			      0, "Write pasture error.");
 	}
-	request_pasture_data();
-
-	int err = k_sem_take(&read_pasture_ack_sem, K_SECONDS(30));
-	zassert_equal(err, 0,
-		      "Test execution hanged waiting for read pasture ack.");
-	err = k_sem_take(&consumed_pasture_ack_sem, K_SECONDS(30));
-	zassert_equal(
-		err, 0,
-		"Test execution hanged waiting for consumed pasture ack.");
-
-	cur_test_id = TEST_ID_NORMAL;
+	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0,
+		      "Read pasture error.");
 }
 
 void test_reboot_persistent_pasture(void)
 {
-	/* Write something. */
-	write_pasture_data(13);
-	int err = k_sem_take(&write_pasture_ack_sem, K_SECONDS(30));
-	zassert_equal(err, 0,
-		      "Test execution hanged waiting for write pasture ack.");
+	zassert_equal(stg_write_to_partition(STG_PARTITION_PASTURE,
+					     (uint8_t *)dummy_fence,
+					     dummy_fence_len),
+		      0, "Write pasture error.");
 
 	/* Reset FCB, pretending to reboot. Checks if persistent storage
 	 * works. Should get the expected read value from the written one above.
 	 */
-	err = stg_fcb_reset_and_init();
+	int err = stg_fcb_reset_and_init();
 	zassert_equal(err, 0, "Error simulating reboot and FCB resets.");
 
-	/* Read something. */
-	request_pasture_data();
-
-	err = k_sem_take(&read_pasture_ack_sem, K_SECONDS(30));
-	zassert_equal(err, 0,
-		      "Test execution hanged waiting for read pasture ack.");
-	err = k_sem_take(&consumed_pasture_ack_sem, K_SECONDS(30));
-	zassert_equal(
-		err, 0,
-		"Test execution hanged waiting for consumed pasture ack.");
+	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0,
+		      "Read pasture error.");
 }
 
 /** @brief Test to check that the fcb_offset_last_n function works
  *         if there have been no writes between the requests.
  */
-void test_request_pasture_twice(void)
+void test_request_pasture_multiple(void)
 {
-	/* Write once, request twice. */
-	write_pasture_data(13);
-	int err = k_sem_take(&write_pasture_ack_sem, K_SECONDS(30));
-	zassert_equal(err, 0,
-		      "Test execution hanged waiting for write pasture ack.");
+	zassert_equal(stg_write_to_partition(STG_PARTITION_PASTURE,
+					     (uint8_t *)dummy_fence,
+					     dummy_fence_len),
+		      0, "Write pasture error.");
 
-	/* Read something. */
-	request_pasture_data();
+	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0,
+		      "Read pasture error.");
+	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0,
+		      "Read pasture error.");
+	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0,
+		      "Read pasture error.");
+	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0,
+		      "Read pasture error.");
+}
 
-	err = k_sem_take(&read_pasture_ack_sem, K_SECONDS(30));
-	zassert_equal(err, 0,
-		      "Test execution hanged waiting for read pasture ack.");
-	err = k_sem_take(&consumed_pasture_ack_sem, K_SECONDS(30));
-	zassert_equal(
-		err, 0,
-		"Test execution hanged waiting for consumed pasture ack.");
+/** @brief Test to check that the fcb_offset_last_n function works
+ *         if there have been no writes between the requests.
+ */
+void test_no_pasture_available(void)
+{
+	/* Clear partition. */
+	zassert_equal(stg_clear_partition(STG_PARTITION_PASTURE), 0, "");
 
-	k_sleep(K_SECONDS(5));
-
-	/* Read something. */
-	request_pasture_data();
-
-	err = k_sem_take(&read_pasture_ack_sem, K_SECONDS(30));
-	zassert_equal(err, 0,
-		      "Test execution hanged waiting for read pasture ack.");
-	err = k_sem_take(&consumed_pasture_ack_sem, K_SECONDS(30));
-	zassert_equal(
-		err, 0,
-		"Test execution hanged waiting for consumed pasture ack.");
+	/* Read. */
+	zassert_equal(stg_read_pasture_data(read_callback_pasture), -ENODATA,
+		      "Read pasture should return -ENODATA.");
 }

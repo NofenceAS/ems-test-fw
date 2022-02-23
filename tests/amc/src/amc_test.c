@@ -6,19 +6,14 @@
 #include "amc_handler.h"
 #include "sound_event.h"
 #include "request_events.h"
-#include "pasture_event.h"
 #include "pasture_structure.h"
-#include "storage_events.h"
+#include "pasture_event.h"
 
-enum test_event_id { TEST_EVENT_REQUEST_GNSS = 0, TEST_EVENT_STRESS_GNSS = 1 };
-static enum test_event_id cur_id = TEST_EVENT_REQUEST_GNSS;
+#include "error_event.h"
 
-static bool toggle_stress_request = false;
-
-static K_SEM_DEFINE(sound_event_sem, 0, 1);
-
-static K_SEM_DEFINE(ack_fencedata_sem, 0, 1);
-static K_SEM_DEFINE(ack_gnssdata_sem, 0, 1);
+K_SEM_DEFINE(sound_event_sem, 0, 1);
+K_SEM_DEFINE(pasture_ready_sem, 0, 1);
+K_SEM_DEFINE(error_event_sem, 0, 1);
 
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
@@ -29,78 +24,19 @@ void assert_post_action(const char *file, unsigned int line)
 	printk("assert_post_action - file: %s (line: %u)\n", file, line);
 }
 
-fence_t *dummy_fence;
-
-static void free_dummy_pasture()
-{
-	k_free(dummy_fence);
-}
-
-static void simulate_dummy_pasture(struct stg_read_event *ev)
-{
-	/* Simulate 13 points. */
-	size_t len = sizeof(fence_t) + (13 * sizeof(fence_coordinate_t));
-	dummy_fence = k_malloc(len);
-
-	/* Write to 13 points on x and y coords. */
-	for (int i = 0; i < 13; i++) {
-		dummy_fence->p_c[i].s_x_dm = 1337;
-		dummy_fence->p_c[i].s_y_dm = 1337;
-	}
-
-	dummy_fence->header.n_points = 13;
-	dummy_fence->header.e_fence_type = 1;
-	dummy_fence->header.us_id = 3;
-
-	/* Publish read ack event and wait for consumed ack, 
-	 * only then do we read the next entry in the walk process.
-	 */
-	struct stg_ack_read_event *event = new_stg_ack_read_event();
-	event->partition = STG_PARTITION_PASTURE;
-	event->data = (uint8_t *)dummy_fence;
-	event->len = len;
-
-	EVENT_SUBMIT(event);
-}
-
 static void simulate_dummy_gnssdata(gnss_struct_t *gnss_out)
 {
-	/* Here we can check which test we're on, so we can have multiple tests
-	 * with multiple dummy FENCE/GNSS data fields.
-	 */
-	if (cur_id == TEST_EVENT_REQUEST_GNSS) {
-		gnss_out->lat = 1337;
-		gnss_out->lon = 1337;
-	} else if (cur_id == TEST_EVENT_STRESS_GNSS) {
-		if (toggle_stress_request) {
-			gnss_out->lat = 123;
-			gnss_out->lon = 123;
-		} else {
-			gnss_out->lat = 1337;
-			gnss_out->lon = 1337;
-		}
-	}
+	gnss_out->lat = 1337;
+	gnss_out->lon = 1337;
 }
 
-void test_init(void)
+void test_init_and_update_pasture(void)
 {
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
 
-	/* When we initialize the AMC module, we request GNSS and FENCE data
-	 * within the module, which means our event handler will trigger below.
-	 * We then have mocked away the storage, GNSS, sound and zap module
-	 * so we can simualte dummy fence and GNSS data and subscribe to
-	 * sound and zap events to check if the calculations are correct.
-	 */
-	amc_module_init();
-
-	/* Wait for event_handler to finish it zasserts.
-	 * We expect to get an ack for both the fencedata and GNSS data as well
-	 * as the sound event.
-	 */
-	int err = k_sem_take(&ack_fencedata_sem, K_SECONDS(30));
-	zassert_equal(err, 0, "Test hanged waiting for pasture ack.");
+	ztest_returns_value(stg_read_pasture_data, 0);
+	zassert_false(amc_module_init(), "Error when initializing AMC module");
 }
 
 void test_update_pasture()
@@ -108,14 +44,20 @@ void test_update_pasture()
 	struct pasture_ready_event *event = new_pasture_ready_event();
 	EVENT_SUBMIT(event);
 
-	int err = k_sem_take(&ack_fencedata_sem, K_SECONDS(30));
-	zassert_equal(err, 0, "Test hanged waiting for pasture ack.");
+	ztest_returns_value(stg_read_pasture_data, 0);
+	int err = k_sem_take(&pasture_ready_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "Test hanged waiting for pasture ready event.");
 }
 
-#define STRESS_TEST_REQUESTS 50
-#define STRESS_TEST_HZ 10
+void test_update_pasture_error()
+{
+	struct pasture_ready_event *event = new_pasture_ready_event();
+	EVENT_SUBMIT(event);
 
-static int stress_test_counter = 0;
+	ztest_returns_value(stg_read_pasture_data, -ENODATA);
+	int err = k_sem_take(&error_event_sem, K_SECONDS(30));
+	zassert_not_equal(err, 0, "Test should hang for error event.");
+}
 
 void test_update_gnssdata()
 {
@@ -126,6 +68,9 @@ void test_update_gnssdata()
 	int err = k_sem_take(&sound_event_sem, K_SECONDS(30));
 	zassert_equal(err, 0, "Test hanged waiting for sound event.");
 }
+
+#define STRESS_TEST_REQUESTS 50
+static int stress_test_counter = 0;
 
 void test_stress_gnss_request()
 {
@@ -140,7 +85,7 @@ void test_stress_gnss_request()
 
 		int err = k_sem_take(&sound_event_sem, K_SECONDS(30));
 		zassert_equal(err, 0, "Test hanged waiting for sound event.");
-		k_sleep(K_MSEC(1000 / STRESS_TEST_HZ));
+		stress_test_counter++;
 	}
 	zassert_equal(stress_test_counter, STRESS_TEST_REQUESTS,
 		      "Missed request events.");
@@ -148,61 +93,42 @@ void test_stress_gnss_request()
 
 static bool event_handler(const struct event_header *eh)
 {
-	/* Regardless of test, if it is of type request event, we simulate its
-	 * contents with our writing dummy function.
-	 */
-	if (is_stg_read_event(eh)) {
-		struct stg_read_event *ev = cast_stg_read_event(eh);
-
-		/* Write our own dummy 
-		 * data to pasture that got requested. 
-		 */
-		simulate_dummy_pasture(ev);
+	if (is_sound_event(eh)) {
+		struct sound_event *ev = cast_sound_event(eh);
+		zassert_equal(ev->type, SND_WELCOME,
+			      "Unexpected sound event type received");
+		k_sem_give(&sound_event_sem);
 	}
-	if (is_stg_consumed_read_event(eh)) {
-		free_dummy_pasture();
-		k_sem_give(&ack_fencedata_sem);
+	if (is_pasture_ready_event(eh)) {
+		k_sem_give(&pasture_ready_sem);
 	}
+	if (is_error_event(eh)) {
+		struct error_event *ev = cast_error_event(eh);
+		zassert_equal(ev->sender, ERR_SENDER_AMC, "Mismatched sender.");
 
-	/* Checking the sound- and zap events that amc_module outputs based on 
-	 * cur_id to check that the amc_module has performed the correct
-	 * calculations from our simulated GNSS and FENCE data.
-	 */
-	if (cur_id == TEST_EVENT_REQUEST_GNSS) {
-		if (is_sound_event(eh)) {
-			struct sound_event *ev = cast_sound_event(eh);
-			zassert_equal(ev->type, SND_WELCOME,
-				      "Unexpected sound event type received");
-			/* Test went through, notify test with k_sem_give
-			 * and prepare for next test with cur_id. 
-			 */
-			k_sem_give(&sound_event_sem);
-			cur_id = TEST_EVENT_STRESS_GNSS;
-		}
-	} else if (cur_id == TEST_EVENT_STRESS_GNSS) {
-		if (is_sound_event(eh)) {
-			stress_test_counter++;
-			struct sound_event *ev = cast_sound_event(eh);
-			if (toggle_stress_request) {
-				zassert_equal(
-					ev->type, SND_FIND_ME,
-					"Unexpected sound event type received");
-			} else {
-				zassert_equal(
-					ev->type, SND_WELCOME,
-					"Unexpected sound event type received");
-			}
-			toggle_stress_request = !toggle_stress_request;
-			k_sem_give(&sound_event_sem);
-		}
+		zassert_equal(ev->severity, ERR_SEVERITY_FATAL,
+			      "Mismatched severity.");
+
+		zassert_equal(ev->code, -ENODATA, "Mismatched error code.");
+
+		char *expected_message = "Cannot update pasture cache on AMC.";
+
+		zassert_equal(ev->dyndata.size, strlen(expected_message),
+			      "Mismatched message length.");
+
+		zassert_mem_equal(ev->dyndata.data, expected_message,
+				  ev->dyndata.size, "Mismatched user message.");
+		k_sem_give(&error_event_sem);
 	}
 	return false;
 }
 
 void test_main(void)
 {
-	ztest_test_suite(amc_tests, ztest_unit_test(test_init),
+	ztest_test_suite(amc_tests,
+			 ztest_unit_test(test_init_and_update_pasture),
 			 ztest_unit_test(test_update_pasture),
+			 ztest_unit_test(test_update_pasture_error),
 			 ztest_unit_test(test_update_gnssdata),
 			 ztest_unit_test(test_stress_gnss_request));
 	ztest_run_test_suite(amc_tests);
@@ -211,6 +137,4 @@ void test_main(void)
 EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, sound_event);
 EVENT_SUBSCRIBE(test_main, gnssdata_event);
-
-EVENT_SUBSCRIBE(test_main, stg_read_event);
-EVENT_SUBSCRIBE(test_main, stg_consumed_read_event);
+EVENT_SUBSCRIBE_FINAL(test_main, pasture_ready_event);
