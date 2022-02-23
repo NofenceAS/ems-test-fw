@@ -33,14 +33,14 @@ static inline uint32_t nmea_parse(uint8_t* data, uint32_t size)
 	uint32_t parsed = 0;
 	for (uint32_t i = 0; i < size; i++) {
 		if (i > NMEA_MAX_SIZE) {
-			/* Exceeded max size, ignore max and stop parsing. */
-			parsed = NMEA_MAX_SIZE;
+			/* Exceeded max size, ignore start character and stop parsing. */
+			parsed = 1;
 			break;
 		}
 
 		if ((size-i) >= NMEA_END_DELIMITER_LEN) {
 			if (strncmp(&data[i], NMEA_END_DELIMITER, 
-					     NMEA_END_DELIMITER_LEN)) {
+					     NMEA_END_DELIMITER_LEN) == 0) {
 				/* Found end delimiter, ignore data (including 
 				 * end) and stop parsing. */
 				parsed = i + NMEA_END_DELIMITER_LEN;

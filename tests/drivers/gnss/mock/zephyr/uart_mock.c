@@ -14,6 +14,8 @@ struct mock_uart_data {
 static uart_irq_callback_user_data_t irq_callback;
 static void *irq_cb_data;
 
+//#define MOCK_UART_VERBOSE
+
 /* GNSS to MCU */ 
 #define UART_MOCK_RX_SIZE 1024
 static uint8_t uart_mock_rx_buffer[UART_MOCK_RX_SIZE];
@@ -44,7 +46,9 @@ static int mock_uart_err_check(const struct device *dev)
 static int mock_uart_configure(const struct device *dev,
 			       const struct uart_config *cfg)
 {
+#ifdef MOCK_UART_VERBOSE
 	printk("%d: mock_uart_configure\r\n", k_uptime_get_32());
+#endif
 	struct mock_uart_data* data = dev->data;
 	data->uart_config = *cfg;
 	return 0;
@@ -53,7 +57,9 @@ static int mock_uart_configure(const struct device *dev,
 static int mock_uart_config_get(const struct device *dev,
 				struct uart_config *cfg)
 {
+#ifdef MOCK_UART_VERBOSE
 	printk("%d: mock_uart_config_get\r\n", k_uptime_get_32());
+#endif
 	struct mock_uart_data* data = dev->data;
 	*cfg = data->uart_config;
 	return 0;
@@ -66,12 +72,14 @@ static int mock_uart_fifo_fill(const struct device *dev,
 {
 	(void)dev;
 	
+#ifdef MOCK_UART_VERBOSE
 	printk("%d: ", k_uptime_get_32());
 	for (int i = 0; i < len; i++)
 	{
 		printk("0x%02X ", tx_data[i]);
 	}
 	printk("\r\n");
+#endif
 
 	int cnt = 0;
 	if (len >= 1) {
@@ -114,7 +122,9 @@ static void mock_uart_irq_tx_enable(const struct device *dev)
 {
 	tx_irq_enabled = true;
 	
+#ifdef MOCK_UART_VERBOSE
 	printk("%d: mock_uart_irq_tx_enable\r\n", k_uptime_get_32());
+#endif
 	if (irq_callback) {
 		irq_callback(dev, irq_cb_data);
 	}
@@ -122,7 +132,9 @@ static void mock_uart_irq_tx_enable(const struct device *dev)
 
 static void mock_uart_irq_tx_disable(const struct device *dev)
 {
+#ifdef MOCK_UART_VERBOSE
 	printk("%d: mock_uart_irq_tx_disable\r\n", k_uptime_get_32());
+#endif
 	tx_irq_enabled = false;
 }
 
@@ -138,10 +150,14 @@ static void mock_uart_irq_rx_disable(const struct device *dev)
 
 static int mock_uart_irq_tx_ready(const struct device *dev)
 {
+#ifdef MOCK_UART_VERBOSE
 	printk("%d: mock_uart_irq_tx_ready\r\n", k_uptime_get_32());
+#endif
 	if (tx_irq_enabled) {
 		if (ring_buf_is_empty(&uart_mock_tx_ring_buf)) {
+#ifdef MOCK_UART_VERBOSE
 			printk("True\r\n");
+#endif
 			return 1;
 		}
 	}
@@ -150,10 +166,14 @@ static int mock_uart_irq_tx_ready(const struct device *dev)
 
 static int mock_uart_irq_tx_complete(const struct device *dev)
 {
+#ifdef MOCK_UART_VERBOSE
 	printk("%d: mock_uart_irq_tx_complete\r\n", k_uptime_get_32());
+#endif
 	if (tx_irq_enabled) {
 		if (ring_buf_is_empty(&uart_mock_tx_ring_buf)) {
+#ifdef MOCK_UART_VERBOSE
 			printk("True\r\n");
+#endif
 			return 1;
 		}
 	}
@@ -162,9 +182,13 @@ static int mock_uart_irq_tx_complete(const struct device *dev)
 
 static int mock_uart_irq_rx_ready(const struct device *dev)
 {
+#ifdef MOCK_UART_VERBOSE
 	printk("%d: mock_uart_irq_rx_ready\r\n", k_uptime_get_32());
+#endif
 	if (!ring_buf_is_empty(&uart_mock_rx_ring_buf)) {
+#ifdef MOCK_UART_VERBOSE
 		printk("True\r\n");
+#endif
 		return 1;
 	}
 	return 0;
@@ -214,27 +238,16 @@ int mock_uart_send(const struct device *dev, uint8_t* data, uint32_t size)
 		return 0;
 	}
 
-	uint8_t* rx_data;
-	uint32_t cnt = 
-		ring_buf_put_claim(&uart_mock_rx_ring_buf, 
-				   &rx_data, 
-				   UART_MOCK_TX_SIZE);
+	ring_buf_put(&uart_mock_rx_ring_buf, data, size);
 
-	if (cnt > size) {
-		cnt = size;
-	}
-
-	memcpy(rx_data, data, cnt);
-
-	
+#ifdef MOCK_UART_VERBOSE
 	printk("Sending: ");
 	for (int i = 0; i < cnt; i++)
 	{
 		printk("0x%02X ", rx_data[i]);
 	}
 	printk("\r\n");
-	
-	ring_buf_put_finish(&uart_mock_rx_ring_buf, cnt);
+#endif
 
 	if (irq_callback) {
 		irq_callback(dev, irq_cb_data);
@@ -249,13 +262,17 @@ int mock_uart_receive(const struct device *dev,
 		      uint32_t max_size,
 		      bool consume)
 {
+#ifdef MOCK_UART_VERBOSE
 	printk("%d: mock_uart_receive\r\n", k_uptime_get_32());
+#endif
 	
 	uint32_t cnt = ring_buf_get(&uart_mock_tx_ring_buf, data, max_size);
 	
 	if (consume && (cnt > 0)) {
 		if (irq_callback) {
+#ifdef MOCK_UART_VERBOSE
 			printk("%d: irq_callback\r\n", k_uptime_get_32());
+#endif
 			irq_callback(dev, irq_cb_data);
 		}
 	}
