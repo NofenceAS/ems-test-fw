@@ -794,7 +794,7 @@ int mia_m10_config_get_u32(uint32_t key, uint32_t* value)
 		return ret;
 	}
 
-	*value = raw_value&0xFFFF;
+	*value = raw_value&0xFFFFFFFF;
 
 	return 0;
 }

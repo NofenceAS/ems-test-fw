@@ -7,6 +7,7 @@
 
 #define BAUDRATE	DT_INST_PROP(0, current_speed)
 
+/* Variables for holding UART config and callback required by driver API */
 struct mock_uart_data {
 	struct uart_config uart_config;
 };
@@ -16,33 +17,40 @@ static void *irq_cb_data;
 
 //#define MOCK_UART_VERBOSE
 
-/* GNSS to MCU */ 
+/* GNSS to MCU buffer */ 
 #define UART_MOCK_RX_SIZE 1024
 static uint8_t uart_mock_rx_buffer[UART_MOCK_RX_SIZE];
 static struct ring_buf uart_mock_rx_ring_buf;
 
 static struct k_sem* uart_mock_rx_sem;
 
-/* MCU to GNSS */
+/* MCU to GNSS buffer */
 #define UART_MOCK_TX_SIZE 1024
 static uint8_t uart_mock_tx_buffer[UART_MOCK_TX_SIZE];
 static struct ring_buf uart_mock_tx_ring_buf;
 
+/* IRQ enablement signal */
+static bool tx_irq_enabled = false;
+
+/* UNUSED, but required by API */
 static int mock_uart_poll_in(const struct device *dev, unsigned char *c)
 {
 	return 0;
 }
 
+/* UNUSED, but required by API */
 static void mock_uart_poll_out(const struct device *dev, unsigned char c)
 {
 
 }
 
+/* UNUSED, but required by API */
 static int mock_uart_err_check(const struct device *dev)
 {
 	return 0;
 }
 
+/* See UART driver API for details */
 static int mock_uart_configure(const struct device *dev,
 			       const struct uart_config *cfg)
 {
@@ -54,6 +62,7 @@ static int mock_uart_configure(const struct device *dev,
 	return 0;
 }
 
+/* See UART driver API for details */
 static int mock_uart_config_get(const struct device *dev,
 				struct uart_config *cfg)
 {
@@ -65,7 +74,7 @@ static int mock_uart_config_get(const struct device *dev,
 	return 0;
 }
 
-
+/* See UART driver API for details */
 static int mock_uart_fifo_fill(const struct device *dev,
 			       const uint8_t *tx_data,
 			       int len)
@@ -91,6 +100,7 @@ static int mock_uart_fifo_fill(const struct device *dev,
 	return cnt;
 }
 
+/* See UART driver API for details */
 static int mock_uart_fifo_read(const struct device *dev,
 			       uint8_t *rx_data,
 			       const int size)
@@ -116,8 +126,7 @@ static int mock_uart_fifo_read(const struct device *dev,
 	return cnt;
 }
 
-static bool tx_irq_enabled = false;
-
+/* See UART driver API for details */
 static void mock_uart_irq_tx_enable(const struct device *dev)
 {
 	tx_irq_enabled = true;
@@ -130,6 +139,7 @@ static void mock_uart_irq_tx_enable(const struct device *dev)
 	}
 }
 
+/* See UART driver API for details */
 static void mock_uart_irq_tx_disable(const struct device *dev)
 {
 #ifdef MOCK_UART_VERBOSE
@@ -138,16 +148,19 @@ static void mock_uart_irq_tx_disable(const struct device *dev)
 	tx_irq_enabled = false;
 }
 
+/* See UART driver API for details */
 static void mock_uart_irq_rx_enable(const struct device *dev)
 {
 	
 }
 
+/* See UART driver API for details */
 static void mock_uart_irq_rx_disable(const struct device *dev)
 {
 	
 }
 
+/* See UART driver API for details */
 static int mock_uart_irq_tx_ready(const struct device *dev)
 {
 #ifdef MOCK_UART_VERBOSE
@@ -164,6 +177,7 @@ static int mock_uart_irq_tx_ready(const struct device *dev)
 	return 0;
 }
 
+/* See UART driver API for details */
 static int mock_uart_irq_tx_complete(const struct device *dev)
 {
 #ifdef MOCK_UART_VERBOSE
@@ -180,6 +194,7 @@ static int mock_uart_irq_tx_complete(const struct device *dev)
 	return 0;
 }
 
+/* See UART driver API for details */
 static int mock_uart_irq_rx_ready(const struct device *dev)
 {
 #ifdef MOCK_UART_VERBOSE
@@ -194,16 +209,19 @@ static int mock_uart_irq_rx_ready(const struct device *dev)
 	return 0;
 }
 
+/* See UART driver API for details */
 static void mock_uart_irq_err_enable(const struct device *dev)
 {
 	
 }
 
+/* See UART driver API for details */
 static void mock_uart_irq_err_disable(const struct device *dev)
 {
 	
 }
 
+/* See UART driver API for details */
 static int mock_uart_irq_is_pending(const struct device *dev)
 {
 	return mock_uart_irq_rx_ready(dev) || \
@@ -211,11 +229,13 @@ static int mock_uart_irq_is_pending(const struct device *dev)
 		mock_uart_irq_tx_complete(dev);
 }
 
+/* See UART driver API for details */
 static int mock_uart_irq_update(const struct device *dev)
 {
 	return 1;
 }
 
+/* See UART driver API for details */
 static void mock_uart_irq_callback_set(const struct device *dev,
 				       uart_irq_callback_user_data_t cb,
 				       void *cb_data)
@@ -282,6 +302,7 @@ int mock_uart_receive(const struct device *dev,
 	return 0;
 }
 
+/* See UART driver API for details */
 static int mock_uart_init(const struct device *dev)
 {	
 	ring_buf_init(&uart_mock_tx_ring_buf, 
