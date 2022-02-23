@@ -70,9 +70,14 @@ void test_pwr_module_init(void)
 
 void test_pwr_module_low(void)
 {
-	struct pwr_status_event *event = new_pwr_status_event();
-	event->pwr_state = PWR_LOW;
-	EVENT_SUBMIT(event);
+	const uint16_t input_mv = CONFIG_BATTERY_LOW - 10;
+	/* Generic ADC setup */
+	const struct device *adc_dev = get_adc_device();
+
+	/* ADC emulator-specific setup */
+	int ret =
+		adc_emul_const_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_mv);
+	zassert_ok(ret, "adc_emul_const_value_set() failed with code %d", ret);
 
 	int err = k_sem_take(&low_pwr_event_sem, K_SECONDS(5));
 	zassert_equal(err, 0, "low_pwr_event_sem hanged.");
@@ -82,9 +87,14 @@ void test_pwr_module_low(void)
 
 void test_pwr_module_critical(void)
 {
-	struct pwr_status_event *event = new_pwr_status_event();
-	event->pwr_state = PWR_CRITICAL;
-	EVENT_SUBMIT(event);
+	const uint16_t input_mv = CONFIG_BATTERY_CRITICAL - 10;
+	/* Generic ADC setup */
+	const struct device *adc_dev = get_adc_device();
+
+	/* ADC emulator-specific setup */
+	int ret =
+		adc_emul_const_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_mv);
+	zassert_ok(ret, "adc_emul_const_value_set() failed with code %d", ret);
 
 	int err = k_sem_take(&critical_pwr_event_sem, K_SECONDS(5));
 	zassert_equal(err, 0, "critical_pwr_event_sem hanged.");
@@ -121,8 +131,14 @@ static bool event_handler(const struct event_header *eh)
 			k_sem_give(&critical_pwr_event_sem);
 			/* Do nothing here */
 			break;
+		case PWR_BATTERY:
+			/* This state is periodic sent based on CONFIG_BATTRY_POLLER_WORK_SEC 
+			   Can be used to fetch battery volatge 
+			*/
+			break;
 		default:
 			zassert_unreachable("Unexpected command event.");
+			break;
 		}
 	}
 	if (is_error_event(eh)) {
