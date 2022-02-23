@@ -24,6 +24,7 @@ static K_SEM_DEFINE(normal_pwr_event_sem, 0, 1);
 static K_SEM_DEFINE(low_pwr_event_sem, 0, 1);
 static K_SEM_DEFINE(critical_pwr_event_sem, 0, 1);
 
+#define VOLTAGE_OFFSET_MV 100
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
  */
@@ -70,7 +71,7 @@ void test_pwr_module_init(void)
 
 void test_pwr_module_low(void)
 {
-	const uint16_t input_mv = CONFIG_BATTERY_LOW - 10;
+	const uint16_t input_mv = CONFIG_BATTERY_LOW - VOLTAGE_OFFSET_MV;
 	/* Generic ADC setup */
 	const struct device *adc_dev = get_adc_device();
 
@@ -87,7 +88,7 @@ void test_pwr_module_low(void)
 
 void test_pwr_module_critical(void)
 {
-	const uint16_t input_mv = CONFIG_BATTERY_CRITICAL - 10;
+	const uint16_t input_mv = CONFIG_BATTERY_CRITICAL - VOLTAGE_OFFSET_MV;
 	/* Generic ADC setup */
 	const struct device *adc_dev = get_adc_device();
 
