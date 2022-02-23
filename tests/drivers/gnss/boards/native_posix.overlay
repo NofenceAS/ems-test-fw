@@ -5,10 +5,11 @@
 / {
 	aliases {
 		gnss = &gnss;
+		gnssuart = &gnssuart;
 	};
 };
 
-gnss_uart: &uart0 {
+gnssuart: &uart0 {
 	compatible = "nofence,mock-uart";
 	gnss: mia_m10 {
 		compatible = "u-blox,mia-m10";

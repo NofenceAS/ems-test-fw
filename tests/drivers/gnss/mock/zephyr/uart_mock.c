@@ -1,5 +1,6 @@
 #include "uart_mock.h"
 
+#include <sys/ring_buffer.h>
 #include <drivers/uart.h>
 
 #define DT_DRV_COMPAT	nofence_mock_uart
@@ -13,6 +14,17 @@ struct mock_uart_data {
 static uart_irq_callback_user_data_t irq_callback;
 static void *irq_cb_data;
 
+/* GNSS to MCU */ 
+#define UART_MOCK_RX_SIZE 1024
+static uint8_t uart_mock_rx_buffer[UART_MOCK_RX_SIZE];
+static struct ring_buf uart_mock_rx_ring_buf;
+
+static struct k_sem* uart_mock_rx_sem;
+
+/* MCU to GNSS */
+#define UART_MOCK_TX_SIZE 1024
+static uint8_t uart_mock_tx_buffer[UART_MOCK_TX_SIZE];
+static struct ring_buf uart_mock_tx_ring_buf;
 
 static int mock_uart_poll_in(const struct device *dev, unsigned char *c)
 {
@@ -32,6 +44,7 @@ static int mock_uart_err_check(const struct device *dev)
 static int mock_uart_configure(const struct device *dev,
 			       const struct uart_config *cfg)
 {
+	printk("%d: mock_uart_configure\r\n", k_uptime_get_32());
 	struct mock_uart_data* data = dev->data;
 	data->uart_config = *cfg;
 	return 0;
@@ -40,6 +53,7 @@ static int mock_uart_configure(const struct device *dev,
 static int mock_uart_config_get(const struct device *dev,
 				struct uart_config *cfg)
 {
+	printk("%d: mock_uart_config_get\r\n", k_uptime_get_32());
 	struct mock_uart_data* data = dev->data;
 	*cfg = data->uart_config;
 	return 0;
@@ -50,19 +64,48 @@ static int mock_uart_fifo_fill(const struct device *dev,
 			       const uint8_t *tx_data,
 			       int len)
 {
+	(void)dev;
+	
+	printk("%d: ", k_uptime_get_32());
 	for (int i = 0; i < len; i++)
 	{
 		printk("0x%02X ", tx_data[i]);
 	}
 	printk("\r\n");
-	return len;
+
+	int cnt = 0;
+	if (len >= 1) {
+		ring_buf_put(&uart_mock_tx_ring_buf, tx_data, 1);
+		k_sem_give(uart_mock_rx_sem);
+		cnt = 1;
+	}
+
+	return cnt;
 }
 
 static int mock_uart_fifo_read(const struct device *dev,
 			       uint8_t *rx_data,
 			       const int size)
 {
-	return 0;
+	if (ring_buf_is_empty(&uart_mock_rx_ring_buf)) {
+		/* No new data */
+		return 0;
+	}
+
+	uint8_t* data;
+	uint32_t cnt = ring_buf_get_claim(
+				&uart_mock_rx_ring_buf, 
+				&data, 
+				UART_MOCK_RX_SIZE);
+	
+	if (cnt > size) {
+		cnt = size;
+	}
+	memcpy(rx_data, data, cnt);
+
+	ring_buf_get_finish(&uart_mock_rx_ring_buf, cnt);
+
+	return cnt;
 }
 
 static bool tx_irq_enabled = false;
@@ -71,7 +114,7 @@ static void mock_uart_irq_tx_enable(const struct device *dev)
 {
 	tx_irq_enabled = true;
 	
-	printk("mock_uart_irq_tx_enable\r\n");
+	printk("%d: mock_uart_irq_tx_enable\r\n", k_uptime_get_32());
 	if (irq_callback) {
 		irq_callback(dev, irq_cb_data);
 	}
@@ -79,7 +122,7 @@ static void mock_uart_irq_tx_enable(const struct device *dev)
 
 static void mock_uart_irq_tx_disable(const struct device *dev)
 {
-	printk("mock_uart_irq_tx_disable\r\n");
+	printk("%d: mock_uart_irq_tx_disable\r\n", k_uptime_get_32());
 	tx_irq_enabled = false;
 }
 
@@ -95,18 +138,35 @@ static void mock_uart_irq_rx_disable(const struct device *dev)
 
 static int mock_uart_irq_tx_ready(const struct device *dev)
 {
-	printk("mock_uart_irq_tx_ready\r\n");
-	return tx_irq_enabled;
+	printk("%d: mock_uart_irq_tx_ready\r\n", k_uptime_get_32());
+	if (tx_irq_enabled) {
+		if (ring_buf_is_empty(&uart_mock_tx_ring_buf)) {
+			printk("True\r\n");
+			return 1;
+		}
+	}
+	return 0;
 }
 
 static int mock_uart_irq_tx_complete(const struct device *dev)
 {
-	printk("mock_uart_irq_tx_complete\r\n");
-	return tx_irq_enabled;
+	printk("%d: mock_uart_irq_tx_complete\r\n", k_uptime_get_32());
+	if (tx_irq_enabled) {
+		if (ring_buf_is_empty(&uart_mock_tx_ring_buf)) {
+			printk("True\r\n");
+			return 1;
+		}
+	}
+	return 0;
 }
 
 static int mock_uart_irq_rx_ready(const struct device *dev)
 {
+	printk("%d: mock_uart_irq_rx_ready\r\n", k_uptime_get_32());
+	if (!ring_buf_is_empty(&uart_mock_rx_ring_buf)) {
+		printk("True\r\n");
+		return 1;
+	}
 	return 0;
 }
 
@@ -122,7 +182,9 @@ static void mock_uart_irq_err_disable(const struct device *dev)
 
 static int mock_uart_irq_is_pending(const struct device *dev)
 {
-	return tx_irq_enabled;
+	return mock_uart_irq_rx_ready(dev) || \
+		mock_uart_irq_tx_ready(dev) || \
+		mock_uart_irq_tx_complete(dev);
 }
 
 static int mock_uart_irq_update(const struct device *dev)
@@ -139,17 +201,83 @@ static void mock_uart_irq_callback_set(const struct device *dev,
 	irq_cb_data = cb_data;
 }
 
-void mock_uart_send(const struct device *dev, uint8_t* data, uint32_t size)
+int mock_uart_register_sem(const struct device *dev, struct k_sem* rx_sem)
 {
-	(void)data;
-	(void)size;
+	uart_mock_rx_sem = rx_sem;
+
+	return 0;
+}
+
+int mock_uart_send(const struct device *dev, uint8_t* data, uint32_t size)
+{
+	if (size == 0) {
+		return 0;
+	}
+
+	uint8_t* rx_data;
+	uint32_t cnt = 
+		ring_buf_put_claim(&uart_mock_rx_ring_buf, 
+				   &rx_data, 
+				   UART_MOCK_TX_SIZE);
+
+	if (cnt > size) {
+		cnt = size;
+	}
+
+	memcpy(rx_data, data, cnt);
+
+	
+	printk("Sending: ");
+	for (int i = 0; i < cnt; i++)
+	{
+		printk("0x%02X ", rx_data[i]);
+	}
+	printk("\r\n");
+	
+	ring_buf_put_finish(&uart_mock_rx_ring_buf, cnt);
+
 	if (irq_callback) {
 		irq_callback(dev, irq_cb_data);
 	}
+
+	return 0;
+}
+
+int mock_uart_receive(const struct device *dev, 
+		      uint8_t* data, 
+		      uint32_t* size, 
+		      uint32_t max_size,
+		      bool consume)
+{
+	printk("%d: mock_uart_receive\r\n", k_uptime_get_32());
+	
+	uint32_t cnt = ring_buf_get(&uart_mock_tx_ring_buf, data, max_size);
+	
+	if (consume && (cnt > 0)) {
+		if (irq_callback) {
+			printk("%d: irq_callback\r\n", k_uptime_get_32());
+			irq_callback(dev, irq_cb_data);
+		}
+	}
+
+	*size = cnt;
+
+	return 0;
 }
 
 static int mock_uart_init(const struct device *dev)
-{
+{	
+	ring_buf_init(&uart_mock_tx_ring_buf, 
+			UART_MOCK_TX_SIZE, 
+			uart_mock_tx_buffer);
+
+	ring_buf_init(&uart_mock_rx_ring_buf, 
+			UART_MOCK_RX_SIZE, 
+			uart_mock_rx_buffer);
+
+	/* Garbage bytes on startup */
+	uint8_t garbage[] = {0x13, 0x37};
+	mock_uart_send(dev, garbage, sizeof(garbage));
 
 	return 0;
 }

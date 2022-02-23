@@ -297,7 +297,7 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 			return ret;
 		}
 
-		ret = mia_m10_config_get_u32(UBX_CFG_UART1OUTPRO_NMEA, &gnss_baudrate);
+		ret = mia_m10_config_get_u32(UBX_CFG_UART1_BAUDRATE, &gnss_baudrate);
 		if (ret != 0) {
 			return -EIO;
 		}
