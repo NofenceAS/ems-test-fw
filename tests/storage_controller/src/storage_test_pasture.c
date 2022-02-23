@@ -22,8 +22,8 @@ void fill_dummy_fence(void)
 {
 	dummy_fence_len = sizeof(fence_t) + (sizeof(fence_coordinate_t) * 4);
 	dummy_fence = (fence_t *)k_malloc(dummy_fence_len);
-
 	dummy_fence->header.n_points = 4;
+
 	dummy_fence->header.e_fence_type = 1;
 	dummy_fence->header.us_id = 128;
 
