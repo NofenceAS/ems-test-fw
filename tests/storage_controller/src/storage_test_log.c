@@ -50,7 +50,6 @@ void test_log_extended(void)
 	zassert_equal(stg_read_log_data(read_callback_multiple_log), 0,
 		      "Read log error.");
 	zassert_equal(num_multiple_log_reads, expected_log_entries, "");
-	printk("Len %i and %i\n", num_multiple_log_reads, expected_log_entries);
 }
 
 void test_reboot_persistent_log(void)
