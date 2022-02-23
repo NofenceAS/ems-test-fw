@@ -7,6 +7,11 @@ size_t dummy_fence_len = 0;
 
 int stg_read_pasture_data(stg_read_log_cb cb)
 {
+	int retval = ztest_get_return_value();
+	if (retval) {
+		return retval;
+	}
+
 	if (dummy_fence != NULL) {
 		k_free(dummy_fence);
 		dummy_fence = NULL;
@@ -33,5 +38,5 @@ int stg_read_pasture_data(stg_read_log_cb cb)
 
 	zassert_false(cb((uint8_t *)dummy_fence, dummy_fence_len), "");
 
-	return ztest_get_return_value();
+	return retval;
 }
