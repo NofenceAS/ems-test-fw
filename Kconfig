@@ -38,6 +38,10 @@ menu "BLE Modules"
 rsource "src/modules/ble/Kconfig"
 endmenu
 
+menu "Storage controller"
+rsource "src/modules/storage_controller/Kconfig"
+endmenu
+
 menu "BLE Events"
 rsource "src/events/ble/Kconfig"
 endmenu
