@@ -11,9 +11,15 @@
 #include <drivers/pwm.h>
 #include "melodies.h"
 
+#include "buzzer_test.h"
+
+#include "error_event.h"
+
 K_SEM_DEFINE(sound_idle_sem, 0, 1);
 K_SEM_DEFINE(sound_playing_sem, 0, 1);
 K_SEM_DEFINE(sound_playing_max_sem, 0, 1);
+
+K_SEM_DEFINE(error_timeout_sem, 0, 1);
 
 void test_init_event_manager(void)
 {
@@ -142,6 +148,7 @@ void setup_common(void)
 	k_sem_take(&sound_idle_sem, K_SECONDS(30));
 	k_sem_take(&sound_playing_sem, K_SECONDS(30));
 	k_sem_take(&sound_playing_max_sem, K_SECONDS(30));
+	k_sem_take(&error_timeout_sem, K_SECONDS(30));
 }
 
 void teardown_common(void)
@@ -160,6 +167,10 @@ void test_main(void)
 		ztest_unit_test_setup_teardown(test_priority_second_prio,
 					       setup_common, teardown_common),
 		ztest_unit_test_setup_teardown(test_priority_first_prio,
+					       setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_warn_zone_no_freq_event,
+					       setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_warn_zone_timeout,
 					       setup_common, teardown_common));
 
 	ztest_run_test_suite(buzzer_tests);
@@ -178,9 +189,17 @@ static bool event_handler(const struct event_header *eh)
 		}
 		return false;
 	}
+	if (is_error_event(eh)) {
+		struct error_event *ev = cast_error_event(eh);
+		if (ev->code == -ETIMEDOUT) {
+			k_sem_give(&error_timeout_sem);
+		}
+		return false;
+	}
 	zassert_true(false, "Unexpected event type received");
 	return false;
 }
 
 EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, sound_status_event);
+EVENT_SUBSCRIBE(test_main, error_event);

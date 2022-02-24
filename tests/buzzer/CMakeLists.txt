@@ -15,6 +15,7 @@ FILE(GLOB app_sources
         mock/drivers/*.c 
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/buzzer/*.c
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer/*.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/*.c
 )
 target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE ${APP_SOURCE})
@@ -23,4 +24,5 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/mock
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/buzzer
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler
 )
