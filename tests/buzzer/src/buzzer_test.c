@@ -34,12 +34,12 @@ void test_perspelmann(void)
 {
 	/* Check if we get the expected song. */
 	for (int i = 0; i < n_perspelmann_notes; i++) {
-		int freq = m_perspelmann[i].t;
+		uint32_t freq = m_perspelmann[i].t;
 		ztest_returns_value(pwm_pin_set_usec, 0);
 		ztest_expect_value(pwm_pin_set_usec, pulse, freq / 2);
 		ztest_expect_value(pwm_pin_set_usec, period, freq);
 
-		/* Expect to set to 0 again. */
+		/* Expect to set to 0 after note was played. */
 		ztest_returns_value(pwm_pin_set_usec, 0);
 		ztest_expect_value(pwm_pin_set_usec, pulse, 0);
 		ztest_expect_value(pwm_pin_set_usec, period, 0);

@@ -48,7 +48,16 @@ struct sound_status_event {
 	enum sound_event_status_type status;
 };
 
+/** @brief Status event of which mode the buzzer is at. */
+struct sound_set_warn_freq_event {
+	struct event_header header;
+
+	/* Frequency in microseconds. (1000000 / uint32_t freq). */
+	uint32_t freq;
+};
+
 EVENT_TYPE_DECLARE(sound_event);
 EVENT_TYPE_DECLARE(sound_status_event);
+EVENT_TYPE_DECLARE(sound_set_warn_freq_event);
 
 #endif /* _SOUND_EVENT_H_ */

@@ -59,23 +59,29 @@ void main(void)
 	if (err) {
 		LOG_ERR("Event manager could not initialize. %d", err);
 	}
+
 	/* Initialize BLE module. */
 	err = ble_module_init();
 	if (err) {
 		LOG_ERR("Could not initialize BLE module. %d", err);
 	}
+
 	/* Initialize firmware upgrade module. */
 	err = fw_upgrade_module_init();
 	if (err) {
 		LOG_ERR("Could not initialize firmware upgrade module. %d",
 			err);
 	}
-	if (ep_module_init()) {
-		LOG_ERR("Could not initialize electric pulse module");
+
+	err = ep_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize electric pulse module. %d", err);
 	}
 
-	if (buzzer_module_init()) {
-		LOG_ERR("Could not initialize buzzer module.");
+	err = buzzer_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize buzzer module. %d", err);
+	}
 
 	/* Initialize animal monitor control module, depends on storage
 	 * controller to be initialized first since amc sends
