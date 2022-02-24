@@ -913,6 +913,8 @@ MODEM_CMD_DEFINE(on_cmd_socknotifyclose)
 				    ATOI(argv[0], 0, "socket_id"));
 	if (sock) {
 		sock->is_connected = false;
+		/* make sure socket data structure is reset */
+		modem_socket_put(&mdata.socket_config, sock->sock_fd);
 	}
 
 	return 0;
