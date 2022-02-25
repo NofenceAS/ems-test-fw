@@ -12,16 +12,17 @@ typedef struct {
 
 	/** Corrected position.*/
 	int16_t x;
+
 	/** Corrected position.*/
 	int16_t y;
 
 	/** Set if overflow because of too far away from origin position.*/
 	uint8_t overflow;
 
-	/** Height above ellipsoid [dm].*/
+	/** Height above ellipsoid [mm].*/
 	int16_t height;
 
-	/** 2-D speed [cm/s]*/
+	/** Ground speed 2-D [mm/s]*/
 	uint16_t speed;
 
 	/** Movement direction (-18000 to 18000 Hundred-deg).*/
@@ -30,10 +31,10 @@ typedef struct {
 	/** Horizontal dilution of precision.*/
 	uint16_t h_dop;
 
-	/** Horizontal Accuracy Estimate [DM].*/
+	/** Horizontal Accuracy Estimate [mm].*/
 	uint16_t h_acc_dm;
 
-	/** Vertical Accuracy Estimate [DM].*/
+	/** Vertical Accuracy Estimate [mm].*/
 	uint16_t v_acc_dm;
 
 	/** Heading accuracy estimate [Hundred-deg].*/
@@ -76,16 +77,16 @@ typedef struct {
 } gnss_last_fix_struct_t;
 
 /* Constants */
-#define GNSS_RESET_MASK_HOT	0x0000
-#define GNSS_RESET_MASK_WARM	0x0001
-#define GNSS_RESET_MASK_COLD	0xFFFF
+#define GNSS_RESET_MASK_HOT 0x0000
+#define GNSS_RESET_MASK_WARM 0x0001
+#define GNSS_RESET_MASK_COLD 0xFFFF
 
-#define GNSS_RESET_MODE_HW_IMMEDIATELY		0x00
-#define GNSS_RESET_MODE_SW			0x01
-#define GNSS_RESET_MODE_SW_GNSS_ONLY		0x02
-#define GNSS_RESET_MODE_HW_SHDN			0x04
-#define GNSS_RESET_MODE_GNSS_STOP		0x08
-#define GNSS_RESET_MODE_GNSS_START		0x09
+#define GNSS_RESET_MODE_HW_IMMEDIATELY 0x00
+#define GNSS_RESET_MODE_SW 0x01
+#define GNSS_RESET_MODE_SW_GNSS_ONLY 0x02
+#define GNSS_RESET_MODE_HW_SHDN 0x04
+#define GNSS_RESET_MODE_GNSS_STOP 0x08
+#define GNSS_RESET_MODE_GNSS_START 0x09
 
 /**
  * @typedef gnss_data_cb_t
@@ -96,7 +97,7 @@ typedef struct {
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-typedef int (*gnss_data_cb_t)(const gnss_struct_t* data);
+typedef int (*gnss_data_cb_t)(const gnss_struct_t *data);
 
 /**
  * @typedef gnss_lastfix_cb_t
@@ -107,7 +108,7 @@ typedef int (*gnss_data_cb_t)(const gnss_struct_t* data);
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-typedef int (*gnss_lastfix_cb_t)(const gnss_last_fix_struct_t* lastfix);
+typedef int (*gnss_lastfix_cb_t)(const gnss_last_fix_struct_t *lastfix);
 
 /**
  * @typedef gnss_setup_t
@@ -115,7 +116,7 @@ typedef int (*gnss_lastfix_cb_t)(const gnss_last_fix_struct_t* lastfix);
  *
  * See gnss_setup() for argument description
  */
-typedef int (*gnss_setup_t)(const struct device *dev, 
+typedef int (*gnss_setup_t)(const struct device *dev,
 			    bool try_default_baud_first);
 
 /**
@@ -124,8 +125,7 @@ typedef int (*gnss_setup_t)(const struct device *dev,
  *
  * See gnss_reset() for argument description
  */
-typedef int (*gnss_reset_t)(const struct device *dev, 
-			    uint16_t mask, 
+typedef int (*gnss_reset_t)(const struct device *dev, uint16_t mask,
 			    uint8_t mode);
 
 /**
@@ -134,9 +134,8 @@ typedef int (*gnss_reset_t)(const struct device *dev,
  *
  * See gnss_upload_assist_data() for argument description
  */
-typedef int (*gnss_upload_assist_data_t)(const struct device *dev, 
-					 uint8_t* data, 
-					 uint32_t size);
+typedef int (*gnss_upload_assist_data_t)(const struct device *dev,
+					 uint8_t *data, uint32_t size);
 
 /**
  * @typedef gnss_set_rate_t
@@ -152,7 +151,7 @@ typedef int (*gnss_set_rate_t)(const struct device *dev, uint16_t rate);
  *
  * See gnss_get_rate() for argument description
  */
-typedef int (*gnss_get_rate_t)(const struct device *dev, uint16_t* rate);
+typedef int (*gnss_get_rate_t)(const struct device *dev, uint16_t *rate);
 
 /**
  * @typedef gnss_set_data_cb_t
@@ -160,7 +159,7 @@ typedef int (*gnss_get_rate_t)(const struct device *dev, uint16_t* rate);
  *
  * See gnss_set_data_cb() for argument description
  */
-typedef int (*gnss_set_data_cb_t)(const struct device *dev, 
+typedef int (*gnss_set_data_cb_t)(const struct device *dev,
 				  gnss_data_cb_t gnss_data_cb);
 
 /**
@@ -169,7 +168,7 @@ typedef int (*gnss_set_data_cb_t)(const struct device *dev,
  *
  * See gnss_set_lastfix_cb() for argument description
  */
-typedef int (*gnss_set_lastfix_cb_t)(const struct device *dev, 
+typedef int (*gnss_set_lastfix_cb_t)(const struct device *dev,
 				     gnss_lastfix_cb_t gnss_lastfix_cb);
 
 /**
@@ -178,8 +177,7 @@ typedef int (*gnss_set_lastfix_cb_t)(const struct device *dev,
  *
  * See gnss_data_fetch() for argument description
  */
-typedef int (*gnss_data_fetch_t)(const struct device *dev, 
-				 gnss_struct_t* data);
+typedef int (*gnss_data_fetch_t)(const struct device *dev, gnss_struct_t *data);
 
 /**
  * @typedef gnss_lastfix_fetch_t
@@ -187,8 +185,8 @@ typedef int (*gnss_data_fetch_t)(const struct device *dev,
  *
  * See gnss_lastfix_fetch() for argument description
  */
-typedef int (*gnss_lastfix_fetch_t)(const struct device *dev, 
-				    gnss_last_fix_struct_t* lastfix);
+typedef int (*gnss_lastfix_fetch_t)(const struct device *dev,
+				    gnss_last_fix_struct_t *lastfix);
 
 __subsystem struct gnss_driver_api {
 	gnss_setup_t gnss_setup;
@@ -201,7 +199,7 @@ __subsystem struct gnss_driver_api {
 
 	gnss_set_data_cb_t gnss_set_data_cb;
 	gnss_set_lastfix_cb_t gnss_set_lastfix_cb;
-	
+
 	gnss_data_fetch_t gnss_data_fetch;
 	gnss_lastfix_fetch_t gnss_lastfix_fetch;
 };
@@ -216,7 +214,7 @@ __subsystem struct gnss_driver_api {
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static inline int gnss_setup(const struct device *dev, 
+static inline int gnss_setup(const struct device *dev,
 			     bool try_default_baud_first)
 {
 	const struct gnss_driver_api *api =
@@ -236,8 +234,7 @@ static inline int gnss_setup(const struct device *dev,
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static inline int gnss_reset(const struct device *dev, 
-			     uint16_t mask, 
+static inline int gnss_reset(const struct device *dev, uint16_t mask,
 			     uint8_t mode)
 {
 	const struct gnss_driver_api *api =
@@ -255,9 +252,8 @@ static inline int gnss_reset(const struct device *dev,
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static inline int gnss_upload_assist_data(const struct device *dev, 
-					  uint8_t* data, 
-					  uint32_t size)
+static inline int gnss_upload_assist_data(const struct device *dev,
+					  uint8_t *data, uint32_t size)
 {
 	const struct gnss_driver_api *api =
 		(const struct gnss_driver_api *)dev->api;
@@ -289,7 +285,7 @@ static inline int gnss_set_rate(const struct device *dev, uint16_t rate)
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static inline int gnss_get_rate(const struct device *dev, uint16_t* rate)
+static inline int gnss_get_rate(const struct device *dev, uint16_t *rate)
 {
 	const struct gnss_driver_api *api =
 		(const struct gnss_driver_api *)dev->api;
@@ -305,7 +301,7 @@ static inline int gnss_get_rate(const struct device *dev, uint16_t* rate)
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static inline int gnss_set_data_cb(const struct device *dev, 
+static inline int gnss_set_data_cb(const struct device *dev,
 				   gnss_data_cb_t gnss_data_cb)
 {
 	const struct gnss_driver_api *api =
@@ -322,7 +318,7 @@ static inline int gnss_set_data_cb(const struct device *dev,
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static inline int gnss_set_lastfix_cb(const struct device *dev, 
+static inline int gnss_set_lastfix_cb(const struct device *dev,
 				      gnss_lastfix_cb_t gnss_lastfix_cb)
 {
 	const struct gnss_driver_api *api =
@@ -339,8 +335,7 @@ static inline int gnss_set_lastfix_cb(const struct device *dev,
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static inline int gnss_data_fetch(const struct device *dev, 
-				  gnss_struct_t* data)
+static inline int gnss_data_fetch(const struct device *dev, gnss_struct_t *data)
 {
 	const struct gnss_driver_api *api =
 		(const struct gnss_driver_api *)dev->api;
@@ -356,8 +351,8 @@ static inline int gnss_data_fetch(const struct device *dev,
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static inline int gnss_lastfix_fetch(const struct device *dev, 
-				     gnss_last_fix_struct_t* lastfix)
+static inline int gnss_lastfix_fetch(const struct device *dev,
+				     gnss_last_fix_struct_t *lastfix)
 {
 	const struct gnss_driver_api *api =
 		(const struct gnss_driver_api *)dev->api;
