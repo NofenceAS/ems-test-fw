@@ -78,7 +78,9 @@ void test_warn_zone_timeout(void)
 }
 
 /* Plays the warn zone until we give sound controller a frequency
- * that's out of range.
+ * that is the SND_MAX. The sound controller should detect that this is the
+ * max, so it publishes a SND_MAX status event. We also test that we can
+ * interrupt and wakeup the "sustain" of the notes to cancel the notes early.
  */
 void test_warn_zone_play_until_range(void)
 {
