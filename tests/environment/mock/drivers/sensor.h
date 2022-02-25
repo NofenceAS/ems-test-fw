@@ -32,9 +32,17 @@ int sensor_channel_get(const struct device *dev, enum sensor_channel chan,
 typedef enum {
 	TEST_SANITY_PASS,
 	TEST_SANITY_FAIL_TEMP,
-	TEST_SANITY_FAIL_PRESSURE,
-	TEST_SANITY_FAIL_HUMIDITY
+	TEST_SANITY_FAIL_PRESS,
+	TEST_SANITY_FAIL_HUMIDITY,
+	TEST_SANITY_FAIL_TEMP_WARN,
+	TEST_SANITY_FAIL_PRESS_WARN,
+	TEST_SANITY_FAIL_HUMIDITY_WARN
 } test_id_t;
+
+static inline double sensor_value_to_double(const struct sensor_value *val)
+{
+	return (double)val->val1 + (double)val->val2 / 1000000;
+}
 
 extern test_id_t cur_test;
 

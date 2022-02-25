@@ -11,9 +11,9 @@
 struct env_sensor_event {
 	struct event_header header;
 
-	float temp;
-	float press;
-	float humidity;
+	double temp;
+	double press;
+	double humidity;
 };
 
 struct request_env_sensor_event {

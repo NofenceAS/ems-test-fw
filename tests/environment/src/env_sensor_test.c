@@ -10,6 +10,7 @@
 #include <stdlib.h>
 
 K_SEM_DEFINE(env_data_sem, 0, 1);
+K_SEM_DEFINE(error_sem, 0, 1);
 
 test_id_t cur_test = TEST_SANITY_PASS;
 
@@ -64,7 +65,7 @@ void test_event_contents_sanity_fail_temp(void)
 void test_event_contents_sanity_fail_pressure(void)
 {
 	/* We want to test and say that sanity should pass. */
-	cur_test = TEST_SANITY_FAIL_PRESSURE;
+	cur_test = TEST_SANITY_FAIL_PRESS;
 	ztest_returns_value(sensor_sample_fetch, 0);
 	ztest_returns_value(sensor_channel_get, 0);
 	ztest_returns_value(sensor_channel_get, 0);
@@ -95,6 +96,72 @@ void test_event_contents_sanity_fail_humidity(void)
 	zassert_not_equal(err, 0, "");
 }
 
+void test_event_contents_sanity_warn_humidity(void)
+{
+	k_sem_take(&error_sem, K_SECONDS(30));
+	k_sem_take(&env_data_sem, K_SECONDS(30));
+
+	cur_test = TEST_SANITY_FAIL_HUMIDITY_WARN;
+	ztest_returns_value(sensor_sample_fetch, 0);
+	ztest_returns_value(sensor_channel_get, 0);
+	ztest_returns_value(sensor_channel_get, 0);
+	ztest_returns_value(sensor_channel_get, 0);
+
+	struct request_env_sensor_event *ev = new_request_env_sensor_event();
+	EVENT_SUBMIT(ev);
+
+	/* We only get warning, should still get the value. */
+	int err = k_sem_take(&env_data_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+
+	err = k_sem_take(&error_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+}
+
+void test_event_contents_sanity_warn_temp(void)
+{
+	k_sem_take(&error_sem, K_SECONDS(30));
+	k_sem_take(&env_data_sem, K_SECONDS(30));
+
+	cur_test = TEST_SANITY_FAIL_TEMP_WARN;
+	ztest_returns_value(sensor_sample_fetch, 0);
+	ztest_returns_value(sensor_channel_get, 0);
+	ztest_returns_value(sensor_channel_get, 0);
+	ztest_returns_value(sensor_channel_get, 0);
+
+	struct request_env_sensor_event *ev = new_request_env_sensor_event();
+	EVENT_SUBMIT(ev);
+
+	/* We only get warning, should still get the value. */
+	int err = k_sem_take(&env_data_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+
+	err = k_sem_take(&error_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+}
+
+void test_event_contents_sanity_warn_press(void)
+{
+	k_sem_take(&error_sem, K_SECONDS(30));
+	k_sem_take(&env_data_sem, K_SECONDS(30));
+
+	cur_test = TEST_SANITY_FAIL_PRESS_WARN;
+	ztest_returns_value(sensor_sample_fetch, 0);
+	ztest_returns_value(sensor_channel_get, 0);
+	ztest_returns_value(sensor_channel_get, 0);
+	ztest_returns_value(sensor_channel_get, 0);
+
+	struct request_env_sensor_event *ev = new_request_env_sensor_event();
+	EVENT_SUBMIT(ev);
+
+	/* We only get warning, should still get the value. */
+	int err = k_sem_take(&env_data_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+
+	err = k_sem_take(&error_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(
@@ -102,7 +169,10 @@ void test_main(void)
 		ztest_unit_test(test_event_contents),
 		ztest_unit_test(test_event_contents_sanity_fail_temp),
 		ztest_unit_test(test_event_contents_sanity_fail_pressure),
-		ztest_unit_test(test_event_contents_sanity_fail_humidity));
+		ztest_unit_test(test_event_contents_sanity_fail_humidity),
+		ztest_unit_test(test_event_contents_sanity_warn_temp),
+		ztest_unit_test(test_event_contents_sanity_warn_press),
+		ztest_unit_test(test_event_contents_sanity_warn_humidity));
 	ztest_run_test_suite(env_sensor_tests);
 }
 
@@ -133,18 +203,22 @@ static bool event_handler(const struct event_header *eh)
 		zassert_equal(ev->sender, ERR_SENDER_ENV_SENSOR,
 			      "Mismatched sender.");
 
-		zassert_equal(ev->severity, ERR_SEVERITY_ERROR,
-			      "Mismatched severity.");
-
 		zassert_equal(ev->code, -ERANGE, "Mismatched error code.");
 		char *expected_message;
-		if (cur_test == TEST_SANITY_FAIL_TEMP) {
+		if (cur_test == TEST_SANITY_FAIL_TEMP ||
+		    cur_test == TEST_SANITY_FAIL_PRESS ||
+		    cur_test == TEST_SANITY_FAIL_HUMIDITY) {
 			expected_message =
-				"Sanity check failed for temperature.";
-		} else if (cur_test == TEST_SANITY_FAIL_PRESSURE) {
-			expected_message = "Sanity check failed for pressure.";
-		} else if (cur_test == TEST_SANITY_FAIL_HUMIDITY) {
-			expected_message = "Sanity check failed for humidity.";
+				"Detected a sensor value error range";
+			zassert_equal(ev->severity, ERR_SEVERITY_ERROR,
+				      "Mismatched severity.");
+		} else if (cur_test == TEST_SANITY_FAIL_TEMP_WARN ||
+			   cur_test == TEST_SANITY_FAIL_PRESS_WARN ||
+			   cur_test == TEST_SANITY_FAIL_HUMIDITY_WARN) {
+			expected_message =
+				"Detected a sensor value warning range";
+			zassert_equal(ev->severity, ERR_SEVERITY_WARNING,
+				      "Mismatched severity.");
 		} else {
 			expected_message = "Unreachable.";
 		}
@@ -154,6 +228,7 @@ static bool event_handler(const struct event_header *eh)
 
 		zassert_mem_equal(ev->dyndata.data, expected_message,
 				  ev->dyndata.size, "Mismatched user message.");
+		k_sem_give(&error_sem);
 	}
 	return false;
 }
