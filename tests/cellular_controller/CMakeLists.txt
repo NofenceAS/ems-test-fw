@@ -4,6 +4,10 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
+list(APPEND ZEPHYR_EXTRA_MODULES
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/collar_protocol
+        )
+
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(cellular_controller_testing)
 
@@ -23,8 +27,10 @@ target_include_directories(app PRIVATE ${APP_SOURCE})
 zephyr_library_include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/mock
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/cellular_controller
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/collar_protocol/zephyr
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/cellular_controller/helpers
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/cellular_controller
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging
         ${CMAKE_CURRENT_SOURCE_DIR}/../../include
 )
+add_dependencies(app collar_protocol_headers)

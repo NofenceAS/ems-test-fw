@@ -10,4 +10,5 @@ target_sources(app PRIVATE
 )
 zephyr_include_directories(
         ../../../include
+        ../../modules/collar_protocol/zephyr
 )
