@@ -52,10 +52,10 @@ typedef struct {
 	/** Milliseconds system time when data was updated from GNSS.*/
 	uint32_t updated_at;
 
-	/** UBX-NAV-SOL milliseconds since receiver start or reset.*/
+	/** UBX-NAV-STATUS milliseconds since receiver start or reset.*/
 	uint32_t msss;
 
-	/** UBX-NAV-SOL milliseconds since First Fix.*/
+	/** UBX-NAV-STATUS milliseconds since First Fix.*/
 	uint32_t ttff;
 } gnss_struct_t;
 
