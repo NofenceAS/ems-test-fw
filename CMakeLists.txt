@@ -2,7 +2,6 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-
 # Print out build type
 message(STATUS "Build type: ${BUILD_TYPE} 🚀")
 
@@ -80,6 +79,7 @@ endif ()
 zephyr_library_include_directories(
         src/modules/amc
         src/modules/fw_upgrade
+  	src/modules/storage_controller
         src/events
         src/modules/error_handler
         src/events/error_handler
@@ -98,6 +98,7 @@ target_sources(app PRIVATE ${APP_MAIN}
 add_subdirectory(src/events/ble)
 add_subdirectory(src/modules/ble)
 add_subdirectory(src/modules/fw_upgrade)
+add_subdirectory(src/modules/storage_controller)
 add_subdirectory(src/eeprom)
 add_subdirectory(src/modules/amc)
 add_subdirectory(src/modules/cellular_controller)
