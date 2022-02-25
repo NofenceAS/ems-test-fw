@@ -55,3 +55,13 @@ EVENT_TYPE_DEFINE(new_fence_available,
 		  true,
 		  NULL,
 		  NULL);
+
+EVENT_TYPE_DEFINE(request_ano_event,
+		  true,
+		  NULL,
+		  NULL);
+
+EVENT_TYPE_DEFINE(ano_ready,
+		  true,
+		  NULL,
+		  NULL);

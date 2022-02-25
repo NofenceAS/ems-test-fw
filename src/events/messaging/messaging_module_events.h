@@ -94,3 +94,15 @@ struct new_fence_available {
 };
 
 EVENT_TYPE_DECLARE(new_fence_available);
+
+struct request_ano_event {
+	struct event_header header;
+};
+
+EVENT_TYPE_DECLARE(request_ano_event);
+
+struct ano_ready {
+	struct event_header header;
+};
+
+EVENT_TYPE_DECLARE(ano_ready);
