@@ -20,6 +20,7 @@ K_SEM_DEFINE(sound_playing_sem, 0, 1);
 K_SEM_DEFINE(sound_playing_max_sem, 0, 1);
 
 K_SEM_DEFINE(error_timeout_sem, 0, 1);
+K_SEM_DEFINE(freq_event_sem, 0, 1);
 
 void test_init_event_manager(void)
 {
@@ -149,6 +150,7 @@ void setup_common(void)
 	k_sem_take(&sound_playing_sem, K_SECONDS(30));
 	k_sem_take(&sound_playing_max_sem, K_SECONDS(30));
 	k_sem_take(&error_timeout_sem, K_SECONDS(30));
+	k_sem_take(&freq_event_sem, K_SECONDS(30));
 }
 
 void teardown_common(void)
@@ -168,9 +170,11 @@ void test_main(void)
 					       setup_common, teardown_common),
 		ztest_unit_test_setup_teardown(test_priority_first_prio,
 					       setup_common, teardown_common),
-		ztest_unit_test_setup_teardown(test_warn_zone_no_freq_event,
+		ztest_unit_test_setup_teardown(test_warn_zone_invalid_freq_event,
 					       setup_common, teardown_common),
 		ztest_unit_test_setup_teardown(test_warn_zone_timeout,
+					       setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_warn_zone_play_until_range,
 					       setup_common, teardown_common));
 
 	ztest_run_test_suite(buzzer_tests);
@@ -196,6 +200,10 @@ static bool event_handler(const struct event_header *eh)
 		}
 		return false;
 	}
+	if (is_sound_set_warn_freq_event(eh)) {
+		k_sem_give(&freq_event_sem);
+		return false;
+	}
 	zassert_true(false, "Unexpected event type received");
 	return false;
 }
@@ -203,3 +211,4 @@ static bool event_handler(const struct event_header *eh)
 EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, sound_status_event);
 EVENT_SUBSCRIBE(test_main, error_event);
+EVENT_SUBSCRIBE_FINAL(test_main, sound_set_warn_freq_event);
