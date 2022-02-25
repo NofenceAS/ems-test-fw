@@ -7,6 +7,7 @@
 #include <drivers/sensor.h>
 #include "env_sensor_event.h"
 #include "error_event.h"
+#include <stdlib.h>
 
 K_SEM_DEFINE(env_data_sem, 0, 1);
 
@@ -105,9 +106,26 @@ void test_main(void)
 	ztest_run_test_suite(env_sensor_tests);
 }
 
+/* Returns true if equal within epsilon limit. */
+bool check_equal_float(float a, float b)
+{
+	float epsilon = 0.0001;
+	return (abs(a - b) < epsilon);
+}
+
 static bool event_handler(const struct event_header *eh)
 {
 	if (is_env_sensor_event(eh)) {
+		struct env_sensor_event *ev = cast_env_sensor_event(eh);
+		if (cur_test == TEST_SANITY_PASS) {
+			/* Check if we get the expected float values. */
+			zassert_true(check_equal_float(ev->temp, 25.013532),
+				     "");
+			zassert_true(check_equal_float(ev->press, 95.000125),
+				     "");
+			zassert_true(check_equal_float(ev->humidity, 11.100532),
+				     "");
+		}
 		k_sem_give(&env_data_sem);
 	}
 	if (is_error_event(eh)) {
