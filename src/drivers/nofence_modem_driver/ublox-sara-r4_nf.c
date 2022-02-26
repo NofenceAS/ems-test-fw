@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT u_blox_sara_r4
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
+LOG_MODULE_REGISTER(modem_ublox_sara_r4_nf, CONFIG_MODEM_LOG_LEVEL);
 
 #include <kernel.h>
 #include <ctype.h>
