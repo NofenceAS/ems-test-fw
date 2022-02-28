@@ -92,6 +92,8 @@ zephyr_library_include_directories(
         src/modules/diagnostics
         src/events/diagnostics
         src/events/fw_upgrade
+  	src/modules/environment
+  	src/events/environment
 	src/modules/cellular_controller
         src/events/cellular_controller
         ${PROJECT_BINARY_DIR}/include/generated/)
@@ -116,3 +118,5 @@ add_subdirectory(src/modules/diagnostics)
 add_subdirectory(src/events/electric_pulse)
 add_subdirectory(src/modules/electric_pulse)
 add_subdirectory(src//drivers/nofence_modem_driver)
+add_subdirectory(src/modules/environment)
+
