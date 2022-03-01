@@ -107,7 +107,10 @@ void test_message_out_published_on_poll_request(void)
 
 	struct cellular_ack_event *ack = new_cellular_ack_event();
 	EVENT_SUBMIT(ack);
-	messaging_module_init();
+//	messaging_module_init();
+	struct update_fence_version *ev = new_update_fence_version();
+	ev->fence_version = 4;
+	EVENT_SUBMIT(ev);
 }
 
 
