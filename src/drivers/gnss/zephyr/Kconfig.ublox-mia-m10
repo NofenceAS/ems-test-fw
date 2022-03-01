@@ -23,5 +23,11 @@ if GNSS_UBLOX_MIA_M10
 		default 1024
 		help
 		This stack is used by the u-blox MIA-M10 RX thread.
+	
+	config GNSS_MIA_M10_THREAD_PRIORITY
+		int "Priority of the parsing thread. Run as cooperative thread."
+		default 7
+		help
+		This priority is used by the u-blox MIA-M10 RX thread.
 
 endif # GNSS_UBLOX_MIA_M10

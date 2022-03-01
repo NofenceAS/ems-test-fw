@@ -270,6 +270,7 @@ int mia_m10_nav_status_handler(void* context, void* payload, uint32_t size)
  */
 static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 {
+	ARG_UNUSED(dev);
 	int ret = 0;
 
 	/* TODO - Could this wait be removed somehow? */
@@ -369,6 +370,7 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
  */
 static int mia_m10_reset(const struct device *dev, uint16_t mask, uint8_t mode)
 {
+	ARG_UNUSED(dev);
 	int ret = 0;
 
 	ret = mia_m10_send_reset(mask, mode);
@@ -389,8 +391,10 @@ static int mia_m10_reset(const struct device *dev, uint16_t mask, uint8_t mode)
  */
 static int mia_m10_upload_assist_data(const struct device *dev, uint8_t* data, uint32_t size)
 {
+	ARG_UNUSED(dev);
 	int ret = 0;
 
+	/* Size of assist data must be 76 Bytes according to datasheet */
 	if (size != 76) {
 		return -EINVAL;
 	}
@@ -412,8 +416,10 @@ static int mia_m10_upload_assist_data(const struct device *dev, uint8_t* data, u
  */
 static int mia_m10_set_rate(const struct device *dev, uint16_t rate)
 {
+	ARG_UNUSED(dev);
 	int ret = 0;
 
+	/* According to datasheet, rate should be minimum 25ms */
 	if (rate < 25) {
 		return -EINVAL;
 	}
@@ -435,6 +441,7 @@ static int mia_m10_set_rate(const struct device *dev, uint16_t rate)
  */
 static int mia_m10_get_rate(const struct device *dev, uint16_t* rate)
 {
+	ARG_UNUSED(dev);
 	int ret = 0;
 
 	ret = mia_m10_config_get_u16(UBX_CFG_RATE_MEAS, rate);
@@ -454,6 +461,7 @@ static int mia_m10_get_rate(const struct device *dev, uint16_t* rate)
  */
 static int mia_m10_set_data_cb(const struct device *dev, gnss_data_cb_t gnss_data_cb)
 {
+	ARG_UNUSED(dev);
 	if (k_mutex_lock(&gnss_cb_mutex, K_MSEC(1000)) == 0) {
 		data_cb = gnss_data_cb;
 		k_mutex_unlock(&gnss_cb_mutex);
@@ -474,6 +482,7 @@ static int mia_m10_set_data_cb(const struct device *dev, gnss_data_cb_t gnss_dat
  */
 static int mia_m10_set_lastfix_cb(const struct device *dev, gnss_lastfix_cb_t gnss_lastfix_cb)
 {
+	ARG_UNUSED(dev);
 	if (k_mutex_lock(&gnss_cb_mutex, K_MSEC(1000)) == 0) {
 		lastfix_cb = gnss_lastfix_cb;
 		k_mutex_unlock(&gnss_cb_mutex);
@@ -493,6 +502,7 @@ static int mia_m10_set_lastfix_cb(const struct device *dev, gnss_lastfix_cb_t gn
  */
 static int mia_m10_data_fetch(const struct device *dev, gnss_struct_t* data)
 {
+	ARG_UNUSED(dev);
 	if (k_mutex_lock(&gnss_data_mutex, K_MSEC(1000)) == 0) {
 
 		if (!gnss_data_is_valid) {
@@ -518,6 +528,7 @@ static int mia_m10_data_fetch(const struct device *dev, gnss_struct_t* data)
  */
 static int mia_m10_lastfix_fetch(const struct device *dev, gnss_last_fix_struct_t* lastfix)
 {
+	ARG_UNUSED(dev);
 	if (k_mutex_lock(&gnss_data_mutex, K_MSEC(1000)) == 0) {
 
 		if (!gnss_lastfix_is_valid) {
@@ -665,7 +676,8 @@ static int mia_m10_init(const struct device *dev)
 			K_KERNEL_STACK_SIZEOF(gnss_parse_stack),
 			(k_thread_entry_t) mia_m10_handle_received_data,
 			(void*)mia_m10_uart_dev, NULL, NULL, 
-			K_PRIO_COOP(7), 0, K_NO_WAIT);
+			K_PRIO_COOP(CONFIG_GNSS_MIA_M10_THREAD_PRIORITY),
+			0, K_NO_WAIT);
 
 	return 0;
 }
