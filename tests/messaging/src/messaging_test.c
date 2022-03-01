@@ -6,7 +6,8 @@
 #include "messaging.h"
 #include "ble_ctrl_event.h"
 #include "ble_data_event.h"
-#include "lte_proto_event.h"
+#include "cellular_controller_events.h"
+#include "messaging_module_events.h"
 
 enum test_event_id { TEST_EVENT_CONTENTS = 0, TEST_EVENT_THREAD_POLLER = 1 };
 static enum test_event_id cur_id = TEST_EVENT_CONTENTS;
@@ -35,7 +36,7 @@ void test_event_contents(void)
 	/* Allocate events. */
 	struct ble_ctrl_event *ev_ble_ctrl = new_ble_ctrl_event();
 	struct ble_data_event *ev_ble_data = new_ble_data_event();
-	struct lte_proto_event *ev_lte_proto = new_lte_proto_event();
+	struct cellular_proto_in_event *ev_lte_proto = new_cellular_proto_in_event();
 
 	/* BLE CTRL event. */
 	ev_ble_ctrl->cmd = BLE_CTRL_BATTERY_UPDATE;
@@ -59,7 +60,7 @@ void test_event_poller(void)
 {
 	/* Allocate events. */
 	struct ble_ctrl_event *ev_ble_ctrl = new_ble_ctrl_event();
-	struct lte_proto_event *ev_lte_proto = new_lte_proto_event();
+	struct cellular_proto_in_event *ev_lte_proto = new_cellular_proto_in_event();
 
 	/* Submit events. */
 	EVENT_SUBMIT(ev_ble_ctrl);
@@ -95,15 +96,39 @@ void teardown_clear_threads(void)
 	k_sleep(K_SECONDS(30));
 }
 
+/* Test expected events published by messaging*/
+//ack - fence_ready - ano_ready - msg_out - host_address
+void test_message_out_published_on_poll_request(void)
+{
+//	modem_poll_work_fn();
+//	ztest_returns_value(send_message, 0);
+	zassert_false(event_manager_init(),
+		      "Error when initializing event manager");
+
+	struct cellular_ack_event *ack = new_cellular_ack_event();
+	EVENT_SUBMIT(ack);
+	messaging_module_init();
+}
+
+
+
+/* Test expected error events published by messaging*/
+// time_out waiting for ack from cellular_controller
+
 void test_main(void)
 {
 	ztest_test_suite(messaging_tests, ztest_unit_test(test_init),
 			 ztest_unit_test_setup_teardown(test_event_contents,
 							setup_take_semaphores,
 							teardown_clear_threads),
+
 			 ztest_unit_test_setup_teardown(
 				 test_event_poller, setup_take_semaphores,
-				 teardown_clear_threads));
+				 teardown_clear_threads),
+
+			 ztest_unit_test(test_message_out_published_on_poll_request)
+			 );
+
 	ztest_run_test_suite(messaging_tests);
 }
 
@@ -130,8 +155,8 @@ static bool event_handler(const struct event_header *eh)
 			zassert_mem_equal(ev->buf, dummy_data, ev->len,
 					  "Contents not equal.");
 		}
-		if (is_lte_proto_event(eh)) {
-			struct lte_proto_event *ev = cast_lte_proto_event(eh);
+		if (is_cellular_proto_in_event(eh)) {
+			struct cellular_proto_in_event *ev = cast_cellular_proto_in_event(eh);
 			zassert_equal(ev->len, sizeof(dummy_data),
 				      "Buffer length mismatch");
 			zassert_mem_equal(ev->buf, dummy_data, ev->len,
@@ -139,10 +164,16 @@ static bool event_handler(const struct event_header *eh)
 			cur_id = TEST_EVENT_THREAD_POLLER;
 		}
 	}
+
+	if(is_messaging_proto_out_event(eh)){
+		struct messaging_proto_out_event *ev = cast_messaging_proto_out_event(eh);
+		printk("length of encoded poll message = %d", ev->len);
+	}
 	return false;
 }
 
 EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, ble_ctrl_event);
 EVENT_SUBSCRIBE(test_main, ble_data_event);
-EVENT_SUBSCRIBE(test_main, lte_proto_event);
+EVENT_SUBSCRIBE(test_main, cellular_proto_in_event);
+EVENT_SUBSCRIBE(test_main, messaging_proto_out_event);

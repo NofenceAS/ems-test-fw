@@ -65,3 +65,13 @@ EVENT_TYPE_DEFINE(ano_ready,
 		  true,
 		  NULL,
 		  NULL);
+
+EVENT_TYPE_DEFINE(animal_warning_event,
+		  true,
+		  NULL,
+		  NULL);
+
+EVENT_TYPE_DEFINE(animal_escape_event,
+		  true,
+		  NULL,
+		  NULL);
