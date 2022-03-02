@@ -6,6 +6,7 @@ variables:
 stages:
   - compliance
   - build
+  - test
   - deploy
 
 check_compliance:
@@ -33,6 +34,17 @@ firmware:
       - buildnumber
       - build/zephyr/app_*
       - build/nf_version.sh
+
+# HW-in-the-loop
+hw-in-the-loop-basic:
+  stage: test
+  script:
+    - printf "$CI_PROJECT_DIR"
+    - ls "$CI_PROJECT_DIR"
+    - printf "Waiting 20 secs"
+    - sleep 20
+  tags:
+    - hw-in-the-loop-x25
 
 # Firmware
 staging-firmware-deploy:
