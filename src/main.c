@@ -51,5 +51,5 @@ void main(void)
 	/* Initialize animal monitor control module. */
 	amc_module_init();
 	cellular_controller_init();
-//	messaging_module_init();
+	messaging_module_init();
 }
