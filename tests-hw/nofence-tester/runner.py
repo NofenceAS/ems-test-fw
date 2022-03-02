@@ -42,13 +42,13 @@ dep["buildpath"] = os.path.join(os.path.join(os.path.join(base_path, ".."), ".."
 # Run test
 passed = True
 try:
-    passed = test_to_run.run()
+    passed = test_to_run.run(dep)
 except Exception as e:
     print(e)
     passed = False
 finally:
     # Tear down dependencies
-    del ocd
+    del dep["ocd"]
 
 if not passed:
     sys.exit(1)
