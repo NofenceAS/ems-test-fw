@@ -35,7 +35,7 @@ void main(void)
 	int err = stg_init_storage_controller();
 	if (err) {
 		LOG_ERR("Could not initialize storage controller, %i", err);
-		return;
+		//return;
 	}
 
 /* Not all boards have eeprom */
