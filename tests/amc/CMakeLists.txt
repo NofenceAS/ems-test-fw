@@ -24,6 +24,7 @@ target_include_directories(app PRIVATE ${APP_SOURCE})
 
 zephyr_library_include_directories(
   mock
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../include/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/amc/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/amc
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer
