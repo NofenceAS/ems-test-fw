@@ -44,19 +44,19 @@ class OCDProc(threading.Thread):
 
     def run(self):
         while self.running:
-            self.lock.acquire()
-            try:
-                line = self.proc.stderr.readline()
-                if line != None:
-                    logging.debug(line.decode("utf-8"))
+            line = self.proc.stderr.readline()
+            if line != None:
+                logging.debug(line.decode("utf-8"))
+                self.lock.acquire()
+                try:
                     if b"Listening on port 4444 for telnet connections" in line:
                         self.active = True
                     if line.startswith(b"Error: "):
                         self.error = True
-                else:
-                    time.sleep(0.01)
-            finally:
-                self.lock.release()
+                finally:
+                    self.lock.release()
+            else:
+                time.sleep(0.01)
 
     def is_active(self):
         return self.active
