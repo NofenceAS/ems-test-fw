@@ -1,1 +1,1 @@
-from . import X25
+from . import x25_basic_test
