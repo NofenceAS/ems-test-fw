@@ -137,6 +137,13 @@ class OCD:
 
         if error:
             raise Exception("OpenOCD reported an error")
+        
+        verified = False
+        for line in result.splitlines():
+            if line.startswith("verified ") and " bytes from file " in line:
+                verified = True
+        if not verified:
+            raise Exception("Response does not indicate successful verification of image")
     
     def rtt_prepare(self, timeout=10):
         cmd = "rtt setup 0x20000000 262144 \"SEGGER RTT\""
