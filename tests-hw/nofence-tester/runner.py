@@ -31,6 +31,8 @@ ocd = OCD()
 from bluefence import BlueFence
 ble = BlueFence()
 
+tests_passed = True
+
 try:
     # TODO - Run test plan and collect results
 
@@ -38,13 +40,17 @@ try:
 
     build_path = os.path.join(os.path.join(os.path.join(base_path, ".."), ".."), "build")
     zephyr_path = os.path.join(build_path, "zephyr")
-    X25.flash.run(ocd, os.path.join(zephyr_path, "merged.hex"))
-    X25.ble_scan.run(ble)
+    if not X25.flash.run(ocd, os.path.join(zephyr_path, "merged.hex")):
+        tests_passed = False
+
+    if not X25.ble_scan.run(ble):
+        tests_passed = False
 
     #sys.exit(1)
     
 except Exception as e:
     print(e)
+    tests_passed = False
 finally:
     # Tear down dependencies
     del ocd

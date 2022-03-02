@@ -8,3 +8,5 @@ def run(ble):
     print("Found device " + str(device))
     # TODO - Verify ScanData
     print("    ScanData " + str(device.getScanData()))
+    
+    return True
