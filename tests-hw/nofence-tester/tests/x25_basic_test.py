@@ -42,11 +42,13 @@ def run(dep):
     try:
         flash(ocd, combined_image)
     except Exception as e:
+        logging.error("Test raised exception: " + str(e))
         return False
 
     try:
         ble_scan()
     except Exception as e:
+        logging.error("Test raised exception: " + str(e))
         return False
 
     return True
