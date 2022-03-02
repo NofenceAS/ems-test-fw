@@ -141,6 +141,95 @@ void test_play_cattle(void)
 	zassert_equal(err, 0, "");
 }
 
+void test_short_100(void)
+{
+	mock_expect_pwm_hz(100);
+
+	struct sound_event *ev = new_sound_event();
+	ev->type = SND_SHORT_100;
+	EVENT_SUBMIT(ev);
+
+	/* Wait for playing event, then idle event when it finishes. */
+	int err = k_sem_take(&sound_playing_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+
+	err = k_sem_take(&sound_idle_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+}
+
+void test_short_200(void)
+{
+	mock_expect_pwm_hz(100);
+
+	struct sound_event *ev = new_sound_event();
+	ev->type = SND_SHORT_200;
+	EVENT_SUBMIT(ev);
+
+	/* Wait for playing event, then idle event when it finishes. */
+	int err = k_sem_take(&sound_playing_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+
+	err = k_sem_take(&sound_idle_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+}
+
+void test_welcome(void)
+{
+	int i = 1000;
+	mock_expect_pwm_hz(i);
+
+	for (; i < 4000; i += 4) {
+		mock_expect_pwm_hz(i);
+	}
+
+	mock_expect_pwm_hz(i);
+	mock_expect_pwm_hz(0);
+
+	for (i = 700; i < 4000; i += 2) {
+		mock_expect_pwm_hz(i);
+	}
+
+	mock_expect_pwm_hz(i);
+
+	for (; i > 1500; i--) {
+		mock_expect_pwm_hz(i);
+	}
+	for (; i > 600; i -= 2) {
+		mock_expect_pwm_hz(i);
+	}
+
+	mock_expect_pwm_hz(i);
+
+	struct sound_event *ev = new_sound_event();
+	ev->type = SND_WELCOME;
+	EVENT_SUBMIT(ev);
+
+	/* Wait for playing event, then idle event when it finishes. */
+	int err = k_sem_take(&sound_playing_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+
+	err = k_sem_take(&sound_idle_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+}
+
+void test_solar_test(void)
+{
+	mock_expect_pwm_hz(tone_c_6);
+	mock_expect_pwm_hz(0);
+	mock_expect_pwm_hz(tone_g_6);
+
+	struct sound_event *ev = new_sound_event();
+	ev->type = SND_SOLAR_TEST;
+	EVENT_SUBMIT(ev);
+
+	/* Wait for playing event, then idle event when it finishes. */
+	int err = k_sem_take(&sound_playing_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+
+	err = k_sem_take(&sound_idle_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+}
+
 /** @brief Tests if the first sound played is aborted due to higher priority
  *         requested on second event publish.
  *
@@ -233,6 +322,14 @@ void test_main(void)
 		ztest_unit_test_setup_teardown(test_setupmode, setup_common,
 					       teardown_common),
 		ztest_unit_test_setup_teardown(test_play_cattle, setup_common,
+					       teardown_common),
+		ztest_unit_test_setup_teardown(test_short_100, setup_common,
+					       teardown_common),
+		ztest_unit_test_setup_teardown(test_short_200, setup_common,
+					       teardown_common),
+		ztest_unit_test_setup_teardown(test_solar_test, setup_common,
+					       teardown_common),
+		ztest_unit_test_setup_teardown(test_welcome, setup_common,
 					       teardown_common),
 		ztest_unit_test_setup_teardown(test_priority_second_prio,
 					       setup_common, teardown_common),
