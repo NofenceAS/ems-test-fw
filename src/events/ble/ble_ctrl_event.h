@@ -15,6 +15,9 @@
 
 #include "event_manager.h"
 
+#define str(x) #x
+#define xstr(x) str(x)
+
 /** @brief Enum for defining the differen bluetooth control commands
  * 		   to enable or disable advertisement, and update ad array. 
  */
@@ -29,6 +32,8 @@ enum ble_ctrl_cmd {
 	BLE_CTRL_PASTURE_UPDATE,
 	BLE_CTRL_FENCE_DEF_VER_UPDATE
 };
+
+
 
 /** BLE control event. */
 struct ble_ctrl_event {

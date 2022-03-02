@@ -13,6 +13,7 @@
 #include "ep_module.h"
 #include "amc_handler.h"
 #include "nf_eeprom.h"
+#include "pwr_module.h"
 
 #include "storage.h"
 #include "nf_version.h"
@@ -39,7 +40,8 @@ void main(void)
 
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
-	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
+		const struct device *eeprom_dev =
+			DEVICE_DT_GET(DT_ALIAS(eeprom));
 	if (eeprom_dev == NULL) {
 		LOG_ERR("No EEPROM detected!");
 	}
@@ -70,10 +72,14 @@ void main(void)
 		LOG_ERR("Could not initialize firmware upgrade module. %d",
 			err);
 	}
+	/* Initialize the electric pulse module. */
 	if (ep_module_init()) {
 		LOG_ERR("Could not initialize electric pulse module");
 	}
-
+	/* Initialize the power manager module. */
+	if (pwr_module_init()) {
+		LOG_ERR("Could not initialize the power module");
+	}
 	/* Initialize animal monitor control module, depends on storage
 	 * controller to be initialized first since amc sends
 	 * a request for pasture data on init. 
