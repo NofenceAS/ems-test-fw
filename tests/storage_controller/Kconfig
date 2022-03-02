@@ -1,8 +1,8 @@
 
 menu "APPLICATION_CODE"
-	menu "AMC"
-    	rsource "./../../src/modules/amc/Kconfig"
-	endmenu # AMC
+	menu "Storage controller"
+    	rsource "./../../src/modules/storage_controller/Kconfig"
+	endmenu # Storage controller
 	menu "ERROR_HANDLER"
     	rsource "./../../src/modules/error_handler/Kconfig"
 	endmenu # ERROR_HANDLER

@@ -1,11 +1,12 @@
 
 menu "APPLICATION_CODE"
-	menu "AMC"
-    	rsource "./../../src/modules/amc/Kconfig"
-	endmenu # AMC
+	menu "ENV_SENSOR"
+    	rsource "./../../src/modules/environment/Kconfig"
+	endmenu # ENV_SENSOR
+
 	menu "ERROR_HANDLER"
     	rsource "./../../src/modules/error_handler/Kconfig"
-	endmenu # ERROR_HANDLER
+	endmenu
 endmenu # APPLICATION CODE
 
 menu "Zephyr Kernel"
