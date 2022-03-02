@@ -19,10 +19,9 @@
 struct msg_data_event {
 	struct event_header header;
 
-	uint8_t *buf;
-	size_t len;
+        struct event_dyndata dyndata;
 };
 
-EVENT_TYPE_DECLARE(msg_data_event);
+EVENT_TYPE_DYNDATA_DECLARE(msg_data_event);
 
 #endif /* _MSG_DATA_EVENT_H_ */
