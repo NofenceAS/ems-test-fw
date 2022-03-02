@@ -74,7 +74,7 @@ class OCD:
                             new_data = ""
                         else:
                             line += new_data[:newline+1]
-                            new_data = new_data[newline+:]
+                            new_data = new_data[newline+1:]
 
                             logging.debug(line.rstrip("\r\n"))
                             line = ""
