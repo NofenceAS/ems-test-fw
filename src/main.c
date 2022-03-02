@@ -19,6 +19,8 @@
 #include "storage.h"
 #include "nf_version.h"
 
+#include "env_sensor_event.h"
+
 #define MODULE main
 #include "module_state_event.h"
 
