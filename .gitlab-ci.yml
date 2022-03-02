@@ -33,6 +33,8 @@ firmware:
     paths:
       - buildnumber
       - build/zephyr/app_*
+      - build/zephyr/merged.hex
+      - build/zephyr/zephyr.elf
       - build/nf_version.sh
 
 # HW-in-the-loop
