@@ -9,7 +9,6 @@ def flash(ocd, firmware_image):
 
 import bluefence
 
-
 def ble_scan():
     board_ble_address = os.environ["X25_BOARD_BLE_ADDRESS"]
     device = bluefence.scan_for_device(addr=board_ble_address)
@@ -46,7 +45,7 @@ def run(dep):
         return False
 
     try:
-        ble_scan(ble)
+        ble_scan()
     except Exception as e:
         return False
 
