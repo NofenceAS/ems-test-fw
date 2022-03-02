@@ -58,12 +58,26 @@ class OCD:
         # - Wait for echo and '> '
         resp = ""
         start = time.time()
+        line = ""
         while (resp.find(cmd) == -1) or (not resp.endswith("> ")):
             try:
                 data = self._tn.read_eager()
                 if len(data) > 0:
-                    resp += data.decode("utf-8")
-                    logging.debug(data)
+                    new_data = data.decode("utf-8")
+                    resp += new_data
+
+                    # For logging purposes, find whole lines
+                    while len(new_data) > 0:
+                        newline = new_data.find("\n")
+                        if newline == -1:
+                            line += new_data
+                            new_data = ""
+                        else:
+                            line += new_data[:newline+1]
+                            new_data = new_data[newline+:]
+
+                            logging.debug(line.rstrip("\r\n"))
+                            line = ""
             except:
                 pass
             
