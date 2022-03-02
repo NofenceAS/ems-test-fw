@@ -1,9 +1,9 @@
 from __future__ import print_function
 
-from time import gmtime, strftime, sleep
-from bluepy.btle import Scanner, DefaultDelegate, BTLEException
+from bluepy.btle import Scanner
 import sys
 import time
+import logging
 
 def scan_for_device(addr=None, uuid=None):
     result_device = None
