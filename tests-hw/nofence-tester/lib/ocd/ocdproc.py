@@ -13,10 +13,14 @@ class OCDProc(threading.Thread):
 
         self.proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+        self.lock = threading.Lock()
+
         self.running = True
         self.active = False
 
         self.daemon = True
+
+        self.error = False
 
         self.start()
     
@@ -27,16 +31,32 @@ class OCDProc(threading.Thread):
         self.running = False
         self.proc.kill()
         self.join()
+    
+    def got_error(self):
+        self.lock.acquire()
+
+        err = self.error
+        self.error = False
+        
+        self.lock.release()
+        
+        return err
 
     def run(self):
         while self.running:
-            line = self.proc.stderr.readline()
-            if line != None:
-                logging.debug(line.decode("utf-8"))
-                if b"Listening on port 4444 for telnet connections" in line:
-                    self.active = True
-            else:
-                time.sleep(0.01)
+            self.lock.acquire()
+            try:
+                line = self.proc.stderr.readline()
+                if line != None:
+                    logging.debug(line.decode("utf-8"))
+                    if b"Listening on port 4444 for telnet connections" in line:
+                        self.active = True
+                    if line.startswith("Error: "):
+                        self.error = True
+                else:
+                    time.sleep(0.01)
+            finally:
+                self.lock.release()
 
     def is_active(self):
         return self.active

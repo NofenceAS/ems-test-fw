@@ -1,11 +1,10 @@
 import os
 
 def flash(ocd, firmware_image):
-    ocd.reset(halt=True)
+    ocd.reset(halt=True):
     ocd.flash_write(firmware_image)
+    ocd.flash_verify(firmware_image)
     ocd.resume()
-
-    return True
 
 def ble_scan(ble):
     board_ble_address = os.environ["X25_BOARD_BLE_ADDRESS"]
@@ -17,8 +16,6 @@ def ble_scan(ble):
     print("Found device " + str(device))
     # TODO - Verify ScanData
     print("    ScanData " + str(device.getScanData()))
-    
-    return True
 
 def run(dep):
     ocd = dep["ocd"]
@@ -28,10 +25,14 @@ def run(dep):
     zephyr_path = os.path.join(build_path, "zephyr")
     combined_image = os.path.join(zephyr_path, "merged.hex")
 
-    if not flash(ocd, combined_image):
+    try:
+        flash(ocd, combined_image)
+    except Exception as e:
         return False
 
-    if not ble_scan(ble):
+    try:
+        ble_scan(ble)
+    except Exception as e:
         return False
 
     return True

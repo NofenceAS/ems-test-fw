@@ -52,6 +52,10 @@ class OCD:
                 raise Exception("Timed out")
         
     def send_cmd(self, cmd, timeout=10):
+        # Check errors to clear
+        self._o.got_error()
+
+        # Send command
         logging.debug("Send CMD: \"" + cmd + "\"")
         self._tn.write((cmd + "\n").encode("utf-8"))
 
@@ -86,7 +90,9 @@ class OCD:
         
         result = resp[resp.find(cmd)+len(cmd):-2]
 
-        return result
+        got_error = self._o.got_error()
+
+        return got_error, result
 
     def reset(self, halt=False, timeout=5):
         cmd = "reset "
@@ -94,36 +100,65 @@ class OCD:
             cmd += "halt"
         else:
             cmd += "run"
-        result = self.send_cmd(cmd, timeout)
+        error, result = self.send_cmd(cmd, timeout)
         logging.debug(result)
+
+        if error:
+            raise Exception("OpenOCD reported an error")
     
     def halt(self, timeout=2):
         cmd = "halt"
-        result = self.send_cmd(cmd, timeout)
+        error, result = self.send_cmd(cmd, timeout)
         logging.debug(result)
+
+        if error:
+            raise Exception("OpenOCD reported an error")
     
     def resume(self, timeout=2):
         cmd = "resume"
-        result = self.send_cmd(cmd, timeout)
+        error, result = self.send_cmd(cmd, timeout)
         logging.debug(result)
+
+        if error:
+            raise Exception("OpenOCD reported an error")
     
     def flash_write(self, image, timeout=30):
         cmd = "flash write_image erase " + image
-        result = self.send_cmd(cmd, timeout)
+        error, result = self.send_cmd(cmd, timeout)
         logging.debug(result)
+
+        if error:
+            raise Exception("OpenOCD reported an error")
+
+    def flash_verify(self, image, timeout=30):
+        cmd = "flash verify_image " + image
+        error, result = self.send_cmd(cmd, timeout)
+        logging.debug(result)
+
+        if error:
+            raise Exception("OpenOCD reported an error")
     
     def rtt_prepare(self, timeout=10):
         cmd = "rtt setup 0x20000000 262144 \"SEGGER RTT\""
-        result = self.send_cmd(cmd, timeout)
+        error, result = self.send_cmd(cmd, timeout)
         logging.debug(result)
+
+        if error:
+            raise Exception("OpenOCD reported an error")
         
         cmd = "rtt start"
-        result = self.send_cmd(cmd, timeout)
+        error, result = self.send_cmd(cmd, timeout)
         logging.debug(result)
+
+        if error:
+            raise Exception("OpenOCD reported an error")
         
     def rtt_connect(self, channel, port, timeout=10):
         cmd = "rtt server start " + str(port) + " " + str(channel)
-        result = self.send_cmd(cmd, timeout)
+        error, result = self.send_cmd(cmd, timeout)
         logging.debug(result)
+
+        if error:
+            raise Exception("OpenOCD reported an error")
 
         self._rtt[channel] = RTT(port)
