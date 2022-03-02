@@ -1,6 +1,9 @@
 import sys
 import os
 import argparse
+import logging
+
+logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
 
 # Parse input arguments
 parser = argparse.ArgumentParser(description='Nofence HW-in-the-loop test runner')

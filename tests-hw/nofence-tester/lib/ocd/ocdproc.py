@@ -32,7 +32,7 @@ class OCDProc(threading.Thread):
         while self.running:
             line = self.proc.stderr.readline()
             if line != None:
-                print(line)
+                logging.debug(line)
                 if b"Listening on port 4444 for telnet connections" in line:
                     self.active = True
             else:

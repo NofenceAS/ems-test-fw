@@ -63,7 +63,7 @@ class OCD:
                 data = self._tn.read_eager()
                 if len(data) > 0:
                     resp += data.decode("utf-8")
-                    #print(data, end='', flush=True)
+                    logging.debug(data)
             except:
                 pass
             
