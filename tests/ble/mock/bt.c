@@ -113,10 +113,10 @@ uint16_t bt_gatt_get_mtu(struct bt_conn *conn)
 	return ztest_get_return_value();
 }
 
-int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str, size_t len)
-{
-	return ztest_get_return_value();
-}
+// int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str, size_t len)
+// {
+// 	return ztest_get_return_value();
+// }
 
 int bt_nus_init(struct bt_nus_cb *callbacks)
 {
@@ -145,4 +145,40 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn,
 
 void bt_conn_cb_register(struct bt_conn_cb *cb)
 {
+}
+
+void bt_data_parse(struct net_buf_simple *ad,
+		   bool (*func)(struct bt_data *data, void *user_data),
+		   void *user_data)
+{
+}
+
+void net_buf_simple_init_with_data(struct net_buf_simple *buf, void *data,
+				   size_t size)
+{
+}
+uint16_t net_buf_simple_pull_be16(struct net_buf_simple *buf)
+{
+	return ztest_get_return_value();
+}
+
+uint8_t net_buf_simple_pull_u8(struct net_buf_simple *buf)
+{
+	return ztest_get_return_value();
+}
+
+void *net_buf_simple_pull_mem(struct net_buf_simple *buf, size_t len)
+{
+	void *data = buf->data;
+	return data;
+}
+
+int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
+{
+	return ztest_get_return_value();
+}
+
+int bt_le_scan_stop(void)
+{
+	return ztest_get_return_value();
 }

@@ -12,6 +12,7 @@
 #include "ble_controller.h"
 #include "event_manager.h"
 #include "bt.h"
+#include "beacon_processor.h"
 
 static K_SEM_DEFINE(ble_connected_sem, 0, 1);
 static K_SEM_DEFINE(ble_disconnected_sem, 0, 1);
@@ -38,6 +39,7 @@ void test_init_ok(void)
 	ztest_returns_value(bt_enable, 0);
 	ztest_returns_value(bt_nus_init, 0);
 	ztest_returns_value(bt_le_adv_start, 0);
+	ztest_returns_value(bt_le_scan_start, 0);
 
 	zassert_equal(event_manager_init(), 0,
 		      "Error when initializing event manager");
@@ -63,6 +65,46 @@ void test_advertise(void)
 	// Currently ble_module_init() also starts adv.
 	// Check if adv is on after ble_ready
 	// Submut event to start adv
+}
+
+void test_ble_beacon_scanner(void)
+{
+	const uint32_t now_1 = k_uptime_get_32();
+	adv_data_t adv_data_1;
+	adv_data_1.rssi = 197; // signed
+	bt_addr_t address_1;
+	address_1.val[0] = 0x46;
+	address_1.val[1] = 0x01;
+	address_1.val[2] = 0x00;
+	address_1.val[3] = 0x30;
+	address_1.val[4] = 0x02;
+	address_1.val[5] = 0xc2;
+	bt_addr_le_t addr_1;
+	addr_1.type = 1;
+	memcpy(addr_1.a.val, address_1.val, sizeof(bt_addr_t));
+	int measured_rssi_1 = -60; // corresponds to 1 meter
+	int range1 = beacon_process_event(now_1, &addr_1, measured_rssi_1,
+					  &adv_data_1);
+	zassert_equal(range1, 1, "Shortest distance calculation is wrong");
+	k_sleep(K_SECONDS(1));
+
+	const uint32_t now_2 = k_uptime_get_32();
+	adv_data_t adv_data_2;
+	adv_data_2.rssi = 197; // signed
+	bt_addr_t address_2;
+	address_2.val[0] = 0x46;
+	address_2.val[1] = 0x01;
+	address_2.val[2] = 0x00;
+	address_2.val[3] = 0x30;
+	address_2.val[4] = 0x02;
+	address_2.val[5] = 0xb3;
+	bt_addr_le_t addr_2;
+	addr_2.type = 1;
+	memcpy(addr_2.a.val, address_2.val, sizeof(bt_addr_t));
+	int measured_rssi_2 = -76; // corresponds to 6 meter
+	int range2 = beacon_process_event(now_2, &addr_2, measured_rssi_2,
+					  &adv_data_2);
+	zassert_equal(range2, 1, "Shortest distance calculation is wrong");
 }
 
 void test_ble_connection(void)
@@ -251,6 +293,7 @@ void test_main(void)
 {
 	ztest_test_suite(test_bluetooth, ztest_unit_test(test_init_ok),
 			 ztest_unit_test(test_init_error),
+			 ztest_unit_test(test_ble_beacon_scanner),
 			 ztest_unit_test(test_ble_connection),
 			 ztest_unit_test(test_ble_disconnection),
 			 ztest_unit_test(test_ble_data_event),
@@ -302,6 +345,12 @@ static bool event_handler(const struct event_header *eh)
 			// TODO: A test of this should be added later
 			break;
 		case BLE_CTRL_ADV_DISABLE:
+			// TODO: A test of this should be added later
+			break;
+		case BLE_CTRL_SCAN_START:
+			// TODO: A test of this should be added later
+			break;
+		case BLE_CTRL_SCAN_STOP:
 			// TODO: A test of this should be added later
 			break;
 		case BLE_CTRL_BATTERY_UPDATE:
