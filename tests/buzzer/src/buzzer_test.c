@@ -230,6 +230,20 @@ void test_solar_test(void)
 	zassert_equal(err, 0, "");
 }
 
+void test_off(void)
+{
+	ztest_returns_value(pwm_pin_set_usec, 0);
+	ztest_expect_value(pwm_pin_set_usec, pulse, 0);
+	ztest_expect_value(pwm_pin_set_usec, period, 0);
+
+	struct sound_event *ev = new_sound_event();
+	ev->type = SND_OFF;
+	EVENT_SUBMIT(ev);
+
+	int err = k_sem_take(&sound_idle_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+}
+
 /** @brief Tests if the first sound played is aborted due to higher priority
  *         requested on second event publish.
  *
@@ -330,6 +344,8 @@ void test_main(void)
 		ztest_unit_test_setup_teardown(test_solar_test, setup_common,
 					       teardown_common),
 		ztest_unit_test_setup_teardown(test_welcome, setup_common,
+					       teardown_common),
+		ztest_unit_test_setup_teardown(test_off, setup_common,
 					       teardown_common),
 		ztest_unit_test_setup_teardown(test_priority_second_prio,
 					       setup_common, teardown_common),
