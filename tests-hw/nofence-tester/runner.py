@@ -45,8 +45,6 @@ try:
 
     if not X25.ble_scan.run(ble):
         tests_passed = False
-
-    #sys.exit(1)
     
 except Exception as e:
     print(e)
@@ -56,3 +54,6 @@ finally:
     del ocd
 
 # TODO - Upload results
+
+if not tests_passed:
+    sys.exit(1)
