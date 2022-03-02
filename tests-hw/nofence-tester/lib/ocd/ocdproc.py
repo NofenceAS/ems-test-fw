@@ -51,7 +51,7 @@ class OCDProc(threading.Thread):
                     logging.debug(line.decode("utf-8"))
                     if b"Listening on port 4444 for telnet connections" in line:
                         self.active = True
-                    if line.startswith("Error: "):
+                    if line.startswith(b"Error: "):
                         self.error = True
                 else:
                     time.sleep(0.01)
