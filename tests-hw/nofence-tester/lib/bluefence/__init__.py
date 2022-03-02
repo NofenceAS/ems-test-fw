@@ -5,7 +5,7 @@ from bluepy.btle import Scanner, DefaultDelegate, BTLEException
 import sys
 import time
 
-def scan_for_device(self, addr=None, uuid=None):
+def scan_for_device(addr=None, uuid=None):
     result_device = None
     
     scanner = Scanner()
