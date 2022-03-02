@@ -16,6 +16,8 @@ class OCDProc(threading.Thread):
         self.running = True
         self.active = False
 
+        self.daemon = True
+
         self.start()
     
     def __del__(self):
@@ -30,7 +32,7 @@ class OCDProc(threading.Thread):
         while self.running:
             line = self.proc.stderr.readline()
             if line != None:
-                #print(line)
+                print(line)
                 if b"Listening on port 4444 for telnet connections" in line:
                     self.active = True
             else:
