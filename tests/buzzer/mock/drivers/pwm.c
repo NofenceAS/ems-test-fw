@@ -1,6 +1,8 @@
 #include <drivers/pwm.h>
 #include <ztest.h>
 
+int pwm_call = 0;
+
 int pwm_pin_set_usec(const struct device *dev, uint32_t pwm, uint32_t period,
 		     uint32_t pulse, pwm_flags_t flags)
 {

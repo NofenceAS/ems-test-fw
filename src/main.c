@@ -94,6 +94,11 @@ void main(void)
 		LOG_ERR("Could not initialize AMC module. %d", err);
 	}
 
+	/* Play welcome sound. */
+	struct sound_event *sound_ev = new_sound_event();
+	sound_ev->type = SND_WELCOME;
+	EVENT_SUBMIT(sound_ev);
+
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,
 	 * it will revert to the previous version on the next reboot that occurs.

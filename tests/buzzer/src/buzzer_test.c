@@ -17,10 +17,28 @@
 
 K_SEM_DEFINE(sound_idle_sem, 0, 1);
 K_SEM_DEFINE(sound_playing_sem, 0, 1);
+K_SEM_DEFINE(sound_playing_warn_sem, 0, 1);
 K_SEM_DEFINE(sound_playing_max_sem, 0, 1);
 
 K_SEM_DEFINE(error_timeout_sem, 0, 1);
 K_SEM_DEFINE(freq_event_sem, 0, 1);
+
+/** @brief Helper function for expecting pulse and period as pwm_pin_set. 
+ *         Expects duty cycle of 50%. Also always expects pwm pins to be
+ *         set to 0 again after being played.
+*/
+void mock_expect_pwm_hz(uint32_t freq)
+{
+	uint32_t period = freq == 0 ? 0 : 1000000 / freq;
+	/* Expect to set to 0 after note was played. */
+	ztest_returns_value(pwm_pin_set_usec, 0);
+	ztest_expect_value(pwm_pin_set_usec, pulse, period / 2);
+	ztest_expect_value(pwm_pin_set_usec, period, period);
+
+	ztest_returns_value(pwm_pin_set_usec, 0);
+	ztest_expect_value(pwm_pin_set_usec, pulse, 0);
+	ztest_expect_value(pwm_pin_set_usec, period, 0);
+}
 
 void test_init_event_manager(void)
 {
@@ -41,19 +59,78 @@ void test_perspelmann(void)
 {
 	/* Check if we get the expected song. */
 	for (int i = 0; i < n_perspelmann_notes; i++) {
-		uint32_t freq = m_perspelmann[i].t;
-		ztest_returns_value(pwm_pin_set_usec, 0);
-		ztest_expect_value(pwm_pin_set_usec, pulse, freq / 2);
-		ztest_expect_value(pwm_pin_set_usec, period, freq);
-
-		/* Expect to set to 0 after note was played. */
-		ztest_returns_value(pwm_pin_set_usec, 0);
-		ztest_expect_value(pwm_pin_set_usec, pulse, 0);
-		ztest_expect_value(pwm_pin_set_usec, period, 0);
+		mock_expect_pwm_hz(m_perspelmann[i].t);
 	}
 
 	struct sound_event *ev = new_sound_event();
 	ev->type = SND_PERSPELMANN;
+	EVENT_SUBMIT(ev);
+
+	/* Wait for playing event, then idle event when it finishes. */
+	int err = k_sem_take(&sound_playing_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+
+	err = k_sem_take(&sound_idle_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+}
+
+void test_find_me(void)
+{
+	/* Check if we get the expected song. */
+	for (int i = 0; i < n_geiterams_notes; i++) {
+		mock_expect_pwm_hz(m_geiterams[i].t);
+	}
+
+	struct sound_event *ev = new_sound_event();
+	ev->type = SND_FIND_ME;
+	EVENT_SUBMIT(ev);
+
+	/* Wait for playing event, then idle event when it finishes. */
+	int err = k_sem_take(&sound_playing_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+
+	err = k_sem_take(&sound_idle_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+}
+
+void test_setupmode(void)
+{
+	/* Check if we get the expected song. */
+	for (int i = 0; i < n_setupmode_notes; i++) {
+		mock_expect_pwm_hz(m_setupmode[i].t);
+	}
+
+	struct sound_event *ev = new_sound_event();
+	ev->type = SND_SETUPMODE;
+	EVENT_SUBMIT(ev);
+
+	/* Wait for playing event, then idle event when it finishes. */
+	int err = k_sem_take(&sound_playing_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+
+	err = k_sem_take(&sound_idle_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+}
+
+void test_play_cattle(void)
+{
+	int i = 250;
+	mock_expect_pwm_hz(i);
+
+	for (; i < 400; i += 1) {
+		mock_expect_pwm_hz(i);
+	}
+
+	mock_expect_pwm_hz(i);
+
+	for (; i > 250; i -= 3) {
+		mock_expect_pwm_hz(i);
+	}
+
+	mock_expect_pwm_hz(i);
+
+	struct sound_event *ev = new_sound_event();
+	ev->type = SND_CATTLE;
 	EVENT_SUBMIT(ev);
 
 	/* Wait for playing event, then idle event when it finishes. */
@@ -72,15 +149,7 @@ void test_priority_second_prio(void)
 {
 	/* Check if we get the expected song FIND_ME. */
 	for (int i = 0; i < n_geiterams_notes; i++) {
-		int freq = m_geiterams[i].t;
-		ztest_returns_value(pwm_pin_set_usec, 0);
-		ztest_expect_value(pwm_pin_set_usec, pulse, freq / 2);
-		ztest_expect_value(pwm_pin_set_usec, period, freq);
-
-		/* Expect to set to 0 again. */
-		ztest_returns_value(pwm_pin_set_usec, 0);
-		ztest_expect_value(pwm_pin_set_usec, pulse, 0);
-		ztest_expect_value(pwm_pin_set_usec, period, 0);
+		mock_expect_pwm_hz(m_geiterams[i].t);
 	}
 
 	struct sound_event *ev = new_sound_event();
@@ -115,20 +184,13 @@ void test_priority_first_prio(void)
 {
 	/* Check if we get the expected song FIND_ME. */
 	for (int i = 0; i < n_geiterams_notes; i++) {
-		int freq = m_geiterams[i].t;
-		ztest_returns_value(pwm_pin_set_usec, 0);
-		ztest_expect_value(pwm_pin_set_usec, pulse, freq / 2);
-		ztest_expect_value(pwm_pin_set_usec, period, freq);
-
-		/* Expect to set to 0 again. */
-		ztest_returns_value(pwm_pin_set_usec, 0);
-		ztest_expect_value(pwm_pin_set_usec, pulse, 0);
-		ztest_expect_value(pwm_pin_set_usec, period, 0);
+		mock_expect_pwm_hz(m_geiterams[i].t);
 	}
 
 	struct sound_event *ev_find_me = new_sound_event();
 	ev_find_me->type = SND_FIND_ME;
 	EVENT_SUBMIT(ev_find_me);
+
 	struct sound_event *ev = new_sound_event();
 	ev->type = SND_PERSPELMANN;
 	EVENT_SUBMIT(ev);
@@ -166,6 +228,12 @@ void test_main(void)
 					       teardown_common),
 		ztest_unit_test_setup_teardown(test_perspelmann, setup_common,
 					       teardown_common),
+		ztest_unit_test_setup_teardown(test_find_me, setup_common,
+					       teardown_common),
+		ztest_unit_test_setup_teardown(test_setupmode, setup_common,
+					       teardown_common),
+		ztest_unit_test_setup_teardown(test_play_cattle, setup_common,
+					       teardown_common),
 		ztest_unit_test_setup_teardown(test_priority_second_prio,
 					       setup_common, teardown_common),
 		ztest_unit_test_setup_teardown(test_priority_first_prio,
@@ -188,6 +256,8 @@ static bool event_handler(const struct event_header *eh)
 			k_sem_give(&sound_idle_sem);
 		} else if (ev->status == SND_STATUS_PLAYING) {
 			k_sem_give(&sound_playing_sem);
+		} else if (ev->status == SND_STATUS_PLAYING_WARN) {
+			k_sem_give(&sound_playing_warn_sem);
 		} else if (ev->status == SND_STATUS_PLAYING_MAX) {
 			k_sem_give(&sound_playing_max_sem);
 		}

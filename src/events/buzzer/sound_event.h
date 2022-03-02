@@ -36,6 +36,7 @@ struct sound_event {
 enum sound_event_status_type {
 	SND_STATUS_IDLE,
 	SND_STATUS_PLAYING,
+	SND_STATUS_PLAYING_WARN,
 	/* EP can check if this enum is set in the sound status event. */
 	SND_STATUS_PLAYING_MAX
 };
