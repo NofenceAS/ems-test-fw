@@ -1,11 +1,11 @@
 import os
+import logging
 
 def flash(ocd, firmware_image):
     ocd.reset(halt=True)
     ocd.flash_write(firmware_image)
     ocd.flash_verify(firmware_image)
     ocd.resume()
-
 
 import bluefence
 
