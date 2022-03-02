@@ -120,6 +120,9 @@ add_subdirectory(src/modules/diagnostics)
 
 add_subdirectory(src/events/electric_pulse)
 add_subdirectory(src/modules/electric_pulse)
-add_subdirectory(src//drivers/nofence_modem_driver)
 add_subdirectory(src/modules/environment)
+
+if (CONFIG_MODEM_UBLOX_SARA_NF)
+        add_subdirectory(src/drivers/nofence_modem_driver)
+endif()
 
