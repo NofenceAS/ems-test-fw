@@ -36,6 +36,8 @@ firmware:
       - build/zephyr/merged.hex
       - build/zephyr/zephyr.elf
       - build/nf_version.sh
+    reports:
+      junit: twister-out/twister_report.xml
 
 # HW-in-the-loop
 hw-in-the-loop-basic:
