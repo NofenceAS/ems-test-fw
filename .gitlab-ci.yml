@@ -41,10 +41,7 @@ firmware:
 hw-in-the-loop-basic:
   stage: test
   script:
-    - printf "$CI_PROJECT_DIR"
-    - ls "$CI_PROJECT_DIR"
-    - printf "Waiting 20 secs"
-    - sleep 20
+    - python3 "$CI_PROJECT_DIR/tests-hw/nofence-tester/runner.py" x25_basic_test
   tags:
     - hw-in-the-loop-x25
 
