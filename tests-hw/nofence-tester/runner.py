@@ -33,9 +33,6 @@ dep = {}
 from ocd import OCD
 dep["ocd"] = OCD()
 
-from bluefence import BlueFence
-dep["ble"] = BlueFence()
-
 dep["buildpath"] = os.path.join(os.path.join(os.path.join(base_path, ".."), ".."), "build")
 
 # TODO - Create results
