@@ -147,6 +147,57 @@ class OCD:
         if not verified:
             raise Exception("Response does not indicate successful verification of image")
     
+    def _rtt_channel_parse(self, resp):
+        expecting_up_ch = False
+        expecting_dn_ch = False
+        for line in resp.splitlines():
+            print(line)
+            if line.startswith("Channels: "):
+                print("Channel start")
+                tmp = line.split(":")[1].split(",")
+
+                parts = tmp[0].strip(" ").split("=")
+                if not parts[0] == "up":
+                    raise Exception("Unexpected value while getting channel count")
+                self._rtt_ch_up_cnt = int(parts[1])
+
+                parts = tmp[1].strip(" ").split("=")
+                if not parts[0] == "down":
+                    raise Exception("Unexpected value while getting channel count")
+                self._rtt_ch_dn_cnt = int(parts[1])
+            elif line.startswith("Up-channels:"):
+                print("UP!")
+                expecting_up_ch = True
+                expecting_dn_ch = False
+            elif line.startswith("Down-channels:"):
+                print("DOWN!")
+                expecting_up_ch = False
+                expecting_dn_ch = True
+            elif expecting_up_ch:
+                print("UP mid!")
+                tmp = line.split(":")
+
+                ch = int(tmp[0])
+                if not ch in self._rtt.keys():
+                    self._rtt[ch] = {}
+
+                parts = tmp[1].strip(" ").split(" ")
+                self._rtt[ch]["up_name"] = parts[0]
+                self._rtt[ch]["up_size"] = int(parts[1])
+                self._rtt[ch]["up_flags"] = int(parts[2])
+            elif expecting_dn_ch:
+                print("DOWN mid!")
+                tmp = line.split(":")
+
+                ch = int(tmp[0])
+                if not ch in self._rtt.keys():
+                    self._rtt[ch] = {}
+
+                parts = tmp[1].strip(" ").split(" ")
+                self._rtt[ch]["dn_name"] = parts[0]
+                self._rtt[ch]["dn_size"] = int(parts[1])
+                self._rtt[ch]["dn_flags"] = int(parts[2])
+
     def rtt_prepare(self, timeout=10):
         cmd = "rtt setup 0x20000000 262144 \"SEGGER RTT\""
         error, result = self.send_cmd(cmd, timeout)
@@ -165,50 +216,8 @@ class OCD:
         logging.debug(result)
         if error:
             raise Exception("OpenOCD reported an error")
-
-        expecting_up_ch = False
-        expecting_dn_ch = False
-        for line in result.splitlines():
-            if line.startswith("Channel: "):
-                tmp = line.split(":")[1].split(",")
-
-                parts = tmp[0].strip(" ").split("=")
-                if not parts[0] == "up":
-                    raise Exception("Unexpected value while getting channel count")
-                self._rtt_ch_up_cnt = int(parts[1])
-
-                parts = tmp[1].strip(" ").split("=")
-                if not parts[0] == "down":
-                    raise Exception("Unexpected value while getting channel count")
-                self._rtt_ch_dn_cnt = int(parts[1])
-            elif line.startswith("Up-channels: "):
-                expecting_up_ch = True
-                expecting_dn_ch = False
-            elif line.startswith("Down-channels: "):
-                expecting_up_ch = False
-                expecting_dn_ch = True
-            elif expecting_up_ch:
-                tmp = line.split(":")
-
-                ch = int(tmp[0])
-                if not ch in self._rtt.keys():
-                    self._rtt[ch] = {}
-
-                parts = tmp[1].strip(" ").split(" ")
-                self._rtt[ch]["up_name"] = parts[0]
-                self._rtt[ch]["up_size"] = int(parts[1])
-                self._rtt[ch]["up_flags"] = int(parts[2])
-            elif expecting_up_ch:
-                tmp = line.split(":")
-
-                ch = int(tmp[0])
-                if not ch in self._rtt.keys():
-                    self._rtt[ch] = {}
-
-                parts = tmp[1].strip(" ").split(" ")
-                self._rtt[ch]["dn_name"] = parts[0]
-                self._rtt[ch]["dn_size"] = int(parts[1])
-                self._rtt[ch]["dn_flags"] = int(parts[2])
+        self._rtt_channel_parse(result)
+        
         logging.debug(self._rtt)
     
     def _rtt_resolve_channel(self, ch_name):
