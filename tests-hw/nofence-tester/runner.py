@@ -30,7 +30,7 @@ if not test_to_run:
 # Setup dependencies
 dep = {}
 
-import report
+from report import Report
 dep["report"] = Report("report.xml")
 
 from ocd import OCD
