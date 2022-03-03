@@ -10,6 +10,10 @@ class OCD:
     def __init__(self, board="X25"):
         self._board = board
 
+        self._rtt = {}
+        self._rtt_ch_up_cnt = 0
+        self._rtt_ch_dn_cnt = 0
+
         base_path = os.path.dirname(os.path.abspath(__file__))
         if self._board == "X25":
             self._config_file = os.path.join(base_path, "openocd_nrf52840.cfg")
@@ -25,10 +29,6 @@ class OCD:
                 raise Exception("Timed out")
 
         self._tn = Telnet('localhost', 4444)
-
-        self._rtt = {}
-        self._rtt_ch_up_cnt = 0
-        self._rtt_ch_dn_cnt = 0
 
         self.wait_for_start()
     
