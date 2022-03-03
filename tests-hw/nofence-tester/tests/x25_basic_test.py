@@ -54,7 +54,7 @@ def run(dep):
     testcase = report.start_testcase(testsuite, "BLE advertisement")
     try:
         ble_scan()
-        report.end_testcase(testcase)
+        #report.end_testcase(testcase)
     except Exception as e:
         report.end_testcase(testcase, fail_message="Test raised exception: " + str(e))
         logging.error("Test raised exception: " + str(e))
