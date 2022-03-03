@@ -18,6 +18,10 @@ config LOG_BLE_CONN_EVENT
 	bool "BLE connection event"
 	default y
 
+config LOG_BLE_CMD_EVENT
+	bool "BLE command event"
+	default y
+
 endmenu
 
 endif
