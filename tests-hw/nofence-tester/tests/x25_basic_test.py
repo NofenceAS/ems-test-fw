@@ -42,21 +42,21 @@ def run(dep):
     zephyr_path = os.path.join(build_path, "zephyr")
     combined_image = os.path.join(zephyr_path, "merged.hex")
 
-    report.start_testcase(testsuite, "Flash image")
+    testcase = report.start_testcase(testsuite, "Flash image")
     try:
         flash(ocd, combined_image)
-        report.end_testcase(testsuite)
+        report.end_testcase(testcase)
     except Exception as e:
-        report.end_testcase(testsuite, fail_message="Test raised exception: " + str(e))
+        report.end_testcase(testcase, fail_message="Test raised exception: " + str(e))
         logging.error("Test raised exception: " + str(e))
         return False
 
-    report.start_testcase(testsuite, "BLE advertisement")
+    testcase = report.start_testcase(testsuite, "BLE advertisement")
     try:
         ble_scan()
-        report.end_testcase(testsuite)
+        report.end_testcase(testcase)
     except Exception as e:
-        report.end_testcase(testsuite, fail_message="Test raised exception: " + str(e))
+        report.end_testcase(testcase, fail_message="Test raised exception: " + str(e))
         logging.error("Test raised exception: " + str(e))
         return False
 
