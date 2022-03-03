@@ -36,7 +36,7 @@ class OCD:
         for ch in self._rtt.keys():
             if "stream" in self._rtt[ch].keys():
                 if self._rtt[ch]["stream"]:
-                    self._rtt[ch].close()
+                    self._rtt[ch]["stream"].close()
         self._tn.close()
         self._o.close()
     
