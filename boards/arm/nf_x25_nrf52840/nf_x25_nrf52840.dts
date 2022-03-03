@@ -26,6 +26,18 @@
 		};
 	};
 
+	solar {
+		compatible = "nofence,solar-charge";
+		charge_dcdc: charge_dcdc {
+			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+			label = "CHARGE DCDC SWITCH";
+		};
+
+		charge_load: charge_load {
+			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+			label = "CHARGE LOAD SWITCH";
+		};
+	};
 	vbatt {
 		compatible = "voltage-divider";
 		io-channels = <&adc 1>;
@@ -33,11 +45,15 @@
 		full-ohms = <(5600000 + 10000000)>;
 	};
 	
+	
 	/* Convenience aliases */
 	aliases {
 		eeprom = &eeprom0;
 		ep-ctrl = &ep_ctrl;
 		ep-detect = &ep_detect;
+		charge-dcdc = &charge_dcdc;
+		charge-load = &charge_load;
+		charge-current = &adc;
 	};
 
 	chosen {
