@@ -46,6 +46,11 @@ hw-in-the-loop-basic:
     - python3 "$CI_PROJECT_DIR/tests-hw/nofence-tester/runner.py" x25_basic_test
   tags:
     - hw-in-the-loop-x25
+  artifacts:
+    name: "hwtest"
+    reports:
+      junit: report.xml
+
 
 # Firmware
 staging-firmware-deploy:

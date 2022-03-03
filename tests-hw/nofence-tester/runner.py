@@ -30,12 +30,14 @@ if not test_to_run:
 # Setup dependencies
 dep = {}
 
+import report
+dep["report"] = Report("report.xml")
+
 from ocd import OCD
 dep["ocd"] = OCD()
 
 dep["buildpath"] = os.path.join(os.path.join(os.path.join(base_path, ".."), ".."), "build")
 
-# TODO - Create results
 # Run test
 passed = True
 try:
@@ -44,7 +46,9 @@ except Exception as e:
     print(e)
     passed = False
 finally:
-    # Tear down dependencies
+    dep["report"].build_report()
+    del dep["report"]
+
     del dep["ocd"]
 
 if not passed:

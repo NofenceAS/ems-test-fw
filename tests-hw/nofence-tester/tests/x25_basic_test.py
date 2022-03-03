@@ -33,21 +33,30 @@ def ble_scan():
         raise Exception("Unexpected battery level in advertisement data!")
 
 def run(dep):
+    report = dep["report"]
+    testsuite = report.create_testsuite("x25_basic_test")
+
     ocd = dep["ocd"]
     build_path = dep["buildpath"]
 
     zephyr_path = os.path.join(build_path, "zephyr")
     combined_image = os.path.join(zephyr_path, "merged.hex")
 
+    report.start_testcase(testsuite, "Flash image")
     try:
         flash(ocd, combined_image)
+        report.end_testcase(testsuite)
     except Exception as e:
+        report.end_testcase(testsuite, fail_message="Test raised exception: " + str(e))
         logging.error("Test raised exception: " + str(e))
         return False
 
+    report.start_testcase(testsuite, "BLE advertisement")
     try:
         ble_scan()
+        report.end_testcase(testsuite)
     except Exception as e:
+        report.end_testcase(testsuite, fail_message="Test raised exception: " + str(e))
         logging.error("Test raised exception: " + str(e))
         return False
 
