@@ -34,8 +34,9 @@ class OCD:
     
     def __del__(self):
         for ch in self._rtt.keys():
-            if self._rtt[ch]["stream"]:
-                self._rtt[ch].close()
+            if "stream" in self._rtt[ch].keys():
+                if self._rtt[ch]["stream"]:
+                    self._rtt[ch].close()
         self._tn.close()
         self._o.close()
     
@@ -152,9 +153,7 @@ class OCD:
         expecting_up_ch = False
         expecting_dn_ch = False
         for line in resp.splitlines():
-            print(line)
             if line.startswith("Channels: "):
-                print("Channel start")
                 tmp = line.split(":")[1].split(",")
 
                 parts = tmp[0].strip(" ").split("=")
@@ -167,15 +166,12 @@ class OCD:
                     raise Exception("Unexpected value while getting channel count")
                 self._rtt_ch_dn_cnt = int(parts[1])
             elif line.startswith("Up-channels:"):
-                print("UP!")
                 expecting_up_ch = True
                 expecting_dn_ch = False
             elif line.startswith("Down-channels:"):
-                print("DOWN!")
                 expecting_up_ch = False
                 expecting_dn_ch = True
             elif expecting_up_ch:
-                print("UP mid!")
                 tmp = line.split(":")
                 if len(tmp) != 2:
                     continue
@@ -189,7 +185,6 @@ class OCD:
                 self._rtt[ch]["up_size"] = int(parts[1])
                 self._rtt[ch]["up_flags"] = int(parts[2])
             elif expecting_dn_ch:
-                print("DOWN mid!")
                 tmp = line.split(":")
                 if len(tmp) != 2:
                     continue
