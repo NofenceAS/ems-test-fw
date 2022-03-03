@@ -42,14 +42,18 @@ class Report:
         testcase["completed"] = True
     
     def build_report(self):
+        all_is_passed = True
+
         suites = []
         for suite in self._testsuites:
             cases = []
             for case in suite["cases"]:
                 t = TestCase(case["name"], elapsed_sec=case["elapsed"], timestamp=case["timestamp"].isoformat())
                 if not case["completed"]:
+                    all_is_passed = False
                     t.add_failure_info(message="Test not completed..")
                 elif case["fail_message"]:
+                    all_is_passed = False
                     t.add_failure_info(message=case["fail_message"], output=case["fail_output"])
                 cases.append(t)
 
@@ -57,3 +61,5 @@ class Report:
 
         self._f.write(TestSuite.to_xml_string(suites))
         self._f.close()
+    
+        return all_is_passed
