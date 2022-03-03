@@ -34,7 +34,8 @@ class OCD:
     
     def __del__(self):
         for ch in self._rtt.keys():
-            self._rtt[ch].close()
+            if self._rtt[ch]["stream"]:
+                self._rtt[ch].close()
         self._tn.close()
         self._o.close()
     
@@ -176,6 +177,8 @@ class OCD:
             elif expecting_up_ch:
                 print("UP mid!")
                 tmp = line.split(":")
+                if len(tmp) != 2:
+                    continue
 
                 ch = int(tmp[0])
                 if not ch in self._rtt.keys():
@@ -187,7 +190,8 @@ class OCD:
                 self._rtt[ch]["up_flags"] = int(parts[2])
             elif expecting_dn_ch:
                 print("DOWN mid!")
-                tmp = line.split(":")
+                tmp = line.split(":")if len(tmp) != 2:
+                    continue
 
                 ch = int(tmp[0])
                 if not ch in self._rtt.keys():
