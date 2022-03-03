@@ -1,4 +1,5 @@
 import os
+import time
 import logging
 
 def flash(ocd, firmware_image):
@@ -8,6 +9,9 @@ def flash(ocd, firmware_image):
     ocd.resume()
 
 def diagnostics_connect(ocd):
+    # Allow application to initialize diagnostics
+    time.sleep(2)
+
     ocd.rtt_prepare()
     # TODO - Check for channels
     # TODO - Connect to diagnostics channel
