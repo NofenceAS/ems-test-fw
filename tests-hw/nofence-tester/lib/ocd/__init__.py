@@ -190,7 +190,8 @@ class OCD:
                 self._rtt[ch]["up_flags"] = int(parts[2])
             elif expecting_dn_ch:
                 print("DOWN mid!")
-                tmp = line.split(":")if len(tmp) != 2:
+                tmp = line.split(":")
+                if len(tmp) != 2:
                     continue
 
                 ch = int(tmp[0])
