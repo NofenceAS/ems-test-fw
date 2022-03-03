@@ -7,6 +7,11 @@ def flash(ocd, firmware_image):
     ocd.flash_verify(firmware_image)
     ocd.resume()
 
+def diagnostics_connect(ocd):
+    ocd.rtt_prepare()
+    # TODO - Check for channels
+    # TODO - Connect to diagnostics channel
+
 import bluefence
 
 def ble_scan():
@@ -45,6 +50,15 @@ def run(dep):
     testcase = report.start_testcase(testsuite, "Flash image")
     try:
         flash(ocd, combined_image)
+        report.end_testcase(testcase)
+    except Exception as e:
+        report.end_testcase(testcase, fail_message="Test raised exception: " + str(e))
+        logging.error("Test raised exception: " + str(e))
+        return False
+        
+    testcase = report.start_testcase(testsuite, "Diagnostics connect")
+    try:
+        diagnostics_connect(ocd)
         report.end_testcase(testcase)
     except Exception as e:
         report.end_testcase(testcase, fail_message="Test raised exception: " + str(e))

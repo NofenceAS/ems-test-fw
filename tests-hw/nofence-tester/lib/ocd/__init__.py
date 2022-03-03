@@ -160,6 +160,20 @@ class OCD:
         if error:
             raise Exception("OpenOCD reported an error")
         
+        cmd = "rtt channels"
+        error, result = self.send_cmd(cmd, timeout)
+        logging.debug(result)
+
+        if error:
+            raise Exception("OpenOCD reported an error")
+        
+        cmd = "rtt channellist"
+        error, result = self.send_cmd(cmd, timeout)
+        logging.debug(result)
+
+        if error:
+            raise Exception("OpenOCD reported an error")
+        
     def rtt_connect(self, channel, port, timeout=10):
         cmd = "rtt server start " + str(port) + " " + str(channel)
         error, result = self.send_cmd(cmd, timeout)
