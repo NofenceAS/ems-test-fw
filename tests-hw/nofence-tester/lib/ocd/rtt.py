@@ -19,6 +19,9 @@ class RTT(threading.Thread):
 
         self.running = True
 
+        self.received_data = b""
+        self.lock = threading.Lock()
+
         self.start()
 
     def __del__(self):
@@ -29,11 +32,30 @@ class RTT(threading.Thread):
         self.join()
         self.s.close()
 
+    def write(self, data):
+        try:
+            self.s.send(data)
+        except:
+            pass
+    
+    def read(self):
+        self.lock.acquire()
+        data = self.received_data
+        self.received_data = b""
+        self.lock.release()
+
+    def _add_received_data(self, data):
+        self.lock.acquire()
+        self.received_data += data
+        self.lock.release()
+
     def run(self):
         while self.running:
             try:
                 data = self.s.recv(1024)
+
                 if len(data) > 0:
+                    self._add_received_data(data)
                     logging.debug(data.decode("utf-8"))
             except Exception as e:
                 time.sleep(0.01)

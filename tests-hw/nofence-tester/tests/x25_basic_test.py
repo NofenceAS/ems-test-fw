@@ -18,6 +18,14 @@ def diagnostics_connect(ocd):
     diag_stream = ocd.rtt_connect("DIAG_UP", 9090)
     return diag_stream
 
+def diagnostics_echo(diag_stream):
+    ECHO_DATA = "X2.5 says hello!"
+    diag_stream.write(ECHO_DATA)
+    time.sleep(0.5)
+    data = diag_stream.read()
+    if data != ECHO_DATA:
+        raise Exception("Received data does not match sent data")
+
 import bluefence
 
 def ble_scan():
@@ -53,6 +61,8 @@ def run(dep):
     zephyr_path = os.path.join(build_path, "zephyr")
     combined_image = os.path.join(zephyr_path, "merged.hex")
 
+    diag_stream = None
+
     testcase = report.start_testcase(testsuite, "Flash image")
     try:
         flash(ocd, combined_image)
@@ -61,10 +71,19 @@ def run(dep):
         report.end_testcase(testcase, fail_message="Test raised exception: " + str(e))
         logging.error("Test raised exception: " + str(e))
         return False
-        
+    
     testcase = report.start_testcase(testsuite, "Diagnostics connect")
     try:
-        diagnostics_connect(ocd)
+        diag_stream = diagnostics_connect(ocd)
+        report.end_testcase(testcase)
+    except Exception as e:
+        report.end_testcase(testcase, fail_message="Test raised exception: " + str(e))
+        logging.error("Test raised exception: " + str(e))
+        return False
+    
+    testcase = report.start_testcase(testsuite, "Diagnostics echo")
+    try:
+        diagnostics_echo(diag_stream)
         report.end_testcase(testcase)
     except Exception as e:
         report.end_testcase(testcase, fail_message="Test raised exception: " + str(e))
