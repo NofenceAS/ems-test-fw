@@ -46,7 +46,10 @@ except Exception as e:
     print(e)
     passed = False
 finally:
-    dep["report"].build_report()
+    report_passed = dep["report"].build_report()
+    if not report_passed:
+        passed = False
+        
     del dep["report"]
 
     del dep["ocd"]
