@@ -12,9 +12,11 @@ def diagnostics_connect(ocd):
     # Allow application to initialize diagnostics
     time.sleep(2)
 
+    # Start RTT and list channels
     ocd.rtt_prepare()
-    # TODO - Check for channels
-    # TODO - Connect to diagnostics channel
+    # Connect to diagnostics channel
+    diag_stream = ocd.rtt_connect("DIAG_UP", 9090)
+    return diag_stream
 
 import bluefence
 
