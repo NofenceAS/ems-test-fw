@@ -19,7 +19,7 @@ def diagnostics_connect(ocd):
     return diag_stream
 
 def diagnostics_echo(diag_stream):
-    ECHO_DATA = "X2.5 says hello!"
+    ECHO_DATA = b"X2.5 says hello!"
     diag_stream.write(ECHO_DATA)
     time.sleep(0.5)
     data = diag_stream.read()
