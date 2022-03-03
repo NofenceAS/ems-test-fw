@@ -43,6 +43,7 @@ class RTT(threading.Thread):
         data = self.received_data
         self.received_data = b""
         self.lock.release()
+        return data
 
     def _add_received_data(self, data):
         self.lock.acquire()
