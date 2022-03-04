@@ -3,27 +3,10 @@
 #include <device.h>
 #include <devicetree.h>
 
-struct data {
-};
-struct sockaddr {
-};
+static int gnss_set_data_cb(const struct device *, gnss_data_cb_t);
 
-uint8_t mock_cellular_controller_init();
+void simulate_new_gnss_data(const gnss_struct_t );
 
-uint8_t socket_receive(struct data *, char **);
+static int gnss_set_lastfix_cb(const struct device *, gnss_lastfix_cb_t);
 
-void stop_tcp(void);
-
-int8_t send_tcp(char *, size_t);
-
-int8_t socket_connect(struct data *, struct sockaddr *, size_t);
-
-int8_t lte_init(void);
-
-bool lte_is_ready(void);
-
-const struct device *bind_modem(void);
-
-int eep_read_host_port(char *, size_t);
-
-//int8_t cache_server_address(void);
+void simulate_new_gnss_last_fix(const gnss_last_fix_struct_t);

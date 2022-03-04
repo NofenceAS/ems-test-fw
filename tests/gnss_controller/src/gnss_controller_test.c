@@ -3,10 +3,9 @@
  */
 
 #include <ztest.h>
-#include "cellular_controller.h"
-#include "cellular_controller_events.h"
-#include "messaging_module_events.h"
-#include "mock_cellular_helpers.h"
+#include "gnss_controller.h"
+#include "gnss_controller_events.h"
+#include "mock_gnss.h"
 
 /* semaphores to check publishing of the cellular controller events. */
 static K_SEM_DEFINE(cellular_ack, 0, 1);
