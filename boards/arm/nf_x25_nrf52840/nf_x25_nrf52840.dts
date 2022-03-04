@@ -28,14 +28,14 @@
 
 	solar {
 		compatible = "nofence,solar-charge";
-		charge_dcdc: charge_dcdc {
+		charging_dcdc: charging_dcdc {
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
-			label = "CHARGE DCDC SWITCH";
+			label = "CHARGING DCDC SWITCH";
 		};
 
-		charge_load: charge_load {
+		charging_load: charging_load {
 			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
-			label = "CHARGE LOAD SWITCH";
+			label = "CHARGING LOAD SWITCH";
 		};
 	};
 	vbatt {
@@ -51,9 +51,9 @@
 		eeprom = &eeprom0;
 		ep-ctrl = &ep_ctrl;
 		ep-detect = &ep_detect;
-		charge-dcdc = &charge_dcdc;
-		charge-load = &charge_load;
-		charge-current = &adc;
+		charging-dcdc = &charging_dcdc;
+		charging-load = &charging_load;
+		charging-current = &adc;
 	};
 
 	chosen {
