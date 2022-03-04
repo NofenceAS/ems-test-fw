@@ -39,7 +39,7 @@ def send_diag_cmd(diag_stream, cmd):
 
                     logging.debug("COBS-data: " + str(enc))
                     resp = cobs.decode(enc)
-                    
+
                     logging.debug("Decoded data: " + str(resp))
                     got_resp = True
     return got_resp
@@ -56,8 +56,8 @@ def trigger_ep(diag_stream):
     
     # Release EP
     CMD_TRG_EP = b"N\x50"
-    if not send_diag_cmd(diag_stream, CMD_MAX_SND):
-        raise Exception("Failed sending CMD_MAX_SND")
+    if not send_diag_cmd(diag_stream, CMD_TRG_EP):
+        raise Exception("Failed sending CMD_TRG_EP")
 
 import bluefence
 
