@@ -31,8 +31,13 @@ def send_diag_cmd(diag_stream, cmd):
         if len(recv) > 0:
             data += recv
             if len(data) >= 5:
-                logging.debug(data)
-                got_resp = True
+                ind = data.find(b"\x00")
+                if ind >= 0:
+                    resp = cobs.decode(data[:ind])
+                    data = data[ind+1:]
+                    logging.debug("COBS-data: " + str(data))
+                    logging.debug("Decoded data: " + str(data))
+                    got_resp = True
     return got_resp
 
 def trigger_ep(diag_stream):
