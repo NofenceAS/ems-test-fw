@@ -5,6 +5,7 @@ Hardware in the loop testing is performed during the GitLab CI/CD pipeline.
 The test is designed to be run as a part of the GitLab CI/CD pipeline on a dedicated test runner. 
 
 Raspberry Pi is used as test runner. Other platforms could be used as long as the libraries required for the tests are supported. 
+
 TODO - Describe deployment of new runners.
 
 See .gitlab-ci.yml for configuration.

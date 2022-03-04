@@ -48,7 +48,7 @@ class Report:
         for suite in self._testsuites:
             cases = []
             for case in suite["cases"]:
-                t = TestCase(case["name"], elapsed_sec=case["elapsed"], timestamp=case["timestamp"].isoformat())
+                t = TestCase(case["name"], classname=suite["name"], elapsed_sec=case["elapsed"], timestamp=case["timestamp"].isoformat())
                 if not case["completed"]:
                     all_is_passed = False
                     t.add_failure_info(message="Test not completed..")
