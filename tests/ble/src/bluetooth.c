@@ -8,6 +8,7 @@
 #include "ble_ctrl_event.h"
 #include "ble_data_event.h"
 #include "ble_conn_event.h"
+#include "ble_beacon_event.h"
 
 #include "ble_controller.h"
 #include "event_manager.h"
@@ -24,6 +25,7 @@ static K_SEM_DEFINE(ble_collar_status_sem, 0, 1);
 static K_SEM_DEFINE(ble_fence_status_sem, 0, 1);
 static K_SEM_DEFINE(ble_pasture_status_sem, 0, 1);
 static K_SEM_DEFINE(ble_fence_def_ver_sem, 0, 1);
+static K_SEM_DEFINE(beacon_hysteresis_sem, 0, 1);
 
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
@@ -105,6 +107,9 @@ void test_ble_beacon_scanner(void)
 	int range2 = beacon_process_event(now_2, &addr_2, measured_rssi_2,
 					  &adv_data_2);
 	zassert_equal(range2, 1, "Shortest distance calculation is wrong");
+
+	int err = k_sem_take(&beacon_hysteresis_sem, K_SECONDS(5));
+	zassert_equal(err, 0, "Test beacon event execution hanged.");
 }
 
 void test_ble_connection(void)
@@ -377,7 +382,21 @@ static bool event_handler(const struct event_header *eh)
 		}
 		return false;
 	}
-
+	if (is_ble_beacon_event(eh)) {
+		const struct ble_beacon_event *event =
+			cast_ble_beacon_event(eh);
+		switch (event->status) {
+		case BEACON_STATUS_REGION_NEAR:
+			printk("Beacon status region near detected\n");
+			k_sem_give(&beacon_hysteresis_sem);
+			break;
+		case BEACON_STATUS_REGION_FAR:
+			break;
+		case BEACON_STATUS_NOT_FOUND:
+			break;
+		}
+		return false;
+	}
 	zassert_true(false, "Wrong event type received");
 	return false;
 }
@@ -385,4 +404,5 @@ static bool event_handler(const struct event_header *eh)
 EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, ble_data_event);
 EVENT_SUBSCRIBE(test_main, ble_conn_event);
+EVENT_SUBSCRIBE(test_main, ble_beacon_event);
 EVENT_SUBSCRIBE_FINAL(test_main, ble_ctrl_event);
