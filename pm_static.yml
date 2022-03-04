@@ -6,10 +6,14 @@ log_partition:
   address: 0x0
   region: external_flash
   size: 0x80000
-ano_partition:
+ano_partition_a:
   address: 0x80000
   region: external_flash
-  size: 0x20000
+  size: 0x10000
+ano_partition_b:
+  address: 0x90000
+  region: external_flash
+  size: 0x10000
 pasture_partition:
   address: 0xA0000
   region: external_flash
