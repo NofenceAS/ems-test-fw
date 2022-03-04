@@ -30,7 +30,7 @@ def send_diag_cmd(diag_stream, cmd):
         recv = diag_stream.read()
         if len(recv) > 0:
             data += recv
-            if len(data) >= 4:
+            if len(data) >= 5:
                 logging.debug(data)
                 got_resp = True
     return got_resp
