@@ -110,7 +110,7 @@ def run(dep):
     
     testcase = report.start_testcase(testsuite, "Trigger EP")
     try:
-        diagnostics_echo(diag_stream)
+        trigger_ep(diag_stream)
         report.end_testcase(testcase)
     except Exception as e:
         report.end_testcase(testcase, fail_message="Test raised exception: " + str(e))
