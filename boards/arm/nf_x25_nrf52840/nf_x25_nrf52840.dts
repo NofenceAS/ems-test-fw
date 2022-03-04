@@ -21,20 +21,14 @@
 		};
 
 		ep_detect: ep_detect {
-			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 			label = "EP DETECT";
 		};
 	};
 
-	vbatt {
-		compatible = "voltage-divider";
-		io-channels = <&adc 1>;
-		output-ohms = <5600000>;
-		full-ohms = <(5600000 + 10000000)>;
-	};
-	
 	/* Convenience aliases */
 	aliases {
+		gnss = &gnss;
 		eeprom = &eeprom0;
 		ep-ctrl = &ep_ctrl;
 		ep-detect = &ep_detect;
@@ -44,7 +38,6 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
-		nordic,pm-ext-flash = &mx25u64;
 	};
 
 	gnss_flash_pwr: periph-pwr-ctrl {
@@ -89,14 +82,20 @@ modem_uart: &uart0 {
 	};
 };
 
-/* FOR u-blox MIA-M10 GNSS */
+/* u-blox MIA-M10 GNSS */
 gnss_uart: &uart1 {
 	compatible = "nordic,nrf-uarte";
-	current-speed = <115200>;
+	current-speed = <38400>;
 	status = "okay";
 	tx-pin = <6>; /* P0.06 */
 	rx-pin = <7>; /* P0.07 */
-	/* TODO: Add driver spesific gpios */
+	gnss: mia_m10 {
+		compatible = "u-blox,mia-m10";
+		label = "ublox-mia-m10";
+		status = "okay";
+		
+		pps-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+	};
 	/* vin-supply = <&gnss_flash_pwr>; */
 };
 

@@ -10,10 +10,10 @@
 #include "fw_upgrade.h"
 #include "nf_eeprom.h"
 #include "ble_controller.h"
-#include "ep_module.h"
+//#include "ep_module.h"
 #include "amc_handler.h"
 #include "nf_eeprom.h"
-#include "pwr_module.h"
+//#include "pwr_module.h"
 
 #include "storage.h"
 #include "nf_version.h"
@@ -31,12 +31,13 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
  */
 void main(void)
 {
+	int err;
 	LOG_INF("Starting Nofence application...");
-	int err = stg_init_storage_controller();
-	if (err) {
-		LOG_ERR("Could not initialize storage controller, %i", err);
-		return;
-	}
+//	int err = stg_init_storage_controller();
+//	if (err) {
+//		LOG_ERR("Could not initialize storage controller, %i", err);
+//		return;
+//	}
 
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
@@ -73,21 +74,21 @@ void main(void)
 			err);
 	}
 	/* Initialize the electric pulse module. */
-	if (ep_module_init()) {
-		LOG_ERR("Could not initialize electric pulse module");
-	}
-	/* Initialize the power manager module. */
-	if (pwr_module_init()) {
-		LOG_ERR("Could not initialize the power module");
-	}
+//	if (ep_module_init()) {
+//		LOG_ERR("Could not initialize electric pulse module");
+//	}
+//	/* Initialize the power manager module. */
+//	if (pwr_module_init()) {
+//		LOG_ERR("Could not initialize the power module");
+//	}
 	/* Initialize animal monitor control module, depends on storage
 	 * controller to be initialized first since amc sends
 	 * a request for pasture data on init. 
 	 */
-	err = amc_module_init();
-	if (err) {
-		LOG_ERR("Could not initialize AMC module. %d", err);
-	}
+//	err = amc_module_init();
+//	if (err) {
+//		LOG_ERR("Could not initialize AMC module. %d", err);
+//	}
 
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,

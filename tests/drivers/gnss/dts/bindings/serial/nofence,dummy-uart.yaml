@@ -1,0 +1,5 @@
+description: Mocked UART device
+
+compatible: "nofence,mock-uart"
+
+include: uart-controller.yaml
