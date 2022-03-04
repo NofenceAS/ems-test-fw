@@ -113,6 +113,9 @@ add_subdirectory(src/modules/amc)
 add_subdirectory(src/modules/cellular_controller)
 add_subdirectory(src/modules/buzzer)
 
+add_subdirectory(src/modules/power_manager)
+add_subdirectory(src/events/power_manager)
+
 add_subdirectory(src/events/messaging)
 add_subdirectory(src/modules/messaging)
 add_subdirectory(src/modules/diagnostics)

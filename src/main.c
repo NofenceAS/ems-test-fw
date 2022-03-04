@@ -15,6 +15,7 @@
 #include "amc_handler.h"
 #include "nf_eeprom.h"
 #include "buzzer.h"
+#include "pwr_module.h"
 
 #include "storage.h"
 #include "nf_version.h"
@@ -78,6 +79,12 @@ void main(void)
 	err = ep_module_init();
 	if (err) {
 		LOG_ERR("Could not initialize electric pulse module. %d", err);
+	}
+
+	/* Initialize the power manager module. */
+	err = pwr_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize the power module %i", err);
 	}
 
 	err = buzzer_module_init();
