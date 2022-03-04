@@ -36,10 +36,16 @@ def send_diag_cmd(diag_stream, cmd):
     return got_resp
 
 def trigger_ep(diag_stream):
+    # EP can not be released before k_uptime_get() returns > MINIMUM_TIME_BETWEEN_BURST
+    # Delay for 5 sec
+    time.sleep(5.0)
+
+    # Send max sound event to allow EP
     CMD_MAX_SND = b"N\x20"
     if not send_diag_cmd(diag_stream, CMD_MAX_SND):
         raise Exception("Failed sending CMD_MAX_SND")
     
+    # Release EP
     CMD_TRG_EP = b"N\x50"
     if not send_diag_cmd(diag_stream, CMD_MAX_SND):
         raise Exception("Failed sending CMD_MAX_SND")
