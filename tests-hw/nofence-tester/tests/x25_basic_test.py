@@ -18,13 +18,31 @@ def diagnostics_connect(ocd):
     diag_stream = ocd.rtt_connect("DIAG_UP", 9090)
     return diag_stream
 
-def diagnostics_echo(diag_stream):
-    ECHO_DATA = b"X2.5 says hello!"
-    diag_stream.write(ECHO_DATA)
-    time.sleep(0.5)
-    data = diag_stream.read()
-    if data != ECHO_DATA:
-        raise Exception("Received data does not match sent data")
+from cobs import cobs
+
+def send_diag_cmd(diag_stream, cmd):
+    diag_stream.write(cobs.encode(cmd) + b"\x00")
+
+    start_time = time.time()
+    got_resp = False
+    data = b""
+    while (not got_resp) and ((time.time()-start_time) < 0.5):
+        recv = diag_stream.read()
+        if len(recv) > 0:
+            data += recv
+            if len(data) >= 4:
+                logging.debug(data)
+                got_resp = True
+    return got_resp
+
+def trigger_ep(diag_stream):
+    CMD_MAX_SND = b"N\x20"
+    if not send_diag_cmd(diag_stream, CMD_MAX_SND):
+        raise Exception("Failed sending CMD_MAX_SND")
+    
+    CMD_TRG_EP = b"N\x50"
+    if not send_diag_cmd(diag_stream, CMD_MAX_SND):
+        raise Exception("Failed sending CMD_MAX_SND")
 
 import bluefence
 
@@ -80,19 +98,19 @@ def run(dep):
         report.end_testcase(testcase, fail_message="Test raised exception: " + str(e))
         logging.error("Test raised exception: " + str(e))
         return False
-    
-    testcase = report.start_testcase(testsuite, "Diagnostics echo")
+
+    testcase = report.start_testcase(testsuite, "BLE advertisement")
     try:
-        diagnostics_echo(diag_stream)
+        ble_scan()
         report.end_testcase(testcase)
     except Exception as e:
         report.end_testcase(testcase, fail_message="Test raised exception: " + str(e))
         logging.error("Test raised exception: " + str(e))
         return False
-
-    testcase = report.start_testcase(testsuite, "BLE advertisement")
+    
+    testcase = report.start_testcase(testsuite, "Trigger EP")
     try:
-        ble_scan()
+        diagnostics_echo(diag_stream)
         report.end_testcase(testcase)
     except Exception as e:
         report.end_testcase(testcase, fail_message="Test raised exception: " + str(e))
