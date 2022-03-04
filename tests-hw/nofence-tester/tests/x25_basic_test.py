@@ -30,13 +30,17 @@ def send_diag_cmd(diag_stream, cmd):
         recv = diag_stream.read()
         if len(recv) > 0:
             data += recv
+            logging.debug("Raw-data: " + str(data))
             if len(data) >= 5:
                 ind = data.find(b"\x00")
                 if ind >= 0:
-                    resp = cobs.decode(data[:ind])
+                    enc = data[:ind]
                     data = data[ind+1:]
-                    logging.debug("COBS-data: " + str(data))
-                    logging.debug("Decoded data: " + str(data))
+
+                    logging.debug("COBS-data: " + str(enc))
+                    resp = cobs.decode(enc)
+                    
+                    logging.debug("Decoded data: " + str(resp))
                     got_resp = True
     return got_resp
 
