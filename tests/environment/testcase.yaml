@@ -1,0 +1,4 @@
+tests:
+  env_sensor.test:
+    platform_allow: native_posix
+    tags: event_manager

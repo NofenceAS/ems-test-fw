@@ -11,7 +11,14 @@
 /** @brief Enum for defining the modules that can publish to this event. 
  *         Will be used by error handler module to perform the correct actions.
  */
-enum error_sender_module { ERR_SENDER_FW_UPGRADE = 0, ERR_ELECTRIC_PULSE = 1 };
+enum error_sender_module {
+	ERR_SENDER_FW_UPGRADE = 0,
+	ERR_SENDER_AMC = 1,
+	ERR_SENDER_STORAGE_CONTROLLER = 2,
+	ERR_SENDER_ENV_SENSOR = 3,
+	ERR_ELECTRIC_PULSE = 4,
+	ERR_PWR_MODULE = 5
+};
 
 /**
  * @brief Registers a fatal error caused by some module/logic that must
