@@ -1,5 +1,5 @@
 #include <event_manager.h>
-#include "gnss.h"
+#include "../../drivers/gnss/zephyr/gnss.h"
 
 /** @brief GNSS data rate. */
 enum gnss_data_rate {
