@@ -5,13 +5,8 @@
 / {
 	aliases {
 		gnss = &gnss;
-		gnssuart = &gnssuart;
 	};
-};
-
-gnssuart: &uart0 {
-
-	gnss {
+	gnss: mockgnss {
 		compatible = "nofence,mock-gnss";
 		label = "nofence-mock-gnss";
 		status = "okay";

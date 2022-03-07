@@ -28,6 +28,7 @@ FILE(GLOB app_sources
         src/*.c
         mock/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/gnss_controller/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/error_event.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/gnss_controller/*.c
         )
 target_sources(app PRIVATE ${app_sources})

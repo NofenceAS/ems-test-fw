@@ -1,5 +1,5 @@
 
-if(CONFIG_SERIAL_MOCK)
+if(CONFIG_GNSS_MOCK)
 	zephyr_include_directories(.)
 
 	zephyr_library()
