@@ -70,7 +70,6 @@ typedef struct {
 	uint8_t num_sv;
 	uint16_t h_dop;
 	int16_t height;
-	int16_t baro_height;
 	uint32_t msss;
 	uint8_t gps_mode;
 } gnss_last_fix_struct_t;
