@@ -311,7 +311,7 @@ uint32_t ublox_parse(uint8_t* data, uint32_t size)
 	ublox_process_message(msg_class, 
 			      msg_id, 
 			      &data[UBLOX_OFFS_PAYLOAD],
-			      payload_length) != 0);
+			      payload_length);
 
 	return packet_length;
 }
