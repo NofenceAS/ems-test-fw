@@ -49,8 +49,7 @@ int read_callback_pasture(uint8_t *data, size_t len)
 
 void test_pasture(void)
 {
-	zassert_equal(stg_write_to_partition(STG_PARTITION_PASTURE,
-					     (uint8_t *)dummy_fence,
+	zassert_equal(stg_write_pasture_data((uint8_t *)dummy_fence,
 					     dummy_fence_len),
 		      0, "Write pasture error.");
 	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0,
@@ -60,8 +59,7 @@ void test_pasture(void)
 void test_pasture_extended_write_read(void)
 {
 	for (int i = 0; i < 5; i++) {
-		zassert_equal(stg_write_to_partition(STG_PARTITION_PASTURE,
-						     (uint8_t *)dummy_fence,
+		zassert_equal(stg_write_pasture_data((uint8_t *)dummy_fence,
 						     dummy_fence_len),
 			      0, "Write pasture error.");
 	}
@@ -71,8 +69,7 @@ void test_pasture_extended_write_read(void)
 
 void test_reboot_persistent_pasture(void)
 {
-	zassert_equal(stg_write_to_partition(STG_PARTITION_PASTURE,
-					     (uint8_t *)dummy_fence,
+	zassert_equal(stg_write_pasture_data((uint8_t *)dummy_fence,
 					     dummy_fence_len),
 		      0, "Write pasture error.");
 
@@ -91,8 +88,7 @@ void test_reboot_persistent_pasture(void)
  */
 void test_request_pasture_multiple(void)
 {
-	zassert_equal(stg_write_to_partition(STG_PARTITION_PASTURE,
-					     (uint8_t *)dummy_fence,
+	zassert_equal(stg_write_pasture_data((uint8_t *)dummy_fence,
 					     dummy_fence_len),
 		      0, "Write pasture error.");
 

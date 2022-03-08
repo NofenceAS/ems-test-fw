@@ -28,9 +28,8 @@ int read_callback_ano(uint8_t *data, size_t len)
 
 void test_ano(void)
 {
-	zassert_equal(stg_write_to_partition(STG_PARTITION_ANO,
-					     (uint8_t *)&dummy_ano,
-					     dummy_ano_len),
+	zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano, dummy_ano_len,
+					 true),
 		      0, "Write ano error.");
 	zassert_equal(stg_read_ano_data(read_callback_ano), 0,
 		      "Read ano error.");
@@ -38,10 +37,12 @@ void test_ano(void)
 
 void test_ano_extended_write_read(void)
 {
+	zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano, dummy_ano_len,
+					 true),
+		      0, "Write ano error.");
 	for (int i = 0; i < 5; i++) {
-		zassert_equal(stg_write_to_partition(STG_PARTITION_ANO,
-						     (uint8_t *)&dummy_ano,
-						     dummy_ano_len),
+		zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano,
+						 dummy_ano_len, false),
 			      0, "Write ano error.");
 	}
 	zassert_equal(stg_read_ano_data(read_callback_ano), 0,
@@ -50,9 +51,8 @@ void test_ano_extended_write_read(void)
 
 void test_reboot_persistent_ano(void)
 {
-	zassert_equal(stg_write_to_partition(STG_PARTITION_ANO,
-					     (uint8_t *)&dummy_ano,
-					     dummy_ano_len),
+	zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano, dummy_ano_len,
+					 true),
 		      0, "Write ano error.");
 
 	/* Reset FCB, pretending to reboot. Checks if persistent storage
@@ -70,10 +70,14 @@ void test_reboot_persistent_ano(void)
  */
 void test_request_ano_multiple(void)
 {
-	zassert_equal(stg_write_to_partition(STG_PARTITION_ANO,
-					     (uint8_t *)&dummy_ano,
-					     dummy_ano_len),
+	zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano, dummy_ano_len,
+					 true),
 		      0, "Write ano error.");
+	for (int i = 0; i < 5; i++) {
+		zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano,
+						 dummy_ano_len, false),
+			      0, "Write ano error.");
+	}
 
 	zassert_equal(stg_read_ano_data(read_callback_ano), 0,
 		      "Read ano error.");

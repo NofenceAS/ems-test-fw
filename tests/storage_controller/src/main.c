@@ -4,7 +4,7 @@
 
 #include <ztest.h>
 #include "storage.h"
-#include "pasture_event.h"
+#include "storage_event.h"
 #include "storage_helper.h"
 
 #include "error_event.h"

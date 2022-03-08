@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 2021 Nofence AS
+ * Copyright (c) 2022 Nofence AS
  */
 
-#ifndef _STROAGE_EVENT_H_
-#define _STROAGE_EVENT_H_
+#ifndef _STORAGE_EVENT_H_
+#define _STORAGE_EVENT_H_
 
 #include "event_manager.h"
 #include <zephyr.h>
@@ -14,4 +14,4 @@ struct request_flash_erase_event {
 
 EVENT_TYPE_DECLARE(request_flash_erase_event);
 
-#endif /* _PWR_EVENT_H_ */
+#endif /* _STORAGE_EVENT_H_ */

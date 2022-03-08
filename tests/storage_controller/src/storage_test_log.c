@@ -10,7 +10,14 @@
 #include "pm_config.h"
 #include <stdlib.h>
 
-log_rec_t dummy_log = { .header.len = 4, .buf = { 0xDE, 0xAD, 0xBE, 0xEF } };
+log_rec_t dummy_log = { .seq_1.has_usBatteryVoltage = true,
+			.seq_1.usBatteryVoltage = 3300,
+
+			.seq_2.has_bme280 = true,
+			.seq_2.bme280.ulHumidity = 40,
+			.seq_2.bme280.ulPressure = 105,
+			.seq_2.bme280.ulTemperature = 25 };
+
 size_t dummy_log_len = sizeof(log_rec_t);
 
 int read_callback_log(uint8_t *data, size_t len)
@@ -31,9 +38,7 @@ int read_callback_multiple_log(uint8_t *data, size_t len)
 
 void test_log(void)
 {
-	zassert_equal(stg_write_to_partition(STG_PARTITION_LOG,
-					     (uint8_t *)&dummy_log,
-					     dummy_log_len),
+	zassert_equal(stg_write_log_data((uint8_t *)&dummy_log, dummy_log_len),
 		      0, "Write log error.");
 	zassert_equal(stg_read_log_data(read_callback_log), 0,
 		      "Read log error.");
@@ -42,9 +47,8 @@ void test_log(void)
 void test_log_extended(void)
 {
 	for (int i = 0; i < expected_log_entries; i++) {
-		zassert_equal(stg_write_to_partition(STG_PARTITION_LOG,
-						     (uint8_t *)&dummy_log,
-						     dummy_log_len),
+		zassert_equal(stg_write_log_data((uint8_t *)&dummy_log,
+						 dummy_log_len),
 			      0, "Write log error.");
 	}
 	zassert_equal(stg_read_log_data(read_callback_multiple_log), 0,
@@ -54,9 +58,7 @@ void test_log_extended(void)
 
 void test_reboot_persistent_log(void)
 {
-	zassert_equal(stg_write_to_partition(STG_PARTITION_LOG,
-					     (uint8_t *)&dummy_log,
-					     dummy_log_len),
+	zassert_equal(stg_write_log_data((uint8_t *)&dummy_log, dummy_log_len),
 		      0, "Write log error.");
 
 	/* Reset FCB, pretending to reboot. Checks if persistent storage
