@@ -66,9 +66,10 @@ endmenu
 menu "PWR Module"
 rsource "src/modules/power_manager/Kconfig"
 endmenu
+
 menu "CELLULAR_CONTROLLER"
 rsource "src/modules/cellular_controller/Kconfig"
-endmenu # CELLULAR_CONTROLLER
+endmenu
 
 menu "Zephyr Kernel"
 source "Kconfig.zephyr" 
@@ -78,3 +79,6 @@ menu "Nofence-modem-driver"
 rsource "src/drivers/nofence_modem_driver/Kconfig"
 endmenu
 
+menu "GNSS_CONTROLLER"
+rsource "src/modules/gnss_controller/Kconfig"
+endmenu

@@ -58,7 +58,7 @@ static inline void submit_app_status(enum error_sender_module sender,
 	}
 
 	/* If not part of the ENUMs. */
-	if (sender < 0 || sender > ERR_ELECTRIC_PULSE) {
+	if (sender < 0 || sender > GPS_CONTROLLER) {
 		return;
 	}
 

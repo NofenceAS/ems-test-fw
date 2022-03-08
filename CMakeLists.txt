@@ -97,6 +97,8 @@ zephyr_library_include_directories(
   	src/events/environment
 	src/modules/cellular_controller
         src/events/cellular_controller
+        src/modules/gnss_controller
+        src/events/gnss_controller
         ${PROJECT_BINARY_DIR}/include/generated/)
         
 target_sources(app PRIVATE ${APP_MAIN}
@@ -117,6 +119,10 @@ add_subdirectory(src/events/power_manager)
 
 add_subdirectory(src/events/messaging)
 add_subdirectory(src/modules/messaging)
+
+add_subdirectory(src/events/gnss_controller)
+add_subdirectory(src/modules/gnss_controller)
+
 add_subdirectory(src/modules/diagnostics)
 
 add_subdirectory(src/events/electric_pulse)
