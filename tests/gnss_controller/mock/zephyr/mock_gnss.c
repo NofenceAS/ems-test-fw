@@ -11,7 +11,7 @@ static int mock_gnss_set_data_cb(const struct device *dev, gnss_data_cb_t
 {
 	ARG_UNUSED(dev);
 	data_cb = gnss_data_cb;
-	return 0;
+	return ztest_get_return_value();
 }
 
 static int mock_gnss_set_lastfix_cb(const struct device *dev, gnss_lastfix_cb_t
@@ -19,7 +19,7 @@ static int mock_gnss_set_lastfix_cb(const struct device *dev, gnss_lastfix_cb_t
 {
 	ARG_UNUSED(dev);
 	lastfix_cb = gnss_lastfix_cb;
-	return 0;
+	return ztest_get_return_value();
 }
 
 void simulate_new_gnss_last_fix(const gnss_last_fix_struct_t gnss_fix){
