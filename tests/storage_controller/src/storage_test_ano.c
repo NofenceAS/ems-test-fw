@@ -13,11 +13,12 @@
 #include "pm_config.h"
 #include <stdlib.h>
 
-ano_rec_t dummy_ano = { .header.len = 4,
-			.header.ID = 1,
-			.header.tag = 128,
-			.buf = { 0xDE, 0xAD, 0xBE, 0xEF } };
-size_t dummy_ano_len = sizeof(ano_rec_t);
+#include "UBX.h"
+
+UBX_MGA_ANO_RAW_t dummy_ano = { .mga_ano.year = 22,
+				.mga_ano.month = 3,
+				.mga_ano.day = 9 };
+size_t dummy_ano_len = sizeof(UBX_MGA_ANO_RAW_t);
 
 int read_callback_ano(uint8_t *data, size_t len)
 {
