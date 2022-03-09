@@ -5,6 +5,7 @@
 
 config MODEM_UBLOX_SARA_NF
 	bool "Enable u-blox SARA modem driver"
+	select MODEM
 	select MODEM_CONTEXT
 	select MODEM_CMD_HANDLER
 	select MODEM_IFACE_UART
