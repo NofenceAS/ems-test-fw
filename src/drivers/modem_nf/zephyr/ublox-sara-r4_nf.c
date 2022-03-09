@@ -2219,10 +2219,20 @@ static int modem_init(const struct device *dev)
 	k_work_init_delayable(&mdata.rssi_query_work, modem_rssi_query_work);
 #endif
 
+#if defined(CONFIG_MODEM_UBLOX_INIT_RESET)
 	modem_reset();
+#endif
 
 error:
 	return ret;
+}
+
+int modem_nf_reset(void)
+{
+	/* TODO - Implement error checking in modem_reset */
+	modem_reset();
+
+	return 0;
 }
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL,

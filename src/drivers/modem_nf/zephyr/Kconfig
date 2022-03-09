@@ -18,6 +18,10 @@ config MODEM_UBLOX_SARA_NF
 
 if MODEM_UBLOX_SARA_NF
 
+config MODEM_UBLOX_INIT_RESET
+	bool "Perform reset during initialization of driver"
+	default y
+
 choice MODEM_UBLOX_SARA_VARIANT
 	bool "u-blox SARA variant selection"
 	default MODEM_UBLOX_SARA_R4
