@@ -24,10 +24,9 @@ void test_reboot_persistent_log(void);
 void test_no_log_available(void);
 
 /* Ano tests. */
-void test_ano(void);
-void test_ano_extended_write_read(void);
-void test_reboot_persistent_ano(void);
-void test_request_ano_multiple(void);
+void test_ano_write_20_years(void);
+void test_ano_write_sent(void);
 void test_no_ano_available(void);
+void test_ano_write_all(void);
 
 #endif /* _STORAGE_HELPER_H_ */
