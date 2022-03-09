@@ -37,7 +37,7 @@ EVENT_TYPE_DECLARE(new_gnss_data);
 /** @brief Set GNSS receiver data update rate. */
 struct gnss_rate {
 	struct event_header header;
-	enum gnss_data_rate rate;
+	uint16_t rate;
 };
 
 EVENT_TYPE_DECLARE(gnss_rate);

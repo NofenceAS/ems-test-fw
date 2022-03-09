@@ -20,6 +20,7 @@ void test_init_ok(void)
 
 	ztest_returns_value(mock_gnss_set_data_cb, 0);
 	ztest_returns_value(mock_gnss_set_lastfix_cb, 0);
+	ztest_returns_value(mock_gnss_setup, 0);
 	int8_t err = gnss_controller_init();
 
 	zassert_equal(err, 0, "Gnss controller initialization incomplete!");
@@ -40,6 +41,19 @@ void test_init_fails2(void)
 {
 	ztest_returns_value(mock_gnss_set_data_cb, 0);
 	ztest_returns_value(mock_gnss_set_lastfix_cb, -1);
+	int8_t ret = gnss_controller_init();
+	int8_t err = k_sem_take(&error, K_MSEC(100));
+	zassert_equal(err, 0,
+		      "Expected error event was not published!");
+	zassert_equal(ret, -1, "Gnss controller initialization "
+			       "incomplete!");
+}
+
+void test_init_fails3(void)
+{
+	ztest_returns_value(mock_gnss_set_data_cb, 0);
+	ztest_returns_value(mock_gnss_set_lastfix_cb, 0);
+	ztest_returns_value(mock_gnss_setup, -1);
 	int8_t ret = gnss_controller_init();
 	int8_t err = k_sem_take(&error, K_MSEC(100));
 	zassert_equal(err, 0,
@@ -249,7 +263,8 @@ void test_main(void)
 		ztest_unit_test(test_publish_event_with_gnss_data_callback),
 		ztest_unit_test(test_publish_event_with_gnss_last_fix_callback),
 		ztest_unit_test(test_init_fails1),
-		ztest_unit_test(test_init_fails2));
+		ztest_unit_test(test_init_fails2),
+		ztest_unit_test(test_init_fails3));
 
 	ztest_run_test_suite(gnss_controller_tests);
 }
