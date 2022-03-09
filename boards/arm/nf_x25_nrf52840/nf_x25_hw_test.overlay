@@ -10,7 +10,10 @@
 };
 
 &uart1 {
-    status = "disabled";
+    status = "okay";
+    mia_m10 {
+        status = "disabled";
+    };
 };
 /*
 &spi0 {
