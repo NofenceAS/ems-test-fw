@@ -46,7 +46,8 @@ void test_main(void)
 	ztest_test_suite(storage_log_test, ztest_unit_test(test_log),
 			 ztest_unit_test(test_reboot_persistent_log),
 			 ztest_unit_test(test_log_extended),
-			 ztest_unit_test(test_no_log_available));
+			 ztest_unit_test(test_no_log_available),
+			 ztest_unit_test(test_log_after_reboot));
 	ztest_run_test_suite(storage_log_test);
 
 	/* Test ano partition. */

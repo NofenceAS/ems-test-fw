@@ -83,3 +83,42 @@ void test_no_log_available(void)
 	zassert_equal(stg_read_log_data(read_callback_log, 0), -ENODATA,
 		      "Read log should return -ENODATA.");
 }
+
+/** @brief Checks if it remembers the entries being read before.
+ */
+void test_log_after_reboot(void)
+{
+	/* Clear partition. */
+	zassert_equal(stg_clear_partition(STG_PARTITION_LOG), 0, "");
+
+	/* Write 10 entries. */
+	for (int i = 0; i < 10; i++) {
+		zassert_equal(stg_write_log_data((uint8_t *)&dummy_log,
+						 dummy_log_len),
+			      0, "Write log error.");
+	}
+
+	/* Read and expect 4. */
+	num_multiple_log_reads = 0;
+	zassert_equal(stg_read_log_data(read_callback_multiple_log, 4), 0, "");
+	zassert_equal(num_multiple_log_reads, 4, "");
+
+	/* Simulate reboot. */
+	int err = stg_fcb_reset_and_init();
+	zassert_equal(err, 0, "Error simulating reboot and FCB resets.");
+
+	/* Read and expect the remaining 6 entries since we should remember we
+	 * read 4 out of 10 entries already. 
+	 */
+	num_multiple_log_reads = 0;
+	zassert_equal(stg_read_log_data(read_callback_multiple_log, 0), 0, "");
+	zassert_equal(num_multiple_log_reads, 6, "");
+
+	/* Simulate reboot. */
+	err = stg_fcb_reset_and_init();
+	zassert_equal(err, 0, "Error simulating reboot and FCB resets.");
+
+	/* We should now have 0 entries remaining, should return -ENODATA. */
+	zassert_equal(stg_read_log_data(read_callback_multiple_log, 0),
+		      -ENODATA, "");
+}

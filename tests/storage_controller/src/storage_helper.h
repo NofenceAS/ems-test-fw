@@ -22,6 +22,7 @@ void test_log(void);
 void test_log_extended(void);
 void test_reboot_persistent_log(void);
 void test_no_log_available(void);
+void test_log_after_reboot(void);
 
 /* Ano tests. */
 void test_ano_write_20_years(void);
