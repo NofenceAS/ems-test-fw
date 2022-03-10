@@ -12,6 +12,7 @@ config MODEM_UBLOX_SARA_NF
 	select MODEM_SOCKET
 	select NET_OFFLOAD
 	select NET_SOCKETS_OFFLOAD
+	select DEVICE_POWER_MANAGEMENT
 	help
 	  Choose this setting to enable u-blox SARA-R4 LTE-CatM1/NB-IoT modem
 	  driver.

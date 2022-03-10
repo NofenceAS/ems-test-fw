@@ -10,6 +10,7 @@
 #include "fw_upgrade.h"
 #include "nf_eeprom.h"
 #include "ble_controller.h"
+#include "cellular_controller.h"
 #include "ep_module.h"
 #include "amc_handler.h"
 #include "nf_eeprom.h"
@@ -87,6 +88,11 @@ void main(void)
 	err = amc_module_init();
 	if (err) {
 		LOG_ERR("Could not initialize AMC module. %d", err);
+	}
+
+	err = cellular_controller_init();
+	if (err) {
+		LOG_ERR("Could not initialize cellular module. %d", err);
 	}
 
 	/* Once EVERYTHING is initialized correctly and we get connection to
