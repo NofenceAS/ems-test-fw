@@ -98,7 +98,7 @@ void test_log_after_reboot(void)
 			      0, "Write log error.");
 	}
 
-	/* Read and expect 4. */
+	/* Read and expect 4 entries. */
 	num_multiple_log_reads = 0;
 	zassert_equal(stg_read_log_data(read_callback_multiple_log, 4), 0, "");
 	zassert_equal(num_multiple_log_reads, 4, "");
@@ -107,18 +107,21 @@ void test_log_after_reboot(void)
 	int err = stg_fcb_reset_and_init();
 	zassert_equal(err, 0, "Error simulating reboot and FCB resets.");
 
-	/* Read and expect the remaining 6 entries since we should remember we
-	 * read 4 out of 10 entries already. 
-	 */
+	/* We know the pointer is not persistent, so we still expect 10 entries. */
 	num_multiple_log_reads = 0;
 	zassert_equal(stg_read_log_data(read_callback_multiple_log, 0), 0, "");
-	zassert_equal(num_multiple_log_reads, 6, "");
+	zassert_equal(num_multiple_log_reads, 10, "");
+
+	/* We're done reading, erase contents since we're done with it. */
+	zassert_equal(stg_clear_partition(STG_PARTITION_LOG), 0, "");
 
 	/* Simulate reboot. */
 	err = stg_fcb_reset_and_init();
 	zassert_equal(err, 0, "Error simulating reboot and FCB resets.");
 
-	/* We should now have 0 entries remaining, should return -ENODATA. */
+	/* We should now have 0 entries remaining due to clear fcb
+	 * partition. Should return -ENODATA. 
+	 */
 	zassert_equal(stg_read_log_data(read_callback_multiple_log, 0),
 		      -ENODATA, "");
 }
