@@ -57,7 +57,8 @@ void test_main(void)
 			 ztest_unit_test(test_ano_write_20_years),
 			 ztest_unit_test(test_ano_write_sent),
 			 ztest_unit_test(test_ano_write_all),
-			 ztest_unit_test(test_no_ano_available));
+			 ztest_unit_test(test_no_ano_available),
+			 ztest_unit_test(test_reboot_persistent_ano));
 	ztest_run_test_suite(storage_ano_test);
 
 	/* Test pasture partition. */

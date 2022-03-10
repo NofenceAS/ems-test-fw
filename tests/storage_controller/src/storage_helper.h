@@ -31,5 +31,6 @@ void test_ano_write_20_years(void);
 void test_ano_write_sent(void);
 void test_no_ano_available(void);
 void test_ano_write_all(void);
+void test_reboot_persistent_ano(void);
 
 #endif /* _STORAGE_HELPER_H_ */

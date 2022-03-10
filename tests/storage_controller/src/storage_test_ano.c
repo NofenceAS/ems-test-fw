@@ -133,24 +133,26 @@ void test_ano_write_all(void)
 		      "Read ano error.");
 }
 
-//void test_reboot_persistent_ano(void)
-//{
-//	zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano, dummy_ano_len),
-//		      0, "Write ano error.");
-//
-//	/* Reset FCB, pretending to reboot. Checks if persistent storage
-//	 * works. Should get the expected read value from the written one above.
-//	 */
-//	int err = stg_fcb_reset_and_init();
-//	zassert_equal(err, 0, "Error simulating reboot and FCB resets.");
-//
-//	zassert_equal(stg_read_ano_data(read_callback_ano, ANO_READ_ALL), 0,
-//		      "Read ano error.");
-//}
-//
-///** @brief Test to check that the fcb_offset_last_n function works
-// *         if there have been no writes between the requests.
-// */
+void test_reboot_persistent_ano(void)
+{
+	zassert_equal(stg_clear_partition(STG_PARTITION_ANO), 0, "");
+	dummy_ano.mga_ano.year = 22;
+	zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano, dummy_ano_len),
+		      0, "Write ano error.");
+
+	/* Reset FCB, pretending to reboot. Checks if persistent storage
+	 * works. Should get the expected read value from the written one above.
+	 */
+	int err = stg_fcb_reset_and_init();
+	zassert_equal(err, 0, "Error simulating reboot and FCB resets.");
+
+	zassert_equal(stg_read_ano_data(read_callback_ano, true, 0), 0,
+		      "Read ano error.");
+}
+
+/** @brief Test to check that the fcb_offset_last_n function works
+ *         if there have been no writes between the requests.
+ */
 void test_no_ano_available(void)
 {
 	/* Clear partition. */
