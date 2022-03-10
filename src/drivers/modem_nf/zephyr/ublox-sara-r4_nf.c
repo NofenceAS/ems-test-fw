@@ -1035,7 +1035,7 @@ static int pin_init(bool power_off, bool force_off)
 		uint32_t loop_count = 0;
 		while (modem_has_power()) {
 			if (loop_count++ >= 300) {
-				LOG_ERR("Modem power did not turn off in time!");
+				LOG_ERR("Modem power not turned off in time!");
 				ret = -ETIME;
 				goto exit;
 			}
@@ -1055,7 +1055,7 @@ static int pin_init(bool power_off, bool force_off)
 		uint32_t loop_count = 0;
 		while (!modem_has_power()) {
 			if (loop_count++ >= 300) {
-				LOG_ERR("Modem power did not turn on in time!");
+				LOG_ERR("Modem power not turned on in time!");
 				ret = -ETIME;
 				goto exit;
 			}

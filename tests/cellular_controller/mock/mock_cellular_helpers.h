@@ -12,6 +12,8 @@ uint8_t mock_cellular_controller_init();
 
 uint8_t socket_receive(struct data *, char **);
 
+int reset_modem(void);
+
 void stop_tcp(void);
 
 int8_t send_tcp(char *, size_t);

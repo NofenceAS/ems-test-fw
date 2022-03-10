@@ -18,11 +18,14 @@ void test_init(void)
 {
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
-	ztest_returns_value(lte_init, 1);
-	ztest_returns_value(lte_is_ready, true);
+	ztest_returns_value(reset_modem, 0);
+	ztest_returns_value(lte_init, 0);
 	ztest_returns_value(eep_read_host_port, 0);
 	ztest_returns_value(socket_connect, 0);
 	int8_t err = cellular_controller_init();
+	while (!cellular_controller_is_connected()) {
+		k_sleep(K_MSEC(100));
+	}
 	zassert_equal(err, 0, "Cellular controller initialization incomplete!");
 }
 
@@ -94,13 +97,13 @@ void test_gsm_device_not_ready(void)
 
 void test_socket_connect_fails(void)
 {
-	ztest_returns_value(lte_init, 1);
-	ztest_returns_value(lte_is_ready, true);
+	ztest_returns_value(reset_modem, 0);
+	ztest_returns_value(lte_init, 0);
 	ztest_returns_value(eep_read_host_port, 0);
 	ztest_returns_value(socket_connect, -1);
 
 	int8_t err = cellular_controller_init();
-	zassert_not_equal(err, 0,
+	zassert_equal(err, 0,
 			  "Cellular controller initialization "
 			  "incomplete!");
 	err = k_sem_take(&cellular_error, K_SECONDS(1));
