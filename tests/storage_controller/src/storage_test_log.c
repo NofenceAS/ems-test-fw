@@ -84,6 +84,33 @@ void test_no_log_available(void)
 		      "Read log should return -ENODATA.");
 }
 
+/** @brief Test to see nothing happens and we get no error if we try to clear
+ *         an empty fcb.
+ */
+void test_double_clear(void)
+{
+	/* Clear partition. */
+	zassert_equal(stg_clear_partition(STG_PARTITION_LOG), 0, "");
+	zassert_equal(stg_clear_partition(STG_PARTITION_LOG), 0, "");
+}
+
+void test_rotate_handling(void)
+{
+	/* Write entries greater than partition size. */
+	uint32_t num_entries = (PM_LOG_PARTITION_SIZE / sizeof(log_rec_t)) + 1;
+	for (int i = 0; i < num_entries; i++) {
+		zassert_equal(stg_write_log_data((uint8_t *)&dummy_log,
+						 dummy_log_len),
+			      0, "Write log error.");
+	}
+
+	uint32_t expected_entries = get_num_entries(STG_PARTITION_LOG);
+	num_multiple_log_reads = 0;
+
+	zassert_equal(stg_read_log_data(read_callback_multiple_log, 0), 0, "");
+	zassert_equal(num_multiple_log_reads, expected_entries, "");
+}
+
 /** @brief Checks if it remembers the entries being read before.
  */
 void test_log_after_reboot(void)

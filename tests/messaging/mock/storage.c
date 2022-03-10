@@ -45,3 +45,13 @@ int stg_write_pasture_data(uint8_t *data, size_t len)
 {
 	return ztest_get_return_value();
 }
+
+uint32_t get_num_entries(flash_partition_t partition)
+{
+	return ztest_get_return_value();
+}
+
+bool stg_log_pointing_to_last()
+{
+	return ztest_get_return_value();
+}

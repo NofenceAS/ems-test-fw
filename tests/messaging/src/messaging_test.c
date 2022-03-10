@@ -178,6 +178,9 @@ void test_poll_response_has_new_fence(void)
 void test_poll_response_has_host_address(void)
 {
 	ztest_returns_value(stg_read_log_data, 0);
+	ztest_returns_value(stg_log_pointing_to_last, true);
+	ztest_returns_value(stg_clear_partition, 0);
+
 	//	messaging_module_init();
 	char dummy_host[] = "111.222.333.4444:12345";
 	//	NofenceMessage decode;
