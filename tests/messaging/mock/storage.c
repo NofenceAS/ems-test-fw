@@ -16,17 +16,17 @@ int stg_fcb_reset_and_init()
 	return ztest_get_return_value();
 }
 
-int stg_read_log_data(stg_read_cb cb)
+int stg_read_log_data(fcb_read_cb cb, uint16_t num_entries)
 {
 	return ztest_get_return_value();
 }
 
-int stg_read_ano_data(stg_read_cb cb)
+int stg_read_ano_data(fcb_read_cb cb, uint16_t num_entries)
 {
 	return ztest_get_return_value();
 }
 
-int stg_read_pasture_data(stg_read_cb cb)
+int stg_read_pasture_data(fcb_read_cb cb)
 {
 	return ztest_get_return_value();
 }

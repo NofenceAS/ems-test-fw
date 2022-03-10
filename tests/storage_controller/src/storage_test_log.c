@@ -40,7 +40,7 @@ void test_log(void)
 {
 	zassert_equal(stg_write_log_data((uint8_t *)&dummy_log, dummy_log_len),
 		      0, "Write log error.");
-	zassert_equal(stg_read_log_data(read_callback_log), 0,
+	zassert_equal(stg_read_log_data(read_callback_log, 0), 0,
 		      "Read log error.");
 }
 
@@ -51,7 +51,7 @@ void test_log_extended(void)
 						 dummy_log_len),
 			      0, "Write log error.");
 	}
-	zassert_equal(stg_read_log_data(read_callback_multiple_log), 0,
+	zassert_equal(stg_read_log_data(read_callback_multiple_log, 0), 0,
 		      "Read log error.");
 	zassert_equal(num_multiple_log_reads, expected_log_entries, "");
 }
@@ -67,7 +67,7 @@ void test_reboot_persistent_log(void)
 	int err = stg_fcb_reset_and_init();
 	zassert_equal(err, 0, "Error simulating reboot and FCB resets.");
 
-	zassert_equal(stg_read_log_data(read_callback_log), 0,
+	zassert_equal(stg_read_log_data(read_callback_log, 0), 0,
 		      "Read log error.");
 }
 
@@ -80,6 +80,6 @@ void test_no_log_available(void)
 	zassert_equal(stg_clear_partition(STG_PARTITION_LOG), 0, "");
 
 	/* Read. */
-	zassert_equal(stg_read_log_data(read_callback_log), -ENODATA,
+	zassert_equal(stg_read_log_data(read_callback_log, 0), -ENODATA,
 		      "Read log should return -ENODATA.");
 }

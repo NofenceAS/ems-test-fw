@@ -19,6 +19,7 @@ FILE(GLOB app_sources
         mock/*.c 
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/storage/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/fcb_ext/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging/*.c
@@ -31,6 +32,7 @@ zephyr_library_include_directories(
   mock/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/fcb_ext
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/storage
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging

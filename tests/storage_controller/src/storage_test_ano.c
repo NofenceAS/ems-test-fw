@@ -66,7 +66,7 @@ void test_ano_write_20_years(void)
 
 	dummy_ano.mga_ano.year = 0;
 
-	zassert_equal(stg_read_ano_data(read_callback_inc_years, false), 0,
+	zassert_equal(stg_read_ano_data(read_callback_inc_years, false, 0), 0,
 		      "Read ano error.");
 }
 
@@ -88,7 +88,7 @@ void test_ano_write_sent(void)
 
 	dummy_ano.mga_ano.year = 0;
 
-	zassert_equal(stg_read_ano_data(read_callback_inc_years, false), 0,
+	zassert_equal(stg_read_ano_data(read_callback_inc_years, false, 0), 0,
 		      "Read ano error.");
 
 	/* Continue to write where it left off. */
@@ -102,7 +102,7 @@ void test_ano_write_sent(void)
 
 	/* We now expect us to read from 10 to 20, not 0 to 20. */
 	dummy_ano.mga_ano.year = 10;
-	zassert_equal(stg_read_ano_data(read_callback_inc_years, false), 0,
+	zassert_equal(stg_read_ano_data(read_callback_inc_years, false, 0), 0,
 		      "Read ano error.");
 }
 
@@ -129,7 +129,7 @@ void test_ano_write_all(void)
 
 	dummy_ano.mga_ano.year = 0;
 
-	zassert_equal(stg_read_ano_data(read_callback_valid_years, true), 0,
+	zassert_equal(stg_read_ano_data(read_callback_valid_years, true, 0), 0,
 		      "Read ano error.");
 }
 
@@ -157,6 +157,6 @@ void test_no_ano_available(void)
 	zassert_equal(stg_clear_partition(STG_PARTITION_ANO), 0, "");
 
 	/* Read. */
-	zassert_equal(stg_read_ano_data(read_callback_ano, ANO_READ_ALL),
-		      -ENODATA, "Read ano should return -ENODATA.");
+	zassert_equal(stg_read_ano_data(read_callback_ano, false, 0), -ENODATA,
+		      "Read ano should return -ENODATA.");
 }
