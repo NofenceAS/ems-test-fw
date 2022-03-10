@@ -109,6 +109,19 @@ void test_rotate_handling(void)
 
 	zassert_equal(stg_read_log_data(read_callback_multiple_log, 0), 0, "");
 	zassert_equal(num_multiple_log_reads, expected_entries, "");
+
+	/* Write 50 times since we know we have to rotate once. */
+	for (int i = 0; i < 50; i++) {
+		zassert_equal(stg_write_log_data((uint8_t *)&dummy_log,
+						 dummy_log_len),
+			      0, "Write log error.");
+	}
+
+	expected_entries = 50;
+	num_multiple_log_reads = 0;
+
+	zassert_equal(stg_read_log_data(read_callback_multiple_log, 0), 0, "");
+	zassert_equal(num_multiple_log_reads, expected_entries, "");
 }
 
 /** @brief Checks if it remembers the entries being read before.
