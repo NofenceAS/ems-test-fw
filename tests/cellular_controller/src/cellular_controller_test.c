@@ -32,23 +32,8 @@ void test_publish_event_with_a_received_msg(void) /* happy scenario - msg
  * received from server is pushed to messaging module! */
 {
 	received = 30;
-	struct messaging_proto_out_event *test_msgIn =
-		new_messaging_proto_out_event();
-	test_msgIn->buf = dummy_test_msg;
-	test_msgIn->len = sizeof(dummy_test_msg);
-	EVENT_SUBMIT(test_msgIn);
-
-	ztest_returns_value(socket_connect, 0);
-	ztest_returns_value(send_tcp, 0);
-	/* TODO: we don't receive unless a message has been sent, change? */
 	ztest_returns_value(socket_receive, received);
-	int8_t err = k_sem_take(&cellular_ack, K_SECONDS(1));
-	zassert_equal(err, 0,
-		      "Expected cellular_ack event was not "
-		      "published ");
-
-	err = k_sem_take(&cellular_proto_in, K_SECONDS(1));
-
+	int8_t err = k_sem_take(&cellular_proto_in, K_SECONDS(1));
 	zassert_equal(err, 0,
 		      "Expected cellular_proto_in event was not "
 		      "published ");
@@ -56,17 +41,11 @@ void test_publish_event_with_a_received_msg(void) /* happy scenario - msg
 
 void test_ack_from_messaging_module_missed(void)
 {
+	test_init();
 	test_publish_event_with_a_received_msg(); /* first transaction */
-
-	struct messaging_proto_out_event *test_msgIn =
-		new_messaging_proto_out_event();
-	test_msgIn->buf = dummy_test_msg;
-	test_msgIn->len = sizeof(dummy_test_msg);
-
-	EVENT_SUBMIT(test_msgIn);
-	ztest_returns_value(socket_connect, 0);
-	ztest_returns_value(send_tcp, sizeof(dummy_test_msg));
+	received = 15;
 	ztest_returns_value(socket_receive, received);
+	ztest_returns_value(socket_receive, -1);
 
 	int8_t err = k_sem_take(&cellular_error, K_SECONDS(1));
 	zassert_equal(err, 0,
@@ -82,14 +61,15 @@ void test_ack_from_messaging_module_missed(void)
 void test_gsm_device_not_ready(void)
 {
 	simulate_modem_down = true;
-	int8_t err = k_sem_take(&cellular_error, K_SECONDS(1));
-	zassert_equal(err, 0,
-		      "Expected cellular_error event was not"
-		      " published on modem down!");
-	err = cellular_controller_init();
+
+	int8_t err = cellular_controller_init();
 	zassert_not_equal(err, 0,
 			  "Cellular controller initialization "
 			  "incomplete!");
+	err = k_sem_take(&cellular_error, K_SECONDS(1));
+	zassert_equal(err, 0,
+		      "Expected cellular_error event was not"
+		      " published on modem down!");
 }
 
 void test_socket_connect_fails(void)
@@ -113,20 +93,8 @@ void test_socket_rcv_fails(void)
 {
 	test_init();
 	received = -1;
-	struct messaging_proto_out_event *test_msgIn =
-		new_messaging_proto_out_event();
-	test_msgIn->buf = dummy_test_msg;
-	test_msgIn->len = sizeof(dummy_test_msg);
-	EVENT_SUBMIT(test_msgIn);
-
-	ztest_returns_value(socket_connect, 0);
-	ztest_returns_value(send_tcp, 0);
-	ztest_returns_value(socket_receive, -1);
-	int8_t err = k_sem_take(&cellular_ack, K_SECONDS(1));
-	zassert_equal(err, 0,
-		      "Expected cellular_ack event was not"
-		      "published ");
-	err = k_sem_take(&cellular_error, K_SECONDS(1));
+	ztest_returns_value(socket_receive, received);
+	int8_t err = k_sem_take(&cellular_error, K_SECONDS(1));
 	zassert_equal(err, 0,
 		      "Expected cellular_error event was not"
 		      " published on receive error!");
@@ -138,11 +106,9 @@ void test_socket_send_fails(void)
 	received = 10;
 	struct messaging_proto_out_event *test_msgIn =
 		new_messaging_proto_out_event();
-	test_msgIn->buf = dummy_test_msg;
+	test_msgIn->buf = &dummy_test_msg[0];
 	test_msgIn->len = sizeof(dummy_test_msg);
 	EVENT_SUBMIT(test_msgIn);
-
-	ztest_returns_value(socket_connect, 0);
 	ztest_returns_value(send_tcp, -1);
 	int8_t err = k_sem_take(&cellular_ack, K_SECONDS(1));
 	zassert_equal(err, 0,
@@ -154,25 +120,6 @@ void test_socket_send_fails(void)
 		      " published on send error!");
 }
 
-void test_socket_reconnect_fails(void)
-{
-	test_init();
-	received = -1;
-	struct messaging_proto_out_event *test_msgIn =
-		new_messaging_proto_out_event();
-	test_msgIn->buf = dummy_test_msg;
-	test_msgIn->len = sizeof(dummy_test_msg);
-	EVENT_SUBMIT(test_msgIn);
-
-	ztest_returns_value(socket_connect, -1);
-	int8_t err = k_sem_take(&cellular_ack, K_SECONDS(1));
-	zassert_equal(err, 0, "Expected cellular_ack event was not published ");
-	err = k_sem_take(&cellular_error, K_SECONDS(1));
-	zassert_equal(err, 0,
-		      "Expected cellular_error event was not"
-		      " published on socket connect error!");
-}
-
 void test_main(void)
 {
 	ztest_test_suite(
@@ -182,7 +129,6 @@ void test_main(void)
 		ztest_unit_test(test_ack_from_messaging_module_missed),
 		ztest_unit_test(test_socket_rcv_fails),
 		ztest_unit_test(test_socket_send_fails),
-		ztest_unit_test(test_socket_reconnect_fails),
 		ztest_unit_test(test_gsm_device_not_ready));
 
 	ztest_run_test_suite(cellular_controller_tests);

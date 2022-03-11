@@ -15,6 +15,9 @@
 #include "nf_eeprom.h"
 #include "pwr_module.h"
 
+#include "messaging.h"
+#include "cellular_controller.h"
+
 #include "storage.h"
 #include "nf_version.h"
 
@@ -40,8 +43,7 @@ void main(void)
 
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
-		const struct device *eeprom_dev =
-			DEVICE_DT_GET(DT_ALIAS(eeprom));
+	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
 	if (eeprom_dev == NULL) {
 		LOG_ERR("No EEPROM detected!");
 	}
@@ -88,6 +90,10 @@ void main(void)
 	if (err) {
 		LOG_ERR("Could not initialize AMC module. %d", err);
 	}
+
+	cellular_controller_init();
+
+	messaging_module_init();
 
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,
