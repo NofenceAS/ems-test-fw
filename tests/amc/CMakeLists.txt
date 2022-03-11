@@ -19,6 +19,7 @@ FILE(GLOB app_sources
         mock/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/amc/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/amc/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/amc/lib/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging/*.c
@@ -31,6 +32,7 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/mock
   ${CMAKE_CURRENT_SOURCE_DIR}/../../include/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/amc/
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/amc/lib/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/amc
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler
