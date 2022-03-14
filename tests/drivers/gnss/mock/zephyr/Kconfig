@@ -1,0 +1,6 @@
+config SERIAL_MOCK
+	bool "Force support for interrupt driven UART"
+	select SERIAL
+	select SERIAL_SUPPORT_INTERRUPT
+	select UART_INTERRUPT_DRIVEN
+	default y
