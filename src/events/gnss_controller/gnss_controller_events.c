@@ -29,3 +29,8 @@ EVENT_TYPE_DEFINE(gnss_set_mode,
 		  true,
 		  NULL,
 		  NULL);
+
+EVENT_TYPE_DEFINE(gnss_no_zone,
+		  true,
+		  NULL,
+		  NULL);
