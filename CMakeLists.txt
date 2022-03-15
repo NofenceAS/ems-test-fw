@@ -35,6 +35,7 @@ list(APPEND ZEPHYR_EXTRA_MODULES
 
 list(APPEND ZEPHYR_EXTRA_MODULES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/collar_protocol
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/drivers/gnss
         )
 
 
@@ -96,6 +97,8 @@ zephyr_library_include_directories(
   	src/events/environment
 	src/modules/cellular_controller
         src/events/cellular_controller
+        src/modules/gnss_controller
+        src/events/gnss_controller
         ${PROJECT_BINARY_DIR}/include/generated/)
         
 target_sources(app PRIVATE ${APP_MAIN}
@@ -106,20 +109,26 @@ target_sources(app PRIVATE ${APP_MAIN}
 add_subdirectory(src/events/ble)
 add_subdirectory(src/modules/ble)
 add_subdirectory(src/modules/fw_upgrade)
-#add_subdirectory(src/modules/storage_controller)
+add_subdirectory(src/modules/storage_controller)
 add_subdirectory(src/eeprom)
-#add_subdirectory(src/modules/amc)
+add_subdirectory(src/modules/amc)
 add_subdirectory(src/modules/cellular_controller)
 
-#add_subdirectory(src/modules/power_manager)
-#add_subdirectory(src/events/power_manager)
+add_subdirectory(src/modules/power_manager)
+add_subdirectory(src/events/power_manager)
 
 add_subdirectory(src/events/messaging)
 add_subdirectory(src/modules/messaging)
+
+add_subdirectory(src/events/gnss_controller)
+add_subdirectory(src/modules/gnss_controller)
+
 add_subdirectory(src/modules/diagnostics)
 
-#add_subdirectory(src/events/electric_pulse)
-#add_subdirectory(src/modules/electric_pulse)
-add_subdirectory(src//drivers/nofence_modem_driver)
+add_subdirectory(src/events/electric_pulse)
+add_subdirectory(src/modules/electric_pulse)
 add_subdirectory(src/modules/environment)
-add_subdirectory(src/modules/gnss_controller)
+
+if (CONFIG_MODEM_UBLOX_SARA_NF)
+        add_subdirectory(src//drivers/nofence_modem_driver)
+endif()

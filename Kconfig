@@ -71,10 +71,6 @@ menu "CELLULAR_CONTROLLER"
 rsource "src/modules/cellular_controller/Kconfig"
 endmenu
 
-menu "GNSS_CONTROLLER"
-rsource "src/modules/gnss_controller/Kconfig"
-endmenu
-
 menu "Zephyr Kernel"
 source "Kconfig.zephyr" 
 endmenu
@@ -83,3 +79,6 @@ menu "Nofence-modem-driver"
 rsource "src/drivers/nofence_modem_driver/Kconfig"
 endmenu
 
+menu "GNSS_CONTROLLER"
+rsource "src/modules/gnss_controller/Kconfig"
+endmenu
