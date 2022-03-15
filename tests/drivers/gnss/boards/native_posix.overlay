@@ -1,0 +1,19 @@
+/* Copyright (c) 2020 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		gnss = &gnss;
+		gnssuart = &gnssuart;
+	};
+};
+
+gnssuart: &uart0 {
+	compatible = "nofence,mock-uart";
+	gnss: mia_m10 {
+		compatible = "u-blox,mia-m10";
+		label = "ublox-mia-m10";
+		status = "okay";
+	};
+};
