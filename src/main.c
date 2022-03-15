@@ -19,7 +19,7 @@
 #include "nf_version.h"
 
 #include "env_sensor_event.h"
-
+#include "gnss_controller.h"
 #define MODULE main
 #include "module_state_event.h"
 
@@ -95,6 +95,7 @@ void main(void)
 	 * it will revert to the previous version on the next reboot that occurs.
 	 */
 	mark_new_application_as_valid();
+	gnss_controller_init();
 
 	LOG_INF("Booted application firmware version %i, and marked it as valid.",
 		NF_X25_VERSION_NUMBER);

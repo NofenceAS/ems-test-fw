@@ -123,8 +123,6 @@ static int mia_m10_sync_complete(uint32_t flag)
 				gnss_lastfix.h_dop = gnss_data.h_dop;
 				gnss_lastfix.num_sv = gnss_data.num_sv;
 				gnss_lastfix.height = gnss_data.height;
-				/* TODO - Barometer data here?! */
-				gnss_lastfix.baro_height = 0;
 				
 				gnss_lastfix.msss = gnss_data.msss;
 

@@ -12,17 +12,16 @@ typedef struct {
 
 	/** Corrected position.*/
 	int16_t x;
-
 	/** Corrected position.*/
 	int16_t y;
 
 	/** Set if overflow because of too far away from origin position.*/
 	uint8_t overflow;
 
-	/** Height above ellipsoid [mm].*/
+	/** Height above ellipsoid [dm].*/
 	int16_t height;
 
-	/** Ground speed 2-D [mm/s]*/
+	/** 2-D speed [cm/s]*/
 	uint16_t speed;
 
 	/** Movement direction (-18000 to 18000 Hundred-deg).*/
@@ -31,10 +30,10 @@ typedef struct {
 	/** Horizontal dilution of precision.*/
 	uint16_t h_dop;
 
-	/** Horizontal Accuracy Estimate [mm].*/
+	/** Horizontal Accuracy Estimate [DM].*/
 	uint16_t h_acc_dm;
 
-	/** Vertical Accuracy Estimate [mm].*/
+	/** Vertical Accuracy Estimate [DM].*/
 	uint16_t v_acc_dm;
 
 	/** Heading accuracy estimate [Hundred-deg].*/
@@ -71,7 +70,6 @@ typedef struct {
 	uint8_t num_sv;
 	uint16_t h_dop;
 	int16_t height;
-	int16_t baro_height;
 	uint32_t msss;
 	uint8_t gps_mode;
 } gnss_last_fix_struct_t;

@@ -176,7 +176,6 @@ static uint16_t ublox_calculate_checksum(uint8_t* data, uint16_t length)
 static int ublox_process_message(uint8_t msg_class, uint8_t msg_id, 
 				 uint8_t* payload, uint16_t length)
 {
-	//LOG_ERR("Process U-blox Message: %d, %d", class, id);
 	uint16_t msg_identifier = UBLOX_MSG_IDENTIFIER(msg_class, msg_id);
 	
 	if (k_mutex_lock(&cmd_mutex, K_MSEC(10)) == 0) {
@@ -235,7 +234,6 @@ static int ublox_process_message(uint8_t msg_class, uint8_t msg_id,
 	int ret = ublox_resolve_handler(msg_class, msg_id, &handler);
 	if (ret == 0)
 	{
-		//LOG_ERR("Calling handler");
 		ret = handler->handle(handler->context, payload, length);
 	}
 
@@ -302,7 +300,6 @@ uint32_t ublox_parse(uint8_t* data, uint32_t size)
 
 	if (!ublox_is_checksum_correct(data, payload_length)) {
 		/* Wrong checksum, ignore data */
-		//LOG_ERR("Checksum failed");
 		return packet_length;
 	}
 
@@ -311,12 +308,10 @@ uint32_t ublox_parse(uint8_t* data, uint32_t size)
 	uint8_t msg_class = data[UBLOX_OFFS_CLASS];
 	uint8_t msg_id = data[UBLOX_OFFS_ID];
 
-	if (ublox_process_message(msg_class, 
-				      msg_id, 
-				      &data[UBLOX_OFFS_PAYLOAD],
-				      payload_length) != 0) {
-		//LOG_ERR("Failed processing message");
-	}
+	ublox_process_message(msg_class, 
+			      msg_id, 
+			      &data[UBLOX_OFFS_PAYLOAD],
+			      payload_length);
 
 	return packet_length;
 }
