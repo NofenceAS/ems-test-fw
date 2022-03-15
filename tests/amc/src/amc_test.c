@@ -5,9 +5,10 @@
 #include <ztest.h>
 #include "amc_handler.h"
 #include "sound_event.h"
-#include "request_events.h"
+#include "messaging_module_events.h"
 #include "pasture_structure.h"
-#include "pasture_event.h"
+#include "nf_common.h"
+#include "request_events.h"
 
 #include "error_event.h"
 
@@ -41,7 +42,7 @@ void test_init_and_update_pasture(void)
 
 void test_update_pasture()
 {
-	struct pasture_ready_event *event = new_pasture_ready_event();
+	struct new_fence_available *event = new_new_fence_available();
 	EVENT_SUBMIT(event);
 
 	ztest_returns_value(stg_read_pasture_data, 0);
@@ -51,7 +52,7 @@ void test_update_pasture()
 
 void test_update_pasture_error()
 {
-	struct pasture_ready_event *event = new_pasture_ready_event();
+	struct new_fence_available *event = new_new_fence_available();
 	EVENT_SUBMIT(event);
 
 	ztest_returns_value(stg_read_pasture_data, -ENODATA);
@@ -99,7 +100,7 @@ static bool event_handler(const struct event_header *eh)
 			      "Unexpected sound event type received");
 		k_sem_give(&sound_event_sem);
 	}
-	if (is_pasture_ready_event(eh)) {
+	if (is_new_fence_available(eh)) {
 		k_sem_give(&pasture_ready_sem);
 	}
 	if (is_error_event(eh)) {
@@ -137,4 +138,4 @@ void test_main(void)
 EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, sound_event);
 EVENT_SUBSCRIBE(test_main, gnssdata_event);
-EVENT_SUBSCRIBE_FINAL(test_main, pasture_ready_event);
+EVENT_SUBSCRIBE_FINAL(test_main, new_fence_available);

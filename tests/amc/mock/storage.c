@@ -5,7 +5,7 @@
 fence_t *dummy_fence = NULL;
 size_t dummy_fence_len = 0;
 
-int stg_read_pasture_data(stg_read_log_cb cb)
+int stg_read_pasture_data(fcb_read_cb cb)
 {
 	int retval = ztest_get_return_value();
 	if (retval) {

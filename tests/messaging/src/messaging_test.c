@@ -45,7 +45,8 @@ void test_event_contents(void)
 	/* Allocate events. */
 	struct ble_ctrl_event *ev_ble_ctrl = new_ble_ctrl_event();
 	struct ble_data_event *ev_ble_data = new_ble_data_event();
-	struct cellular_proto_in_event *ev_lte_proto = new_cellular_proto_in_event();
+	struct cellular_proto_in_event *ev_lte_proto =
+		new_cellular_proto_in_event();
 
 	/* BLE CTRL event. */
 	ev_ble_ctrl->cmd = BLE_CTRL_BATTERY_UPDATE;
@@ -69,7 +70,8 @@ void test_event_poller(void)
 {
 	/* Allocate events. */
 	struct ble_ctrl_event *ev_ble_ctrl = new_ble_ctrl_event();
-	struct cellular_proto_in_event *ev_lte_proto = new_cellular_proto_in_event();
+	struct cellular_proto_in_event *ev_lte_proto =
+		new_cellular_proto_in_event();
 
 	/* Submit events. */
 	EVENT_SUBMIT(ev_ble_ctrl);
@@ -111,19 +113,20 @@ void test_initial_poll_request_out(void)
 {
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager\n");
+
 	messaging_module_init();
 	k_sem_take(&msg_out, K_SECONDS(0.5));
 	printk("Outbound messages = %d\n", msg_count);
 	zassert_not_equal(pMsg, NULL, "Proto message not published!\n");
 	NofenceMessage decode;
-	int err = collar_protocol_decode(pMsg+2, len-2, &decode);
+	int err = collar_protocol_decode(pMsg + 2, len - 2, &decode);
 	zassert_equal(err, 0, "Corrupt proto message!\n");
 	printk("%d\n", decode.which_m);
-	zassert_equal(decode.which_m,
-		      NofenceMessage_poll_message_req_tag, "Expected "
-							       "fence def. "
-							       "request- not "
-							       "sent!\n");
+	zassert_equal(decode.which_m, NofenceMessage_poll_message_req_tag,
+		      "Expected "
+		      "fence def. "
+		      "request- not "
+		      "sent!\n");
 }
 
 void test_poll_response_has_new_fence(void)
@@ -153,31 +156,34 @@ void test_poll_response_has_new_fence(void)
 	size_t encoded_size = 0;
 	int ret = collar_protocol_encode(&poll_response, &encoded_msg[0],
 					 sizeof(encoded_msg), &encoded_size);
-	zassert_equal(ret, 0 , "Could not encode server response!\n");
+	zassert_equal(ret, 0, "Could not encode server response!\n");
 	memcpy(&encoded_msg[2], &encoded_msg[0], encoded_size);
-	struct cellular_proto_in_event *msgIn =
-		new_cellular_proto_in_event();
+	struct cellular_proto_in_event *msgIn = new_cellular_proto_in_event();
 	msgIn->buf = &encoded_msg[0];
-	msgIn->len = encoded_size+2;
+	msgIn->len = encoded_size + 2;
 	EVENT_SUBMIT(msgIn);
 	k_sem_take(&msg_out, K_FOREVER);
-	int err = collar_protocol_decode(pMsg+2, len-2, &decode);
+	int err = collar_protocol_decode(pMsg + 2, len - 2, &decode);
 	zassert_equal(err, 0, "Decode error!\n");
 	printk("%d\n", decode.which_m);
-	zassert_equal(decode.which_m,
-		      NofenceMessage_fence_definition_req_tag, "Expected "
-							   "fence def. "
-							   "request- not "
-							   "sent!\n");
+	zassert_equal(decode.which_m, NofenceMessage_fence_definition_req_tag,
+		      "Expected "
+		      "fence def. "
+		      "request- not "
+		      "sent!\n");
 	zassert_equal(decode.m.fence_definition_req.ulFenceDefVersion,
 		      dummy_fence, "Wrong fence version requested!\n");
 }
 
 void test_poll_response_has_host_address(void)
 {
-//	messaging_module_init();
+	ztest_returns_value(stg_read_log_data, 0);
+	ztest_returns_value(stg_log_pointing_to_last, true);
+	ztest_returns_value(stg_clear_partition, 0);
+
+	//	messaging_module_init();
 	char dummy_host[] = "111.222.333.4444:12345";
-//	NofenceMessage decode;
+	//	NofenceMessage decode;
 	NofenceMessage poll_response = {
 		.which_m = NofenceMessage_poll_message_resp_tag,
 		.header = {
@@ -197,24 +203,22 @@ void test_poll_response_has_host_address(void)
 		}
 	};
 	memcpy(poll_response.m.poll_message_resp.xServerIp, dummy_host,
-	       sizeof (dummy_host[0]*22));
+	       sizeof(dummy_host[0] * 22));
 	uint8_t encoded_msg[NofenceMessage_size];
 	memset(encoded_msg, 0, sizeof(encoded_msg));
 	size_t encoded_size = 0;
 	int ret = collar_protocol_encode(&poll_response, &encoded_msg[0],
 					 sizeof(encoded_msg), &encoded_size);
-	zassert_equal(ret, 0 , "Could not encode server response!\n");
+	zassert_equal(ret, 0, "Could not encode server response!\n");
 	memcpy(&encoded_msg[2], &encoded_msg[0], encoded_size);
-	struct cellular_proto_in_event *msgIn =
-		new_cellular_proto_in_event();
+	struct cellular_proto_in_event *msgIn = new_cellular_proto_in_event();
 	msgIn->buf = &encoded_msg[0];
-	msgIn->len = encoded_size+2;
+	msgIn->len = encoded_size + 2;
 	EVENT_SUBMIT(msgIn);
 
 	ret = k_sem_take(&new_host, K_SECONDS(2));
-	zassert_equal(ret, 0 , "New host event not published!\n");
-	ret = memcmp(host, dummy_host,
-		     sizeof (dummy_host[0]*22));
+	zassert_equal(ret, 0, "New host event not published!\n");
+	ret = memcmp(host, dummy_host, sizeof(dummy_host[0] * 22));
 	zassert_equal(ret, 0, "Host address mismatch!\n");
 }
 
@@ -228,9 +232,9 @@ void test_main(void)
 							setup_take_semaphores,
 							teardown_clear_threads),
 
-			 ztest_unit_test_setup_teardown(
-				 test_event_poller, setup_take_semaphores,
-				 teardown_clear_threads),
+			 ztest_unit_test_setup_teardown(test_event_poller,
+							setup_take_semaphores,
+							teardown_clear_threads),
 
 			 ztest_unit_test(test_initial_poll_request_out),
 			 ztest_unit_test(test_poll_response_has_new_fence),
@@ -265,8 +269,8 @@ static bool event_handler(const struct event_header *eh)
 			return false;
 		}
 		if (is_cellular_proto_in_event(eh)) {
-
-			struct cellular_proto_in_event *ev = cast_cellular_proto_in_event(eh);
+			struct cellular_proto_in_event *ev =
+				cast_cellular_proto_in_event(eh);
 			zassert_equal(ev->len, sizeof(dummy_data),
 				      "Buffer length mismatch");
 			zassert_mem_equal(ev->buf, dummy_data, ev->len,
@@ -275,19 +279,20 @@ static bool event_handler(const struct event_header *eh)
 			return false;
 		}
 	}
-	if(is_messaging_proto_out_event(eh)){
+	if (is_messaging_proto_out_event(eh)) {
 		msg_count++;
-		struct messaging_proto_out_event *ev = cast_messaging_proto_out_event(eh);
+		struct messaging_proto_out_event *ev =
+			cast_messaging_proto_out_event(eh);
 		printk("length of encoded message = %d\n", ev->len);
 		pMsg = ev->buf;
 		len = ev->len;
 		k_sem_give(&msg_out);
 		return true;
 	}
-	if (is_messaging_host_address_event(eh)){
+	if (is_messaging_host_address_event(eh)) {
 		struct messaging_host_address_event *ev =
 			cast_messaging_host_address_event(eh);
-		memcpy(host, ev->address, sizeof (ev->address));
+		memcpy(host, ev->address, sizeof(ev->address));
 		k_sem_give(&new_host);
 		return true;
 	}

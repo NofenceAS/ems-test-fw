@@ -1,0 +1,28 @@
+menuconfig GNSS
+	bool "GNSS Drivers"
+	select RING_BUFFER
+	help
+	  Enable config options for GNSS drivers.
+
+if GNSS
+	config GNSS_LOG_LEVEL
+		int "Log level for the GNSS driver"
+		default 4
+		
+	config GNSS_INIT_PRIORITY
+		int "GNSS init priority"
+		default 90
+		help
+		GNSS initialization priority.
+		
+	config GNSS_NMEA_PARSER
+		bool "Enable NMEA parser for GNSS data"
+		default n
+
+	config GNSS_COMM_BUFFER_SIZE
+		int "Memory to allocate for RX/TX buffers."
+		default 1024
+
+	rsource "Kconfig.ublox-mia-m10"
+
+endif # GNSS

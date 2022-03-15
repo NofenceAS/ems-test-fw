@@ -7,8 +7,8 @@
 
 #include <zephyr.h>
 
-typedef int (*stg_read_log_cb)(uint8_t *data, size_t len);
+typedef int (*fcb_read_cb)(uint8_t *data, size_t len);
 
-int stg_read_pasture_data(stg_read_log_cb cb);
+int stg_read_pasture_data(fcb_read_cb cb);
 
 #endif /* _STORAGE_H_ */
