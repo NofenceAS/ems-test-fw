@@ -24,6 +24,7 @@ __packed struct eemem {
 	uint32_t uid;
 	/** Configurable 0-terminated host:port, e.g. @p 192.176.777.888:987654\0 */
 	char host_port[EEP_HOST_PORT_BUF_SIZE];
+	uint8_t ble_sec_key[EEP_BLE_SEC_KEY_LEN];
 };
 
 #endif //X3_FW_NF_EEPROM_PRIVATE_H

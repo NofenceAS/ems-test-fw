@@ -15,12 +15,12 @@
  */
 #define EEP_HOST_PORT_BUF_SIZE 24
 
+#define EEP_BLE_SEC_KEY_LEN 8
 /**
  * @brief initialises the eeprom API
  * @param[in] device pointer to the EEPROM device to use for subsequent read/writes
  */
 void eep_init(const struct device *dev);
-
 
 /**
  * @brief writes the persistent collar serial number.
@@ -54,5 +54,23 @@ int eep_write_host_port(const char *host_port);
  * @return 0 on success, otherwise negative errror code
  */
 int eep_read_host_port(char *host_port, size_t bufsize);
+
+/**
+ * @brief writes the ble_security key to persisted storage
+ * @param[in] ble_sec_key pointer to security key array.
+ * @param[in] bufsize length of data to be written
+ *
+ * @return 0 on success, otherwise negative errror code
+ */
+int eep_write_ble_sec_key(uint8_t *ble_sec_key, size_t bufsize);
+
+/**
+ * @brief reads the ble_security key from persisted storage
+ * @param[in] ble_sec_key pointer to security key array.
+ * @param[in] bufsize length of data to be written
+ *
+ * @return 0 on success, otherwise negative errror code
+ */
+int eep_read_ble_sec_key(uint8_t *ble_sec_key, size_t bufsize);
 
 #endif //X3_FW_NF_EEPROM_H
