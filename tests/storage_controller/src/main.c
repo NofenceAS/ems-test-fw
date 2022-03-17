@@ -32,7 +32,7 @@ void test_init(void)
 {
 	zassert_false(stg_init_storage_controller(),
 		      "Error when initializing storage controller.");
-	fill_dummy_fence();
+	init_dummy_pasture();
 }
 
 void test_main(void)

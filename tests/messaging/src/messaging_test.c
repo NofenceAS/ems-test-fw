@@ -31,9 +31,14 @@ void assert_post_action(const char *file, unsigned int line)
 
 void test_init(void)
 {
+	ztest_returns_value(stg_read_log_data, 0);
+	ztest_returns_value(stg_log_pointing_to_last, false);
+
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
 	messaging_module_init();
+
+	k_sleep(K_SECONDS(10));
 }
 
 /* Test expected events published by messaging*/
@@ -54,10 +59,18 @@ void test_initial_poll_request_out(void)
 		      "fence def. "
 		      "request- not "
 		      "sent!\n");
+
+	k_sleep(K_SECONDS(1));
 }
 
 void test_poll_response_has_new_fence(void)
 {
+	/* We need to simulate that we received the message on server, publish
+	 * ACK for messaging module.
+	 */
+	struct cellular_ack_event *ev = new_cellular_ack_event();
+	EVENT_SUBMIT(ev);
+	k_sem_take(&msg_out, K_NO_WAIT);
 	int dummy_fence = 4;
 	NofenceMessage decode;
 	NofenceMessage poll_response = {
@@ -89,7 +102,7 @@ void test_poll_response_has_new_fence(void)
 	msgIn->buf = &encoded_msg[0];
 	msgIn->len = encoded_size + 2;
 	EVENT_SUBMIT(msgIn);
-	k_sem_take(&msg_out, K_FOREVER);
+	zassert_equal(k_sem_take(&msg_out, K_SECONDS(15)), 0, "");
 	int err = collar_protocol_decode(pMsg + 2, len - 2, &decode);
 	zassert_equal(err, 0, "Decode error!\n");
 	printk("%d\n", decode.which_m);
@@ -100,14 +113,12 @@ void test_poll_response_has_new_fence(void)
 		      "sent!\n");
 	zassert_equal(decode.m.fence_definition_req.ulFenceDefVersion,
 		      dummy_fence, "Wrong fence version requested!\n");
+
+	k_sleep(K_SECONDS(10));
 }
 
 void test_poll_response_has_host_address(void)
 {
-	ztest_returns_value(stg_read_log_data, 0);
-	ztest_returns_value(stg_log_pointing_to_last, false);
-
-	//	messaging_module_init();
 	char dummy_host[] = "111.222.333.4444:12345";
 	//	NofenceMessage decode;
 	NofenceMessage poll_response = {
@@ -146,6 +157,8 @@ void test_poll_response_has_host_address(void)
 	zassert_equal(ret, 0, "New host event not published!\n");
 	ret = memcmp(host, dummy_host, sizeof(dummy_host[0] * 22));
 	zassert_equal(ret, 0, "Host address mismatch!\n");
+
+	k_sleep(K_SECONDS(1));
 }
 
 NofenceMessage dummy_nf_msg = { .m.seq_msg.has_usBatteryVoltage = 1500 };
@@ -167,6 +180,8 @@ void test_encode_message(void)
 
 	printk("ret %i\n", ret);
 	zassert_equal(k_sem_take(&msg_out, K_SECONDS(30)), 0, "");
+
+	k_sleep(K_SECONDS(1));
 }
 
 /* Test expected error events published by messaging*/
