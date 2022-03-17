@@ -112,15 +112,6 @@ struct new_fence_available {
 
 EVENT_TYPE_DECLARE(new_fence_available);
 
-/** @brief notify messaging to start requesting latest ano data.
- * Published by the gps module and consumed by the messaging controller.
- * */
-struct request_ano_event {
-	struct event_header header;
-};
-
-EVENT_TYPE_DECLARE(request_ano_event);
-
 /** @brief notify gps controller after successfully downloading and storing ano
  * data.
  * Published by the messaging module and consumed by the gps controller.

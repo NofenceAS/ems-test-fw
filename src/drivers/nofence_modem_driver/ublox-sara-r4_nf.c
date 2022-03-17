@@ -1203,7 +1203,7 @@ static void modem_reset(void)
 #else
 		/* activate the PDP context */
 		SETUP_CMD_NOHANDLE("AT+CGDCONT?"),
-        SETUP_CMD_NOHANDLE("AT+COPS?"),
+		SETUP_CMD_NOHANDLE("AT+COPS?"),
 #endif
 	};
 
