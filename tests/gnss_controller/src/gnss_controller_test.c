@@ -21,6 +21,7 @@ void test_init_ok(void)
 	ztest_returns_value(mock_gnss_set_data_cb, 0);
 	ztest_returns_value(mock_gnss_set_lastfix_cb, 0);
 	ztest_returns_value(mock_gnss_setup, 0);
+	ztest_returns_value(mock_gnss_get_rate, 0);
 	int8_t err = gnss_controller_init();
 
 	zassert_equal(err, 0, "Gnss controller initialization incomplete!");
@@ -125,6 +126,7 @@ void test_publish_event_with_gnss_data_callback(void)
 	int8_t err = k_sem_take(&gnss_data_out, K_SECONDS(0.5));
 	zassert_equal(err, 0,
 		      "Expected gnss data event was not published!");
+	k_sleep(K_SECONDS(1));
 }
 
 void test_publish_event_with_gnss_last_fix_callback(void)
@@ -136,135 +138,99 @@ void test_publish_event_with_gnss_last_fix_callback(void)
 		      "Expected gnss fix event was not published!");
 }
 
-//
-//void test_ack_from_messaging_module_missed(void)
-//{
-//	test_publish_event_with_a_received_msg(); /* first transaction */
-//
-//	struct messaging_proto_out_event *test_msgIn =
-//		new_messaging_proto_out_event();
-//	test_msgIn->buf = dummy_test_msg;
-//	test_msgIn->len = sizeof(dummy_test_msg);
-//
-//	EVENT_SUBMIT(test_msgIn);
-//	ztest_returns_value(socket_connect, 0);
-//	ztest_returns_value(send_tcp, sizeof(dummy_test_msg));
-//	ztest_returns_value(socket_receive, received);
-//
-//	int8_t err = k_sem_take(&cellular_error, K_SECONDS(1));
-//	zassert_equal(err, 0,
-//		      "Expected cellular_error event was not "
-//		      "published ");
-//
-//	err = k_sem_take(&cellular_proto_in, K_SECONDS(1));
-//	zassert_not_equal(err, 0,
-//			  "Unexpected cellular_proto_in event was "
-//			  "published ");
-//}
-//
-//void test_gsm_device_not_ready(void)
-//{
-//	simulate_modem_down = true;
-//	int8_t err = k_sem_take(&cellular_error, K_SECONDS(1));
-//	zassert_equal(err, 0,
-//		      "Expected cellular_error event was not"
-//		      " published on modem down!");
-//	err = cellular_controller_init();
-//	zassert_not_equal(err, 0,
-//			  "Cellular controller initialization "
-//			  "incomplete!");
-//}
-//
-//void test_socket_connect_fails(void)
-//{
-//	ztest_returns_value(lte_init, 1);
-//	ztest_returns_value(lte_is_ready, true);
-//	ztest_returns_value(eep_read_host_port, 0);
-//	ztest_returns_value(socket_connect, -1);
-//
-//	int8_t err = cellular_controller_init();
-//	zassert_not_equal(err, 0,
-//			  "Cellular controller initialization "
-//			  "incomplete!");
-//	err = k_sem_take(&cellular_error, K_SECONDS(1));
-//	zassert_equal(err, 0,
-//		      "Expected cellular_error event was not"
-//		      " published on socket connect error!");
-//}
-//
-//void test_socket_rcv_fails(void)
-//{
-//	test_init();
-//	received = -1;
-//	struct messaging_proto_out_event *test_msgIn =
-//		new_messaging_proto_out_event();
-//	test_msgIn->buf = dummy_test_msg;
-//	test_msgIn->len = sizeof(dummy_test_msg);
-//	EVENT_SUBMIT(test_msgIn);
-//
-//	ztest_returns_value(socket_connect, 0);
-//	ztest_returns_value(send_tcp, 0);
-//	ztest_returns_value(socket_receive, -1);
-//	int8_t err = k_sem_take(&cellular_ack, K_SECONDS(1));
-//	zassert_equal(err, 0,
-//		      "Expected cellular_ack event was not"
-//		      "published ");
-//	err = k_sem_take(&cellular_error, K_SECONDS(1));
-//	zassert_equal(err, 0,
-//		      "Expected cellular_error event was not"
-//		      " published on receive error!");
-//}
-//
-//void test_socket_send_fails(void)
-//{
-//	test_init();
-//	received = 10;
-//	struct messaging_proto_out_event *test_msgIn =
-//		new_messaging_proto_out_event();
-//	test_msgIn->buf = dummy_test_msg;
-//	test_msgIn->len = sizeof(dummy_test_msg);
-//	EVENT_SUBMIT(test_msgIn);
-//
-//	ztest_returns_value(socket_connect, 0);
-//	ztest_returns_value(send_tcp, -1);
-//	int8_t err = k_sem_take(&cellular_ack, K_SECONDS(1));
-//	zassert_equal(err, 0,
-//		      "Expected cellular_ack event was not"
-//		      "published ");
-//	err = k_sem_take(&cellular_error, K_SECONDS(1));
-//	zassert_equal(err, 0,
-//		      "Expected cellular_error event was not"
-//		      " published on send error!");
-//}
-//
-//void test_socket_reconnect_fails(void)
-//{
-//	test_init();
-//	received = -1;
-//	struct messaging_proto_out_event *test_msgIn =
-//		new_messaging_proto_out_event();
-//	test_msgIn->buf = dummy_test_msg;
-//	test_msgIn->len = sizeof(dummy_test_msg);
-//	EVENT_SUBMIT(test_msgIn);
-//
-//	ztest_returns_value(socket_connect, -1);
-//	int8_t err = k_sem_take(&cellular_ack, K_SECONDS(1));
-//	zassert_equal(err, 0, "Expected cellular_ack event was not published ");
-//	err = k_sem_take(&cellular_error, K_SECONDS(1));
-//	zassert_equal(err, 0,
-//		      "Expected cellular_error event was not"
-//		      " published on socket connect error!");
-//}
+void test_old_gnss_last_fix_callback1(void)
+{
+	test_init_ok();
+	//fix arrives on time
+	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	int8_t err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
+	zassert_equal(err, 0,
+		      "Expected gnss fix event was not published!");
+
+	//fix arrives after 6 seconds
+	k_sleep(K_SECONDS(6));
+	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	ztest_returns_value(mock_gnss_reset, 0);
+	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_HOT);
+	err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
+	zassert_equal(err, 0,
+		      "Expected gnss fix event was not published!");
+
+	//fix arrives after 11 seconds
+	k_sleep(K_SECONDS(11));
+	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	ztest_returns_value(mock_gnss_reset, 0);
+	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_WARM);
+	err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
+	zassert_equal(err, 0,
+		      "Expected gnss fix event was not published!");
+
+	//fix arrives after 21 seconds
+	k_sleep(K_SECONDS(21));
+	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	ztest_returns_value(mock_gnss_reset, 0);
+	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_COLD);
+	err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
+	zassert_equal(err, 0,
+		      "Expected gnss fix event was not published!");
+
+	//fix arrives on time
+	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
+	zassert_equal(err, 0,
+		      "Expected gnss fix event was not published!");
+
+	//fix arrives after 6 seconds
+	k_sleep(K_SECONDS(6));
+	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	ztest_returns_value(mock_gnss_reset, 0);
+	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_HOT);
+	err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
+	zassert_equal(err, 0,
+		      "Expected gnss fix event was not published!");
+
+	//fix arrives after 11 seconds
+	k_sleep(K_SECONDS(11));
+	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	ztest_returns_value(mock_gnss_reset, 0);
+	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_WARM);
+	err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
+	zassert_equal(err, 0,
+		      "Expected gnss fix event was not published!");
+
+	//fix arrives after 21 seconds
+	k_sleep(K_SECONDS(21));
+	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	ztest_returns_value(mock_gnss_reset, 0);
+	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_COLD);
+	err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
+	zassert_equal(err, 0,
+		      "Expected gnss fix event was not published!");
+
+	k_sleep(K_SECONDS(21));
+	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	ztest_returns_value(mock_gnss_reset, 0);
+	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_COLD);
+	err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
+	zassert_equal(err, 0,
+		      "Expected gnss fix event was not published!");
+
+	err = k_sem_take(&error, K_SECONDS(3));
+	zassert_equal(err, 0,
+		      "Expected error event was not published!");
+}
 
 void test_main(void)
 {
 	ztest_test_suite(
 		gnss_controller_tests, ztest_unit_test(test_init_ok),
 		ztest_unit_test(test_publish_event_with_gnss_data_callback),
-		ztest_unit_test(test_publish_event_with_gnss_last_fix_callback),
 		ztest_unit_test(test_init_fails1),
 		ztest_unit_test(test_init_fails2),
-		ztest_unit_test(test_init_fails3));
+		ztest_unit_test(test_init_fails3),
+		ztest_unit_test(test_publish_event_with_gnss_last_fix_callback),
+		ztest_unit_test(test_old_gnss_last_fix_callback1)
+		);
 
 	ztest_run_test_suite(gnss_controller_tests);
 }

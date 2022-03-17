@@ -39,8 +39,9 @@ static int mock_gnss_setup(const struct device *dev, bool dummy)
 
 static int mock_gnss_reset(const struct device *dev, uint16_t mask, uint8_t mode)
 {
+	ztest_check_expected_value(mask);
 	ARG_UNUSED(dev);
-	ARG_UNUSED(mask);
+//	ARG_UNUSED(mask);
 	ARG_UNUSED(mode);
 	return ztest_get_return_value();
 }
