@@ -57,7 +57,7 @@ int eep_write_ble_sec_key(uint8_t *ble_sec_key, size_t bufsize)
 	}
 	/* Note, write the string including null-terminator */
 	return eeprom_write(m_p_device, offsetof(struct eemem, ble_sec_key),
-			    ble_sec_key, sizeof(bufsize));
+			    ble_sec_key, bufsize);
 }
 
 int eep_read_ble_sec_key(uint8_t *ble_sec_key, size_t bufsize)

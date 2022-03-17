@@ -50,6 +50,19 @@ void main(void)
 		LOG_ERR("No EEPROM detected!");
 	}
 	eep_init(eeprom_dev);
+	//uint32_t serial_nr = 11456;
+	//eep_write_serial(serial_nr);
+	//uint8_t ble_key[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
+	uint8_t ble_key_ret[8];
+	memset(ble_key_ret, 0, 8);
+	eep_write_ble_sec_key(ble_key, 8);
+
+	uint32_t readout_serial;
+	eep_read_serial(&readout_serial);
+	LOG_INF("Serial read from eeprom: %d", readout_serial);
+
+	eep_read_ble_sec_key(ble_key_ret, 8);
+	LOG_HEXDUMP_INF(ble_key_ret, 8, "BLE sec key");
 #endif
 
 	/* Initialize diagnostics module. */
