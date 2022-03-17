@@ -28,12 +28,9 @@ EVENT_TYPE_DEFINE(gnss_switch_off,
 EVENT_TYPE_DEFINE(gnss_set_mode,
 		  true,
 		  NULL,
-<<<<<<< HEAD
 		  NULL);
 
 EVENT_TYPE_DEFINE(gnss_no_zone,
 		  true,
 		  NULL,
-=======
->>>>>>> main
 		  NULL);
