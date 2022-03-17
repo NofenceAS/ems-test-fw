@@ -8,7 +8,7 @@
 #include <ztest.h>
 #include "storage.h"
 
-void fill_dummy_fence(void);
+void init_dummy_pasture(void);
 
 /* Pasture tests. */
 void test_pasture(void);

@@ -19,6 +19,7 @@ zephyr_include_directories(
 FILE(GLOB app_sources 
         mock/*.c
         src/*.c 
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/crc/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/lte/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging/*.c
@@ -35,6 +36,7 @@ target_include_directories(app PRIVATE ${APP_SOURCE})
 
 zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/mock
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/crc/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/messaging/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble
