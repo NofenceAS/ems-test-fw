@@ -98,6 +98,14 @@ void main(void)
 
 	LOG_INF("Booted application firmware version %i, and marked it as valid.",
 		NF_X25_VERSION_NUMBER);
-	cellular_controller_init();
-	messaging_module_init();
+	err = cellular_controller_init();
+	if (err) {
+		LOG_ERR("Could not initialize cellular controller. %d",
+			err);
+	}
+
+	err = messaging_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize messaging module. %d", err);
+	}
 }
