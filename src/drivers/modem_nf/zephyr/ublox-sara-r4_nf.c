@@ -1002,80 +1002,87 @@ static int uart_state_set(enum pm_device_state target_state)
 	return 0;
 }
 
-static int pin_init(bool power_off, bool force_off)
+static int pin_init(void)
 {
-	int ret = 0;
-
 	LOG_INF("Setting Modem Pins");
 
-	modem_pin_config(&mctx, MDM_POWER, true);
+#if DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
+	LOG_DBG("MDM_RESET_PIN -> NOT_ASSERTED");
+	modem_pin_write(&mctx, MDM_RESET, MDM_RESET_NOT_ASSERTED);
+#endif
 
-	if (power_off && modem_has_power()) {
-		LOG_DBG("Forcing modem power off.");
+	uart_state_set(PM_DEVICE_STATE_SUSPENDED);
+	k_sleep(K_MSEC(100));
 
-		ret = uart_state_set(PM_DEVICE_STATE_SUSPENDED);
-		if (ret) {
-			LOG_ERR("Failed suspending UART device.");
-			goto exit;
-		}
+	LOG_DBG("MDM_POWER_PIN -> ENABLE");
+	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+	k_sleep(K_SECONDS(4));
 
-		LOG_DBG("MDM_POWER_PIN -> ENABLE");
-		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
-		if (!force_off) {
-			LOG_DBG("Graceful switch off.");
-			k_sleep(K_SECONDS(2));
-		} else 
-		{
-			LOG_DBG("Forced emergency switch off.");
-			k_sleep(K_SECONDS(18));
-		}
+	if (modem_has_power()) {
+
 		LOG_DBG("MDM_POWER_PIN -> DISABLE");
 		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
-		
-		uint32_t loop_count = 0;
+#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
+		k_sleep(K_SECONDS(1));
+#else
+		k_sleep(K_SECONDS(4));
+#endif
+		LOG_DBG("MDM_POWER_PIN -> ENABLE");
+		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+		k_sleep(K_SECONDS(1));
+
+		/* make sure module is powered off */
+#if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
+		LOG_DBG("Waiting for MDM_VINT_PIN = 0");
+
 		while (modem_has_power()) {
-			if (loop_count++ >= 300) {
-				LOG_ERR("Modem power not turned off in time!");
-				ret = -ETIME;
-				goto exit;
-			}
-
+#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
+			/* try to power off again */
+			LOG_DBG("MDM_POWER_PIN -> DISABLE");
+			modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+			k_sleep(K_SECONDS(1));
+			LOG_DBG("MDM_POWER_PIN -> ENABLE");
+			modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+#endif
 			k_sleep(K_MSEC(100));
 		}
+#else
+		k_sleep(K_SECONDS(8));
+#endif
 	}
 
-	if (!modem_has_power()) {
-		LOG_DBG("No modem power, switching on.");
-		LOG_DBG("MDM_POWER_PIN -> ENABLE");
-		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
-		k_sleep(K_MSEC(250));
-		LOG_DBG("MDM_POWER_PIN -> DISABLE");
-		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+	LOG_DBG("MDM_POWER_PIN -> DISABLE");
 
-		uint32_t loop_count = 0;
-		while (!modem_has_power()) {
-			if (loop_count++ >= 300) {
-				LOG_ERR("Modem power not turned on in time!");
-				ret = -ETIME;
-				goto exit;
-			}
+	unsigned int irq_lock_key = irq_lock();
 
-			k_sleep(K_MSEC(100));
-		}
-	}
-	ret = uart_state_set(PM_DEVICE_STATE_ACTIVE);
-	if (ret) {
-		LOG_ERR("Failed activating UART device.");
-		goto exit;
-	}
+	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
+	k_usleep(50);		/* 50-80 microseconds */
+#else
+	k_sleep(K_SECONDS(1));
+#endif
+	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
 
+	irq_unlock(irq_lock_key);
+
+	LOG_DBG("MDM_POWER_PIN -> ENABLE");
+
+#if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
+	LOG_DBG("Waiting for MDM_VINT_PIN = 1");
+	do {
+		k_sleep(K_MSEC(100));
+	} while (!modem_has_power());
+#else
+	k_sleep(K_SECONDS(10));
+#endif
+
+	modem_pin_config(&mctx, MDM_POWER, false);
+
+	uart_state_set(PM_DEVICE_STATE_ACTIVE);
 
 	LOG_INF("... Done!");
 
-exit:
-	modem_pin_config(&mctx, MDM_POWER, false);
-
-	return ret;
+	return 0;
 }
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
@@ -1255,7 +1262,7 @@ restart:
 	k_work_cancel_delayable(&mdata.rssi_query_work);
 #endif
 
-	ret = pin_init(true, false);
+	ret = pin_init();
 	if (ret != 0) {
 		LOG_ERR("Pin configuration failed.");
 		goto error;
