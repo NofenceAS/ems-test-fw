@@ -103,13 +103,10 @@ struct update_zap_count {
 EVENT_TYPE_DECLARE(update_zap_count);
 
 /** @brief Notify amc after successfully downloading a new fence.
- *         Published by the messaging module and consumed by the amc. '
- *         Dyndata field of a fence_t type.
+ *         Published by the messaging module and consumed by the amc.
  */
 struct new_fence_available {
 	struct event_header header;
-
-	uint32_t fence_version;
 };
 
 EVENT_TYPE_DECLARE(new_fence_available);
