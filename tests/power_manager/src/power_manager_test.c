@@ -44,7 +44,7 @@ void assert_post_action(const char *file, unsigned int line)
 	printk("assert_post_action - file: %s (line: %u)\n", file, line);
 }
 
-void test_init(void)
+void test_event_manager_init(void)
 {
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
@@ -64,6 +64,23 @@ void test_pwr_module_init(void)
 
 	zassert_equal(pwr_module_init(), 0,
 		      "Error when initializing pwr module");
+
+	/* Normal mode is initialized as default */
+	int err = k_sem_take(&normal_pwr_event_sem, K_SECONDS(5));
+	zassert_equal(err, 0, "normal_pwr_event_sem hanged.");
+}
+
+void test_pwr_module_normal(void)
+{
+	/* Test with a givevn voltage */
+	const uint16_t input_mv = 3800;
+	/* Generic ADC setup */
+	const struct device *adc_dev = get_adc_device();
+
+	/* ADC emulator-specific setup */
+	int ret =
+		adc_emul_const_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_mv);
+	zassert_ok(ret, "adc_emul_const_value_set() failed with code %d", ret);
 
 	int err = k_sem_take(&normal_pwr_event_sem, K_SECONDS(5));
 	zassert_equal(err, 0, "normal_pwr_event_sem hanged.");
@@ -103,12 +120,34 @@ void test_pwr_module_critical(void)
 	/* Check stuff when event is received here */
 }
 
+void test_pwr_module_normal_to_critical(void)
+{
+	const uint16_t input_mv = CONFIG_BATTERY_CRITICAL - VOLTAGE_OFFSET_MV;
+	/* Generic ADC setup */
+	const struct device *adc_dev = get_adc_device();
+
+	/* ADC emulator-specific setup */
+	int ret =
+		adc_emul_const_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_mv);
+	zassert_ok(ret, "adc_emul_const_value_set() failed with code %d", ret);
+
+	int err = k_sem_take(&critical_pwr_event_sem, K_SECONDS(2));
+	zassert_equal(err, -EAGAIN,
+		      "Error: jump directly to critical not allowed");
+
+	err = k_sem_take(&critical_pwr_event_sem, K_SECONDS(5));
+	zassert_equal(err, 0, "critical_pwr_event_sem hanged.");
+}
+
 void test_main(void)
 {
-	ztest_test_suite(pwr_tests, ztest_unit_test(test_init),
+	ztest_test_suite(pwr_tests, ztest_unit_test(test_event_manager_init),
 			 ztest_unit_test(test_pwr_module_init),
 			 ztest_unit_test(test_pwr_module_low),
-			 ztest_unit_test(test_pwr_module_critical));
+			 ztest_unit_test(test_pwr_module_critical),
+			 ztest_unit_test(test_pwr_module_low),
+			 ztest_unit_test(test_pwr_module_normal),
+			 ztest_unit_test(test_pwr_module_normal_to_critical));
 	ztest_run_test_suite(pwr_tests);
 }
 
