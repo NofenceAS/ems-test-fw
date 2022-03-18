@@ -382,3 +382,117 @@ void test_fnc_calc_dist_2_fences_max_size(void)
 	d = fnc_calc_dist(INT16_MIN, INT16_MIN, &fence_index, &vertex_index);
 	zassert_equal(round(sqrt(2 * pow(INT16_MIN + MAX_FENCE, 2))), d, "");
 }
+
+void test_fnc_calc_dist_2_fences_hole2(void)
+{
+	/* Pasture. */
+	pasture_t pasture = {
+		.m.ul_total_fences = 2,
+	};
+
+	/* Fences. */
+	pasture.fences[0].m.e_fence_type =
+		FenceDefinitionMessage_FenceType_Normal;
+	pasture.fences[0].m.us_id = 0;
+	pasture.fences[0].m.fence_no = 0;
+
+	pasture.fences[1].m.e_fence_type =
+		FenceDefinitionMessage_FenceType_Inverted;
+	pasture.fences[1].m.us_id = 0;
+	pasture.fences[1].m.fence_no = 1;
+
+	/* Coordinates. */
+	fence_coordinate_t points1[] = {
+		{ .s_x_dm = 100, .s_y_dm = -50 },
+		{ .s_x_dm = 100, .s_y_dm = 100 },
+		{ .s_x_dm = -100, .s_y_dm = 100 },
+		{ .s_x_dm = -100, .s_y_dm = -50 },
+		{ .s_x_dm = 100, .s_y_dm = -50 },
+	};
+
+	pasture.fences[0].m.n_points = sizeof(points1) / sizeof(points1[0]);
+	memcpy(pasture.fences[0].coordinates, points1, sizeof(points1));
+
+	fence_coordinate_t points2[] = { { .s_x_dm = 90, .s_y_dm = 80 },
+					 { .s_x_dm = 90, .s_y_dm = 90 },
+					 { .s_x_dm = -90, .s_y_dm = 90 },
+					 { .s_x_dm = -90, .s_y_dm = 80 },
+					 { .s_x_dm = 90, .s_y_dm = 80 } };
+
+	pasture.fences[1].m.n_points = sizeof(points2) / sizeof(points2[0]);
+	memcpy(pasture.fences[1].coordinates, points2, sizeof(points2));
+
+	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)),
+		      "");
+
+	uint8_t fence_index;
+	uint8_t vertex_index;
+	int16_t d;
+
+	d = fnc_calc_dist(0, 0, &fence_index, &vertex_index);
+	zassert_equal(-50, d, "");
+	zassert_equal(0, fence_index, "");
+	zassert_equal(VERTEX_BOTTOM, vertex_index, "");
+
+	/* Up. */
+	d = fnc_calc_dist(0, 10, &fence_index, &vertex_index);
+	zassert_equal(-60, d, "");
+	zassert_equal(0, fence_index, "");
+	zassert_equal(VERTEX_BOTTOM, vertex_index, "");
+
+	d = fnc_calc_dist(0, 20, &fence_index, &vertex_index);
+	zassert_equal(-60, d, "");
+	zassert_equal(1, fence_index, "");
+	zassert_equal(VERTEX_BOTTOM, vertex_index, "");
+
+	d = fnc_calc_dist(0, 30, &fence_index, &vertex_index);
+	zassert_equal(-50, d, "");
+	zassert_equal(1, fence_index, "");
+	zassert_equal(VERTEX_BOTTOM, vertex_index, "");
+
+	d = fnc_calc_dist(0, 70, &fence_index, &vertex_index);
+	zassert_equal(-10, d, "");
+	zassert_equal(1, fence_index, "");
+	zassert_equal(VERTEX_BOTTOM, vertex_index, "");
+
+	d = fnc_calc_dist(0, 80, &fence_index, &vertex_index);
+	zassert_equal(0, d, "");
+	zassert_equal(1, fence_index, "");
+	zassert_equal(VERTEX_BOTTOM, vertex_index, "");
+
+	d = fnc_calc_dist(0, 85, &fence_index, &vertex_index);
+	zassert_equal(5, d, "");
+	zassert_equal(1, fence_index, "");
+	zassert_equal(VERTEX_TOP, vertex_index, "");
+
+	d = fnc_calc_dist(0, 90, &fence_index, &vertex_index);
+	zassert_equal(0, d, "");
+	zassert_equal(1, fence_index, "");
+	zassert_equal(VERTEX_TOP, vertex_index, "");
+
+	d = fnc_calc_dist(0, 95, &fence_index, &vertex_index);
+	zassert_equal(-5, d, "");
+	zassert_equal(0, fence_index, "");
+	zassert_equal(VERTEX_TOP, vertex_index, "");
+
+	d = fnc_calc_dist(0, 100, &fence_index, &vertex_index);
+	zassert_equal(0, d, "");
+	zassert_equal(0, fence_index, "");
+	zassert_equal(VERTEX_TOP, vertex_index, "");
+
+	d = fnc_calc_dist(0, 105, &fence_index, &vertex_index);
+	zassert_equal(5, d, "");
+	zassert_equal(0, fence_index, "");
+	zassert_equal(VERTEX_TOP, vertex_index, "");
+
+	d = fnc_calc_dist(0, 1000, &fence_index, &vertex_index);
+	zassert_equal(900, d, "");
+
+	/* Down. */
+	d = fnc_calc_dist(0, -10, &fence_index, &vertex_index);
+	zassert_equal(-40, d, "");
+	d = fnc_calc_dist(0, -20, &fence_index, &vertex_index);
+	zassert_equal(-30, d, "");
+	d = fnc_calc_dist(0, -50, &fence_index, &vertex_index);
+	zassert_equal(0, d, "");
+}
