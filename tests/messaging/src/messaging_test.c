@@ -46,7 +46,7 @@ void test_init(void)
 //ack - fence_ready - ano_ready - msg_out - host_address
 void test_initial_poll_request_out(void)
 {
-	k_sem_take(&msg_out, K_MSEC(500));
+	k_sem_take(&msg_out, K_SECONDS(10));
 	printk("Outbound messages = %d\n", msg_count);
 	zassert_not_equal(pMsg, NULL, "Proto message not published!\n");
 
@@ -61,7 +61,7 @@ void test_initial_poll_request_out(void)
 		      "request- not "
 		      "sent!\n");
 
-	k_sleep(K_SECONDS(1));
+	k_sleep(K_SECONDS(10));
 }
 
 void test_poll_response_has_new_fence(void)
@@ -159,7 +159,7 @@ void test_poll_response_has_host_address(void)
 	ret = memcmp(host, dummy_host, sizeof(dummy_host[0] * 22));
 	zassert_equal(ret, 0, "Host address mismatch!\n");
 
-	k_sleep(K_SECONDS(1));
+	k_sleep(K_SECONDS(10));
 }
 
 NofenceMessage dummy_nf_msg = { .m.seq_msg.has_usBatteryVoltage = 1500 };
@@ -182,7 +182,7 @@ void test_encode_message(void)
 	printk("ret %i\n", ret);
 	zassert_equal(k_sem_take(&msg_out, K_SECONDS(30)), 0, "");
 
-	k_sleep(K_SECONDS(1));
+	k_sleep(K_SECONDS(10));
 }
 
 /* Test expected error events published by messaging*/
