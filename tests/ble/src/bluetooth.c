@@ -136,8 +136,8 @@ void test_ble_beacon_out_of_range(void)
 
 	zassert_equal(range, -EIO, "We received a wrong return code");
 
-	// int err = k_sem_take(&beacon_out_of_range, K_SECONDS(10));
-	// zassert_equal(err, 0, "Test beacon out of range execution hanged.");
+	int err = k_sem_take(&beacon_out_of_range, K_SECONDS(10));
+	zassert_equal(err, 0, "Test beacon out of range execution hanged.");
 }
 void test_ble_connection(void)
 {
