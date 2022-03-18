@@ -79,7 +79,11 @@ void test_main(void)
 	ztest_run_test_suite(amc_tests);
 
 	ztest_test_suite(amc_dist_tests,
-			 ztest_unit_test(test_fnc_calc_dist_quadratic));
+			 ztest_unit_test(test_fnc_calc_dist_quadratic),
+			 ztest_unit_test(test_fnc_calc_dist_quadratic_max),
+			 ztest_unit_test(test_fnc_calc_dist_rect),
+			 ztest_unit_test(test_fnc_calc_dist_2_fences_hole),
+			 ztest_unit_test(test_fnc_calc_dist_2_fences_max_size));
 	ztest_run_test_suite(amc_dist_tests);
 }
 
