@@ -19,11 +19,10 @@
 #include "nf_version.h"
 
 #include "env_sensor_event.h"
-#include "module_state_event.h"
-#include "cellular_controller.h"
-#include "messaging.h"
 
 #define MODULE main
+#include "module_state_event.h"
+
 LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 
 /**
@@ -33,11 +32,11 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 void main(void)
 {
 	LOG_INF("Starting Nofence application...");
-//	int err = stg_init_storage_controller();
-//	if (err) {
-//		LOG_ERR("Could not initialize storage controller, %i", err);
-//		return;
-//	}
+	int err = stg_init_storage_controller();
+	if (err) {
+		LOG_ERR("Could not initialize storage controller, %i", err);
+		return;
+	}
 
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
@@ -58,7 +57,7 @@ void main(void)
 #endif
 
 	/* Initialize the event manager. */
-	int err = event_manager_init();
+	err = event_manager_init();
 	if (err) {
 		LOG_ERR("Event manager could not initialize. %d", err);
 	}
