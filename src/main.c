@@ -50,19 +50,18 @@ void main(void)
 		LOG_ERR("No EEPROM detected!");
 	}
 	eep_init(eeprom_dev);
-	//uint32_t serial_nr = 11456;
-	//eep_write_serial(serial_nr);
-	//uint8_t ble_key[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
-	uint8_t ble_key_ret[8];
-	memset(ble_key_ret, 0, 8);
-	eep_write_ble_sec_key(ble_key, 8);
+	uint32_t eeprom_stored_serial_nr;
+	eep_read_serial(&eeprom_stored_serial_nr);
+	if (eeprom_stored_serial_nr != CONFIG_NOFENCE_SERIAL_NUMBER) {
+		eep_write_serial(CONFIG_NOFENCE_SERIAL_NUMBER);
+		eep_read_serial(&eeprom_stored_serial_nr);
+	}
+	LOG_INF("Serial number is: %d", eeprom_stored_serial_nr);
 
-	uint32_t readout_serial;
-	eep_read_serial(&readout_serial);
-	LOG_INF("Serial read from eeprom: %d", readout_serial);
-
-	eep_read_ble_sec_key(ble_key_ret, 8);
-	LOG_HEXDUMP_INF(ble_key_ret, 8, "BLE sec key");
+	// uint8_t ble_key_ret[8];
+	// memset(ble_key_ret, 0, 8);
+	// eep_read_ble_sec_key(ble_key_ret, 8);
+	// LOG_HEXDUMP_INF(ble_key_ret, 8, "BLE sec key");
 #endif
 
 	/* Initialize diagnostics module. */
@@ -121,9 +120,9 @@ void main(void)
 
 	messaging_module_init();
 	/* Play welcome sound. */
-	struct sound_event *sound_ev = new_sound_event();
-	sound_ev->type = SND_WELCOME;
-	EVENT_SUBMIT(sound_ev);
+	// struct sound_event *sound_ev = new_sound_event();
+	// sound_ev->type = SND_WELCOME;
+	// EVENT_SUBMIT(sound_ev);
 
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,
