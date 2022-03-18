@@ -6,7 +6,6 @@
 #include <zephyr.h>
 
 #include "diagnostics.h"
-#include "ble/nf_ble.h"
 #include "fw_upgrade.h"
 #include "nf_eeprom.h"
 #include "ble_controller.h"
@@ -19,6 +18,9 @@
 #include "nf_version.h"
 
 #include "env_sensor_event.h"
+
+#include "cellular_controller.h"
+#include "messaging.h"
 
 #define MODULE main
 #include "module_state_event.h"
