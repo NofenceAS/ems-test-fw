@@ -27,6 +27,7 @@
 
 #include <zephyr.h>
 #include "trigonometry.h"
+#include <stdlib.h>
 
 // MODULE VARIABLES
 

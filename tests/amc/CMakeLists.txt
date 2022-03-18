@@ -17,6 +17,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 FILE(GLOB app_sources
         src/*.c 
         mock/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/trigonometry/trigonometry.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/amc/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/amc/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/amc/lib/*.c
@@ -31,6 +32,7 @@ target_include_directories(app PRIVATE ${APP_SOURCE})
 zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/mock
   ${CMAKE_CURRENT_SOURCE_DIR}/../../include/
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/trigonometry/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/amc/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/amc/lib/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/amc
