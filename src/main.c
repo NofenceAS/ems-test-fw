@@ -33,12 +33,13 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
  */
 void main(void)
 {
-	LOG_INF("Starting Nofence application...");
-	int err = stg_init_storage_controller();
-	if (err) {
-		LOG_ERR("Could not initialize storage controller, %i", err);
-		return;
-	}
+	int err;
+//	LOG_INF("Starting Nofence application...");
+//	int err = stg_init_storage_controller();
+//	if (err) {
+//		LOG_ERR("Could not initialize storage controller, %i", err);
+//		return;
+//	}
 
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
@@ -64,10 +65,10 @@ void main(void)
 		LOG_ERR("Event manager could not initialize. %d", err);
 	}
 	/* Initialize BLE module. */
-	err = ble_module_init();
-	if (err) {
-		LOG_ERR("Could not initialize BLE module. %d", err);
-	}
+//	err = ble_module_init();
+//	if (err) {
+//		LOG_ERR("Could not initialize BLE module. %d", err);
+//	}
 	/* Initialize firmware upgrade module. */
 	err = fw_upgrade_module_init();
 	if (err) {
