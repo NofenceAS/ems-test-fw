@@ -7,11 +7,13 @@
 
 #include "diagnostics.h"
 #include "fw_upgrade.h"
+#include "fw_upgrade_events.h"
 #include "nf_eeprom.h"
 #include "ble_controller.h"
 #include "ep_module.h"
 #include "amc_handler.h"
 #include "nf_eeprom.h"
+#include "buzzer.h"
 #include "pwr_module.h"
 
 #include "storage.h"
@@ -39,8 +41,7 @@ void main(void)
 
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
-		const struct device *eeprom_dev =
-			DEVICE_DT_GET(DT_ALIAS(eeprom));
+	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
 	if (eeprom_dev == NULL) {
 		LOG_ERR("No EEPROM detected!");
 	}
@@ -60,25 +61,36 @@ void main(void)
 	if (err) {
 		LOG_ERR("Event manager could not initialize. %d", err);
 	}
+
 	/* Initialize BLE module. */
 	err = ble_module_init();
 	if (err) {
 		LOG_ERR("Could not initialize BLE module. %d", err);
 	}
+
 	/* Initialize firmware upgrade module. */
 	err = fw_upgrade_module_init();
 	if (err) {
 		LOG_ERR("Could not initialize firmware upgrade module. %d",
 			err);
 	}
-	/* Initialize the electric pulse module. */
-	if (ep_module_init()) {
-		LOG_ERR("Could not initialize electric pulse module");
+
+	err = ep_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize electric pulse module. %d", err);
 	}
+
 	/* Initialize the power manager module. */
-	if (pwr_module_init()) {
-		LOG_ERR("Could not initialize the power module");
+	err = pwr_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize the power module %i", err);
 	}
+
+	err = buzzer_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize buzzer module. %d", err);
+	}
+
 	/* Initialize animal monitor control module, depends on storage
 	 * controller to be initialized first since amc sends
 	 * a request for pasture data on init. 
@@ -87,6 +99,11 @@ void main(void)
 	if (err) {
 		LOG_ERR("Could not initialize AMC module. %d", err);
 	}
+
+	/* Play welcome sound. */
+	struct sound_event *sound_ev = new_sound_event();
+	sound_ev->type = SND_WELCOME;
+	EVENT_SUBMIT(sound_ev);
 
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,
