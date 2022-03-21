@@ -993,7 +993,7 @@ static int uart_state_set(enum pm_device_state target_state)
 		return 0;
 	}
 
-	ret = pm_device_state_get(MDM_UART_DEV, &target_state);
+	ret = pm_device_state_set(MDM_UART_DEV, target_state);
 	if (ret) {
 		LOG_ERR("pm_device_state_set: %d", ret);
 		return -EIO;
