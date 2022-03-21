@@ -52,7 +52,9 @@ struct sound_status_event {
 struct sound_set_warn_freq_event {
 	struct event_header header;
 
-	/* Frequency in microseconds. (1000000 / uint32_t freq). */
+	/* Frequency to play, will be calculated further in the
+	 * sound controller with 1/freq to get period in microseconds.
+	 */
 	uint32_t freq;
 };
 
