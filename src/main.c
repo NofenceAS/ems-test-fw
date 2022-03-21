@@ -6,7 +6,6 @@
 #include <zephyr.h>
 
 #include "diagnostics.h"
-#include "ble/nf_ble.h"
 #include "fw_upgrade.h"
 #include "nf_eeprom.h"
 #include "ble_controller.h"
