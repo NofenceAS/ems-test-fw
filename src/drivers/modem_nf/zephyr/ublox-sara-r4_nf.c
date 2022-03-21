@@ -1002,6 +1002,24 @@ static int uart_state_set(enum pm_device_state target_state)
 	return 0;
 }
 
+static bool modem_rx_pin_is_high(void) {
+#if DT_PROP(DT_INST_BUS(0), rx_pin) >= 32
+/* This error is used to detect unhandled situations
+   The situations are unhandled to avoid unnecessary complexity */
+#error "Modem RX pin must be in GPIO0"
+#endif
+
+	uint32_t rx_pin = DT_PROP(DT_INST_BUS(0), rx_pin);
+	
+	uint32_t values = 0;
+	const struct device *gpio_dev = 
+			device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
+	gpio_pin_configure(gpio_dev, rx_pin, GPIO_INPUT);
+	gpio_port_get_raw(gpio_dev, &values);
+	
+	return ((values&(1<<rx_pin)) != 0);
+}
+
 static int pin_init(void)
 {
 	LOG_INF("Setting Modem Pins");
@@ -1051,30 +1069,38 @@ static int pin_init(void)
 #endif
 	}
 
-	LOG_DBG("MDM_POWER_PIN -> DISABLE");
+	if (!modem_has_power()) {
+		LOG_DBG("MDM_POWER_PIN -> DISABLE");
 
-	unsigned int irq_lock_key = irq_lock();
+		unsigned int irq_lock_key = irq_lock();
 
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
-	k_usleep(50);		/* 50-80 microseconds */
+		k_usleep(50);		/* 50-80 microseconds */
 #else
-	k_sleep(K_SECONDS(1));
+		k_sleep(K_SECONDS(1));
 #endif
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
 
-	irq_unlock(irq_lock_key);
+		irq_unlock(irq_lock_key);
 
-	LOG_DBG("MDM_POWER_PIN -> ENABLE");
+		LOG_DBG("MDM_POWER_PIN -> ENABLE");
 
 #if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
-	LOG_DBG("Waiting for MDM_VINT_PIN = 1");
+		LOG_DBG("Waiting for MDM_VINT_PIN = 1");
+		do {
+			k_sleep(K_MSEC(100));
+		} while (!modem_has_power());
+#else
+		k_sleep(K_SECONDS(10));
+#endif
+	}
+
+	/* Wait for modem GPIO RX pin to rise, indicating readiness */
+	LOG_DBG("Waiting for Modem RX = 1");
 	do {
 		k_sleep(K_MSEC(100));
-	} while (!modem_has_power());
-#else
-	k_sleep(K_SECONDS(10));
-#endif
+	} while (!modem_rx_pin_is_high());
 
 	modem_pin_config(&mctx, MDM_POWER, false);
 
