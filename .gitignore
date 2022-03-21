@@ -6,6 +6,7 @@
 *.pyc
 *.swp
 *.swo
+*.orig
 *~
 build*/
 cmake-build-*/
