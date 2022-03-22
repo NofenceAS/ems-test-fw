@@ -80,17 +80,18 @@ endif ()
 zephyr_library_include_directories(
         src/modules/amc
         src/modules/fw_upgrade
-  	src/modules/storage_controller
+  	    src/modules/storage_controller
         src/events
         src/modules/error_handler
         src/events/error_handler
         src/modules/diagnostics
         src/events/diagnostics
         src/events/fw_upgrade
-  	src/modules/environment
-  	src/events/environment
-	src/modules/cellular_controller
+  	    src/modules/environment
+  	    src/events/environment
+	    src/modules/cellular_controller
         src/events/cellular_controller
+  	    src/modules/buzzer
         ${PROJECT_BINARY_DIR}/include/generated/)
         
 target_sources(app PRIVATE ${APP_MAIN}
@@ -105,6 +106,7 @@ add_subdirectory(src/modules/storage_controller)
 add_subdirectory(src/eeprom)
 add_subdirectory(src/modules/amc)
 add_subdirectory(src/modules/cellular_controller)
+add_subdirectory(src/modules/buzzer)
 
 add_subdirectory(src/modules/power_manager)
 add_subdirectory(src/events/power_manager)
