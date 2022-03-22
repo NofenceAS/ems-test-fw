@@ -8,10 +8,12 @@
 #include "ble_ctrl_event.h"
 #include "ble_data_event.h"
 #include "ble_conn_event.h"
+#include "ble_beacon_event.h"
 
 #include "ble_controller.h"
 #include "event_manager.h"
 #include "bt.h"
+#include "beacon_processor.h"
 
 static K_SEM_DEFINE(ble_connected_sem, 0, 1);
 static K_SEM_DEFINE(ble_disconnected_sem, 0, 1);
@@ -23,6 +25,8 @@ static K_SEM_DEFINE(ble_collar_status_sem, 0, 1);
 static K_SEM_DEFINE(ble_fence_status_sem, 0, 1);
 static K_SEM_DEFINE(ble_pasture_status_sem, 0, 1);
 static K_SEM_DEFINE(ble_fence_def_ver_sem, 0, 1);
+static K_SEM_DEFINE(beacon_hysteresis_sem, 0, 1);
+static K_SEM_DEFINE(beacon_out_of_range, 0, 1);
 
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
@@ -38,6 +42,7 @@ void test_init_ok(void)
 	ztest_returns_value(bt_enable, 0);
 	ztest_returns_value(bt_nus_init, 0);
 	ztest_returns_value(bt_le_adv_start, 0);
+	ztest_returns_value(bt_le_scan_start, 0);
 
 	zassert_equal(event_manager_init(), 0,
 		      "Error when initializing event manager");
@@ -65,6 +70,75 @@ void test_advertise(void)
 	// Submut event to start adv
 }
 
+void test_ble_beacon_scanner(void)
+{
+	const uint32_t now_1 = k_uptime_get_32();
+	adv_data_t adv_data_1;
+	adv_data_1.rssi = 197; // signed
+	bt_addr_t address_1;
+	address_1.val[0] = 0x46;
+	address_1.val[1] = 0x01;
+	address_1.val[2] = 0x00;
+	address_1.val[3] = 0x30;
+	address_1.val[4] = 0x02;
+	address_1.val[5] = 0xc2;
+	bt_addr_le_t addr_1;
+	addr_1.type = 1;
+	memcpy(addr_1.a.val, address_1.val, sizeof(bt_addr_t));
+	int measured_rssi_1 = -60; // corresponds to 1 meter
+	int range1 = beacon_process_event(now_1, &addr_1, measured_rssi_1,
+					  &adv_data_1);
+	zassert_equal(range1, 1, "Shortest distance calculation is wrong");
+	k_sleep(K_SECONDS(1));
+
+	const uint32_t now_2 = k_uptime_get_32();
+	adv_data_t adv_data_2;
+	adv_data_2.rssi = 197; // signed
+	bt_addr_t address_2;
+	address_2.val[0] = 0x46;
+	address_2.val[1] = 0x01;
+	address_2.val[2] = 0x00;
+	address_2.val[3] = 0x30;
+	address_2.val[4] = 0x02;
+	address_2.val[5] = 0xb3;
+	bt_addr_le_t addr_2;
+	addr_2.type = 1;
+	memcpy(addr_2.a.val, address_2.val, sizeof(bt_addr_t));
+	int measured_rssi_2 = -76; // corresponds to 6 meter
+	int range2 = beacon_process_event(now_2, &addr_2, measured_rssi_2,
+					  &adv_data_2);
+	zassert_equal(range2, 1, "Shortest distance calculation is wrong");
+
+	int err = k_sem_take(&beacon_hysteresis_sem, K_SECONDS(5));
+	zassert_equal(err, 0, "Test beacon event execution hanged.");
+}
+
+void test_ble_beacon_out_of_range(void)
+{
+	/* Clear the beacon list */
+	init_beacon_list();
+
+	const uint32_t now = k_uptime_get_32();
+	adv_data_t adv_data;
+	adv_data.rssi = 197; // signed
+	bt_addr_t address;
+	address.val[0] = 0x46;
+	address.val[1] = 0x01;
+	address.val[2] = 0x00;
+	address.val[3] = 0x30;
+	address.val[4] = 0x02;
+	address.val[5] = 0xb3;
+	bt_addr_le_t addr;
+	addr.type = 1;
+	memcpy(addr.a.val, address.val, sizeof(bt_addr_t));
+	int measured_rssi = -120; // corresponds to 6 meter
+	int range = beacon_process_event(now, &addr, measured_rssi, &adv_data);
+
+	zassert_equal(range, -EIO, "We received a wrong return code");
+
+	int err = k_sem_take(&beacon_out_of_range, K_SECONDS(10));
+	zassert_equal(err, 0, "Test beacon out of range execution hanged.");
+}
 void test_ble_connection(void)
 {
 	struct ble_conn_event *event = new_ble_conn_event();
@@ -251,6 +325,8 @@ void test_main(void)
 {
 	ztest_test_suite(test_bluetooth, ztest_unit_test(test_init_ok),
 			 ztest_unit_test(test_init_error),
+			 ztest_unit_test(test_ble_beacon_scanner),
+			 ztest_unit_test(test_ble_beacon_out_of_range),
 			 ztest_unit_test(test_ble_connection),
 			 ztest_unit_test(test_ble_disconnection),
 			 ztest_unit_test(test_ble_data_event),
@@ -304,6 +380,12 @@ static bool event_handler(const struct event_header *eh)
 		case BLE_CTRL_ADV_DISABLE:
 			// TODO: A test of this should be added later
 			break;
+		case BLE_CTRL_SCAN_START:
+			// TODO: A test of this should be added later
+			break;
+		case BLE_CTRL_SCAN_STOP:
+			// TODO: A test of this should be added later
+			break;
 		case BLE_CTRL_BATTERY_UPDATE:
 			k_sem_give(&ble_battery_sem);
 			break;
@@ -328,7 +410,27 @@ static bool event_handler(const struct event_header *eh)
 		}
 		return false;
 	}
-
+	if (is_ble_beacon_event(eh)) {
+		const struct ble_beacon_event *event =
+			cast_ble_beacon_event(eh);
+		switch (event->status) {
+		case BEACON_STATUS_REGION_NEAR:
+			printk("Beacon status region near detected\n");
+			k_sem_give(&beacon_hysteresis_sem);
+			break;
+		case BEACON_STATUS_REGION_FAR:
+			printk("Beacon status region far\n");
+			break;
+		case BEACON_STATUS_NOT_FOUND:
+			printk("Beacon status not found\n");
+			break;
+		case BEACON_STATUS_OUT_OF_RANGE:
+			printk("Beacon status out for range\n");
+			k_sem_give(&beacon_out_of_range);
+			break;
+		}
+		return false;
+	}
 	zassert_true(false, "Wrong event type received");
 	return false;
 }
@@ -336,4 +438,5 @@ static bool event_handler(const struct event_header *eh)
 EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, ble_data_event);
 EVENT_SUBSCRIBE(test_main, ble_conn_event);
+EVENT_SUBSCRIBE(test_main, ble_beacon_event);
 EVENT_SUBSCRIBE_FINAL(test_main, ble_ctrl_event);
