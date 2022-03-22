@@ -130,6 +130,10 @@ void test_main(void)
 			 ztest_unit_test(test_fnc_calc_dist_2_fences_hole2),
 			 ztest_unit_test(test_fnc_calc_dist_2_fences_max_size));
 	ztest_run_test_suite(amc_dist_tests);
+
+	ztest_test_suite(amc_zone_tests,
+			 ztest_unit_test(test_zone_calc));
+	ztest_run_test_suite(amc_zone_tests);
 }
 
 EVENT_LISTENER(test_main, event_handler);
