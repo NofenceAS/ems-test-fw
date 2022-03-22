@@ -66,12 +66,6 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 zephyr_include_directories(${PROJECT_BINARY_DIR}/include/generated)
 
-# These are common files used by both hardware test and the real app
-set(APP_SOURCES
-        src/ble/nf_ble.c        
-        src/ble/beacon_processor.c
-)
-
 #if (HARDWARE_TEST)
 #        set(APP_MAIN src/main_hardware_test.c)
 #else ()
@@ -97,9 +91,7 @@ zephyr_library_include_directories(
   	src/events/environment
 	src/modules/cellular_controller
         src/events/cellular_controller
-	src/modules/buzzer
-        src/modules/gnss_controller
-        src/events/gnss_controller
+  	src/modules/buzzer
         ${PROJECT_BINARY_DIR}/include/generated/)
         
 target_sources(app PRIVATE ${APP_MAIN}

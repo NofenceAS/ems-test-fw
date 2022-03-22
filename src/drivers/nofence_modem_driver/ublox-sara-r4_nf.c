@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT u_blox_sara_r4
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
+LOG_MODULE_REGISTER(modem_ublox_sara_r4_nf, CONFIG_MODEM_LOG_LEVEL);
 
 #include <kernel.h>
 #include <ctype.h>
@@ -901,6 +901,8 @@ MODEM_CMD_DEFINE(on_cmd_socknotifyclose)
 				    ATOI(argv[0], 0, "socket_id"));
 	if (sock) {
 		sock->is_connected = false;
+		/* make sure socket data structure is reset */
+		modem_socket_put(&mdata.socket_config, sock->sock_fd);
 	}
 
 	return 0;
