@@ -10,6 +10,7 @@
 
 /** @brief Enum for defining the modules that can publish to this event. 
  *         Will be used by error handler module to perform the correct actions.
+ *         Add new values before ERR_END_OF_LIST.
  */
 enum error_sender_module {
 	ERR_SENDER_FW_UPGRADE = 0,
@@ -18,7 +19,8 @@ enum error_sender_module {
 	ERR_SENDER_ENV_SENSOR = 3,
 	ERR_ELECTRIC_PULSE = 4,
 	ERR_PWR_MODULE = 5,
-	GPS_CONTROLLER = 6
+	ERR_GNSS_CONTROLLER = 6,
+	ERR_END_OF_LIST = 7
 };
 
 /**
