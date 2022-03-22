@@ -97,6 +97,7 @@ zephyr_library_include_directories(
   	src/events/environment
 	src/modules/cellular_controller
         src/events/cellular_controller
+	src/modules/buzzer
         src/modules/gnss_controller
         src/events/gnss_controller
         ${PROJECT_BINARY_DIR}/include/generated/)
@@ -113,6 +114,7 @@ add_subdirectory(src/modules/storage_controller)
 add_subdirectory(src/eeprom)
 add_subdirectory(src/modules/amc)
 add_subdirectory(src/modules/cellular_controller)
+add_subdirectory(src/modules/buzzer)
 
 add_subdirectory(src/modules/power_manager)
 add_subdirectory(src/events/power_manager)
