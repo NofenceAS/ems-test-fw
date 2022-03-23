@@ -17,6 +17,8 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4_nf, CONFIG_MODEM_LOG_LEVEL);
 #include <device.h>
 #include <init.h>
 #include <fcntl.h>
+#include <pm/device.h>
+#include <pm/device_runtime.h>
 
 #include <net/net_if.h>
 #include <net/net_offload.h>
@@ -957,6 +959,57 @@ static void modem_rx(void)
 	}
 }
 
+bool modem_has_power(void)
+{
+#if !DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
+	#error "Modem must have VINT pin!"
+#endif
+
+	return modem_pin_read(&mctx, MDM_VINT) != 0;
+}
+
+static int uart_state_set(enum pm_device_state target_state)
+{
+	int ret = 0;
+
+	enum pm_device_state current_state;
+	ret = pm_device_state_get(MDM_UART_DEV, &current_state);
+	if (ret) {
+		LOG_ERR("pm_device_state_get: %d", ret);
+		return -EIO;
+	}
+
+	if (target_state == current_state) {
+		return 0;
+	}
+
+	ret = pm_device_state_set(MDM_UART_DEV, target_state);
+	if (ret) {
+		LOG_ERR("pm_device_state_set: %d", ret);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static bool modem_rx_pin_is_high(void) {
+#if DT_PROP(DT_INST_BUS(0), rx_pin) >= 32
+/* This error is used to detect unhandled situations
+   The situations are unhandled to avoid unnecessary complexity */
+#error "Modem RX pin must be in GPIO0"
+#endif
+
+	uint32_t rx_pin = DT_PROP(DT_INST_BUS(0), rx_pin);
+	
+	uint32_t values = 0;
+	const struct device *gpio_dev = 
+			device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
+	gpio_pin_configure(gpio_dev, rx_pin, GPIO_INPUT);
+	gpio_port_get_raw(gpio_dev, &values);
+	
+	return ((values&(1<<rx_pin)) != 0);
+}
+
 static int pin_init(void)
 {
 	LOG_INF("Setting Modem Pins");
@@ -966,66 +1019,82 @@ static int pin_init(void)
 	modem_pin_write(&mctx, MDM_RESET, MDM_RESET_NOT_ASSERTED);
 #endif
 
+	uart_state_set(PM_DEVICE_STATE_SUSPENDED);
+	k_sleep(K_MSEC(100));
+
 	LOG_DBG("MDM_POWER_PIN -> ENABLE");
 	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
 	k_sleep(K_SECONDS(4));
 
-	LOG_DBG("MDM_POWER_PIN -> DISABLE");
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
-#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
-	k_sleep(K_SECONDS(1));
-#else
-	k_sleep(K_SECONDS(4));
-#endif
-	LOG_DBG("MDM_POWER_PIN -> ENABLE");
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
-	k_sleep(K_SECONDS(1));
+	if (modem_has_power()) {
 
-	/* make sure module is powered off */
-#if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
-	LOG_DBG("Waiting for MDM_VINT_PIN = 0");
-
-	while (modem_pin_read(&mctx, MDM_VINT) > 0) {
-#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
-		/* try to power off again */
 		LOG_DBG("MDM_POWER_PIN -> DISABLE");
 		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
 		k_sleep(K_SECONDS(1));
+#else
+		k_sleep(K_SECONDS(4));
+#endif
 		LOG_DBG("MDM_POWER_PIN -> ENABLE");
 		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
-#endif
-		k_sleep(K_MSEC(100));
-	}
-#else
-	k_sleep(K_SECONDS(8));
-#endif
+		k_sleep(K_SECONDS(1));
 
-	LOG_DBG("MDM_POWER_PIN -> DISABLE");
+		/* make sure module is powered off */
+#if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
+		LOG_DBG("Waiting for MDM_VINT_PIN = 0");
 
-	unsigned int irq_lock_key = irq_lock();
-
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+		while (modem_has_power()) {
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
-	k_usleep(50); /* 50-80 microseconds */
-#else
-	k_sleep(K_SECONDS(1));
+			/* try to power off again */
+			LOG_DBG("MDM_POWER_PIN -> DISABLE");
+			modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+			k_sleep(K_SECONDS(1));
+			LOG_DBG("MDM_POWER_PIN -> ENABLE");
+			modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
 #endif
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+			k_sleep(K_MSEC(100));
+		}
+#else
+		k_sleep(K_SECONDS(8));
+#endif
+	}
 
-	irq_unlock(irq_lock_key);
+	if (!modem_has_power()) {
+		LOG_DBG("MDM_POWER_PIN -> DISABLE");
 
-	LOG_DBG("MDM_POWER_PIN -> ENABLE");
+		unsigned int irq_lock_key = irq_lock();
+
+		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
+		k_usleep(50);		/* 50-80 microseconds */
+#else
+		k_sleep(K_SECONDS(1));
+#endif
+		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+
+		irq_unlock(irq_lock_key);
+
+		LOG_DBG("MDM_POWER_PIN -> ENABLE");
 
 #if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
-	LOG_DBG("Waiting for MDM_VINT_PIN = 1");
+		LOG_DBG("Waiting for MDM_VINT_PIN = 1");
+		do {
+			k_sleep(K_MSEC(100));
+		} while (!modem_has_power());
+#else
+		k_sleep(K_SECONDS(10));
+#endif
+	}
+
+	/* Wait for modem GPIO RX pin to rise, indicating readiness */
+	LOG_DBG("Waiting for Modem RX = 1");
 	do {
 		k_sleep(K_MSEC(100));
-	} while (modem_pin_read(&mctx, MDM_VINT) == 0);
-#else
-	k_sleep(K_SECONDS(10));
-#endif
+	} while (!modem_rx_pin_is_high());
 
 	modem_pin_config(&mctx, MDM_POWER, false);
+
+	uart_state_set(PM_DEVICE_STATE_ACTIVE);
 
 	LOG_INF("... Done!");
 
@@ -1120,7 +1189,7 @@ static void modem_rssi_query_work(struct k_work *work)
 }
 #endif
 
-static void modem_reset(void)
+static int modem_reset(void)
 {
 	int ret = 0, retry_count = 0, counter = 0;
 	static const struct setup_cmd setup_cmds[] = {
@@ -1201,7 +1270,11 @@ restart:
 	k_work_cancel_delayable(&mdata.rssi_query_work);
 #endif
 
-	pin_init();
+	ret = pin_init();
+	if (ret != 0) {
+		LOG_ERR("Pin configuration failed.");
+		goto error;
+	}
 
 	LOG_INF("Waiting for modem to respond");
 
@@ -1360,7 +1433,7 @@ restart:
 #endif
 
 error:
-	return;
+	return ret;
 }
 
 /*
@@ -2185,12 +2258,20 @@ static int modem_init(const struct device *dev)
 	k_work_init_delayable(&mdata.rssi_query_work, modem_rssi_query_work);
 #endif
 
+#if defined(CONFIG_MODEM_UBLOX_INIT_RESET)
 	modem_reset();
+#endif
 
 error:
 	return ret;
 }
 
-NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL, &mdata, NULL,
+int modem_nf_reset(void)
+{
+	return modem_reset();
+}
+
+NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL,
+				  &mdata, NULL,
 				  CONFIG_MODEM_UBLOX_SARA_R4_INIT_PRIORITY,
 				  &api_funcs, MDM_MAX_DATA_LENGTH);

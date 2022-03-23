@@ -10,6 +10,7 @@
 #include "fw_upgrade_events.h"
 #include "nf_eeprom.h"
 #include "ble_controller.h"
+#include "cellular_controller.h"
 #include "ep_module.h"
 #include "amc_handler.h"
 #include "nf_eeprom.h"
