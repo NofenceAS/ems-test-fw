@@ -1,0 +1,8 @@
+description: Mocked GNSS device
+
+compatible: "nofence,mock-gnss"
+
+properties:
+  label:
+    type: string
+    required: true
