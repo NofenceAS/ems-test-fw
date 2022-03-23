@@ -105,7 +105,7 @@ static bool event_handler(const struct event_header *eh)
 	}
 	if (is_error_event(eh)) {
 		struct error_event *ev = cast_error_event(eh);
-		zassert_equal(ev->sender, ERR_SENDER_AMC, "Mismatched sender.");
+		zassert_equal(ev->sender, ERR_AMC, "Mismatched sender.");
 
 		zassert_equal(ev->severity, ERR_SEVERITY_FATAL,
 			      "Mismatched severity.");
