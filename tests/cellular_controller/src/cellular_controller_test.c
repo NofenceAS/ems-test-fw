@@ -37,39 +37,27 @@ void test_publish_event_with_a_received_msg(void) /* happy scenario - msg
 	zassert_equal(err, 0,
 		      "Expected cellular_proto_in event was not "
 		      "published ");
+	/* simulate messaging module not publishing it's ack- for the next test
+	struct messaging_ack_event *ack = new_messaging_ack_event();
+	EVENT_SUBMIT(ack);
+	 */
 }
 
 void test_ack_from_messaging_module_missed(void)
 {
-	test_init();
-	test_publish_event_with_a_received_msg(); /* first transaction */
-	received = 15;
+	received = 30;
 	ztest_returns_value(socket_receive, received);
-	ztest_returns_value(socket_receive, -1);
 
-	int8_t err = k_sem_take(&cellular_error, K_SECONDS(1));
+	int err = k_sem_take(&cellular_error, K_SECONDS(5));
 	zassert_equal(err, 0,
 		      "Expected cellular_error event was not "
 		      "published ");
-
-	err = k_sem_take(&cellular_proto_in, K_SECONDS(1));
+	err = k_sem_take(&cellular_proto_in, K_MSEC(100));
 	zassert_not_equal(err, 0,
 			  "Unexpected cellular_proto_in event was "
 			  "published ");
-}
-
-void test_gsm_device_not_ready(void)
-{
-	simulate_modem_down = true;
-
-	int8_t err = cellular_controller_init();
-	zassert_not_equal(err, 0,
-			  "Cellular controller initialization "
-			  "incomplete!");
-	err = k_sem_take(&cellular_error, K_SECONDS(1));
-	zassert_equal(err, 0,
-		      "Expected cellular_error event was not"
-		      " published on modem down!");
+	struct messaging_ack_event *ack = new_messaging_ack_event();
+	EVENT_SUBMIT(ack);
 }
 
 void test_socket_connect_fails(void)
@@ -120,13 +108,27 @@ void test_socket_send_fails(void)
 		      " published on send error!");
 }
 
+void test_gsm_device_not_ready(void)
+{
+	simulate_modem_down = true;
+
+	int8_t err = cellular_controller_init();
+	zassert_not_equal(err, 0,
+			  "Cellular controller initialization "
+			  "incomplete!");
+	err = k_sem_take(&cellular_error, K_SECONDS(1));
+	zassert_equal(err, 0,
+		      "Expected cellular_error event was not"
+		      " published on modem down!");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(
 		cellular_controller_tests, ztest_unit_test(test_init),
 		ztest_unit_test(test_publish_event_with_a_received_msg),
-		ztest_unit_test(test_socket_connect_fails),
 		ztest_unit_test(test_ack_from_messaging_module_missed),
+		ztest_unit_test(test_socket_connect_fails),
 		ztest_unit_test(test_socket_rcv_fails),
 		ztest_unit_test(test_socket_send_fails),
 		ztest_unit_test(test_gsm_device_not_ready));

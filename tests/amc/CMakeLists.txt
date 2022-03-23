@@ -38,6 +38,7 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/drivers/gnss/zephyr
 )
 
 add_dependencies(app collar_protocol_headers)

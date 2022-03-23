@@ -19,7 +19,7 @@ enum error_sender_module {
 	ERR_PWR_MODULE = 4,
 	ERR_SENDER_SOUND_CONTROLLER = 5,
 	ERR_MESSAGING = 6,
-	ERR_ELECTRIC_PULSE = 7
+	ERR_ELECTRIC_PULSE = 7,	
 };
 
 /**
