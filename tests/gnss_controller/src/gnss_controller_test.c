@@ -143,6 +143,7 @@ void test_old_gnss_last_fix_callback1(void)
 	test_init_ok();
 	//fix arrives on time
 	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	simulate_new_gnss_data(dummy_gnss_data);
 	int8_t err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
 	zassert_equal(err, 0,
 		      "Expected gnss fix event was not published!");
@@ -150,6 +151,7 @@ void test_old_gnss_last_fix_callback1(void)
 	//fix arrives after 6 seconds
 	k_sleep(K_SECONDS(6));
 	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_HOT);
 	err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
@@ -159,6 +161,7 @@ void test_old_gnss_last_fix_callback1(void)
 	//fix arrives after 11 seconds
 	k_sleep(K_SECONDS(11));
 	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_WARM);
 	err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
@@ -168,6 +171,7 @@ void test_old_gnss_last_fix_callback1(void)
 	//fix arrives after 21 seconds
 	k_sleep(K_SECONDS(21));
 	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_COLD);
 	err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
@@ -176,6 +180,7 @@ void test_old_gnss_last_fix_callback1(void)
 
 	//fix arrives on time
 	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	simulate_new_gnss_data(dummy_gnss_data);
 	err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
 	zassert_equal(err, 0,
 		      "Expected gnss fix event was not published!");
@@ -183,6 +188,7 @@ void test_old_gnss_last_fix_callback1(void)
 	//fix arrives after 6 seconds
 	k_sleep(K_SECONDS(6));
 	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_HOT);
 	err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
@@ -192,6 +198,7 @@ void test_old_gnss_last_fix_callback1(void)
 	//fix arrives after 11 seconds
 	k_sleep(K_SECONDS(11));
 	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_WARM);
 	err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
@@ -201,6 +208,7 @@ void test_old_gnss_last_fix_callback1(void)
 	//fix arrives after 21 seconds
 	k_sleep(K_SECONDS(21));
 	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_COLD);
 	err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
@@ -209,6 +217,7 @@ void test_old_gnss_last_fix_callback1(void)
 
 	k_sleep(K_SECONDS(21));
 	simulate_new_gnss_last_fix(dummy_gnss_fix);
+	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_COLD);
 	err = k_sem_take(&gnss_new_fix, K_SECONDS(0.1));
