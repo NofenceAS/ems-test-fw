@@ -638,7 +638,8 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_ccid)
 	size_t out_len;
 
 	out_len = net_buf_linearize(mdata.mdm_ccid, sizeof(mdata.mdm_ccid) - 1,
-				    data->rx_buf, 0, len);
+				    data->rx_buf, 7, len); /*offset of 7
+ * bytes to discard 'ccid:_' */
 	mdata.mdm_ccid[out_len] = '\0';
 	LOG_INF("CCID: %s", log_strdup(mdata.mdm_ccid));
 
@@ -736,6 +737,24 @@ static const struct setup_cmd query_cellinfo_cmds[] = {
 	SETUP_CMD("AT+COPS?", "", on_cmd_atcmdinfo_cops, 3U, ","),
 };
 #endif /* CONFIG_MODEM_CELL_INFO */
+
+/*
+ * Handler: +CEREG: <n>[0],<stat>[1],<tac>[2],<ci>[3],<AcT>[4]
+ */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
+{
+	LOG_WRN("CDGCONT? handler, %d", argc);
+	for (int i=0; i<=argc;i++) {
+		LOG_INF("%d: %s", i,argv[i]);
+	}
+//	if (argc >= 4) {
+//		mctx.data_lac = unquoted_atoi(argv[2], 16);
+//		mctx.data_cellid = unquoted_atoi(argv[3], 16);
+//		LOG_INF("lac: %u, cellid: %u", mctx.data_lac, mctx.data_cellid);
+//	}
+
+	return 0;
+}
 
 /*
  * Modem Socket Command Handlers
@@ -1252,8 +1271,9 @@ static int modem_reset(void)
 		SETUP_CMD_NOHANDLE("AT+UPSDA=0,3"),
 #else
 		/* activate the PDP context */
-		SETUP_CMD_NOHANDLE("AT+CGDCONT?"),
+//		SETUP_CMD_NOHANDLE("AT+CGDCONT?"),
 		SETUP_CMD_NOHANDLE("AT+COPS?"),
+		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 6U, ","),
 #endif
 	};
 
