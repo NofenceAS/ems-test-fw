@@ -75,4 +75,14 @@ void test_zone_calc(void)
 	zassert_equal(zone_update(-250, false), 
 		      NO_ZONE, 
 		      "Not in no zone as expected");
+	
+	/* Extremes minimum */
+	zassert_equal(zone_update(INT16_MIN, true), 
+		      PSM_ZONE, 
+		      "Not in psm zone as expected");
+	
+	/* Extremes maximum */
+	zassert_equal(zone_update(INT16_MAX, true), 
+		      WARN_ZONE, 
+		      "Not in warn zone as expected");
 }
