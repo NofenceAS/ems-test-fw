@@ -23,7 +23,7 @@ void test_init(void)
 	ztest_returns_value(eep_read_host_port, 0);
 	ztest_returns_value(socket_connect, 0);
 	int8_t err = cellular_controller_init();
-	while (!cellular_controller_is_connected()) {
+	while (!cellular_controller_is_ready()) {
 		k_sleep(K_MSEC(100));
 	}
 	zassert_equal(err, 0, "Cellular controller initialization incomplete!");
@@ -74,7 +74,7 @@ void test_socket_connect_fails(void)
 	zassert_equal(err, 0,
 			  "Cellular controller initialization "
 			  "incomplete!");
-	err = k_sem_take(&cellular_error, K_SECONDS(1));
+	err = k_sem_take(&cellular_error, K_SECONDS(7));
 	zassert_equal(err, 0,
 		      "Expected cellular_error event was not"
 		      " published on socket connect error!");
