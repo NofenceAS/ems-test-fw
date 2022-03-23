@@ -15,7 +15,9 @@
 #include "nf_eeprom.h"
 #include "buzzer.h"
 #include "pwr_module.h"
-
+#if defined(CONFIG_WATCHDOG_ENABLE)
+#include "watchdog_app.h"
+#endif
 #include "storage.h"
 #include "nf_version.h"
 
@@ -113,12 +115,18 @@ void main(void)
 		NF_X25_VERSION_NUMBER);
 	err = cellular_controller_init();
 	if (err) {
-		LOG_ERR("Could not initialize cellular controller. %d",
-			err);
+		LOG_ERR("Could not initialize cellular controller. %d", err);
 	}
 
 	err = messaging_module_init();
 	if (err) {
 		LOG_ERR("Could not initialize messaging module. %d", err);
 	}
+#if defined(CONFIG_WATCHDOG_ENABLE)
+	err = watchdog_init_and_start();
+	if (err) {
+		LOG_ERR("Could not initialize and start watchdog, error: %d",
+			err);
+	}
+#endif
 }

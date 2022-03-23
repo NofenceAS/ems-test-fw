@@ -82,3 +82,6 @@ menu "Nofence-modem-driver"
 rsource "src/drivers/nofence_modem_driver/Kconfig"
 endmenu
 
+menu "Watchdog"
+rsource "src/modules/watchdog/Kconfig"
+endmenu
