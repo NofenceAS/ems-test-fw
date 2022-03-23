@@ -36,6 +36,7 @@ list(APPEND ZEPHYR_EXTRA_MODULES
 list(APPEND ZEPHYR_EXTRA_MODULES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/collar_protocol
         ${CMAKE_CURRENT_SOURCE_DIR}/src/drivers/gnss
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/drivers/modem_nf
         )
 
 
@@ -80,24 +81,24 @@ endif ()
 zephyr_library_include_directories(
         src/modules/amc
         src/modules/fw_upgrade
-  	    src/modules/storage_controller
+        src/modules/storage_controller
         src/events
         src/modules/error_handler
         src/events/error_handler
         src/modules/diagnostics
         src/events/diagnostics
         src/events/fw_upgrade
-  	    src/modules/environment
-  	    src/events/environment
-	    src/modules/cellular_controller
+        src/modules/environment
+        src/events/environment
+        src/modules/cellular_controller
         src/events/cellular_controller
   	    src/modules/buzzer
         ${PROJECT_BINARY_DIR}/include/generated/)
         
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
-)       
-        
+)
+
 # Application sources
 add_subdirectory(src/events/ble)
 add_subdirectory(src/modules/ble)
@@ -118,7 +119,3 @@ add_subdirectory(src/modules/diagnostics)
 add_subdirectory(src/events/electric_pulse)
 add_subdirectory(src/modules/electric_pulse)
 add_subdirectory(src/modules/environment)
-
-if (CONFIG_MODEM_UBLOX_SARA_NF)
-        add_subdirectory(src//drivers/nofence_modem_driver)
-endif()
