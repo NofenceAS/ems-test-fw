@@ -9,17 +9,18 @@
 /** @brief Function to convert enum to string */
 static char *stringFromEnum(enum ble_ctrl_cmd cmd)
 {
-	static char *strings[] = {
-		"BLE_CTRL_ADV_ENABLE",
-		"BLE_CTRL_ADV_DISABLE",
-		"BLE_CTRL_BATTERY_UPDATE",
-		"BLE_CTRL_ERROR_FLAG_UPDATE",
-		"BLE_CTRL_COLLAR_MODE_UPDATE",
-		"BLE_CTRL_COLLAR_STATUS_UPDATE",
-		"BLE_CTRL_FENCE_STATUS_UPDATE",
-		"BLE_CTRL_PASTURE_UPDATE",
-		"BLE_CTRL_FENCE_DEF_VER_UPDATE",
-	};
+	static char *strings[] = { "BLE_CTRL_ADV_ENABLE",
+				   "BLE_CTRL_ADV_DISABLE",
+				   "BLE_CTRL_BATTERY_UPDATE",
+				   "BLE_CTRL_ERROR_FLAG_UPDATE",
+				   "BLE_CTRL_COLLAR_MODE_UPDATE",
+				   "BLE_CTRL_COLLAR_STATUS_UPDATE",
+				   "BLE_CTRL_FENCE_STATUS_UPDATE",
+				   "BLE_CTRL_PASTURE_UPDATE",
+				   "BLE_CTRL_FENCE_DEF_VER_UPDATE",
+				   "BLE_CTRL_SCAN_START",
+				   "BLE_CTRL_SCAN_STOP",
+				   "BLE_CTRL_DISCONNECT_PEER" };
 
 	return strings[cmd];
 }

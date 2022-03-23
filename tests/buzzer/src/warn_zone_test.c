@@ -14,34 +14,28 @@
 #include "buzzer_test.h"
 
 /* This test tries to run the warn_zone event without setting the
- * frequency event first. We would then expect sound controller to just
- * exit the SND_WARN event immediately.
+ * frequency event first. We should expect the sound controller to play the
+ * init frequency for the timeout duration since we do not give it any updates.
  */
-void test_warn_zone_invalid_freq_event(void)
+void test_warn_zone_init(void)
 {
+	mock_expect_pwm_hz(WARN_FREQ_MS_PERIOD_INIT);
+
 	struct sound_event *ev = new_sound_event();
 	ev->type = SND_WARN;
 	EVENT_SUBMIT(ev);
 
-	/* We should not get playing warn event 
-	 * since we're outside the range.
+	/* We should get playing warn event 
+	 * since we just issued the event.
 	 */
 	int err = k_sem_take(&sound_playing_warn_sem, K_SECONDS(30));
-	zassert_not_equal(err, 0, "");
+	zassert_equal(err, 0, "");
 
-	/* Should not get playing normal either, we play nothing since
-	 * frequency is invalid.
-	 */
-	err = k_sem_take(&sound_playing_sem, K_SECONDS(30));
-	zassert_not_equal(err, 0, "");
-
-	/* We should not timeout either, as we never properly enter warn zone
-	 * loop.
-	 */
+	/* We should timeout here, since we do not get a new frequency update. */
 	err = k_sem_take(&error_timeout_sem, K_SECONDS(30));
-	zassert_not_equal(err, 0, "Should not timeout in this test.");
+	zassert_equal(err, 0, "Should not timeout in this test.");
 
-	/* The only one we should get is playing IDLE. */
+	/* Finish with playing IDLE. */
 	err = k_sem_take(&sound_idle_sem, K_SECONDS(30));
 	zassert_equal(err, 0, "");
 }
@@ -53,18 +47,26 @@ void test_warn_zone_invalid_freq_event(void)
  */
 void test_warn_zone_timeout(void)
 {
+	/* Issue warn zone, will start playing initial frequency. */
+	mock_expect_pwm_hz(WARN_FREQ_MS_PERIOD_INIT);
+
+	struct sound_event *ev = new_sound_event();
+	ev->type = SND_WARN;
+	EVENT_SUBMIT(ev);
+
+	/* Wait for playing warn zone event. */
+	int err = k_sem_take(&sound_playing_warn_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
+
+	/* Play MAX event. */
 	mock_expect_pwm_hz(WARN_FREQ_MS_PERIOD_MAX);
 
 	struct sound_set_warn_freq_event *ef = new_sound_set_warn_freq_event();
 	ef->freq = WARN_FREQ_MS_PERIOD_MAX;
 	EVENT_SUBMIT(ef);
 
-	struct sound_event *ev = new_sound_event();
-	ev->type = SND_WARN;
-	EVENT_SUBMIT(ev);
-
 	/* Wait for playing MAX event. */
-	int err = k_sem_take(&sound_playing_max_sem, K_SECONDS(30));
+	err = k_sem_take(&sound_playing_max_sem, K_SECONDS(30));
 	zassert_equal(err, 0, "");
 
 	/* Wait for playing idle event which should happen as we timeout. */
@@ -87,22 +89,16 @@ void test_warn_zone_play_until_range(void)
 {
 	int err;
 
-	/* Tell the sound controller we're in the warn zone, we have to
-	 * give it a valid frequency before we submit SND_WARN.
-	 */
+	/* Issue new warn zone event. Expect INIT freq to be played. */
 	mock_expect_pwm_hz(WARN_FREQ_MS_PERIOD_INIT);
-	struct sound_set_warn_freq_event *efw = new_sound_set_warn_freq_event();
-	efw->freq = WARN_FREQ_MS_PERIOD_INIT;
-	EVENT_SUBMIT(efw);
-
-	err = k_sem_take(&freq_event_sem, K_SECONDS(30));
-	zassert_equal(err, 0, "");
 
 	struct sound_event *ev = new_sound_event();
 	ev->type = SND_WARN;
 	EVENT_SUBMIT(ev);
 
-	k_sleep(K_MSEC(200));
+	/* Wait for playing warn zone event. */
+	err = k_sem_take(&sound_playing_warn_sem, K_SECONDS(30));
+	zassert_equal(err, 0, "");
 
 	for (int i = WARN_FREQ_MS_PERIOD_MAX;
 	     i > WARN_FREQ_MS_PERIOD_INIT - 100; i -= 50) {

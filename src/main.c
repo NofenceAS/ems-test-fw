@@ -6,11 +6,11 @@
 #include <zephyr.h>
 
 #include "diagnostics.h"
-#include "ble/nf_ble.h"
 #include "fw_upgrade.h"
 #include "fw_upgrade_events.h"
 #include "nf_eeprom.h"
 #include "ble_controller.h"
+#include "cellular_controller.h"
 #include "ep_module.h"
 #include "amc_handler.h"
 #include "nf_eeprom.h"
@@ -58,10 +58,10 @@ void main(void)
 	}
 	LOG_INF("Serial number is: %d", eeprom_stored_serial_nr);
 
-	// uint8_t ble_key_ret[8];
-	// memset(ble_key_ret, 0, 8);
-	// eep_read_ble_sec_key(ble_key_ret, 8);
-	// LOG_HEXDUMP_INF(ble_key_ret, 8, "BLE sec key");
+	uint8_t ble_key_ret[8];
+	memset(ble_key_ret, 0, 8);
+	eep_read_ble_sec_key(ble_key_ret, 8);
+	LOG_HEXDUMP_INF(ble_key_ret, 8, "BLE sec key");
 #endif
 
 	/* Initialize diagnostics module. */
@@ -116,13 +116,20 @@ void main(void)
 		LOG_ERR("Could not initialize AMC module. %d", err);
 	}
 
-	cellular_controller_init();
-
-	messaging_module_init();
 	/* Play welcome sound. */
 	// struct sound_event *sound_ev = new_sound_event();
 	// sound_ev->type = SND_WELCOME;
 	// EVENT_SUBMIT(sound_ev);
+
+	err = cellular_controller_init();
+	if (err) {
+		LOG_ERR("Could not initialize cellular controller. %d", err);
+	}
+
+	err = messaging_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize messaging module. %d", err);
+	}
 
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,

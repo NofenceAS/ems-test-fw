@@ -21,11 +21,12 @@ FILE(GLOB app_sources
         src/*.c 
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/crc/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/lte/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/messaging/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/cellular_controller/*.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/gps_controller/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/gnss_controller/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/error_event.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/storage/storage_event.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/fw_upgrade_events.c
@@ -38,17 +39,20 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/mock
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/crc/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/messaging/
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/ble/services
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/lte
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/cellular_controller
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/gps_controller
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/gnss_controller
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/amc
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/storage/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/drivers/gnss/zephyr
 )
 
 

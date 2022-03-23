@@ -310,7 +310,7 @@ void test_main(void)
 					       setup_common, teardown_common),
 		ztest_unit_test_setup_teardown(test_priority_first_prio,
 					       setup_common, teardown_common),
-		ztest_unit_test_setup_teardown(test_warn_zone_invalid_freq_event,
+		ztest_unit_test_setup_teardown(test_warn_zone_init,
 					       setup_common, teardown_common),
 		ztest_unit_test_setup_teardown(test_warn_zone_timeout,
 					       setup_common, teardown_common),

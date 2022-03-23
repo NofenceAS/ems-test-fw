@@ -8,7 +8,7 @@
 #include <zephyr.h>
 #include "sound_event.h"
 
-void test_warn_zone_invalid_freq_event(void);
+void test_warn_zone_init(void);
 void test_warn_zone_timeout(void);
 void test_warn_zone_play_until_range(void);
 
