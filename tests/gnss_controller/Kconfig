@@ -1,0 +1,15 @@
+
+menu "APPLICATION_CODE"
+	menu "GNSS_CTRL"
+    	rsource "./../../src/modules/gnss_controller/Kconfig"
+	endmenu # GNSS_CTRL
+
+    menu "ERROR_HANDLER"
+        rsource "./../../src/modules/error_handler/Kconfig"
+    endmenu # ERROR_HANDLER
+
+endmenu # APPLICATION CODE
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu
