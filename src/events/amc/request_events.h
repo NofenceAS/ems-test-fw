@@ -7,7 +7,7 @@
 
 #include "event_manager.h"
 #include <zephyr.h>
-#include "nf_common.h"
+#include "gnss.h"
 
 /** @note These events and definitions WILL be moved to their respective module
  *        once they're in place.

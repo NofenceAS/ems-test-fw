@@ -108,9 +108,16 @@ void main(void)
 	sound_ev->type = SND_WELCOME;
 	EVENT_SUBMIT(sound_ev);
 
-	cellular_controller_init();
+	err = cellular_controller_init();
+	if (err) {
+		LOG_ERR("Could not initialize cellular controller. %d",
+			err);
+	}
 
-	messaging_module_init();
+	err = messaging_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize messaging module. %d", err);
+	}
 
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,

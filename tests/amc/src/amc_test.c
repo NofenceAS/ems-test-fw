@@ -7,9 +7,9 @@
 #include "sound_event.h"
 #include "messaging_module_events.h"
 #include "pasture_structure.h"
-#include "nf_common.h"
 #include "request_events.h"
 
+#include "gnss.h"
 #include "error_event.h"
 
 K_SEM_DEFINE(sound_event_sem, 0, 1);
