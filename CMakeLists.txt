@@ -120,5 +120,4 @@ add_subdirectory(src/events/electric_pulse)
 add_subdirectory(src/modules/electric_pulse)
 add_subdirectory(src/modules/environment)
 
-add_subdirectory_ifdef(CONFIG_MODEM_UBLOX_SARA_NF src/drivers/nofence_modem_driver)
 add_subdirectory_ifdef(CONFIG_WATCHDOG_ENABLE src/modules/watchdog)
