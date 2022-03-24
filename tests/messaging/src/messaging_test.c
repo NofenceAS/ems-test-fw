@@ -112,6 +112,9 @@ void test_initial_poll_request_out(void)
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager\n");
 	messaging_module_init();
+	struct connection_ready_event *ev
+		= new_connection_ready_event();
+	EVENT_SUBMIT(ev);
 	k_sem_take(&msg_out, K_SECONDS(0.5));
 	printk("Outbound messages = %d\n", msg_count);
 	zassert_not_equal(pMsg, NULL, "Proto message not published!\n");
@@ -160,6 +163,9 @@ void test_poll_response_has_new_fence(void)
 	msgIn->buf = &encoded_msg[0];
 	msgIn->len = encoded_size+2;
 	EVENT_SUBMIT(msgIn);
+	struct connection_ready_event *ev
+		= new_connection_ready_event();
+	EVENT_SUBMIT(ev);
 	k_sem_take(&msg_out, K_FOREVER);
 	int err = collar_protocol_decode(pMsg+2, len-2, &decode);
 	zassert_equal(err, 0, "Decode error!\n");
@@ -210,6 +216,9 @@ void test_poll_response_has_host_address(void)
 	msgIn->buf = &encoded_msg[0];
 	msgIn->len = encoded_size+2;
 	EVENT_SUBMIT(msgIn);
+	struct connection_ready_event *ev
+		= new_connection_ready_event();
+	EVENT_SUBMIT(ev);
 
 	ret = k_sem_take(&new_host, K_SECONDS(2));
 	zassert_equal(ret, 0 , "New host event not published!\n");

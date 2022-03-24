@@ -30,4 +30,7 @@ int eep_read_host_port(char *, size_t);
 
 int eep_write_host_port(const char *);
 
+int check_ip(void);
+
+int get_ip(char **);
 //int8_t cache_server_address(void);
