@@ -8,6 +8,7 @@
 #include "event_manager.h"
 #include "ble_controller.h"
 #include <zephyr.h>
+#include <bluetooth/addr.h>
 
 #define CONFIG_BT_DEVICE_NAME "NF999999"
 
@@ -25,15 +26,51 @@ struct bt_data {
 	const uint8_t *data;
 };
 
-typedef struct {
-	uint8_t val[6];
-} bt_addr_t;
-
-/** Bluetooth LE Device Address */
-typedef struct {
+struct bt_le_scan_param {
+	/** Scan type (BT_LE_SCAN_TYPE_ACTIVE or BT_LE_SCAN_TYPE_PASSIVE) */
 	uint8_t type;
-	bt_addr_t a;
-} bt_addr_le_t;
+
+	/** Bit-field of scanning options. */
+	uint32_t options;
+
+	/** Scan interval (N * 0.625 ms) */
+	uint16_t interval;
+
+	/** Scan window (N * 0.625 ms) */
+	uint16_t window;
+
+	/**
+	 * @brief Scan timeout (N * 10 ms)
+	 *
+	 * Application will be notified by the scan timeout callback.
+	 * Set zero to disable timeout.
+	 */
+	uint16_t timeout;
+
+	/**
+	 * @brief Scan interval LE Coded PHY (N * 0.625 MS)
+	 *
+	 * Set zero to use same as LE 1M PHY scan interval.
+	 */
+	uint16_t interval_coded;
+
+	/**
+	 * @brief Scan window LE Coded PHY (N * 0.625 MS)
+	 *
+	 * Set zero to use same as LE 1M PHY scan window.
+	 */
+	uint16_t window_coded;
+};
+
+// typedef struct {
+// 	uint8_t val[6];
+// } bt_addr_t;
+
+// /** Bluetooth LE Device Address */
+// typedef struct {
+// 	uint8_t type;
+// 	bt_addr_t a;
+// } bt_addr_le_t;
 
 struct bt_le_conn_param {
 	uint16_t interval_min;
@@ -264,7 +301,7 @@ int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
 
 uint16_t bt_gatt_get_mtu(struct bt_conn *conn);
 
-int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str, size_t len);
+//int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str, size_t len);
 
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
 
@@ -277,6 +314,37 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn,
 
 void bt_conn_cb_register(struct bt_conn_cb *cb);
 
+struct net_buf_simple {
+	/** Pointer to the start of data in the buffer. */
+	uint8_t *data;
+
+	/**
+	 * Length of the data behind the data pointer.
+	 *
+	 * To determine the max length, use net_buf_simple_max_len(), not #size!
+	 */
+	uint16_t len;
+
+	/** Amount of data that net_buf_simple#__buf can store. */
+	uint16_t size;
+
+	/** Start of the data storage. Not to be accessed directly
+	 *  (the data pointer should be used instead).
+	 */
+	uint8_t *__buf;
+};
+
+void net_buf_simple_init_with_data(struct net_buf_simple *buf, void *data,
+				   size_t size);
+
+uint16_t net_buf_simple_pull_be16(struct net_buf_simple *buf);
+uint8_t net_buf_simple_pull_u8(struct net_buf_simple *buf);
+void *net_buf_simple_pull_mem(struct net_buf_simple *buf, size_t len);
+
+void bt_data_parse(struct net_buf_simple *ad,
+		   bool (*func)(struct bt_data *data, void *user_data),
+		   void *user_data);
+
 bool bt_mock_is_battery_adv_data_correct(uint8_t data);
 bool bt_mock_is_error_flag_adv_data_correct(uint8_t data);
 bool bt_mock_is_collar_mode_adv_data_correct(uint8_t data);
@@ -285,6 +353,10 @@ bool bt_mock_is_fence_status_adv_data_correct(uint8_t data);
 bool bt_mock_is_pasture_status_adv_data_correct(uint8_t data);
 bool bt_mock_is_fence_def_ver_adv_data_correct(uint16_t data);
 
+typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
+			     uint8_t adv_type, struct net_buf_simple *buf);
 
+int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
+int bt_le_scan_stop(void);
 
 #endif

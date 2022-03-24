@@ -171,7 +171,7 @@ static bool event_handler(const struct event_header *eh)
 	}
 	if (is_error_event(eh)) {
 		struct error_event *ev = cast_error_event(eh);
-		zassert_equal(ev->sender, ERR_SENDER_FW_UPGRADE,
+		zassert_equal(ev->sender, ERR_FW_UPGRADE,
 			      "Wrong sender expected.");
 
 		if (cur_id == TEST_EVENT_ERROR_START_DL) {

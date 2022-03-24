@@ -7,11 +7,11 @@
 #include "sound_event.h"
 #include "messaging_module_events.h"
 #include "pasture_structure.h"
-#include "nf_common.h"
 #include "request_events.h"
 #include "amc_cache.h"
 #include "amc_dist.h"
 
+#include "gnss.h"
 #include "error_event.h"
 #include "amc_test_common.h"
 
@@ -110,6 +110,33 @@ void test_empty_fence(void)
 
 static bool event_handler(const struct event_header *eh)
 {
+	if (is_sound_event(eh)) {
+		struct sound_event *ev = cast_sound_event(eh);
+		zassert_equal(ev->type, SND_WELCOME,
+			      "Unexpected sound event type received");
+		k_sem_give(&sound_event_sem);
+	}
+	if (is_new_fence_available(eh)) {
+		k_sem_give(&pasture_ready_sem);
+	}
+	if (is_error_event(eh)) {
+		struct error_event *ev = cast_error_event(eh);
+		zassert_equal(ev->sender, ERR_AMC, "Mismatched sender.");
+
+		zassert_equal(ev->severity, ERR_SEVERITY_FATAL,
+			      "Mismatched severity.");
+
+		zassert_equal(ev->code, -ENODATA, "Mismatched error code.");
+
+		char *expected_message = "Cannot update pasture cache on AMC.";
+
+		zassert_equal(ev->dyndata.size, strlen(expected_message),
+			      "Mismatched message length.");
+
+		zassert_mem_equal(ev->dyndata.data, expected_message,
+				  ev->dyndata.size, "Mismatched user message.");
+		k_sem_give(&error_event_sem);
+	}
 	return false;
 }
 

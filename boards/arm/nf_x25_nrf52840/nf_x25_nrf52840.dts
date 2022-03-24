@@ -32,14 +32,6 @@
 		output-ohms = <5600000>;
 		full-ohms = <(5600000 + 10000000)>;
 	};
-	
-	/* Convenience aliases */
-	aliases {
-		gnss = &gnss;
-		eeprom = &eeprom0;
-		ep-ctrl = &ep_ctrl;
-		ep-detect = &ep_detect;
-	};
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -55,6 +47,24 @@
 		enable-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 	};
+
+
+	pwm_buzzer {
+		compatible = "pwm-buzzer";
+		pwm_buzzer: pwm_buzzer {
+			pwms = <&pwm0 14>;
+		};
+	};
+
+	/* Convenience aliases */
+	aliases {
+		eeprom = &eeprom0;
+		ep-ctrl = &ep_ctrl;
+		ep-detect = &ep_detect;
+		pwm-buzzer = &pwm_buzzer;
+		gnss = &gnss;
+	};
+
 };
 
 &adc {
@@ -123,9 +133,8 @@ gnss_uart: &uart1 {
 };
 
 &pwm0 {
-	status = "disabled";
-	ch0-pin = <13>;
-	ch0-inverted;
+	status = "okay";
+	ch0-pin = <14>;
 };
 
 &spi0 {

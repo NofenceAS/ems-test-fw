@@ -16,6 +16,7 @@ FILE(GLOB app_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging/msg_data_event.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/ble/ble_controller.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/ble/beacon_processor.c
 )
 target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE ${APP_SOURCE})
