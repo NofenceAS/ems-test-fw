@@ -123,8 +123,8 @@ static int mia_m10_sync_complete(uint32_t flag)
 				
 				gnss_data.lastfix.msss = gnss_data.latest.msss;
 
-				/* TODO - What to do?! */
-				gnss_data.lastfix.gps_mode = 0;
+				/* GNSS is always in max mode now */
+				gnss_data.lastfix.mode = GNSSMODE_MAX;
 
 				gnss_data.has_lastfix = true;
 			}
