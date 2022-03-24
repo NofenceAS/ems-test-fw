@@ -10,6 +10,7 @@
 #include "fw_upgrade_events.h"
 #include "nf_eeprom.h"
 #include "ble_controller.h"
+#include "cellular_controller.h"
 #include "ep_module.h"
 #include "amc_handler.h"
 #include "nf_eeprom.h"
@@ -38,11 +39,11 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 void main(void)
 {
 	LOG_INF("Starting Nofence application...");
-	int err = stg_init_storage_controller();
-	if (err) {
-		LOG_ERR("Could not initialize storage controller, %i", err);
-		return;
-	}
+//	int err = stg_init_storage_controller();
+//	if (err) {
+//		LOG_ERR("Could not initialize storage controller, %i", err);
+//		return;
+//	}
 
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
@@ -62,7 +63,7 @@ void main(void)
 #endif
 
 	/* Initialize the event manager. */
-	err = event_manager_init();
+	int err = event_manager_init();
 	if (err) {
 		LOG_ERR("Event manager could not initialize. %d", err);
 	}

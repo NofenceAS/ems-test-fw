@@ -24,6 +24,12 @@ int8_t socket_connect(struct data *dummy_data, struct sockaddr *dummy_add,
 {
 	return ztest_get_return_value();
 }
+
+int reset_modem(void)
+{
+	return ztest_get_return_value();
+}
+
 void stop_tcp(void)
 {
 	return;
