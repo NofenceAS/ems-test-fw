@@ -17,8 +17,8 @@ zephyr_include_directories(
 )
 
 FILE(GLOB app_sources 
-        mock/*.c
-        src/*.c 
+        ${CMAKE_CURRENT_SOURCE_DIR}/mock/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c 
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/lte/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging/*.c
