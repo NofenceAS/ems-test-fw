@@ -29,7 +29,7 @@ EVENT_TYPE_DECLARE(gnss_rate);
 /** @brief Set GNSS mode. */
 struct gnss_set_mode {
 	struct event_header header;
-	gnss_mode mode;
+	gnss_mode_t mode;
 };
 
 EVENT_TYPE_DECLARE(gnss_set_mode);

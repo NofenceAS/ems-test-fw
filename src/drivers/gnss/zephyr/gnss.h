@@ -65,7 +65,7 @@ typedef enum {
 	GNSSMODE_CAUTION = 3,
 	GNSSMODE_MAX = 4,
 	GNSSMODE_SIZE = 5
-} gnss_mode;
+} gnss_mode_t;
 
 /** @brief See gnss_struct_t for descriptions. */
 typedef struct {
@@ -80,7 +80,7 @@ typedef struct {
 	uint16_t h_dop;
 	int16_t height;
 	uint32_t msss;
-	gnss_mode mode;
+	gnss_mode_t mode;
 } gnss_last_fix_struct_t;
 
 /** @brief Struct containing both GNSS status messages and 

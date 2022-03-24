@@ -14,4 +14,6 @@ void test_fnc_calc_dist_2_fences_max_size(void);
 
 void test_zone_calc(void);
 
+void test_gnss_fix(void);
+
 #endif /* _AMC_TEST_COMMON_H_ */
