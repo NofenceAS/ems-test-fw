@@ -16,22 +16,14 @@ enum gnss_mode {
 	GNSSMODE_SIZE = 5
 };
 
-/** @brief Last GNSS fix received from the GNSS driver. */
-struct new_gnss_fix {
+
+/** @brief GNSS data received from the GNSS driver. */
+struct gnss_data {
 	struct event_header header;
-	gnss_last_fix_struct_t fix;
+	gnss_t gnss_data;
 };
 
-EVENT_TYPE_DECLARE(new_gnss_fix);
-
-
-/** @brief Last GNSS data received from the GNSS driver. */
-struct new_gnss_data {
-	struct event_header header;
-	gnss_struct_t gnss_data;
-};
-
-EVENT_TYPE_DECLARE(new_gnss_data);
+EVENT_TYPE_DECLARE(gnss_data);
 
 
 /** @brief Set GNSS receiver data update rate. */
