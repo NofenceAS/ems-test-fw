@@ -28,6 +28,8 @@
 #define MODULE main
 #include "module_state_event.h"
 
+#include "movement_controller.h"
+
 LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 
 /**
@@ -99,6 +101,11 @@ void main(void)
 		LOG_ERR("Could not initialize AMC module. %d", err);
 	}
 
+	err = init_movement_controller();
+	if (err) {
+		LOG_ERR("Could not initialize movement module. %d", err);
+	}
+
 	/* Play welcome sound. */
 	struct sound_event *sound_ev = new_sound_event();
 	sound_ev->type = SND_WELCOME;
@@ -114,8 +121,7 @@ void main(void)
 		NF_X25_VERSION_NUMBER);
 	err = cellular_controller_init();
 	if (err) {
-		LOG_ERR("Could not initialize cellular controller. %d",
-			err);
+		LOG_ERR("Could not initialize cellular controller. %d", err);
 	}
 
 	err = messaging_module_init();
