@@ -91,6 +91,7 @@ zephyr_library_include_directories(
         src/modules/environment
         src/events/environment
         src/modules/cellular_controller
+        src/modules/gnss_controller
         src/events/cellular_controller
   	    src/modules/buzzer
         ${PROJECT_BINARY_DIR}/include/generated/)
@@ -119,3 +120,4 @@ add_subdirectory(src/modules/diagnostics)
 add_subdirectory(src/events/electric_pulse)
 add_subdirectory(src/modules/electric_pulse)
 add_subdirectory(src/modules/environment)
+add_subdirectory(src/modules/gnss_controller)
