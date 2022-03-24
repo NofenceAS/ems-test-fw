@@ -61,7 +61,7 @@ void main(void)
 #endif
 
 	/* Initialize the event manager. */
-	int err = event_manager_init();
+	err = event_manager_init();
 	if (err) {
 		LOG_ERR("Event manager could not initialize. %d", err);
 	}
