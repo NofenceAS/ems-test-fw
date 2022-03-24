@@ -162,6 +162,7 @@ struct modem_data {
 	char mdm_imei[MDM_IMEI_LENGTH];
 	char mdm_imsi[MDM_IMSI_LENGTH];
 	char mdm_ccid[2 * MDM_IMSI_LENGTH];
+	char mdm_pdp_addr[MDM_IMSI_LENGTH];
 	int mdm_rssi;
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
@@ -738,21 +739,25 @@ static const struct setup_cmd query_cellinfo_cmds[] = {
 };
 #endif /* CONFIG_MODEM_CELL_INFO */
 
+
+
 /*
- * Handler: +CEREG: <n>[0],<stat>[1],<tac>[2],<ci>[3],<AcT>[4]
+ * Handler: [+CGDCONT: <cid>,<PDP_type>,
+	<APN>,<PDP_addr>,<d_comp>,
+	<h_comp>[,<IPv4AddrAlloc>,
+	<emergency_indication>[,<P-CSCF_
+	discovery>,<IM_CN_Signalling_Flag_
+	Ind>[,<NSLPI>]]]]
+
+ we're interested in PDP_addr != 0.0.0.0 to make sure that socket connection is
+ allowed.
  */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 {
 	LOG_WRN("CDGCONT? handler, %d", argc);
-	for (int i=0; i<=argc;i++) {
-		LOG_INF("%d: %s", i,argv[i]);
-	}
-//	if (argc >= 4) {
-//		mctx.data_lac = unquoted_atoi(argv[2], 16);
-//		mctx.data_cellid = unquoted_atoi(argv[3], 16);
-//		LOG_INF("lac: %u, cellid: %u", mctx.data_lac, mctx.data_cellid);
-//	}
-
+	LOG_INF("ip: %s", argv[3]);
+	memcpy(mdata.mdm_pdp_addr,argv[3],MDM_IMSI_LENGTH);
+	printk("new_mdm_pdp_addr = %s\n", mdata.mdm_pdp_addr);
 	return 0;
 }
 
@@ -1273,10 +1278,25 @@ static int modem_reset(void)
 		/* activate the PDP context */
 //		SETUP_CMD_NOHANDLE("AT+CGDCONT?"),
 		SETUP_CMD_NOHANDLE("AT+COPS?"),
-		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 6U, ","),
+//		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 6, ","),
 #endif
 	};
 
+//	ret = modem_cmd_handler_setup_cmds(
+//		&mctx.iface, &mctx.cmd_handler, post_setup_cmds2,
+//		1, &mdata.sem_response,
+//		MDM_REGISTRATION_TIMEOUT);
+//	if (ret != 0){
+//		LOG_ERR("Failed to read pdp address!");
+//		goto restart;
+//		/*TODO: handle differntly if needed!*/
+//	} else{
+//		ret = memcmp(mdata.mdm_pdp_addr,"0.0.0.0",9);
+//		if (ret != 0){
+//			LOG_INF("Valid ip address acquired!, %s", mdata.mdm_pdp_addr);
+//			return 0;
+//		}
+//	}
 restart:
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
@@ -2289,6 +2309,22 @@ error:
 int modem_nf_reset(void)
 {
 	return modem_reset();
+}
+
+int get_pdp_addr(char** ip_addr){
+	const struct setup_cmd post_setup_cmds2[] = {
+		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 6, ","),
+	};
+	int ret = modem_cmd_handler_setup_cmds(
+		&mctx.iface, &mctx.cmd_handler, post_setup_cmds2,
+		1, &mdata.sem_response,
+		MDM_REGISTRATION_TIMEOUT);
+	if (ret == 0){
+		*ip_addr = mdata.mdm_pdp_addr;
+		return 0;
+	}else{
+		return -1;
+	}
 }
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL,

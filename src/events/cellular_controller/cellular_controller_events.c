@@ -16,3 +16,8 @@ EVENT_TYPE_DEFINE(cellular_error_event,
                   true,
                   NULL,
                   NULL);
+
+EVENT_TYPE_DEFINE(connection_ready_event,
+		  true,
+		  NULL,
+		  NULL);

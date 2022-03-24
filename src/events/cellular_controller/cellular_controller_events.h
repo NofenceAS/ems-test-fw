@@ -31,7 +31,7 @@ enum cause {
 	CONNECTION_LOST = 6,
 };
 
-/** @brief Error event published by the cellular controller to when it
+/** @brief Error event published by the cellular controller when it
  * fails to send a message to the server. */
 
 struct cellular_error_event {
@@ -41,3 +41,14 @@ struct cellular_error_event {
 };
 
 EVENT_TYPE_DECLARE(cellular_error_event);
+
+/** @brief Error event published by the cellular controller when it
+ * fails to send a message to the server. */
+
+struct connection_ready_event {
+	struct event_header header;
+	enum cause cause;
+	int8_t err_code;
+};
+
+EVENT_TYPE_DECLARE(connection_ready_event);
