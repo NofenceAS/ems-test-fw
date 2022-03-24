@@ -4,7 +4,7 @@
 
 #include <ztest.h>
 #include "storage.h"
-#include "pasture_event.h"
+#include "storage_event.h"
 #include "storage_helper.h"
 
 #include "error_event.h"
@@ -32,7 +32,7 @@ void test_init(void)
 {
 	zassert_false(stg_init_storage_controller(),
 		      "Error when initializing storage controller.");
-	fill_dummy_fence();
+	init_dummy_pasture();
 }
 
 void test_main(void)
@@ -46,16 +46,19 @@ void test_main(void)
 	ztest_test_suite(storage_log_test, ztest_unit_test(test_log),
 			 ztest_unit_test(test_reboot_persistent_log),
 			 ztest_unit_test(test_log_extended),
-			 ztest_unit_test(test_request_ano_multiple),
-			 ztest_unit_test(test_no_log_available));
+			 ztest_unit_test(test_no_log_available),
+			 ztest_unit_test(test_log_after_reboot),
+			 ztest_unit_test(test_double_clear),
+			 ztest_unit_test(test_rotate_handling));
 	ztest_run_test_suite(storage_log_test);
 
 	/* Test ano partition. */
-	ztest_test_suite(storage_ano_test, ztest_unit_test(test_ano),
-			 ztest_unit_test(test_reboot_persistent_ano),
-			 ztest_unit_test(test_ano_extended_write_read),
-			 ztest_unit_test(test_request_ano_multiple),
-			 ztest_unit_test(test_no_ano_available));
+	ztest_test_suite(storage_ano_test,
+			 ztest_unit_test(test_ano_write_20_years),
+			 ztest_unit_test(test_ano_write_sent),
+			 ztest_unit_test(test_ano_write_all),
+			 ztest_unit_test(test_no_ano_available),
+			 ztest_unit_test(test_reboot_persistent_ano));
 	ztest_run_test_suite(storage_ano_test);
 
 	/* Test pasture partition. */

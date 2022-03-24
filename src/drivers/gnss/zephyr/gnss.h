@@ -58,7 +58,7 @@ typedef struct {
 	uint32_t ttff;
 } gnss_struct_t;
 
-/** @brief See gps_struct_t for descriptions. */
+/** @brief See gnss_struct_t for descriptions. */
 typedef struct {
 	int32_t lat;
 	int32_t lon;
@@ -73,6 +73,17 @@ typedef struct {
 	uint32_t msss;
 	uint8_t gps_mode;
 } gnss_last_fix_struct_t;
+
+/** @brief Struct containing both GNSS status messages and 
+ *         a flag indicating whether the fix was sufficient and the lastfix
+ *         has been updated. */
+typedef struct {
+	gnss_struct_t latest;
+	bool fix_ok;
+
+	gnss_last_fix_struct_t lastfix;
+	bool has_lastfix;
+} gnss_t;
 
 /* Constants */
 #define GNSS_RESET_MASK_HOT 0x0000
@@ -89,24 +100,13 @@ typedef struct {
 /**
  * @typedef gnss_data_cb_t
  * @brief Callback definition used for notifying of 
- *        updated gnss_struct_t
+ *        updated gnss_t
  *
  * @param[in] data Pointer to updated GNSS data
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-typedef int (*gnss_data_cb_t)(const gnss_struct_t *data);
-
-/**
- * @typedef gnss_lastfix_cb_t
- * @brief Callback definition used for notifying of 
- *        updated gnss_last_fix_struct_t
- *
- * @param[in] lastfix Pointer to updated GNSS last fix data
- * 
- * @return 0 if everything was ok, error code otherwise
- */
-typedef int (*gnss_lastfix_cb_t)(const gnss_last_fix_struct_t *lastfix);
+typedef int (*gnss_data_cb_t)(const gnss_t *data);
 
 /**
  * @typedef gnss_setup_t
@@ -161,30 +161,12 @@ typedef int (*gnss_set_data_cb_t)(const struct device *dev,
 				  gnss_data_cb_t gnss_data_cb);
 
 /**
- * @typedef gnss_set_lastfix_cb_t
- * @brief Callback API for setting callback to call on updated last fix data
- *
- * See gnss_set_lastfix_cb() for argument description
- */
-typedef int (*gnss_set_lastfix_cb_t)(const struct device *dev,
-				     gnss_lastfix_cb_t gnss_lastfix_cb);
-
-/**
  * @typedef gnss_data_fetch_t
  * @brief Callback API for getting latest GNSS data
  *
  * See gnss_data_fetch() for argument description
  */
-typedef int (*gnss_data_fetch_t)(const struct device *dev, gnss_struct_t *data);
-
-/**
- * @typedef gnss_lastfix_fetch_t
- * @brief Callback API for getting latest GNSS last fix data
- *
- * See gnss_lastfix_fetch() for argument description
- */
-typedef int (*gnss_lastfix_fetch_t)(const struct device *dev,
-				    gnss_last_fix_struct_t *lastfix);
+typedef int (*gnss_data_fetch_t)(const struct device *dev, gnss_t *data);
 
 __subsystem struct gnss_driver_api {
 	gnss_setup_t gnss_setup;
@@ -196,10 +178,8 @@ __subsystem struct gnss_driver_api {
 	gnss_get_rate_t gnss_get_rate;
 
 	gnss_set_data_cb_t gnss_set_data_cb;
-	gnss_set_lastfix_cb_t gnss_set_lastfix_cb;
 
 	gnss_data_fetch_t gnss_data_fetch;
-	gnss_lastfix_fetch_t gnss_lastfix_fetch;
 };
 
 /**
@@ -309,23 +289,6 @@ static inline int gnss_set_data_cb(const struct device *dev,
 }
 
 /**
- * @brief Set callback to call on updated last fix data
- *
- * @param[in] dev Pointer to the GNSS device
- * @param[in] gnss_lastfix_cb_t Callback function. 
- * 
- * @return 0 if everything was ok, error code otherwise
- */
-static inline int gnss_set_lastfix_cb(const struct device *dev,
-				      gnss_lastfix_cb_t gnss_lastfix_cb)
-{
-	const struct gnss_driver_api *api =
-		(const struct gnss_driver_api *)dev->api;
-
-	return api->gnss_set_lastfix_cb(dev, gnss_lastfix_cb);
-}
-
-/**
  * @brief Get latest GNSS data
  *
  * @param[in] dev Pointer to the GNSS device
@@ -333,29 +296,12 @@ static inline int gnss_set_lastfix_cb(const struct device *dev,
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static inline int gnss_data_fetch(const struct device *dev, gnss_struct_t *data)
+static inline int gnss_data_fetch(const struct device *dev, gnss_t *data)
 {
 	const struct gnss_driver_api *api =
 		(const struct gnss_driver_api *)dev->api;
 
 	return api->gnss_data_fetch(dev, data);
-}
-
-/**
- * @brief Get latest GNSS last fix data
- *
- * @param[in] dev Pointer to the GNSS device
- * @param[out] data Pointer to destination of data. 
- * 
- * @return 0 if everything was ok, error code otherwise
- */
-static inline int gnss_lastfix_fetch(const struct device *dev,
-				     gnss_last_fix_struct_t *lastfix)
-{
-	const struct gnss_driver_api *api =
-		(const struct gnss_driver_api *)dev->api;
-
-	return api->gnss_lastfix_fetch(dev, lastfix);
 }
 
 #endif /* GNSS_H_ */

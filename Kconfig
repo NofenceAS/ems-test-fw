@@ -63,6 +63,10 @@ rsource "src/modules/messaging/Kconfig"
 rsource "src/events/messaging/Kconfig"
 endmenu
 
+menu "GNSS controller"
+rsource "src/modules/gnss_controller/Kconfig"
+endmenu
+
 menu "Movement"
 rsource "src/modules/movement_controller/Kconfig"
 endmenu
