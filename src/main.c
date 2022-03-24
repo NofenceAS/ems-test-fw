@@ -31,6 +31,7 @@
 #include "module_state_event.h"
 
 #include "movement_controller.h"
+#include "movement_events.h"
 
 LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 
