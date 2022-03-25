@@ -60,9 +60,7 @@ static inline void submit_app_status(enum error_sender_module sender,
 
 	/* If not part of the ENUMs. */
 	if (sender < 0 || sender >= ERR_END_OF_LIST) {
-		LOG_ERR("Invalid error sender index, max allowed value is "
-			"%d!\n",
-			ERR_END_OF_LIST - 1);
+		LOG_ERR("Invalid error sender index %i", sender);
 		return;
 	}
 
