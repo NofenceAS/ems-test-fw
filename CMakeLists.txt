@@ -93,7 +93,8 @@ zephyr_library_include_directories(
         src/modules/cellular_controller
         src/modules/gnss_controller
         src/events/cellular_controller
-  	    src/modules/buzzer
+  	src/modules/buzzer
+        src/events/watchdog
         ${PROJECT_BINARY_DIR}/include/generated/)
         
 target_sources(app PRIVATE ${APP_MAIN}

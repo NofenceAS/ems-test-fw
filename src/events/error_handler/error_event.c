@@ -3,9 +3,9 @@
  */
 
 #include "error_event.h"
+#include "watchdog_event.h"
 #include <logging/log.h>
 #include <stdio.h>
-#include "watchdog_app.h"
 
 #define LOG_MODULE_NAME error_events
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_ERROR_HANDLER_LOG_LEVEL);
@@ -99,22 +99,12 @@ void nf_app_warning(enum error_sender_module sender, int code, char *msg,
 	submit_app_status(sender, ERR_SEVERITY_WARNING, code, msg, msg_len);
 }
 
-uint8_t module_alive_array[ERR_END_OF_LIST] = { 0 };
-
 void nf_module_alive(enum error_sender_module sender)
 {
-	module_alive_array[sender] = 1;
-
-	for (int i = 0; i < ERR_END_OF_LIST; i++) {
-		if (module_alive_array[i] != 1) {
-			break;
-		}
-		external_watchdog_feed();
-		/* Feed watchdog through main system thread.
-		 * System is fully operational. 
-		 */
-		memset(module_alive_array, 0, sizeof(module_alive_array));
-	}
+	struct watchdog_alive_event *event = new_watchdog_alive_event();
+	event->sender = sender;
+	/* Submit event. */
+	EVENT_SUBMIT(event);
 }
 
 EVENT_TYPE_DEFINE(error_event, true, log_error_event, NULL);
