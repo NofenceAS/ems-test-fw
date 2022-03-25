@@ -17,13 +17,15 @@
 #include "buzzer.h"
 #include "pwr_module.h"
 
+#include "messaging.h"
+#include "cellular_controller.h"
+
+#include "gnss_controller.h"
+
 #include "storage.h"
 #include "nf_version.h"
 
 #include "env_sensor_event.h"
-
-#include "cellular_controller.h"
-#include "messaging.h"
 
 #define MODULE main
 #include "module_state_event.h"
@@ -37,12 +39,11 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 void main(void)
 {
 	LOG_INF("Starting Nofence application...");
-	int err;
-//	= stg_init_storage_controller();
-//	if (err) {
-//		LOG_ERR("Could not initialize storage controller, %i", err);
-//		return;
-//	}
+	int err = stg_init_storage_controller();
+	if (err) {
+		LOG_ERR("Could not initialize storage controller, %i", err);
+		return;
+	}
 
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
@@ -66,24 +67,29 @@ void main(void)
 	if (err) {
 		LOG_ERR("Event manager could not initialize. %d", err);
 	}
+
 	/* Initialize BLE module. */
-//	err = ble_module_init();
-//	if (err) {
-//		LOG_ERR("Could not initialize BLE module. %d", err);
-//	}
+	err = ble_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize BLE module. %d", err);
+	}
+
 	/* Initialize firmware upgrade module. */
 	err = fw_upgrade_module_init();
 	if (err) {
 		LOG_ERR("Could not initialize firmware upgrade module. %d",
 			err);
 	}
-	/* Initialize the electric pulse module. */
-	if (ep_module_init()) {
-		LOG_ERR("Could not initialize electric pulse module");
+
+	err = ep_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize electric pulse module. %d", err);
 	}
+
 	/* Initialize the power manager module. */
-	if (pwr_module_init()) {
-		LOG_ERR("Could not initialize the power module");
+	err = pwr_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize the power module %i", err);
 	}
 
 	err = buzzer_module_init();
@@ -105,6 +111,21 @@ void main(void)
 	sound_ev->type = SND_WELCOME;
 	EVENT_SUBMIT(sound_ev);
 
+	err = cellular_controller_init();
+	if (err) {
+		LOG_ERR("Could not initialize cellular controller. %d", err);
+	}
+
+	err = messaging_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize messaging module. %d", err);
+	}
+
+	err = gnss_controller_init();
+	if (err) {
+		LOG_ERR("Could not initialize GNSS controller. %d", err);
+	}
+
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,
 	 * it will revert to the previous version on the next reboot that occurs.
@@ -113,14 +134,4 @@ void main(void)
 
 	LOG_INF("Booted application firmware version %i, and marked it as valid.",
 		NF_X25_VERSION_NUMBER);
-	err = cellular_controller_init();
-	if (err) {
-		LOG_ERR("Could not initialize cellular controller. %d",
-			err);
-	}
-
-	err = messaging_module_init();
-	if (err) {
-		LOG_ERR("Could not initialize messaging module. %d", err);
-	}
 }
