@@ -49,6 +49,8 @@ void test_publish_event_with_a_received_msg(void) /* happy scenario - msg
 
 void test_ack_from_messaging_module_missed(void)
 {
+	struct check_connection *check = new_check_connection();
+	EVENT_SUBMIT(check);
 	ztest_returns_value(check_ip, 0);
 	received = 30;
 	ztest_returns_value(socket_receive, received);

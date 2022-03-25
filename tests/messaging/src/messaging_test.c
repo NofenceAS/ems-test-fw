@@ -31,6 +31,9 @@ void assert_post_action(const char *file, unsigned int line)
 
 void test_init(void)
 {
+	struct connection_ready_event *ev
+		= new_connection_ready_event();
+	EVENT_SUBMIT(ev);
 	ztest_returns_value(stg_read_log_data, 0);
 	ztest_returns_value(stg_log_pointing_to_last, false);
 
@@ -45,6 +48,9 @@ void test_init(void)
 //ack - fence_ready - ano_ready - msg_out - host_address
 void test_initial_poll_request_out(void)
 {
+	struct connection_ready_event *ev
+		= new_connection_ready_event();
+	EVENT_SUBMIT(ev);
 	k_sem_take(&msg_out, K_MSEC(500));
 	printk("Outbound messages = %d\n", msg_count);
 	zassert_not_equal(pMsg, NULL, "Proto message not published!\n");
