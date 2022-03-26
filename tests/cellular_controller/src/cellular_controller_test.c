@@ -24,6 +24,8 @@ void test_init(void)
 	ztest_returns_value(eep_read_host_port, 0);
 	ztest_returns_value(socket_connect, 0);
 	int8_t err = cellular_controller_init();
+	struct check_connection *ev = new_check_connection();
+	EVENT_SUBMIT(ev);
 	while (!cellular_controller_is_ready()) {
 		k_sleep(K_MSEC(100));
 	}
@@ -69,6 +71,8 @@ void test_ack_from_messaging_module_missed(void)
 
 void test_socket_connect_fails(void)
 {
+	struct check_connection *check = new_check_connection();
+	EVENT_SUBMIT(check);
 	ztest_returns_value(reset_modem, 0);
 	ztest_returns_value(check_ip, 0);
 	ztest_returns_value(lte_init, 0);
