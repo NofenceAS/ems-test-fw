@@ -1601,7 +1601,12 @@ static int offload_close(void *obj)
 		snprintk(buf, sizeof(buf), "AT+USOCL=%d", sock->id);
 
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U,
-				     buf, &mdata.sem_response, MDM_CMD_TIMEOUT);
+				     buf, &mdata.sem_response,
+				     MDM_CMD_TIMEOUT*3);
+		//MDM_CMD_TIMEOUT=10sec. (default zephyr driver.)
+		// wait for 30 seconds instead of 10, as closing the socket
+		// might take some
+		// time.
 		if (ret < 0) {
 			LOG_ERR("%s ret:%d", log_strdup(buf), ret);
 		}
