@@ -5,4 +5,5 @@
 
 int modem_nf_reset(void);
 int get_pdp_addr(char **);
+bool poll_listen_socket(void);
 #endif /* MODEM_NF_H_ */

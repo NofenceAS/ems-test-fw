@@ -977,7 +977,8 @@ ip_address>,<listening_port> */
 MODEM_CMD_DEFINE(on_cmd_socknotify_listen)
 {
 	LOG_DBG("Received new message on listening socket:%s, port:%s",
-		argv[0], argv[5]);
+		argv[3], argv[5]);
+	listen_request = true;
 	return 0;
 }
 
@@ -2268,7 +2269,7 @@ static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("+UUSORD: ", on_cmd_socknotifydata, 2U, ","),
 	MODEM_CMD("+UUSORF: ", on_cmd_socknotifydata, 2U, ","),
 	MODEM_CMD("+CREG: ", on_cmd_socknotifycreg, 1U, ""),
-	MODEM_CMD("+UUSOLI: ", on_cmd_socknotify_listen, 6U, ""),
+	MODEM_CMD("+UUSOLI: ", on_cmd_socknotify_listen, 6U, ","),
 };
 
 static int modem_init(const struct device *dev)
@@ -2366,7 +2367,8 @@ int modem_nf_reset(void)
 	return modem_reset();
 }
 
-int get_pdp_addr(char** ip_addr){
+int get_pdp_addr(char** ip_addr)
+{
 	const struct setup_cmd post_setup_cmds2[] = {
 		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 6, ","),
 	};
@@ -2381,6 +2383,16 @@ int get_pdp_addr(char** ip_addr){
 		return -1;
 	}
 }
+
+bool poll_listen_socket(void)
+{
+	if (listen_request){
+		listen_request = false;
+		return true;
+	}
+	return false;
+}
+
 
 //int listen_socket(void){
 //	static uint8_t id = -1;

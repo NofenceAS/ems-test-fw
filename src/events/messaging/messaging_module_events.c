@@ -75,3 +75,8 @@ EVENT_TYPE_DEFINE(check_connection,
 		  true,
 		  NULL,
 		  NULL);
+
+EVENT_TYPE_DEFINE(send_poll_request_now,
+		  true,
+		  NULL,
+		  NULL);
