@@ -756,7 +756,10 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 {
 	LOG_DBG("CDGCONT? handler, %d", argc);
 	LOG_INF("ip: %s", argv[3]);
-	memcpy(mdata.mdm_pdp_addr,argv[3],MDM_IMSI_LENGTH);
+	memcpy(mdata.mdm_pdp_addr,argv[3],17); //17: "xxx.xxx.xxx.xxx", for
+	// the check_ip function, we're only interested in the fact that the
+	// first 8 characters are not "0.0.0.0
+	/*TODO: add more sofistication in handling the string if needed.*/
 	printk("new_mdm_pdp_addr = %s\n", mdata.mdm_pdp_addr);
 	return 0;
 }
@@ -1592,7 +1595,10 @@ static int offload_close(void *obj)
 		snprintk(buf, sizeof(buf), "AT+USOCL=%d", sock->id);
 
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U,
-				     buf, &mdata.sem_response, MDM_CMD_TIMEOUT);
+				     buf, &mdata.sem_response,
+				     MDM_CMD_TIMEOUT*3); //use a 30 second
+		// timeout for the socket close command, as it might take
+		// more time compared to other commands.
 		if (ret < 0) {
 			LOG_ERR("%s ret:%d", log_strdup(buf), ret);
 		}
