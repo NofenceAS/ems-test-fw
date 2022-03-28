@@ -84,6 +84,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_RESET_ASSERTED 0
 
 #define MDM_CMD_TIMEOUT K_SECONDS(10)
+#define MDM_CMD_TIMEOUT_USOCL K_SECONDS(30)
 #define MDM_DNS_TIMEOUT K_SECONDS(70)
 #define MDM_CMD_CONN_TIMEOUT K_SECONDS(120)
 #define MDM_REGISTRATION_TIMEOUT K_SECONDS(180)
@@ -970,6 +971,16 @@ MODEM_CMD_DEFINE(on_cmd_socknotifycreg)
 	return 0;
 }
 
+/* Handler: +UUSOLI: <socket>,<ip_address>,
+<port>,<listening_socket>,<local_
+ip_address>,<listening_port> */
+MODEM_CMD_DEFINE(on_cmd_socknotify_listen)
+{
+	LOG_DBG("Received new message on listening socket:%s, port:%s",
+		argv[0], argv[5]);
+	return 0;
+}
+
 /* RX thread */
 static void modem_rx(void)
 {
@@ -1602,7 +1613,7 @@ static int offload_close(void *obj)
 
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U,
 				     buf, &mdata.sem_response,
-				     MDM_CMD_TIMEOUT*3);
+				     MDM_CMD_TIMEOUT_USOCL);
 		//MDM_CMD_TIMEOUT=10sec. (default zephyr driver.)
 		// wait for 30 seconds instead of 10, as closing the socket
 		// might take some
@@ -2257,6 +2268,7 @@ static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("+UUSORD: ", on_cmd_socknotifydata, 2U, ","),
 	MODEM_CMD("+UUSORF: ", on_cmd_socknotifydata, 2U, ","),
 	MODEM_CMD("+CREG: ", on_cmd_socknotifycreg, 1U, ""),
+	MODEM_CMD("+UUSOLI: ", on_cmd_socknotify_listen, 6U, ""),
 };
 
 static int modem_init(const struct device *dev)
