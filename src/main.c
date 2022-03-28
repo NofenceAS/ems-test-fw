@@ -43,6 +43,15 @@ void main(void)
 {
 	int err;
 	LOG_INF("Starting Nofence application...");
+
+#if defined(CONFIG_WATCHDOG_ENABLE)
+	err = watchdog_init_and_start();
+	if (err) {
+		LOG_ERR("Could not initialize and start watchdog, error: %d",
+			err);
+	}
+#endif
+
 	err = stg_init_storage_controller();
 	if (err) {
 		LOG_ERR("Could not initialize storage controller, %i", err);
@@ -124,13 +133,6 @@ void main(void)
 	if (err) {
 		LOG_ERR("Could not initialize messaging module. %d", err);
 	}
-#if defined(CONFIG_WATCHDOG_ENABLE)
-	err = watchdog_init_and_start();
-	if (err) {
-		LOG_ERR("Could not initialize and start watchdog, error: %d",
-			err);
-	}
-#endif
 
 	err = gnss_controller_init();
 	if (err) {

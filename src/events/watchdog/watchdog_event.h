@@ -5,17 +5,34 @@
 #ifndef _WATCHDOG_EVENT_H_
 #define _WATCHDOG_EVENT_H_
 
-#include "error_event.h"
 #include "event_manager.h"
 #include <zephyr.h>
+
+/** @brief Only periodic modules are included in this list */
+enum watchdog_alive_module {
+	WDG_PWR_MODULE = 0,
+	WDG_GNSS_CONTROLLER = 1,
+	WDG_MESSAGING = 2,
+	WDG_BLE_SCAN = 3,
+	WDG_END_OF_LIST = 4
+};
 
 struct watchdog_alive_event {
 	struct event_header header;
 
-	/** Which module triggered the event. */
-	enum error_sender_module sender;
+	/** Which module report alive */
+	enum watchdog_alive_module module;
 };
 
-EVENT_TYPE_DECLARE(watchdog_alive_event);
+/**
+ * @brief System monitor function to validate that all the modules are
+ *        alive and working at intended. Will feed watchdog if all modules 
+ *        reported within required time.
+ * 
+ * @param[in] module which module responds to be valid and alive.
+ */
+void watchdog_report_module_alive(enum watchdog_alive_module module)
+
+	EVENT_TYPE_DECLARE(watchdog_alive_event);
 
 #endif /* _WATCHDOG_EVENT_H_ */

@@ -67,15 +67,6 @@ void nf_app_error(enum error_sender_module sender, int code, char *msg,
 void nf_app_warning(enum error_sender_module sender, int code, char *msg,
 		    size_t msg_len);
 
-/**
- * @brief System monitor function to validate that all the modules are
- *        alive and working at intended. Will feed watchdog if all modules 
- *        did not report within required time.
- * 
- * @param[in] sender which module responds to be valid and alive.
- */
-void nf_module_alive(enum error_sender_module sender);
-
 /** @brief Enum for error severity. Can be replaced with error level in the
  *         future corresponding to integer values instead.
  */

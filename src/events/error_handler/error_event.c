@@ -3,7 +3,6 @@
  */
 
 #include "error_event.h"
-#include "watchdog_event.h"
 #include <logging/log.h>
 #include <stdio.h>
 
@@ -97,14 +96,6 @@ void nf_app_warning(enum error_sender_module sender, int code, char *msg,
 		    size_t msg_len)
 {
 	submit_app_status(sender, ERR_SEVERITY_WARNING, code, msg, msg_len);
-}
-
-void nf_module_alive(enum error_sender_module sender)
-{
-	struct watchdog_alive_event *event = new_watchdog_alive_event();
-	event->sender = sender;
-	/* Submit event. */
-	EVENT_SUBMIT(event);
 }
 
 EVENT_TYPE_DEFINE(error_event, true, log_error_event, NULL);
