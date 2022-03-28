@@ -754,7 +754,7 @@ static const struct setup_cmd query_cellinfo_cmds[] = {
  */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 {
-	LOG_WRN("CDGCONT? handler, %d", argc);
+	LOG_DBG("CDGCONT? handler, %d", argc);
 	LOG_INF("ip: %s", argv[3]);
 	memcpy(mdata.mdm_pdp_addr,argv[3],MDM_IMSI_LENGTH);
 	printk("new_mdm_pdp_addr = %s\n", mdata.mdm_pdp_addr);
@@ -1275,28 +1275,11 @@ static int modem_reset(void)
 		/* activate the GPRS connection */
 		SETUP_CMD_NOHANDLE("AT+UPSDA=0,3"),
 #else
-		/* activate the PDP context */
-//		SETUP_CMD_NOHANDLE("AT+CGDCONT?"),
 		SETUP_CMD_NOHANDLE("AT+COPS?"),
-//		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 6, ","),
+//		SETUP_CMD_NOHANDLE("AT+USOSO=0,65535,128,1,10"),
 #endif
 	};
 
-//	ret = modem_cmd_handler_setup_cmds(
-//		&mctx.iface, &mctx.cmd_handler, post_setup_cmds2,
-//		1, &mdata.sem_response,
-//		MDM_REGISTRATION_TIMEOUT);
-//	if (ret != 0){
-//		LOG_ERR("Failed to read pdp address!");
-//		goto restart;
-//		/*TODO: handle differntly if needed!*/
-//	} else{
-//		ret = memcmp(mdata.mdm_pdp_addr,"0.0.0.0",9);
-//		if (ret != 0){
-//			LOG_INF("Valid ip address acquired!, %s", mdata.mdm_pdp_addr);
-//			return 0;
-//		}
-//	}
 restart:
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
@@ -1511,6 +1494,15 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 			     &mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		goto error;
+	}
+/*set linger time to 0ms
+ * TODO: parametrize duration */
+	char buf2[sizeof("AT+USOSO=%d,65535,128,1,0\r")];
+	snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,0", ret);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, buf2,
+			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_DBG("Failed to set socket linger time!");
 	}
 
 	if (sock->ip_proto == IPPROTO_TLS_1_2) {
@@ -2312,11 +2304,11 @@ int modem_nf_reset(void)
 }
 
 int get_pdp_addr(char** ip_addr){
-	const struct setup_cmd post_setup_cmds2[] = {
+	const struct setup_cmd read_sim_ip_cmd[] = {
 		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 6, ","),
 	};
 	int ret = modem_cmd_handler_setup_cmds(
-		&mctx.iface, &mctx.cmd_handler, post_setup_cmds2,
+		&mctx.iface, &mctx.cmd_handler, read_sim_ip_cmd,
 		1, &mdata.sem_response,
 		MDM_REGISTRATION_TIMEOUT);
 	if (ret == 0){
