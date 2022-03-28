@@ -52,6 +52,7 @@ enum mdm_control_pins {
 	MDM_VINT,
 #endif
 };
+bool listen_request;
 
 static struct modem_pin modem_pins[] = {
 	/* MDM_POWER */
@@ -1686,6 +1687,43 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	return 0;
 }
 
+static int offload_listen(void *obj, int backlog)
+{
+	struct modem_socket *sock = (struct modem_socket *)obj;
+	int ret;
+	char buf[sizeof("AT+USOLI=#,#####\r")];
+	uint16_t dst_port = 1099;
+	LOG_WRN("Starting listen offload!");
+
+	if (sock->id < mdata.socket_config.base_socket_num - 1) {
+		LOG_ERR("Invalid socket_id(%d) from fd:%d", sock->id,
+			sock->sock_fd);
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* make sure we've created the socket */
+	if (sock->id == mdata.socket_config.sockets_len + 1) {
+		if (create_socket(sock, NULL) < 0) {
+			return -1;
+		}
+	}
+
+//	snprintk(buf, sizeof(buf), "AT+USOLI=%d,%d", sock->id, dst_port);
+	snprintk(buf, sizeof(buf), "AT+USOLI=%d,%d", sock->id, dst_port);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf,
+			     &mdata.sem_response, MDM_CMD_CONN_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("%s ret:%d", log_strdup(buf), ret);
+		errno = -ret;
+		return -1;
+	}
+
+	sock->is_connected = true;
+	errno = 0;
+	return 0;
+}
+
 /* support for POLLIN only for now. */
 static int offload_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 {
@@ -2042,7 +2080,7 @@ static const struct socket_op_vtable offload_socket_fd_op_vtable = {
 	.connect = offload_connect,
 	.sendto = offload_sendto,
 	.recvfrom = offload_recvfrom,
-	.listen = NULL,
+	.listen = offload_listen,
 	.accept = NULL,
 	.sendmsg = offload_sendmsg,
 	.getsockopt = NULL,
@@ -2326,6 +2364,25 @@ int get_pdp_addr(char** ip_addr){
 		return -1;
 	}
 }
+
+//int listen_socket(void){
+//	static uint8_t id = -1;
+//	const struct setup_cmd start_listening_sock[] = {
+//		SETUP_CMD_NOHANDLE("AT+USOCR=6"),
+//
+//	};
+//	int ret = modem_cmd_handler_setup_cmds(
+//		&mctx.iface, &mctx.cmd_handler, start_listening_sock,
+//		1, &mdata.sem_response,
+//		MDM_REGISTRATION_TIMEOUT);
+//	if (ret == 0){
+//		*ip_addr = mdata.mdm_pdp_addr;
+//		return 0;
+//	}else{
+//		return -1;
+//	}
+//}
+
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL,
 				  &mdata, NULL,
