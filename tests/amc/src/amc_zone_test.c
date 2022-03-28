@@ -7,23 +7,51 @@ void test_zone_calc(void)
 	zassert_equal(zone_get(), 
 		      NO_ZONE, 
 		      "Zone not initialized correctly");
+
+	/* Check updated since timer */
+	zassert_true(zone_get_time_since_update() < 5,
+		      "Time since update is wrong");
+
+	k_sleep(K_MSEC(100));
+	
+	zassert_true((zone_get_time_since_update() > 100) && 
+		     (zone_get_time_since_update() < 150),
+		      "Time since update is wrong");
 	
 	/* Position on border */
 	zassert_equal(zone_update(0), 
 		      WARN_ZONE, 
 		      "Position on border, but not in warn zone");
 	
+	/* Check updated since timer reset */
+	zassert_true(zone_get_time_since_update() < 5,
+		      "Time since update is wrong");
+
 	/* Get position after change */
 	zassert_equal(zone_get(), 
 		      WARN_ZONE, 
 		      "Zone not updated correctly");
 
+	/* Check updated since timer */
+	k_sleep(K_MSEC(500));
+	zassert_true((zone_get_time_since_update() > 500) && 
+		     (zone_get_time_since_update() < 550),
+		      "Time since update is wrong");
+
+	printk("Since updated: %d", (uint32_t)zone_get_time_since_update());
 	/* Even further outside border */
 	for (int i = 0; i < 10; i++) {
 		zassert_equal(zone_update(i), 
 			      WARN_ZONE, 
 			      "Not in warn zone as expected");
+		k_sleep(K_MSEC(100));
+		printk("Since updated: %d", (uint32_t)zone_get_time_since_update());
 	}
+	/* No change, check timer, wide range since simulator is not good with time */
+	printk("Since updated: %d", (uint32_t)zone_get_time_since_update());
+	zassert_true((zone_get_time_since_update() > 1500) && 
+		     (zone_get_time_since_update() < 1750),
+		      "Time since update is wrong");
 
 	/* Moving back to border */
 	for (int i = 0; i < 10; i++) {
