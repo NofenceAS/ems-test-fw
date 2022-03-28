@@ -1498,7 +1498,7 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 	if (ret < 0) {
 		goto error;
 	}
-/*set linger time to 0ms
+/*set linger time to 3000ms
  * TODO: parametrize duration */
 	char buf2[sizeof("AT+USOSO=%d,65535,128,1,00\r")];
 	snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,3000", ret);
