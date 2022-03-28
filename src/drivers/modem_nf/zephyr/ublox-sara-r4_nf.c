@@ -83,6 +83,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_RESET_ASSERTED 0
 
 #define MDM_CMD_TIMEOUT K_SECONDS(10)
+#define MDM_CMD_USOCL_TIMEOUT K_SECONDS(30)
 #define MDM_DNS_TIMEOUT K_SECONDS(70)
 #define MDM_CMD_CONN_TIMEOUT K_SECONDS(120)
 #define MDM_REGISTRATION_TIMEOUT K_SECONDS(180)
@@ -1596,7 +1597,7 @@ static int offload_close(void *obj)
 
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U,
 				     buf, &mdata.sem_response,
-				     MDM_CMD_TIMEOUT*3); //use a 30 second
+				     MDM_CMD_USOCL_TIMEOUT); //use a 30 second
 		// timeout for the socket close command, as it might take
 		// more time compared to other commands.
 		if (ret < 0) {
