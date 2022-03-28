@@ -1280,7 +1280,6 @@ static int modem_reset(void)
 		SETUP_CMD_NOHANDLE("AT+UPSDA=0,3"),
 #else
 		SETUP_CMD_NOHANDLE("AT+COPS?"),
-//		SETUP_CMD_NOHANDLE("AT+USOSO=0,65535,128,1,10"),
 #endif
 	};
 
@@ -1501,8 +1500,8 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 	}
 /*set linger time to 0ms
  * TODO: parametrize duration */
-	char buf2[sizeof("AT+USOSO=%d,65535,128,1,0\r")];
-	snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,0", ret);
+	char buf2[sizeof("AT+USOSO=%d,65535,128,1,00\r")];
+	snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,3000", ret);
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, buf2,
 			     &mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
