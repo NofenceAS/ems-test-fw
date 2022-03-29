@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 void main(void)
 {
 	LOG_INF("Starting Nofence application...");
-	int err;// = stg_init_storage_controller();
+	int err = stg_init_storage_controller();
 	if (err) {
 		LOG_ERR("Could not initialize storage controller, %i", err);
 		return;
@@ -69,10 +69,10 @@ void main(void)
 	}
 
 	/* Initialize BLE module. */
-//	err = ble_module_init();
-//	if (err) {
-//		LOG_ERR("Could not initialize BLE module. %d", err);
-//	}
+	err = ble_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize BLE module. %d", err);
+	}
 
 	/* Initialize firmware upgrade module. */
 	err = fw_upgrade_module_init();
