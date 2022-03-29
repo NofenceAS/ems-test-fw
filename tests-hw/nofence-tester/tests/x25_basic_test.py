@@ -20,7 +20,7 @@ def diagnostics_connect(ocd):
 
 from cobs import cobs
 
-def send_diag_cmd(diag_stream, cmd):
+def send_diag_cmd(diag_stream, cmd, expect_data):
     diag_stream.write(cobs.encode(cmd) + b"\x00")
 
     start_time = time.time()
@@ -51,12 +51,12 @@ def trigger_ep(diag_stream):
 
     # Send max sound event to allow EP
     CMD_MAX_SND = b"N\x20"
-    if not send_diag_cmd(diag_stream, CMD_MAX_SND):
+    if not send_diag_cmd(diag_stream, CMD_MAX_SND, False):
         raise Exception("Failed sending CMD_MAX_SND")
     
     # Release EP
     CMD_TRG_EP = b"N\x50"
-    if not send_diag_cmd(diag_stream, CMD_TRG_EP):
+    if not send_diag_cmd(diag_stream, CMD_TRG_EP, False):
         raise Exception("Failed sending CMD_TRG_EP")
 
 import bluefence
