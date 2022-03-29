@@ -123,4 +123,5 @@ add_subdirectory(src/modules/electric_pulse)
 add_subdirectory(src/modules/environment)
 
 add_subdirectory_ifdef(CONFIG_WATCHDOG_ENABLE src/modules/watchdog)
+add_subdirectory_ifdef(CONFIG_WATCHDOG_ENABLE src/events/watchdog)
 add_subdirectory(src/modules/gnss_controller)

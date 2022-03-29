@@ -11,10 +11,10 @@
 /** @brief Only periodic modules are included in this list */
 enum watchdog_alive_module {
 	WDG_PWR_MODULE = 0,
-	WDG_GNSS_CONTROLLER = 1,
-	WDG_MESSAGING = 2,
-	WDG_BLE_SCAN = 3,
-	WDG_END_OF_LIST = 4
+	WDG_MESSAGING = 1,
+	WDG_BLE_SCAN = 2,
+	//WDG_GNSS_CONTROLLER = 3,
+	WDG_END_OF_LIST
 };
 
 struct watchdog_alive_event {
@@ -31,8 +31,8 @@ struct watchdog_alive_event {
  * 
  * @param[in] module which module responds to be valid and alive.
  */
-void watchdog_report_module_alive(enum watchdog_alive_module module)
+void watchdog_report_module_alive(enum watchdog_alive_module module);
 
-	EVENT_TYPE_DECLARE(watchdog_alive_event);
+EVENT_TYPE_DECLARE(watchdog_alive_event);
 
 #endif /* _WATCHDOG_EVENT_H_ */

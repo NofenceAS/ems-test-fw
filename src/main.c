@@ -23,7 +23,9 @@
 #include "messaging.h"
 #include "cellular_controller.h"
 
+#if CONFIG_GNSS_CONTROLLER
 #include "gnss_controller.h"
+#endif
 
 #include "storage.h"
 #include "nf_version.h"
@@ -120,9 +122,9 @@ void main(void)
 	}
 
 	/* Play welcome sound. */
-	struct sound_event *sound_ev = new_sound_event();
-	sound_ev->type = SND_WELCOME;
-	EVENT_SUBMIT(sound_ev);
+	// struct sound_event *sound_ev = new_sound_event();
+	// sound_ev->type = SND_WELCOME;
+	// EVENT_SUBMIT(sound_ev);
 
 	err = cellular_controller_init();
 	if (err) {
@@ -133,12 +135,12 @@ void main(void)
 	if (err) {
 		LOG_ERR("Could not initialize messaging module. %d", err);
 	}
-
+#if CONFIG_GNSS_CONTROLLER
 	err = gnss_controller_init();
 	if (err) {
 		LOG_ERR("Could not initialize GNSS controller. %d", err);
 	}
-
+#endif
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,
 	 * it will revert to the previous version on the next reboot that occurs.
