@@ -24,8 +24,7 @@ static int log_movement_out_event(const struct event_header *eh, char *buf,
 {
 	struct movement_out_event *event = cast_movement_out_event(eh);
 
-	return snprintf(buf, buf_len,
-			"Request environment sensor data, event adr %p", event);
+	return snprintf(buf, buf_len, "Movement out state %i", event->state);
 }
 
 EVENT_TYPE_DEFINE(movement_out_event, true, log_movement_out_event, NULL);

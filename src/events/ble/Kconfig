@@ -8,19 +8,19 @@ comment "Initially logged events"
 
 config LOG_BLE_DATA_EVENT
 	bool "BLE data event"
-	default y
+	default n
 
 config LOG_BLE_CTRL_EVENT
 	bool "BLE control event"
-	default y
+	default n
 
 config LOG_BLE_CONN_EVENT
 	bool "BLE connection event"
-	default y
+	default n
 
 config LOG_BLE_BEACON_EVENT
 	bool "BLE connection event"
-	default y
+	default n
 
 endmenu
 
