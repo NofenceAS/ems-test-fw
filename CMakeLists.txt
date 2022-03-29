@@ -36,6 +36,7 @@ list(APPEND ZEPHYR_EXTRA_MODULES
 list(APPEND ZEPHYR_EXTRA_MODULES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/modules/collar_protocol
         ${CMAKE_CURRENT_SOURCE_DIR}/src/drivers/gnss
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/drivers/modem_nf
         )
 
 
@@ -66,12 +67,6 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 zephyr_include_directories(${PROJECT_BINARY_DIR}/include/generated)
 
-# These are common files used by both hardware test and the real app
-set(APP_SOURCES
-        src/ble/nf_ble.c        
-        src/ble/beacon_processor.c
-)
-
 #if (HARDWARE_TEST)
 #        set(APP_MAIN src/main_hardware_test.c)
 #else ()
@@ -86,23 +81,25 @@ endif ()
 zephyr_library_include_directories(
         src/modules/amc
         src/modules/fw_upgrade
-  	src/modules/storage_controller
+        src/modules/storage_controller
         src/events
         src/modules/error_handler
         src/events/error_handler
         src/modules/diagnostics
         src/events/diagnostics
         src/events/fw_upgrade
-  	src/modules/environment
-  	src/events/environment
-	src/modules/cellular_controller
+        src/modules/environment
+        src/events/environment
+        src/modules/cellular_controller
+        src/modules/gnss_controller
         src/events/cellular_controller
+  	    src/modules/buzzer
         ${PROJECT_BINARY_DIR}/include/generated/)
         
 target_sources(app PRIVATE ${APP_MAIN}
         ${APP_SOURCES}
-)       
-        
+)
+
 # Application sources
 add_subdirectory(src/events/ble)
 add_subdirectory(src/modules/ble)
@@ -111,6 +108,7 @@ add_subdirectory(src/modules/storage_controller)
 add_subdirectory(src/eeprom)
 add_subdirectory(src/modules/amc)
 add_subdirectory(src/modules/cellular_controller)
+add_subdirectory(src/modules/buzzer)
 
 add_subdirectory(src/modules/power_manager)
 add_subdirectory(src/events/power_manager)
@@ -122,8 +120,4 @@ add_subdirectory(src/modules/diagnostics)
 add_subdirectory(src/events/electric_pulse)
 add_subdirectory(src/modules/electric_pulse)
 add_subdirectory(src/modules/environment)
-
-if (CONFIG_MODEM_UBLOX_SARA_NF)
-        add_subdirectory(src/drivers/nofence_modem_driver)
-endif()
-
+add_subdirectory(src/modules/gnss_controller)

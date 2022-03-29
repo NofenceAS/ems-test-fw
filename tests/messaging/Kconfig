@@ -7,6 +7,10 @@ menu "APPLICATION_CODE"
     	rsource "./../../src/events/fw_upgrade/Kconfig"
 endmenu # APPLICATION CODE
 
+menu "ERROR_HANDLER"
+    	rsource "./../../src/modules/error_handler/Kconfig"
+	endmenu # ERROR_HANDLER
+
 menu "Zephyr Kernel"
 source "Kconfig.zephyr"
 endmenu

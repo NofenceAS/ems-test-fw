@@ -1,0 +1,14 @@
+/* Copyright (c) 2020 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		gnss = &gnss;
+	};
+	gnss: mockgnss {
+		compatible = "nofence,mock-gnss";
+		label = "nofence-mock-gnss";
+		status = "okay";
+	};
+};

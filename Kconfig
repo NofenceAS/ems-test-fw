@@ -22,6 +22,10 @@ menu "AMC_MODULE"
 rsource "src/modules/amc/Kconfig"
 endmenu # AMC_MODULE
 
+menu "BUZZER_MODULE"
+rsource "src/modules/buzzer/Kconfig"
+endmenu # BUZZER_MODULE
+
 menu "ERROR_HANDLER"
 rsource "src/modules/error_handler/Kconfig"
 endmenu # ERROR_HANDLER
@@ -59,6 +63,10 @@ rsource "src/modules/messaging/Kconfig"
 rsource "src/events/messaging/Kconfig"
 endmenu
 
+menu "GNSS controller"
+rsource "src/modules/gnss_controller/Kconfig"
+endmenu
+
 menu "PWR Events"
 rsource "src/events/power_manager/Kconfig"
 endmenu
@@ -72,9 +80,5 @@ endmenu # CELLULAR_CONTROLLER
 
 menu "Zephyr Kernel"
 source "Kconfig.zephyr" 
-endmenu
-
-menu "Nofence-modem-driver"
-rsource "src/drivers/nofence_modem_driver/Kconfig"
 endmenu
 
