@@ -19,10 +19,13 @@ void test_init(void)
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
 	ztest_returns_value(reset_modem, 0);
+	ztest_returns_value(check_ip, 0);
 	ztest_returns_value(lte_init, 0);
 	ztest_returns_value(eep_read_host_port, 0);
 	ztest_returns_value(socket_connect, 0);
 	int8_t err = cellular_controller_init();
+	struct check_connection *ev = new_check_connection();
+	EVENT_SUBMIT(ev);
 	while (!cellular_controller_is_ready()) {
 		k_sleep(K_MSEC(100));
 	}
@@ -48,6 +51,9 @@ void test_publish_event_with_a_received_msg(void) /* happy scenario - msg
 
 void test_ack_from_messaging_module_missed(void)
 {
+	struct check_connection *check = new_check_connection();
+	EVENT_SUBMIT(check);
+	ztest_returns_value(check_ip, 0);
 	received = 30;
 	ztest_returns_value(socket_receive, received);
 
@@ -65,16 +71,18 @@ void test_ack_from_messaging_module_missed(void)
 
 void test_socket_connect_fails(void)
 {
+	struct check_connection *check = new_check_connection();
+	EVENT_SUBMIT(check);
 	ztest_returns_value(reset_modem, 0);
+	ztest_returns_value(check_ip, 0);
 	ztest_returns_value(lte_init, 0);
 	ztest_returns_value(eep_read_host_port, 0);
 	ztest_returns_value(socket_connect, -1);
-
 	int8_t err = cellular_controller_init();
 	zassert_equal(err, 0,
 			  "Cellular controller initialization "
 			  "incomplete!");
-	err = k_sem_take(&cellular_error, K_SECONDS(7));
+	err = k_sem_take(&cellular_error, K_MSEC(100));
 	zassert_equal(err, 0,
 		      "Expected cellular_error event was not"
 		      " published on socket connect error!");
@@ -83,18 +91,15 @@ void test_socket_connect_fails(void)
 void test_socket_rcv_fails(void)
 {
 	test_init();
-	received = -1;
-	ztest_returns_value(socket_receive, received);
-	int8_t err = k_sem_take(&cellular_error, K_SECONDS(1));
+	ztest_returns_value(socket_receive, -1);
+	int err = k_sem_take(&cellular_error, K_MSEC(400));
 	zassert_equal(err, 0,
 		      "Expected cellular_error event was not"
-		      " published on receive error!");
+		      " published on socket connect error!");
 }
 
 void test_socket_send_fails(void)
 {
-	test_init();
-	received = 10;
 	struct messaging_proto_out_event *test_msgIn =
 		new_messaging_proto_out_event();
 	test_msgIn->buf = &dummy_test_msg[0];

@@ -20,6 +20,8 @@
 #include "messaging.h"
 #include "cellular_controller.h"
 
+#include "gnss_controller.h"
+
 #include "storage.h"
 #include "nf_version.h"
 
@@ -37,11 +39,11 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 void main(void)
 {
 	LOG_INF("Starting Nofence application...");
-//	int err = stg_init_storage_controller();
-//	if (err) {
-//		LOG_ERR("Could not initialize storage controller, %i", err);
-//		return;
-//	}
+	int err = stg_init_storage_controller();
+	if (err) {
+		LOG_ERR("Could not initialize storage controller, %i", err);
+		return;
+	}
 
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
@@ -61,7 +63,7 @@ void main(void)
 #endif
 
 	/* Initialize the event manager. */
-	int err = event_manager_init();
+	err = event_manager_init();
 	if (err) {
 		LOG_ERR("Event manager could not initialize. %d", err);
 	}
@@ -111,13 +113,17 @@ void main(void)
 
 	err = cellular_controller_init();
 	if (err) {
-		LOG_ERR("Could not initialize cellular controller. %d",
-			err);
+		LOG_ERR("Could not initialize cellular controller. %d", err);
 	}
 
 	err = messaging_module_init();
 	if (err) {
 		LOG_ERR("Could not initialize messaging module. %d", err);
+	}
+
+	err = gnss_controller_init();
+	if (err) {
+		LOG_ERR("Could not initialize GNSS controller. %d", err);
 	}
 
 	/* Once EVERYTHING is initialized correctly and we get connection to

@@ -71,6 +71,16 @@ int eep_write_host_port(const char *host_port)
 	return ztest_get_return_value();
 }
 
+int check_ip(void){
+	return ztest_get_return_value();
+}
+
+int get_ip(char** ip){
+	ARG_UNUSED(ip);
+	return ztest_get_return_value();
+}
+
+
 //int8_t cache_server_address(void)
 //{
 //    return ztest_get_return_value();
