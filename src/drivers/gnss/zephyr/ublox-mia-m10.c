@@ -59,17 +59,13 @@ static gnss_struct_t gnss_data_in_progress;
 static uint32_t gnss_tow_in_progress = 0;
 static uint64_t gnss_unix_timestamp = 0;
 
-static bool gnss_data_is_valid = false;
-static gnss_struct_t gnss_data;
-
-static bool gnss_lastfix_is_valid = false;
-static gnss_last_fix_struct_t gnss_lastfix;
+static gnss_t gnss_data;
+bool gnss_data_is_valid = false;
 
 static struct k_mutex gnss_data_mutex;
 static struct k_mutex gnss_cb_mutex;
 
 static gnss_data_cb_t data_cb = NULL;
-static gnss_lastfix_cb_t lastfix_cb = NULL;
 
 /**
  * @brief Synchronizes on time of week (TOW). If a new TOW is encountered, 
@@ -107,29 +103,30 @@ static int mia_m10_sync_complete(uint32_t flag)
 
 		/* Copy data from "in progress" to "working", and call callbacks */
 		if (k_mutex_lock(&gnss_data_mutex, K_MSEC(10)) == 0) {
-			memcpy(&gnss_data, &gnss_data_in_progress, sizeof(gnss_struct_t));
-			gnss_data.updated_at = k_uptime_get_32();
+			memcpy(&gnss_data.latest, &gnss_data_in_progress, sizeof(gnss_struct_t));
+			gnss_data.latest.updated_at = k_uptime_get_32();
 			gnss_data_is_valid = true;
+			gnss_data.fix_ok = (gnss_data.latest.pvt_flags&1) != 0;
 
-			if (gnss_data.pvt_flags&1) {
-				gnss_lastfix.h_acc_dm = gnss_data.h_acc_dm;
-				gnss_lastfix.lat = gnss_data.lat;
-				gnss_lastfix.lon = gnss_data.lon;
-				gnss_lastfix.unix_timestamp = gnss_unix_timestamp; 
+			if (gnss_data.fix_ok) {
+				gnss_data.lastfix.h_acc_dm = gnss_data.latest.h_acc_dm;
+				gnss_data.lastfix.lat = gnss_data.latest.lat;
+				gnss_data.lastfix.lon = gnss_data.latest.lon;
+				gnss_data.lastfix.unix_timestamp = gnss_unix_timestamp; 
 
-				gnss_lastfix.head_veh = gnss_data.head_veh;
-				gnss_lastfix.pvt_flags = gnss_data.pvt_flags;
-				gnss_lastfix.head_acc = gnss_data.head_acc;
-				gnss_lastfix.h_dop = gnss_data.h_dop;
-				gnss_lastfix.num_sv = gnss_data.num_sv;
-				gnss_lastfix.height = gnss_data.height;
+				gnss_data.lastfix.head_veh = gnss_data.latest.head_veh;
+				gnss_data.lastfix.pvt_flags = gnss_data.latest.pvt_flags;
+				gnss_data.lastfix.head_acc = gnss_data.latest.head_acc;
+				gnss_data.lastfix.h_dop = gnss_data.latest.h_dop;
+				gnss_data.lastfix.num_sv = gnss_data.latest.num_sv;
+				gnss_data.lastfix.height = gnss_data.latest.height;
 				
-				gnss_lastfix.msss = gnss_data.msss;
+				gnss_data.lastfix.msss = gnss_data.latest.msss;
 
 				/* TODO - What to do?! */
-				gnss_lastfix.gps_mode = 0;
+				gnss_data.lastfix.gps_mode = 0;
 
-				gnss_lastfix_is_valid = true;
+				gnss_data.has_lastfix = true;
 			}
 			
 			k_mutex_unlock(&gnss_data_mutex);
@@ -138,9 +135,6 @@ static int mia_m10_sync_complete(uint32_t flag)
 		if (k_mutex_lock(&gnss_cb_mutex, K_MSEC(10)) == 0) {
 			if (data_cb != NULL) {
 				data_cb(&gnss_data);
-			}
-			if (gnss_data.pvt_flags&1) {
-				lastfix_cb(&gnss_lastfix);
 			}
 
 			k_mutex_unlock(&gnss_cb_mutex);
@@ -270,6 +264,10 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 {
 	ARG_UNUSED(dev);
 	int ret = 0;
+	
+	/* Clear GNSS data */
+	gnss_data_is_valid = false;
+	memset(&gnss_data, 0, sizeof(gnss_t));
 
 	/* TODO - Could this wait be removed somehow? */
 	/* Wait to assure startup */
@@ -470,27 +468,6 @@ static int mia_m10_set_data_cb(const struct device *dev, gnss_data_cb_t gnss_dat
 }
 
 /**
- * @brief Set callback to call when new GNSS data with fix has been received. 
- *
- * @param[in] dev Device context. 
- * @param[in] gnss_lastfix_cb Function to call upon receiving 
- *                            GNSS data with fix. 
- * 
- * @return 0 if everything was ok, error code otherwise
- */
-static int mia_m10_set_lastfix_cb(const struct device *dev, gnss_lastfix_cb_t gnss_lastfix_cb)
-{
-	ARG_UNUSED(dev);
-	if (k_mutex_lock(&gnss_cb_mutex, K_MSEC(1000)) == 0) {
-		lastfix_cb = gnss_lastfix_cb;
-		k_mutex_unlock(&gnss_cb_mutex);
-	} else {
-		return -ETIME;
-	}
-	return 0;
-}
-
-/**
  * @brief Get GNSS data. 
  *
  * @param[in] dev Device context. 
@@ -498,7 +475,7 @@ static int mia_m10_set_lastfix_cb(const struct device *dev, gnss_lastfix_cb_t gn
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static int mia_m10_data_fetch(const struct device *dev, gnss_struct_t* data)
+static int mia_m10_data_fetch(const struct device *dev, gnss_t* data)
 {
 	ARG_UNUSED(dev);
 	if (k_mutex_lock(&gnss_data_mutex, K_MSEC(1000)) == 0) {
@@ -508,37 +485,11 @@ static int mia_m10_data_fetch(const struct device *dev, gnss_struct_t* data)
 			return -ENODATA;
 		}
 
-		memcpy(data, &gnss_data, sizeof(gnss_struct_t));
+		memcpy(data, &gnss_data, sizeof(gnss_t));
 
 		k_mutex_unlock(&gnss_data_mutex);
 	}
 	
-	return 0;
-}
-
-/**
- * @brief Get GNSS last fix data. 
- *
- * @param[in] dev Device context. 
- * @param[out] data GNSS last fix data. 
- * 
- * @return 0 if everything was ok, error code otherwise
- */
-static int mia_m10_lastfix_fetch(const struct device *dev, gnss_last_fix_struct_t* lastfix)
-{
-	ARG_UNUSED(dev);
-	if (k_mutex_lock(&gnss_data_mutex, K_MSEC(1000)) == 0) {
-
-		if (!gnss_lastfix_is_valid) {
-			k_mutex_unlock(&gnss_data_mutex);
-			return -ENODATA;
-		}
-
-		memcpy(lastfix, &gnss_lastfix, sizeof(gnss_last_fix_struct_t));
-		
-		k_mutex_unlock(&gnss_data_mutex);
-	}
-
 	return 0;
 }
 
@@ -552,10 +503,8 @@ static const struct gnss_driver_api mia_m10_api_funcs = {
 	.gnss_get_rate = mia_m10_get_rate,
 
 	.gnss_set_data_cb = mia_m10_set_data_cb,
-	.gnss_set_lastfix_cb = mia_m10_set_lastfix_cb,
 
 	.gnss_data_fetch = mia_m10_data_fetch,
-	.gnss_lastfix_fetch = mia_m10_lastfix_fetch
 };
 
 /**

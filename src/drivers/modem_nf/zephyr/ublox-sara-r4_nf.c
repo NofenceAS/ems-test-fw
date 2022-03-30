@@ -83,6 +83,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_RESET_ASSERTED 0
 
 #define MDM_CMD_TIMEOUT K_SECONDS(10)
+#define MDM_CMD_USOCL_TIMEOUT K_SECONDS(30)
 #define MDM_DNS_TIMEOUT K_SECONDS(70)
 #define MDM_CMD_CONN_TIMEOUT K_SECONDS(120)
 #define MDM_REGISTRATION_TIMEOUT K_SECONDS(180)
@@ -162,6 +163,7 @@ struct modem_data {
 	char mdm_imei[MDM_IMEI_LENGTH];
 	char mdm_imsi[MDM_IMSI_LENGTH];
 	char mdm_ccid[2 * MDM_IMSI_LENGTH];
+	char mdm_pdp_addr[MDM_IMSI_LENGTH];
 	int mdm_rssi;
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
@@ -638,7 +640,8 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_ccid)
 	size_t out_len;
 
 	out_len = net_buf_linearize(mdata.mdm_ccid, sizeof(mdata.mdm_ccid) - 1,
-				    data->rx_buf, 0, len);
+				    data->rx_buf, 7, len); /*offset of 7
+ * bytes to discard 'ccid:_' */
 	mdata.mdm_ccid[out_len] = '\0';
 	LOG_INF("CCID: %s", log_strdup(mdata.mdm_ccid));
 
@@ -736,6 +739,31 @@ static const struct setup_cmd query_cellinfo_cmds[] = {
 	SETUP_CMD("AT+COPS?", "", on_cmd_atcmdinfo_cops, 3U, ","),
 };
 #endif /* CONFIG_MODEM_CELL_INFO */
+
+
+
+/*
+ * Handler: [+CGDCONT: <cid>,<PDP_type>,
+	<APN>,<PDP_addr>,<d_comp>,
+	<h_comp>[,<IPv4AddrAlloc>,
+	<emergency_indication>[,<P-CSCF_
+	discovery>,<IM_CN_Signalling_Flag_
+	Ind>[,<NSLPI>]]]]
+
+ we're interested in PDP_addr != 0.0.0.0 to make sure that socket connection is
+ allowed.
+ */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
+{
+	LOG_DBG("CDGCONT? handler, %d", argc);
+	LOG_INF("ip: %s", argv[3]);
+	memcpy(mdata.mdm_pdp_addr,argv[3],17); //17: "xxx.xxx.xxx.xxx", for
+	// the check_ip function, we're only interested in the fact that the
+	// first 8 characters are not "0.0.0.0
+	/*TODO: add more sofistication in handling the string if needed.*/
+	printk("new_mdm_pdp_addr = %s\n", mdata.mdm_pdp_addr);
+	return 0;
+}
 
 /*
  * Modem Socket Command Handlers
@@ -1251,8 +1279,6 @@ static int modem_reset(void)
 		/* activate the GPRS connection */
 		SETUP_CMD_NOHANDLE("AT+UPSDA=0,3"),
 #else
-		/* activate the PDP context */
-		SETUP_CMD_NOHANDLE("AT+CGDCONT?"),
 		SETUP_CMD_NOHANDLE("AT+COPS?"),
 #endif
 	};
@@ -1472,6 +1498,15 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 	if (ret < 0) {
 		goto error;
 	}
+/*set linger time to 3000ms
+ * TODO: parametrize duration */
+	char buf2[sizeof("AT+USOSO=%d,65535,128,1,00\r")];
+	snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,3000", ret);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, buf2,
+			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_DBG("Failed to set socket linger time!");
+	}
 
 	if (sock->ip_proto == IPPROTO_TLS_1_2) {
 		char buf[sizeof("AT+USECPRF=#,#,#######\r")];
@@ -1560,7 +1595,10 @@ static int offload_close(void *obj)
 		snprintk(buf, sizeof(buf), "AT+USOCL=%d", sock->id);
 
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U,
-				     buf, &mdata.sem_response, MDM_CMD_TIMEOUT);
+				     buf, &mdata.sem_response,
+				     MDM_CMD_USOCL_TIMEOUT); //use a 30 second
+		// timeout for the socket close command, as it might take
+		// more time compared to other commands.
 		if (ret < 0) {
 			LOG_ERR("%s ret:%d", log_strdup(buf), ret);
 		}
@@ -2269,6 +2307,22 @@ error:
 int modem_nf_reset(void)
 {
 	return modem_reset();
+}
+
+int get_pdp_addr(char** ip_addr){
+	const struct setup_cmd read_sim_ip_cmd[] = {
+		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 6, ","),
+	};
+	int ret = modem_cmd_handler_setup_cmds(
+		&mctx.iface, &mctx.cmd_handler, read_sim_ip_cmd,
+		1, &mdata.sem_response,
+		MDM_REGISTRATION_TIMEOUT);
+	if (ret == 0){
+		*ip_addr = mdata.mdm_pdp_addr;
+		return 0;
+	}else{
+		return -1;
+	}
 }
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL,

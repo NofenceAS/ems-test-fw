@@ -20,6 +20,8 @@
 #include "messaging.h"
 #include "cellular_controller.h"
 
+#include "gnss_controller.h"
+
 #include "storage.h"
 #include "nf_version.h"
 
@@ -129,6 +131,11 @@ void main(void)
 	err = messaging_module_init();
 	if (err) {
 		LOG_ERR("Could not initialize messaging module. %d", err);
+	}
+
+	err = gnss_controller_init();
+	if (err) {
+		LOG_ERR("Could not initialize GNSS controller. %d", err);
 	}
 
 	/* Once EVERYTHING is initialized correctly and we get connection to
