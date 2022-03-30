@@ -141,6 +141,14 @@ void test_old_gnss_last_fix_callback1(void)
 	k_sleep(K_SECONDS(6));
 	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
+	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_HOT);
+	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
+	zassert_equal(err, 0, "Expected gnss fix event was not published!");
+
+	//fix arrives after 11 seconds
+	k_sleep(K_SECONDS(11));
+	simulate_new_gnss_data(dummy_gnss_data);
+	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_WARM);
 	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
 	zassert_equal(err, 0, "Expected gnss fix event was not published!");
