@@ -5,11 +5,6 @@
 #include <zephyr.h>
 #include <device.h>
 
-#define GPS_1SEC 1000
-#define GPS_5SEC (GPS_1SEC * 5)
-#define GPS_10SEC (GPS_1SEC * 10)
-#define GPS_20SEC (GPS_1SEC * 20)
-
 /** @brief Struct containing GNSS data. */
 typedef struct {
 	int32_t lat;
@@ -86,6 +81,7 @@ typedef struct {
 	int16_t height;
 	uint32_t msss;
 	gnss_mode_t mode;
+	uint32_t updated_at;
 } gnss_last_fix_struct_t;
 
 /** @brief Struct containing both GNSS status messages and 
