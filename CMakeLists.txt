@@ -7,16 +7,6 @@ message(STATUS "Build type: ${BUILD_TYPE} 🚀")
 
 list(APPEND DTS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Define configuration files.
-#if (HARDWARE_TEST)
-#list(APPEND CONF_FILE
-#        ${CMAKE_CURRENT_SOURCE_DIR}/prj.conf
-#        ${CMAKE_CURRENT_SOURCE_DIR}/hw_test.conf
-#        )
-#endif()
-
-
-
 if (HARDWARE_TEST)
         if(DTC_OVERLAY_FILE)
                 set(DTC_OVERLAY_FILE
@@ -67,11 +57,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 zephyr_include_directories(${PROJECT_BINARY_DIR}/include/generated)
 
-#if (HARDWARE_TEST)
-#        set(APP_MAIN src/main_hardware_test.c)
-#else ()
-        set(APP_MAIN src/main.c)
-#endif ()
+set(APP_MAIN src/main.c)
 
 if (CONFIG_COLLAR_PROTOCOL)
         add_dependencies(app collar_protocol_headers)
