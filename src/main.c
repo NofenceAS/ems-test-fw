@@ -67,6 +67,16 @@ void main(void)
 		LOG_ERR("No EEPROM detected!");
 	}
 	eep_init(eeprom_dev);
+	/* Fetch and log stored serial number */
+	uint32_t eeprom_stored_serial_nr = 0;
+	eep_read_serial(&eeprom_stored_serial_nr);
+	if (eeprom_stored_serial_nr) {
+		LOG_INF("Device Serial Number stored in EEPROM: %d",
+			eeprom_stored_serial_nr);
+	} else {
+		LOG_WRN("Missing device Serial Number in EEPROM");
+	}
+
 #endif
 
 	/* Initialize diagnostics module. */
@@ -122,9 +132,9 @@ void main(void)
 	}
 
 	/* Play welcome sound. */
-	// struct sound_event *sound_ev = new_sound_event();
-	// sound_ev->type = SND_WELCOME;
-	// EVENT_SUBMIT(sound_ev);
+	struct sound_event *sound_ev = new_sound_event();
+	sound_ev->type = SND_WELCOME;
+	EVENT_SUBMIT(sound_ev);
 
 	err = cellular_controller_init();
 	if (err) {
