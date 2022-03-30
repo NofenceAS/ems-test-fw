@@ -8,6 +8,15 @@
 #include "event_manager.h"
 #include <zephyr.h>
 
+/** Freq warning start. */
+#define WARN_FREQ_INIT 2000
+
+/** Freq max warning. */
+#define WARN_FREQ_MAX 4200
+
+/** Duration of the warning tone in ms. */
+#define WARN_MIN_DURATION_MS 5000
+
 enum sound_event_type {
 	SND_OFF = 0,
 	SND_FIND_ME,

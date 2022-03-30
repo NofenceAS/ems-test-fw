@@ -5,6 +5,11 @@
 #include <zephyr.h>
 #include <device.h>
 
+#define GPS_1SEC 1000
+#define GPS_5SEC (GPS_1SEC * 5)
+#define GPS_10SEC (GPS_1SEC * 10)
+#define GPS_20SEC (GPS_1SEC * 20)
+
 /** @brief Struct containing GNSS data. */
 typedef struct {
 	int32_t lat;
