@@ -2,41 +2,34 @@
 #include "storage.h"
 #include "pasture_structure.h"
 
-fence_t *dummy_fence = NULL;
-size_t dummy_fence_len = 0;
+pasture_t pasture;
 
-int stg_read_pasture_data(stg_read_log_cb cb)
+int stg_read_pasture_data(fcb_read_cb cb)
 {
 	int retval = ztest_get_return_value();
 	if (retval) {
 		return retval;
 	}
 
-	if (dummy_fence != NULL) {
-		k_free(dummy_fence);
-		dummy_fence = NULL;
-	}
+	pasture.m.ul_total_fences = 2;
 
-	dummy_fence_len = sizeof(fence_t) + (sizeof(fence_coordinate_t) * 4);
-	dummy_fence = (fence_t *)k_malloc(dummy_fence_len);
+	pasture.fences[0].m.fence_no = 0;
+	pasture.fences[0].m.n_points = 2;
+	pasture.fences[0].coordinates[0].s_x_dm = 1;
+	pasture.fences[0].coordinates[0].s_y_dm = 2;
+	pasture.fences[0].coordinates[1].s_x_dm = 3;
+	pasture.fences[0].coordinates[1].s_y_dm = 4;
 
-	dummy_fence->header.n_points = 4;
-	dummy_fence->header.e_fence_type = 1;
-	dummy_fence->header.us_id = 128;
+	pasture.fences[1].m.fence_no = 1;
+	pasture.fences[1].m.n_points = 3;
+	pasture.fences[1].coordinates[0].s_x_dm = 1;
+	pasture.fences[1].coordinates[0].s_y_dm = 2;
+	pasture.fences[1].coordinates[1].s_x_dm = 3;
+	pasture.fences[1].coordinates[1].s_y_dm = 4;
+	pasture.fences[1].coordinates[2].s_x_dm = 5;
+	pasture.fences[1].coordinates[2].s_y_dm = 6;
 
-	dummy_fence->p_c[0].s_x_dm = 0xDE;
-	dummy_fence->p_c[0].s_y_dm = 0xDE;
-
-	dummy_fence->p_c[1].s_x_dm = 0xAD;
-	dummy_fence->p_c[1].s_y_dm = 0xAD;
-
-	dummy_fence->p_c[2].s_x_dm = 0xBE;
-	dummy_fence->p_c[2].s_y_dm = 0xBE;
-
-	dummy_fence->p_c[3].s_x_dm = 0xEF;
-	dummy_fence->p_c[3].s_y_dm = 0xEF;
-
-	zassert_false(cb((uint8_t *)dummy_fence, dummy_fence_len), "");
+	zassert_false(cb((uint8_t *)&pasture, sizeof(pasture)), "");
 
 	return retval;
 }

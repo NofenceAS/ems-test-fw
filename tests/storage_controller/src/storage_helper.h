@@ -8,7 +8,7 @@
 #include <ztest.h>
 #include "storage.h"
 
-void fill_dummy_fence(void);
+void init_dummy_pasture(void);
 
 /* Pasture tests. */
 void test_pasture(void);
@@ -22,12 +22,15 @@ void test_log(void);
 void test_log_extended(void);
 void test_reboot_persistent_log(void);
 void test_no_log_available(void);
+void test_log_after_reboot(void);
+void test_double_clear(void);
+void test_rotate_handling(void);
 
 /* Ano tests. */
-void test_ano(void);
-void test_ano_extended_write_read(void);
-void test_reboot_persistent_ano(void);
-void test_request_ano_multiple(void);
+void test_ano_write_20_years(void);
+void test_ano_write_sent(void);
 void test_no_ano_available(void);
+void test_ano_write_all(void);
+void test_reboot_persistent_ano(void);
 
 #endif /* _STORAGE_HELPER_H_ */

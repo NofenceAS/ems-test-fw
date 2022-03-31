@@ -5,17 +5,23 @@
 
 config MODEM_UBLOX_SARA_NF
 	bool "Enable u-blox SARA modem driver"
+	select MODEM
 	select MODEM_CONTEXT
 	select MODEM_CMD_HANDLER
 	select MODEM_IFACE_UART
 	select MODEM_SOCKET
 	select NET_OFFLOAD
 	select NET_SOCKETS_OFFLOAD
+	select DEVICE_POWER_MANAGEMENT
 	help
 	  Choose this setting to enable u-blox SARA-R4 LTE-CatM1/NB-IoT modem
 	  driver.
 
 if MODEM_UBLOX_SARA_NF
+
+config MODEM_UBLOX_INIT_RESET
+	bool "Perform reset during initialization of driver"
+	default y
 
 choice MODEM_UBLOX_SARA_VARIANT
 	bool "u-blox SARA variant selection"

@@ -19,6 +19,7 @@ zephyr_include_directories(
 FILE(GLOB app_sources 
         mock/*.c
         src/*.c 
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/crc/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/lte/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging/*.c
@@ -26,6 +27,8 @@ FILE(GLOB app_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/cellular_controller/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/gnss_controller/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/error_event.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/storage/storage_event.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/fw_upgrade_events.c
 
 )
 target_sources(app PRIVATE ${app_sources})
@@ -33,6 +36,7 @@ target_include_directories(app PRIVATE ${APP_SOURCE})
 
 zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/mock
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/crc/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/messaging/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble
@@ -41,6 +45,9 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/gnss_controller
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/amc
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/storage/
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/drivers/gnss/zephyr
 )

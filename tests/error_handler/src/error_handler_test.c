@@ -32,7 +32,7 @@ void test_normal_error_message(void)
 {
 	char *e_msg = "Simulated fw normal error. Overflow.";
 
-	nf_app_error(ERR_SENDER_FW_UPGRADE, -ENOMEM, e_msg, strlen(e_msg));
+	nf_app_error(ERR_FW_UPGRADE, -ENOMEM, e_msg, strlen(e_msg));
 
 	int err = k_sem_take(&error_event_sem, K_SECONDS(30));
 	zassert_equal(err, 0, "Normal error message, test hanged.");
@@ -40,7 +40,7 @@ void test_normal_error_message(void)
 
 void test_fatal_error_no_message(void)
 {
-	nf_app_fatal(ERR_SENDER_FW_UPGRADE, -ENODATA, NULL, 0);
+	nf_app_fatal(ERR_FW_UPGRADE, -ENODATA, NULL, 0);
 
 	int err = k_sem_take(&error_event_sem, K_SECONDS(30));
 	zassert_equal(err, 0, "Fatal error no message, test hanged.");
@@ -51,7 +51,7 @@ void test_warning_exceed_message(void)
 	size_t msg_len = CONFIG_ERROR_USER_MESSAGE_SIZE + 1;
 	char msg[msg_len];
 
-	nf_app_warning(ERR_SENDER_FW_UPGRADE, -EINVAL, msg, msg_len);
+	nf_app_warning(ERR_FW_UPGRADE, -EINVAL, msg, msg_len);
 
 	int err = k_sem_take(&error_event_sem, K_SECONDS(30));
 	zassert_equal(err, 0, "Exceeding message, test hanged.");
@@ -72,7 +72,7 @@ static bool event_handler(const struct event_header *eh)
 	if (is_error_event(eh)) {
 		struct error_event *ev = cast_error_event(eh);
 		if (cur_id == TEST_EVENT_1) {
-			zassert_equal(ev->sender, ERR_SENDER_FW_UPGRADE,
+			zassert_equal(ev->sender, ERR_FW_UPGRADE,
 				      "Mismatched sender.");
 
 			zassert_equal(ev->severity, ERR_SEVERITY_ERROR,
@@ -93,7 +93,7 @@ static bool event_handler(const struct event_header *eh)
 					  "Mismatched user message.");
 			cur_id = TEST_EVENT_2;
 		} else if (cur_id == TEST_EVENT_2) {
-			zassert_equal(ev->sender, ERR_SENDER_FW_UPGRADE,
+			zassert_equal(ev->sender, ERR_FW_UPGRADE,
 				      "Mismatched sender.");
 
 			zassert_equal(ev->severity, ERR_SEVERITY_FATAL,
@@ -106,7 +106,7 @@ static bool event_handler(const struct event_header *eh)
 				      "Message not empty.");
 			cur_id = TEST_EVENT_3;
 		} else if (cur_id == TEST_EVENT_3) {
-			zassert_equal(ev->sender, ERR_SENDER_FW_UPGRADE,
+			zassert_equal(ev->sender, ERR_FW_UPGRADE,
 				      "Mismatched sender.");
 
 			zassert_equal(ev->severity, ERR_SEVERITY_WARNING,

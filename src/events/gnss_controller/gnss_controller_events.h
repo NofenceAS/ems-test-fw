@@ -8,30 +8,22 @@ enum gnss_data_rate {
 };
 
 enum gnss_mode {
-	GPSMODE_NOMODE = 0,
-	GPSMODE_INACTIVE = 1,
-	GPSMODE_PSM = 2,
-	GPSMODE_CAUTION = 3,
-	GPSMODE_MAX = 4,
-	GPSMODE_SIZE = 5
+	GNSSMODE_NOMODE = 0,
+	GNSSMODE_INACTIVE = 1,
+	GNSSMODE_PSM = 2,
+	GNSSMODE_CAUTION = 3,
+	GNSSMODE_MAX = 4,
+	GNSSMODE_SIZE = 5
 };
 
-/** @brief Last gps fix received from the GNSS driver. */
-struct new_gnss_fix {
+
+/** @brief GNSS data received from the GNSS driver. */
+struct gnss_data {
 	struct event_header header;
-	gnss_last_fix_struct_t fix;
+	gnss_t gnss_data;
 };
 
-EVENT_TYPE_DECLARE(new_gnss_fix);
-
-
-/** @brief Last gps data received from the GNSS driver. */
-struct new_gnss_data {
-	struct event_header header;
-	gnss_struct_t gnss_data;
-};
-
-EVENT_TYPE_DECLARE(new_gnss_data);
+EVENT_TYPE_DECLARE(gnss_data);
 
 
 /** @brief Set GNSS receiver data update rate. */
