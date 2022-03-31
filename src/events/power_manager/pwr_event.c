@@ -38,3 +38,5 @@ static int log_pwr_status_event(const struct event_header *eh, char *buf,
 
 EVENT_TYPE_DEFINE(pwr_status_event, IS_ENABLED(CONFIG_LOG_PWR_EVENT),
 		  log_pwr_status_event, NULL);
+
+EVENT_TYPE_DEFINE(pwr_reboot_scheduled_event, true, NULL, NULL);

@@ -21,4 +21,17 @@ struct pwr_status_event {
 
 EVENT_TYPE_DECLARE(pwr_status_event);
 
+/** @brief Empty event to notify modules that need to shut down before
+ *         SYS_REBOOT call to shut down gracefully if needed.
+ * 
+ * @param reboots_at k_uptime_get_32 + timer, 
+ *                   telling when the system will reboot.
+ */
+struct pwr_reboot_scheduled_event {
+	struct event_header header;
+	uint32_t reboots_at;
+};
+
+EVENT_TYPE_DECLARE(pwr_reboot_scheduled_event);
+
 #endif /* _PWR_EVENT_H_ */
