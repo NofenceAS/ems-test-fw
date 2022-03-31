@@ -54,6 +54,7 @@ static inline void submit_app_status(enum error_sender_module sender,
 	/* -EINVALS to error handler, nothing to do about that. */
 	/* Not negative error code. */
 	if (code >= 0) {
+		LOG_ERR("Invalid error code %d", code);
 		return;
 	}
 
