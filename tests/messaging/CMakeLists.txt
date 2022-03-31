@@ -21,6 +21,7 @@ FILE(GLOB app_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c 
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/crc/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/lte/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/messaging/*.c
@@ -40,6 +41,8 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/mock
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/crc/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/messaging/
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/ble/services
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/lte
