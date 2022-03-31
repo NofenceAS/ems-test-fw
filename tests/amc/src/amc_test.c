@@ -92,7 +92,7 @@ void test_fnc_valid_fence_exists(void)
 	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)),
 		      "");
 
-	zassert_true(fnc_any_valid_fence(), "");
+	zassert_true(fnc_valid_fence(), "");
 }
 
 void test_empty_fence(void)
@@ -105,7 +105,7 @@ void test_empty_fence(void)
 	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)),
 		      "");
 
-	zassert_false(fnc_any_valid_fence(), "");
+	zassert_false(fnc_valid_fence(), "");
 }
 
 static bool event_handler(const struct event_header *eh)
@@ -131,12 +131,10 @@ void test_main(void)
 			 ztest_unit_test(test_fnc_calc_dist_2_fences_max_size));
 	ztest_run_test_suite(amc_dist_tests);
 
-	ztest_test_suite(amc_zone_tests,
-			 ztest_unit_test(test_zone_calc));
+	ztest_test_suite(amc_zone_tests, ztest_unit_test(test_zone_calc));
 	ztest_run_test_suite(amc_zone_tests);
-	
-	ztest_test_suite(amc_gnss_tests,
-			 ztest_unit_test(test_gnss_fix));
+
+	ztest_test_suite(amc_gnss_tests, ztest_unit_test(test_gnss_fix));
 	ztest_run_test_suite(amc_gnss_tests);
 }
 
