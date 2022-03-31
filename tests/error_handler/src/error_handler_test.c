@@ -5,6 +5,7 @@
 #include <ztest.h>
 #include "error_handler.h"
 #include "error_event.h"
+#include "pwr_event.h"
 #include <stdio.h>
 #include <string.h>
 

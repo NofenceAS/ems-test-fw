@@ -29,7 +29,6 @@ EVENT_TYPE_DECLARE(pwr_status_event);
  */
 struct pwr_reboot_scheduled_event {
 	struct event_header header;
-	uint32_t reboots_at;
 };
 
 EVENT_TYPE_DECLARE(pwr_reboot_scheduled_event);
