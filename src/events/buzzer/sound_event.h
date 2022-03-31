@@ -19,8 +19,8 @@
 
 enum sound_event_type {
 	SND_OFF = 0,
-	SND_FIND_ME,
 	SND_WARN,
+	SND_FIND_ME,
 	SND_WELCOME,
 	SND_SETUPMODE,
 	SND_PERSPELMANN,
