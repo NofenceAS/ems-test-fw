@@ -84,7 +84,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_RESET_ASSERTED 0
 
 #define MDM_CMD_TIMEOUT K_SECONDS(10)
-#define MDM_CMD_TIMEOUT_USOCL K_SECONDS(30)
+#define MDM_CMD_USOCL_TIMEOUT K_SECONDS(30)
 #define MDM_DNS_TIMEOUT K_SECONDS(70)
 #define MDM_CMD_CONN_TIMEOUT K_SECONDS(120)
 #define MDM_REGISTRATION_TIMEOUT K_SECONDS(180)
@@ -756,9 +756,12 @@ static const struct setup_cmd query_cellinfo_cmds[] = {
  */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 {
-	LOG_WRN("CDGCONT? handler, %d", argc);
+	LOG_DBG("CDGCONT? handler, %d", argc);
 	LOG_INF("ip: %s", argv[3]);
-	memcpy(mdata.mdm_pdp_addr,argv[3],MDM_IMSI_LENGTH);
+	memcpy(mdata.mdm_pdp_addr,argv[3],17); //17: "xxx.xxx.xxx.xxx", for
+	// the check_ip function, we're only interested in the fact that the
+	// first 8 characters are not "0.0.0.0
+	/*TODO: add more sofistication in handling the string if needed.*/
 	printk("new_mdm_pdp_addr = %s\n", mdata.mdm_pdp_addr);
 	return 0;
 }
@@ -1288,28 +1291,10 @@ static int modem_reset(void)
 		/* activate the GPRS connection */
 		SETUP_CMD_NOHANDLE("AT+UPSDA=0,3"),
 #else
-		/* activate the PDP context */
-//		SETUP_CMD_NOHANDLE("AT+CGDCONT?"),
 		SETUP_CMD_NOHANDLE("AT+COPS?"),
-//		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 6, ","),
 #endif
 	};
 
-//	ret = modem_cmd_handler_setup_cmds(
-//		&mctx.iface, &mctx.cmd_handler, post_setup_cmds2,
-//		1, &mdata.sem_response,
-//		MDM_REGISTRATION_TIMEOUT);
-//	if (ret != 0){
-//		LOG_ERR("Failed to read pdp address!");
-//		goto restart;
-//		/*TODO: handle differntly if needed!*/
-//	} else{
-//		ret = memcmp(mdata.mdm_pdp_addr,"0.0.0.0",9);
-//		if (ret != 0){
-//			LOG_INF("Valid ip address acquired!, %s", mdata.mdm_pdp_addr);
-//			return 0;
-//		}
-//	}
 restart:
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
@@ -1525,6 +1510,15 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 	if (ret < 0) {
 		goto error;
 	}
+/*set linger time to 3000ms
+ * TODO: parametrize duration */
+	char buf2[sizeof("AT+USOSO=%d,65535,128,1,00\r")];
+	snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,3000", ret);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, buf2,
+			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_DBG("Failed to set socket linger time!");
+	}
 
 	if (sock->ip_proto == IPPROTO_TLS_1_2) {
 		char buf[sizeof("AT+USECPRF=#,#,#######\r")];
@@ -1614,11 +1608,9 @@ static int offload_close(void *obj)
 
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U,
 				     buf, &mdata.sem_response,
-				     MDM_CMD_TIMEOUT_USOCL);
-		//MDM_CMD_TIMEOUT=10sec. (default zephyr driver.)
-		// wait for 30 seconds instead of 10, as closing the socket
-		// might take some
-		// time.
+				     MDM_CMD_USOCL_TIMEOUT); //use a 30 second
+		// timeout for the socket close command, as it might take
+		// more time compared to other commands.
 		if (ret < 0) {
 			LOG_ERR("%s ret:%d", log_strdup(buf), ret);
 		}
@@ -1726,7 +1718,6 @@ static int offload_listen(void *obj, int backlog)
 		}
 	}
 
-//	snprintk(buf, sizeof(buf), "AT+USOLI=%d,%d", sock->id, dst_port);
 	snprintk(buf, sizeof(buf), "AT+USOLI=%d,%d", sock->id, dst_port);
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf,
 			     &mdata.sem_response, MDM_CMD_CONN_TIMEOUT);
@@ -2367,13 +2358,12 @@ int modem_nf_reset(void)
 	return modem_reset();
 }
 
-int get_pdp_addr(char** ip_addr)
-{
-	const struct setup_cmd post_setup_cmds2[] = {
+int get_pdp_addr(char** ip_addr){
+	const struct setup_cmd read_sim_ip_cmd[] = {
 		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 6, ","),
 	};
 	int ret = modem_cmd_handler_setup_cmds(
-		&mctx.iface, &mctx.cmd_handler, post_setup_cmds2,
+		&mctx.iface, &mctx.cmd_handler, read_sim_ip_cmd,
 		1, &mdata.sem_response,
 		MDM_REGISTRATION_TIMEOUT);
 	if (ret == 0){
@@ -2392,25 +2382,6 @@ bool poll_listen_socket(void)
 	}
 	return false;
 }
-
-
-//int listen_socket(void){
-//	static uint8_t id = -1;
-//	const struct setup_cmd start_listening_sock[] = {
-//		SETUP_CMD_NOHANDLE("AT+USOCR=6"),
-//
-//	};
-//	int ret = modem_cmd_handler_setup_cmds(
-//		&mctx.iface, &mctx.cmd_handler, start_listening_sock,
-//		1, &mdata.sem_response,
-//		MDM_REGISTRATION_TIMEOUT);
-//	if (ret == 0){
-//		*ip_addr = mdata.mdm_pdp_addr;
-//		return 0;
-//	}else{
-//		return -1;
-//	}
-//}
 
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL,

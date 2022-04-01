@@ -19,9 +19,12 @@ void test_init(void)
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
 	ztest_returns_value(reset_modem, 0);
-	ztest_returns_value(check_ip, 0);
+
 	ztest_returns_value(lte_init, 0);
 	ztest_returns_value(eep_read_host_port, 0);
+	ztest_returns_value(check_ip, 0);
+	ztest_returns_value(socket_listen, 0);
+	ztest_returns_value(check_ip, 0);
 	ztest_returns_value(socket_connect, 0);
 	int8_t err = cellular_controller_init();
 	struct check_connection *ev = new_check_connection();
@@ -37,6 +40,7 @@ int8_t received;
 void test_publish_event_with_a_received_msg(void) /* happy scenario - msg
  * received from server is pushed to messaging module! */
 {
+	ztest_returns_value(query_listen_sock, false);
 	received = 30;
 	ztest_returns_value(socket_receive, received);
 	int8_t err = k_sem_take(&cellular_proto_in, K_SECONDS(1));
@@ -53,11 +57,15 @@ void test_ack_from_messaging_module_missed(void)
 {
 	struct check_connection *check = new_check_connection();
 	EVENT_SUBMIT(check);
+	ztest_returns_value(query_listen_sock, false);
 	ztest_returns_value(check_ip, 0);
 	received = 30;
 	ztest_returns_value(socket_receive, received);
-
-	int err = k_sem_take(&cellular_error, K_SECONDS(5));
+	ztest_returns_value(query_listen_sock, false);
+	ztest_returns_value(query_listen_sock, false);
+	ztest_returns_value(query_listen_sock, false);
+	ztest_returns_value(query_listen_sock, false);
+	int err = k_sem_take(&cellular_error, K_SECONDS(2));
 	zassert_equal(err, 0,
 		      "Expected cellular_error event was not "
 		      "published ");
@@ -77,6 +85,8 @@ void test_socket_connect_fails(void)
 	ztest_returns_value(check_ip, 0);
 	ztest_returns_value(lte_init, 0);
 	ztest_returns_value(eep_read_host_port, 0);
+	ztest_returns_value(socket_listen, 0);
+	ztest_returns_value(check_ip, 0);
 	ztest_returns_value(socket_connect, -1);
 	int8_t err = cellular_controller_init();
 	zassert_equal(err, 0,
