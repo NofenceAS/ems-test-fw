@@ -27,10 +27,10 @@ EVENT_TYPE_DECLARE(pwr_status_event);
  * @param reboots_at k_uptime_get_32 + timer, 
  *                   telling when the system will reboot.
  */
-struct pwr_reboot_scheduled_event {
+struct pwr_reboot_event {
 	struct event_header header;
 };
 
-EVENT_TYPE_DECLARE(pwr_reboot_scheduled_event);
+EVENT_TYPE_DECLARE(pwr_reboot_event);
 
 #endif /* _PWR_EVENT_H_ */
