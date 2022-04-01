@@ -12,6 +12,7 @@
 static K_SEM_DEFINE(cellular_ack, 0, 1);
 static K_SEM_DEFINE(cellular_proto_in, 0, 1);
 static K_SEM_DEFINE(cellular_error, 0, 1);
+static K_SEM_DEFINE(wake_up, 0, 1);
 bool simulate_modem_down = false;
 
 void test_init(void)
@@ -75,6 +76,16 @@ void test_ack_from_messaging_module_missed(void)
 			  "published ");
 	struct messaging_ack_event *ack = new_messaging_ack_event();
 	EVENT_SUBMIT(ack);
+}
+
+void test_notify_messaging_module_when_nudged_from_server(void)
+{
+	ztest_returns_value(socket_receive, 0);
+	ztest_returns_value(query_listen_sock, true);
+	int err = k_sem_take(&wake_up, K_SECONDS(1));
+	zassert_equal(err, 0,
+		      "Failed to notify messaging module when nudged from "
+		      "server!");
 }
 
 void test_socket_connect_fails(void)
@@ -146,6 +157,7 @@ void test_main(void)
 		cellular_controller_tests, ztest_unit_test(test_init),
 		ztest_unit_test(test_publish_event_with_a_received_msg),
 		ztest_unit_test(test_ack_from_messaging_module_missed),
+		ztest_unit_test(test_notify_messaging_module_when_nudged_from_server),
 		ztest_unit_test(test_socket_connect_fails),
 		ztest_unit_test(test_socket_rcv_fails),
 		ztest_unit_test(test_socket_send_fails),
@@ -174,6 +186,10 @@ static bool event_handler(const struct event_header *eh)
 		k_sem_give(&cellular_error);
 		printk("released semaphore for cellular_error!\n");
 		return true;
+	} else if (is_send_poll_request_now(eh)) {
+		k_sem_give(&wake_up);
+		printk("released semaphore for cellular_error!\n");
+		return true;
 	}
 	return false;
 }
@@ -182,3 +198,4 @@ EVENT_LISTENER(test, event_handler);
 EVENT_SUBSCRIBE(test, cellular_proto_in_event);
 EVENT_SUBSCRIBE(test, cellular_ack_event);
 EVENT_SUBSCRIBE(test, cellular_error_event);
+EVENT_SUBSCRIBE(test, send_poll_request_now);
