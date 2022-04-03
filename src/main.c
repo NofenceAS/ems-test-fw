@@ -39,12 +39,14 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 void main(void)
 {
 	LOG_INF("Starting Nofence application...");
+	int err = 0;
+#if 0
 	int err = stg_init_storage_controller();
 	if (err) {
 		LOG_ERR("Could not initialize storage controller, %i", err);
 		return;
 	}
-
+#endif
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
 	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
@@ -73,6 +75,7 @@ void main(void)
 	if (err) {
 		LOG_ERR("Could not initialize BLE module. %d", err);
 	}
+#if 0
 
 	/* Initialize firmware upgrade module. */
 	err = fw_upgrade_module_init();
@@ -134,4 +137,5 @@ void main(void)
 
 	LOG_INF("Booted application firmware version %i, and marked it as valid.",
 		NF_X25_VERSION_NUMBER);
+#endif
 }
