@@ -6,6 +6,7 @@ variables:
 stages:
   - compliance
   - build
+  - test
   - deploy
 
 check_compliance:
@@ -32,7 +33,24 @@ firmware:
     paths:
       - buildnumber
       - build/zephyr/app_*
+      - build/zephyr/merged.hex
+      - build/zephyr/zephyr.elf
       - build/nf_version.sh
+    reports:
+      junit: twister-out/twister_report.xml
+
+# HW-in-the-loop
+hw-in-the-loop-basic:
+  stage: test
+  script:
+    - python3 "$CI_PROJECT_DIR/tests-hw/nofence-tester/runner.py" x25_basic_test
+  tags:
+    - hw-in-the-loop-x25
+  artifacts:
+    name: "hwtest"
+    reports:
+      junit: report.xml
+
 
 # Firmware
 staging-firmware-deploy:
