@@ -105,10 +105,11 @@ void test_start_fota_error_start_download(void)
 	ev->version = 2001;
 	EVENT_SUBMIT(ev);
 
-	/* Should see it on the event bus that we failed to start download. */
+	/** Should not see it on the event bus, since we do not want to
+	  * hangup the thread. 
+	  */
 	int err = k_sem_take(&test_status, K_SECONDS(30));
-	zassert_equal(err, 0, "Test status event execution \
-		hanged waiting for error.");
+	zassert_not_equal(err, 0, "");
 }
 
 void teardown_common(void)
