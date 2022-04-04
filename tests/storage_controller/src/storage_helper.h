@@ -33,4 +33,8 @@ void test_no_ano_available(void);
 void test_ano_write_all(void);
 void test_reboot_persistent_ano(void);
 
+/* System diagnostic tests. */
+void test_sys_diag_log(void);
+void test_reboot_persistent_system_diag(void);
+
 #endif /* _STORAGE_HELPER_H_ */
