@@ -34,6 +34,13 @@ int gnss_uart_init(const struct device *uart_dev,
 int gnss_uart_set_baudrate(uint32_t baudrate, bool immediate);
 
 /**
+ * @brief Get baudrate for UART communication.
+ * 
+ * @return Baudrate in use. 
+ */
+uint32_t gnss_uart_get_baudrate(void);
+
+/**
  * @brief Send data to UART. 
  *
  * @param[in] buffer Buffer with data to send. 
