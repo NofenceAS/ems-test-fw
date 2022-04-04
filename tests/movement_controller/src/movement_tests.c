@@ -19,8 +19,13 @@ void assert_post_action(const char *file, unsigned int line)
 
 void test_init(void)
 {
+	ztest_returns_value(sensor_attr_set, 0);
+	ztest_returns_value(sensor_trigger_set, 0);
+
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
+	zassert_false(init_movement_controller(),
+		      "Error when initializing movement controller");
 }
 
 void test_main(void)
@@ -31,11 +36,11 @@ void test_main(void)
 
 static bool event_handler(const struct event_header *eh)
 {
-	if (is_movement_event(eh)) {
+	if (is_movement_out_event(eh)) {
 		return false;
 	}
 	return false;
 }
 
 EVENT_LISTENER(test_main, event_handler);
-EVENT_SUBSCRIBE(test_main, movement_event);
+EVENT_SUBSCRIBE(test_main, movement_out_event);

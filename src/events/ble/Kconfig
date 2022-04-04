@@ -22,6 +22,10 @@ config LOG_BLE_BEACON_EVENT
 	bool "BLE connection event"
 	default n
 
+config LOG_BLE_CMD_EVENT
+	bool "BLE command event"
+	default n
+
 endmenu
 
 endif

@@ -282,11 +282,11 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 	}
 
 	/* Check if communication is working by sending dummy command */
-	uint32_t gnss_baudrate = 0;
+	uint32_t gnss_baudrate = gnss_uart_get_baudrate();
 	ret = mia_m10_config_get_u32(UBX_CFG_UART1_BAUDRATE, &gnss_baudrate);
 	if (ret != 0) {
 		/* Communication failed, try other baudrate */
-		gnss_baudrate = try_default_baud_first ? 
+		gnss_baudrate = (gnss_baudrate == MIA_M10_DEFAULT_BAUDRATE) ? 
 				    CONFIG_GNSS_MIA_M10_UART_BAUDRATE : 
 				    MIA_M10_DEFAULT_BAUDRATE;
 		ret = gnss_uart_set_baudrate(gnss_baudrate, true);

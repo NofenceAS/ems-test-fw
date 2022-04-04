@@ -22,7 +22,7 @@ target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE ${APP_SOURCE})
 
 zephyr_library_include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/mock
+  ${CMAKE_CURRENT_SOURCE_DIR}/mock/drivers
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/environment/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/environment
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/
