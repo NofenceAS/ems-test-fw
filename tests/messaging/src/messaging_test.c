@@ -32,6 +32,10 @@ void assert_post_action(const char *file, unsigned int line)
 
 void test_init(void)
 {
+	struct connection_state_event *ev
+		= new_connection_state_event();
+	ev->state = true;
+	EVENT_SUBMIT(ev);
 	ztest_returns_value(stg_read_log_data, 0);
 	ztest_returns_value(stg_log_pointing_to_last, false);
 
@@ -46,7 +50,11 @@ void test_init(void)
 //ack - fence_ready - ano_ready - msg_out - host_address
 void test_initial_poll_request_out(void)
 {
-	k_sem_take(&msg_out, K_SECONDS(10));
+	struct connection_state_event *ev
+		= new_connection_state_event();
+	ev->state = true;
+	EVENT_SUBMIT(ev);
+	k_sem_take(&msg_out, K_MSEC(500));
 	printk("Outbound messages = %d\n", msg_count);
 	zassert_not_equal(pMsg, NULL, "Proto message not published!\n");
 
@@ -61,7 +69,7 @@ void test_initial_poll_request_out(void)
 		      "request- not "
 		      "sent!\n");
 
-	k_sleep(K_SECONDS(10));
+	k_sleep(K_SECONDS(1));
 }
 
 void test_poll_response_has_new_fence(void)
@@ -153,13 +161,17 @@ void test_poll_response_has_host_address(void)
 	msgIn->buf = &encoded_msg[0];
 	msgIn->len = encoded_size + 2;
 	EVENT_SUBMIT(msgIn);
+	struct connection_state_event *ev
+		= new_connection_state_event();
+	ev->state = true;
+	EVENT_SUBMIT(ev);
 
 	ret = k_sem_take(&new_host, K_SECONDS(2));
 	zassert_equal(ret, 0, "New host event not published!\n");
 	ret = memcmp(host, dummy_host, sizeof(dummy_host[0] * 22));
 	zassert_equal(ret, 0, "Host address mismatch!\n");
 
-	k_sleep(K_SECONDS(10));
+	k_sleep(K_SECONDS(1));
 }
 
 NofenceMessage dummy_nf_msg = { .m.seq_msg.has_usBatteryVoltage = 1500 };
@@ -182,7 +194,7 @@ void test_encode_message(void)
 	printk("ret %i\n", ret);
 	zassert_equal(k_sem_take(&msg_out, K_SECONDS(30)), 0, "");
 
-	k_sleep(K_SECONDS(10));
+	k_sleep(K_SECONDS(1));
 }
 
 /* Test expected error events published by messaging*/

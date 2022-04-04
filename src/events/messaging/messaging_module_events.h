@@ -2,6 +2,19 @@
 #include "nf_eeprom.h"
 #include "collar_protocol.h"
 
+/** @brief Empty event to notify modules that need to shut down before
+ *         SYS_REBOOT call to shut down gracefully if needed.
+ * 
+ * @param reboots_at k_uptime_get_32 + timer, 
+ *                   telling when the system will reboot.
+ */
+struct reboot_scheduled_event {
+	struct event_header header;
+	uint32_t reboots_at;
+};
+
+EVENT_TYPE_DECLARE(reboot_scheduled_event);
+
 /** @brief Empty event published by the messaging module to acknowledge
  *         reception of proto_in messages from the cellular controller. 
  */
@@ -140,3 +153,14 @@ struct animal_escape_event {
 };
 
 EVENT_TYPE_DECLARE(animal_escape_event);
+
+
+/** @brief Notify cellular controller to check if cellular connection is ready.
+ *Published by the messaging before sending out a new message to the server,
+ * cellular controller should reply with connection_ready event.
+ */
+struct check_connection {
+	struct event_header header;
+};
+
+EVENT_TYPE_DECLARE(check_connection);

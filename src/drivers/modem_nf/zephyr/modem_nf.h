@@ -4,5 +4,5 @@
 #include <zephyr.h>
 
 int modem_nf_reset(void);
-
+int get_pdp_addr(char **);
 #endif /* MODEM_NF_H_ */
