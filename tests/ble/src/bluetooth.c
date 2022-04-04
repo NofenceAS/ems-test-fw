@@ -386,6 +386,9 @@ static bool event_handler(const struct event_header *eh)
 		case BLE_CTRL_SCAN_STOP:
 			// TODO: A test of this should be added later
 			break;
+		case BLE_CTRL_DISCONNECT_PEER:
+			// TODO: A test of this should be added later
+			break;
 		case BLE_CTRL_BATTERY_UPDATE:
 			k_sem_give(&ble_battery_sem);
 			break;
