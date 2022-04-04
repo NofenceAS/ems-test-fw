@@ -7,17 +7,6 @@ message(STATUS "Build type: ${BUILD_TYPE} 🚀")
 
 list(APPEND DTS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
-if (HARDWARE_TEST)
-        if(DTC_OVERLAY_FILE)
-                set(DTC_OVERLAY_FILE
-                        "${DTC_OVERLAY_FILE};boards/arm/nf_x25_nrf52840/nf_x25_hw_test.overlay"
-                        CACHE STRING "" FORCE
-                        )
-        else()
-                set(DTC_OVERLAY_FILE boards/arm/nf_x25_nrf52840/nf_x25_hw_test.overlay)
-        endif()
-endif()
-
 # Out-of-tree driver for GNSS,
 # see https://github.com/zephyrproject-rtos/zephyr/tree/main/samples/application_development/out_of_tree_driver
 list(APPEND ZEPHYR_EXTRA_MODULES
