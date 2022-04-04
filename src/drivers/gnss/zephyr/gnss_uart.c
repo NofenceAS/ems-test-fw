@@ -187,6 +187,18 @@ int gnss_uart_init(const struct device *uart_dev,
 	return 0;
 }
 
+uint32_t gnss_uart_get_baudrate(void)
+{
+	struct uart_config cfg;
+
+	int ret = uart_config_get(gnss_uart_dev, &cfg);
+	if (ret != 0) {
+		return 0;
+	}
+	
+	return cfg.baudrate;
+}
+
 int gnss_uart_set_baudrate(uint32_t baudrate, bool immediate)
 {
 	int ret = 0;

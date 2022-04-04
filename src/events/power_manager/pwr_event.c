@@ -9,12 +9,8 @@
 /** @brief Function to convert enum to string */
 static char *string_from_enum(enum pwr_state_flag state)
 {
-	static char *strings[] = {
-		"PWR_NORMAL",
-		"PWR_LOW",
-		"PWR_CRITICAL",
-		"PWR_BATTERY",
-	};
+	static char *strings[] = { "PWR_NORMAL", "PWR_LOW", "PWR_CRITICAL",
+				   "PWR_BATTERY", "PWR_CHARGING" };
 
 	return strings[state];
 }
