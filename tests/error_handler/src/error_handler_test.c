@@ -31,6 +31,7 @@ void test_init(void)
 
 void test_normal_error_message(void)
 {
+	ztest_returns_value(date_time_now, 0);
 	ztest_returns_value(stg_write_system_diagnostic_log, 0);
 	char *e_msg = "Simulated fw normal error. Overflow.";
 
@@ -42,6 +43,7 @@ void test_normal_error_message(void)
 
 void test_fatal_error_no_message(void)
 {
+	ztest_returns_value(date_time_now, 0);
 	ztest_returns_value(stg_write_system_diagnostic_log, 0);
 	nf_app_fatal(ERR_FW_UPGRADE, -ENODATA, NULL, 0);
 
@@ -51,6 +53,7 @@ void test_fatal_error_no_message(void)
 
 void test_warning_exceed_message(void)
 {
+	ztest_returns_value(date_time_now, 0);
 	ztest_returns_value(stg_write_system_diagnostic_log, 0);
 	size_t msg_len = CONFIG_ERROR_USER_MESSAGE_SIZE + 1;
 	char msg[msg_len];

@@ -38,6 +38,10 @@ void test_reboot_persistent_system_diag(void)
 	zassert_equal(stg_write_system_diagnostic_log(
 			      (uint8_t *)&dummy_sys_diag, dummy_sys_diag_len),
 		      0, "Write system diagnostic error.");
+
+	/* Clear ANO partition so that we do not call date_time. */
+	zassert_false(stg_clear_partition(STG_PARTITION_ANO), "");
+
 	int err = stg_fcb_reset_and_init();
 	zassert_equal(err, 0, "Error simulating reboot and FCB resets.");
 	zassert_equal(stg_read_system_diagnostic_log(read_callback_sys_log, 0),
