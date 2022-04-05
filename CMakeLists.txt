@@ -85,6 +85,7 @@ add_subdirectory(src/eeprom)
 add_subdirectory(src/modules/amc)
 add_subdirectory(src/modules/cellular_controller)
 add_subdirectory(src/modules/buzzer)
+add_subdirectory(src/modules/error_handler)
 
 add_subdirectory(src/modules/power_manager)
 add_subdirectory(src/events/power_manager)

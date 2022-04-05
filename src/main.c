@@ -5,6 +5,8 @@
 #include <sys/printk.h>
 #include <zephyr.h>
 
+#include "error_event.h"
+
 #include "diagnostics.h"
 #include "fw_upgrade.h"
 #include "fw_upgrade_events.h"
