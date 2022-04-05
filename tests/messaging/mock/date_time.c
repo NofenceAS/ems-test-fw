@@ -3,11 +3,7 @@
  */
 #include <ztest.h>
 
-int date_time_set(int64_t unixtime)
-{
-	return ztest_get_return_value();
-}
-int date_time_now(int64_t *unixtime)
+int date_time_set(const struct tm *date)
 {
 	return ztest_get_return_value();
 }

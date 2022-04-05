@@ -5,7 +5,10 @@
 #ifndef _DATE_TIME_MOCK_H_
 #define _DATE_TIME_MOCK_H_
 
-int date_time_set(int64_t unixtime);
-int date_time_now(int64_t *unixtime);
+#include <zephyr.h>
+#include <stdint.h>
+#include <time.h>
+
+int date_time_set(const struct tm *date);
 
 #endif /* _DATE_TIME_MOCK_H_ */

@@ -37,17 +37,6 @@ int read_callback_inc_days(uint8_t *data, size_t len)
 	return err;
 }
 
-/* Valid days are from 1 to 31. */
-int read_callback_valid_days(uint8_t *data, size_t len)
-{
-	dummy_ano.mga_ano.day = expected_valid_day;
-	UBX_MGA_ANO_RAW_t *ano_frame = (UBX_MGA_ANO_RAW_t *)data;
-	zassert_equal(len, dummy_ano_len, "");
-	zassert_mem_equal(ano_frame, &dummy_ano, len, "");
-	expected_valid_day++;
-	return 0;
-}
-
 /** @brief Writes ano data, where each frame is one day.
  *         So it will write from day 5 to 25, and checks if we read all
  *         entries if read_from_boot_entry == false.
@@ -113,7 +102,6 @@ void test_ano_write_sent(void)
  */
 void test_ano_write_all(void)
 {
-	ztest_returns_value(date_time_now, 0);
 	zassert_equal(stg_clear_partition(STG_PARTITION_ANO), 0, "");
 
 	dummy_ano.mga_ano.day = 1;
@@ -124,14 +112,21 @@ void test_ano_write_all(void)
 		dummy_ano.mga_ano.day++;
 	}
 
-	/* Simualte reboot. */
+	/* Simualte reboot. We check here if we have valid ANO data, which
+	 * means date_time_now should be called 1,2,3,4,5, 5 times until it finds
+	 * a valid entry containing a day greater or equal than 5th. 
+	 */
+	ztest_returns_value(date_time_now, 0);
+	ztest_returns_value(date_time_now, 0);
+	ztest_returns_value(date_time_now, 0);
+	ztest_returns_value(date_time_now, 0);
+	ztest_returns_value(date_time_now, 0);
 	int err = stg_fcb_reset_and_init();
 	zassert_equal(err, 0, "Error simulating reboot and FCB resets.");
 
-	/* Current day is 5th, so we do not expect day 1, 2, 3, 4 to be valid. */
 	dummy_ano.mga_ano.day = 5;
 
-	zassert_equal(stg_read_ano_data(read_callback_valid_days, true, 0), 0,
+	zassert_equal(stg_read_ano_data(read_callback_inc_days, true, 0), 0,
 		      "Read ano error.");
 }
 
