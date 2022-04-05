@@ -2316,7 +2316,7 @@ int get_pdp_addr(char** ip_addr){
 	int ret = modem_cmd_handler_setup_cmds(
 		&mctx.iface, &mctx.cmd_handler, read_sim_ip_cmd,
 		1, &mdata.sem_response,
-		MDM_REGISTRATION_TIMEOUT);
+		MDM_CMD_TIMEOUT);
 	if (ret == 0){
 		*ip_addr = mdata.mdm_pdp_addr;
 		return 0;
