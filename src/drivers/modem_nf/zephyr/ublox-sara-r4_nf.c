@@ -1040,6 +1040,7 @@ static bool modem_rx_pin_is_high(void) {
 
 static int pin_init(void)
 {
+	modem_pin_config(&mctx, MDM_POWER, true);
 	LOG_INF("Setting Modem Pins");
 
 #if DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
@@ -1047,7 +1048,8 @@ static int pin_init(void)
 	modem_pin_write(&mctx, MDM_RESET, MDM_RESET_NOT_ASSERTED);
 #endif
 
-	uart_state_set(PM_DEVICE_STATE_SUSPENDED);
+	int rc = uart_state_set(PM_DEVICE_STATE_SUSPENDED);
+	LOG_DBG("uart_state_set returns: %d", rc);
 	k_sleep(K_MSEC(100));
 
 	LOG_DBG("MDM_POWER_PIN -> ENABLE");
