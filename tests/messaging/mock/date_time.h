@@ -9,6 +9,6 @@
 #include <stdint.h>
 #include <time.h>
 
-int date_time_set(const struct tm *date);
+int date_time_set(struct tm *tm_date);
 
 #endif /* _DATE_TIME_MOCK_H_ */
