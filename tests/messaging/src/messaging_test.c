@@ -9,6 +9,7 @@
 #include "cellular_controller_events.h"
 #include "messaging_module_events.h"
 #include "collar_protocol.h"
+#include "eeprom.h"
 
 static K_SEM_DEFINE(msg_out, 0, 1);
 static K_SEM_DEFINE(new_host, 0, 1);
@@ -73,7 +74,6 @@ void test_initial_poll_request_out(void)
 
 void test_poll_response_has_new_fence(void)
 {
-	ztest_returns_value(eep_read_serial, 0);
 	/* We need to simulate that we received the message on server, publish
 	 * ACK for messaging module.
 	 */
