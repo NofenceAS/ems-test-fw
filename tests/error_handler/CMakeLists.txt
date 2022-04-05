@@ -25,4 +25,5 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/error_handler
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/include
 )
