@@ -54,7 +54,7 @@ void test_main(void)
 
 	/* Test ano partition. */
 	ztest_test_suite(storage_ano_test,
-			 ztest_unit_test(test_ano_write_20_years),
+			 ztest_unit_test(test_ano_write_20_days),
 			 ztest_unit_test(test_ano_write_sent),
 			 ztest_unit_test(test_ano_write_all),
 			 ztest_unit_test(test_no_ano_available),

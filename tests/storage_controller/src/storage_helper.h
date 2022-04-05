@@ -27,7 +27,7 @@ void test_double_clear(void);
 void test_rotate_handling(void);
 
 /* Ano tests. */
-void test_ano_write_20_years(void);
+void test_ano_write_20_days(void);
 void test_ano_write_sent(void);
 void test_no_ano_available(void);
 void test_ano_write_all(void);
