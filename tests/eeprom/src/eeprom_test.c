@@ -1,5 +1,5 @@
 #include <ztest.h>
-#include <nf_eeprom.h>
+#include <nf_settings.h>
 #include <drivers/eeprom.h>
 
 static int mock_eeprom_read(const struct device *dev, off_t offset, void *data,
@@ -94,7 +94,7 @@ static void test_host_port(void)
 	zassert_mem_equal(host_port, "193.333.555.777:123456", 23,
 			  "Expected host port");
 	/* Read, too small buffer */
-	ret = eep_read_host_port(host_port, EEP_HOST_PORT_BUF_SIZE-1);
+	ret = eep_read_host_port(host_port, EEP_HOST_PORT_BUF_SIZE - 1);
 	zassert_equal(ret, -EOVERFLOW, "unexpected return");
 }
 

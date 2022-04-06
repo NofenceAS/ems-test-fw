@@ -8,12 +8,12 @@
 #include "diagnostics.h"
 #include "fw_upgrade.h"
 #include "fw_upgrade_events.h"
-#include "nf_eeprom.h"
+#include "nf_settings.h"
 #include "ble_controller.h"
 #include "cellular_controller.h"
 #include "ep_module.h"
 #include "amc_handler.h"
-#include "nf_eeprom.h"
+#include "nf_settings.h"
 #include "buzzer.h"
 #include "pwr_module.h"
 
@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 void main(void)
 {
 	LOG_INF("Starting Nofence application...");
-	
+
 	int err = stg_init_storage_controller();
 	if (err) {
 		LOG_ERR("Could not initialize storage controller, %i", err);

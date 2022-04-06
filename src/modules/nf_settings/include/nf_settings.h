@@ -3,8 +3,8 @@
 * Copyright (c) 2022 Nofence AS
 */
 
-#ifndef X3_FW_NF_EEPROM_H
-#define X3_FW_NF_EEPROM_H
+#ifndef X3_FW_NF_SETTINGS_H
+#define X3_FW_NF_SETTINGS_H
 
 #include <device.h>
 
@@ -20,7 +20,6 @@
  * @param[in] device pointer to the EEPROM device to use for subsequent read/writes
  */
 void eep_init(const struct device *dev);
-
 
 /**
  * @brief writes the persistent collar serial number.
@@ -55,4 +54,4 @@ int eep_write_host_port(const char *host_port);
  */
 int eep_read_host_port(char *host_port, size_t bufsize);
 
-#endif //X3_FW_NF_EEPROM_H
+#endif /* X3_FW_NF_SETTINGS_H */

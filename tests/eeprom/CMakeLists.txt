@@ -10,7 +10,7 @@ zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../include)
 
 FILE(GLOB app_sources src/*.c
-        ../../src/eeprom/eeprom.c)
+        ../../src/modules/nf_settings/nf_settings.c)
 target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE ${APP_SOURCE})
 

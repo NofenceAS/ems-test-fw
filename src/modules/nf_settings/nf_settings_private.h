@@ -7,7 +7,7 @@
 #define X3_FW_NF_EEPROM_PRIVATE_H
 
 #include <stdint.h>
-#include <nf_eeprom.h>
+#include <nf_settings.h>
 
 /**
  * @brief Convenience structure to define the Zephyr eeprom address space

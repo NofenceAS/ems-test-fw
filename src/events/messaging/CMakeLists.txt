@@ -9,7 +9,7 @@ target_sources(app PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/msg_data_event.c
 )
 zephyr_include_directories(
-        ../../../include
+        ../../modules/nf_settings/include
         ../../modules/collar_protocol/zephyr
         ./../events/error_handler
 )

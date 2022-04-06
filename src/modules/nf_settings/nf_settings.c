@@ -3,7 +3,7 @@
 * Copyright (c) 2022 Nofence AS
 */
 
-#include "nf_eeprom_private.h"
+#include "nf_settings_private.h"
 #include <drivers/eeprom.h>
 #include <string.h>
 
