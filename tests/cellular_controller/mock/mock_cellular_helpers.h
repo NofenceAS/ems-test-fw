@@ -18,6 +18,8 @@ void stop_tcp(void);
 
 int8_t send_tcp(char *, size_t);
 
+int8_t send_tcp_q(char *, size_t);
+
 int8_t socket_connect(struct data *, struct sockaddr *, size_t);
 
 int8_t lte_init(void);
@@ -33,4 +35,6 @@ int eep_write_host_port(const char *);
 int check_ip(void);
 
 int get_ip(char **);
+
+void send_tcp_fn(void);
 //int8_t cache_server_address(void);

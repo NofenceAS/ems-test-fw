@@ -1223,6 +1223,7 @@ static int modem_reset(void)
 {
 	int ret = 0, retry_count = 0, counter = 0;
 	static const struct setup_cmd setup_cmds[] = {
+
 		/* turn off echo */
 		SETUP_CMD_NOHANDLE("ATE0"),
 		/* stop functionality */
