@@ -9,6 +9,7 @@
 #include "cellular_controller_events.h"
 #include "messaging_module_events.h"
 #include "collar_protocol.h"
+#include "eeprom.h"
 
 static K_SEM_DEFINE(msg_out, 0, 1);
 static K_SEM_DEFINE(new_host, 0, 1);
@@ -35,6 +36,7 @@ void test_init(void)
 		= new_connection_state_event();
 	ev->state = true;
 	EVENT_SUBMIT(ev);
+	ztest_returns_value(eep_read_serial, 0);
 	ztest_returns_value(stg_read_log_data, 0);
 	ztest_returns_value(stg_log_pointing_to_last, false);
 
