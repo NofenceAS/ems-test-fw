@@ -65,6 +65,8 @@ zephyr_library_include_directories(
         src/events/fw_upgrade
         src/modules/environment
         src/events/environment
+        src/modules/movement_controller
+        src/events/movement_controller
         src/modules/cellular_controller
         src/modules/gnss_controller
         src/events/cellular_controller
@@ -96,3 +98,4 @@ add_subdirectory(src/events/electric_pulse)
 add_subdirectory(src/modules/electric_pulse)
 add_subdirectory(src/modules/environment)
 add_subdirectory(src/modules/gnss_controller)
+add_subdirectory(src/modules/movement_controller)
