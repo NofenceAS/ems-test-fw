@@ -8,8 +8,12 @@ menu "APPLICATION_CODE"
 endmenu # APPLICATION CODE
 
 menu "ERROR_HANDLER"
-    	rsource "./../../src/modules/error_handler/Kconfig"
-	endmenu # ERROR_HANDLER
+rsource "./../../src/modules/error_handler/Kconfig"
+endmenu # ERROR_HANDLER
+
+menu "ENVIRONMENT"
+rsource "./../../src/modules/environment/Kconfig"
+endmenu # ENVIRONMENT
 
 menu "Zephyr Kernel"
 source "Kconfig.zephyr"
