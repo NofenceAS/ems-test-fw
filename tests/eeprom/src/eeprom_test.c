@@ -42,7 +42,7 @@ static void test_serial_number(void)
 	ztest_expect_value(mock_eeprom_write, len, 4);
 	ztest_expect_data(mock_eeprom_write, data, &expected_data);
 	ztest_returns_value(mock_eeprom_write, 0);
-	ret = eep_write_serial(UINT32_MAX);
+	ret = eep_uint32_write(EEP_UID, UINT32_MAX);
 	zassert_equal(ret, 0, "eep_write_serial should return 0");
 
 	/* Read: Happy scenario */
@@ -52,7 +52,7 @@ static void test_serial_number(void)
 	ztest_return_data(mock_eeprom_read, data, &expected_data);
 	ztest_returns_value(mock_eeprom_read, 0);
 	uint32_t serial;
-	ret = eep_read_serial(&serial);
+	ret = eep_uint32_read(EEP_UID, &serial);
 	zassert_equal(ret, 0, "eep_read_serial should return 0");
 	zassert_equal(serial, 1234, "Expected serial number");
 }
