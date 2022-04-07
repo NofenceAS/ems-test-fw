@@ -29,7 +29,19 @@ void test_init_and_update_pasture(void)
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
 
+	/* Cached pasture. */
 	ztest_returns_value(stg_read_pasture_data, 0);
+
+	/* Cached variables. 1. tot zap count, 2. warn count, 3. zap count day */
+	ztest_returns_value(eep_uint16_read, 0);
+	ztest_returns_value(eep_uint32_read, 0);
+	ztest_returns_value(eep_uint16_read, 0);
+
+	/* Cached modes. Collarmode, fencestatus and collarstatus. */
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_read, 0);
+
 	zassert_false(amc_module_init(), "Error when initializing AMC module");
 }
 

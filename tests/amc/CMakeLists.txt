@@ -29,6 +29,7 @@ FILE(GLOB app_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/gnss_controller/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/electric_pulse/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/movement_controller/*.c
 )
 target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE ${APP_SOURCE})
@@ -51,6 +52,8 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/drivers/gnss/zephyr
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/electric_pulse
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/movement_controller
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/movement_controller
 )
 
 add_dependencies(app collar_protocol_headers)
