@@ -36,6 +36,7 @@ void test_init(void)
 		= new_connection_state_event();
 	ev->state = true;
 	EVENT_SUBMIT(ev);
+	ztest_returns_value(eep_uint32_read, 0);
 	ztest_returns_value(stg_read_log_data, 0);
 	ztest_returns_value(stg_log_pointing_to_last, false);
 
