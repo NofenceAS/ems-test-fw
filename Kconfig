@@ -74,9 +74,14 @@ endmenu
 menu "PWR Module"
 rsource "src/modules/power_manager/Kconfig"
 endmenu
+
 menu "CELLULAR_CONTROLLER"
 rsource "src/modules/cellular_controller/Kconfig"
-endmenu # CELLULAR_CONTROLLER
+endmenu
+
+menu "TIME_USE"
+rsource "src/modules/time_use/Kconfig"
+endmenu
 
 menu "Zephyr Kernel"
 source "Kconfig.zephyr" 
