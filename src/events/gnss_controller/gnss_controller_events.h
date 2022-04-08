@@ -56,3 +56,11 @@ struct gnss_no_zone {
 
 EVENT_TYPE_DECLARE(gnss_no_zone);
 
+/** @brief GNSS mode, published when the mode changes. */
+struct gnss_mode {
+	struct event_header header;
+	gnss_mode_t mode;
+};
+
+EVENT_TYPE_DECLARE(gnss_mode);
+

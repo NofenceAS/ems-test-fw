@@ -71,6 +71,8 @@ zephyr_library_include_directories(
         src/modules/gnss_controller
         src/events/cellular_controller
   	    src/modules/buzzer
+        src/modules/time_use
+        src/modules/time_use/lib/include
         ${PROJECT_BINARY_DIR}/include/generated/)
         
 target_sources(app PRIVATE ${APP_MAIN}
@@ -99,3 +101,4 @@ add_subdirectory(src/modules/electric_pulse)
 add_subdirectory(src/modules/environment)
 add_subdirectory(src/modules/gnss_controller)
 add_subdirectory(src/modules/movement_controller)
+add_subdirectory(src/modules/time_use)
