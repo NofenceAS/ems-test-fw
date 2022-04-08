@@ -8,8 +8,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define GNSS_HUB_ID_UART			0
-#define GNSS_HUB_ID_DRIVER			1
+#define GNSS_HUB_ID_UART		0
+#define GNSS_HUB_ID_DRIVER		1
 #define GNSS_HUB_ID_DIAGNOSTICS		2
 
 #define GNSS_HUB_MODE_DEFAULT		0
@@ -17,9 +17,13 @@
 #define GNSS_HUB_MODE_CONTROLLER	2
 #define GNSS_HUB_MODE_EMULATOR		3
 
+typedef void (*gnss_diag_data_cb_t)(void);
+
 int gnss_hub_init(const struct device *uart_dev, 
 		  struct k_sem* rx_sem, 
 		  uint32_t baudrate);
+
+int gnss_hub_set_diagnostics_callback(gnss_diag_data_cb_t cb);
 
 int gnss_hub_configure(uint8_t mode);
 
