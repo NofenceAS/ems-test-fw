@@ -8,8 +8,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define GNSS_HUB_ID_UART		0
-#define GNSS_HUB_ID_DRIVER		1
+#define GNSS_HUB_ID_UART			0
+#define GNSS_HUB_ID_DRIVER			1
 #define GNSS_HUB_ID_DIAGNOSTICS		2
 
 #define GNSS_HUB_MODE_DEFAULT		0
@@ -28,6 +28,8 @@ int gnss_hub_set_uart_baudrate(uint32_t baudrate, bool immediate);
 uint32_t gnss_hub_get_uart_baudrate(void);
 
 int gnss_hub_send(uint8_t hub_id, uint8_t* buffer, uint32_t cnt);
+
+bool gnss_hub_rx_is_empty(uint8_t hub_id);
 
 int gnss_hub_rx_get_data(uint8_t hub_id, uint8_t** buffer, uint32_t* cnt);
 
