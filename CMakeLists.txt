@@ -86,6 +86,7 @@ add_subdirectory(src/modules/fw_upgrade)
 add_subdirectory(src/modules/storage_controller)
 add_subdirectory(src/modules/nf_settings)
 add_subdirectory(src/modules/amc)
+add_subdirectory(src/events/amc)
 add_subdirectory(src/modules/cellular_controller)
 add_subdirectory(src/modules/buzzer)
 

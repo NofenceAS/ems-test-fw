@@ -2,6 +2,7 @@
 #ifndef X3_FW_AMC_EVENTS_H
 #define X3_FW_AMC_EVENTS_H
 #include "amc_zone.h"
+#include <event_manager.h>
 
 struct zone_change {
 	struct event_header header;
