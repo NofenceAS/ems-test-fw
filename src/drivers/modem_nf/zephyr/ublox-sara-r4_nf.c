@@ -53,6 +53,7 @@ enum mdm_control_pins {
 #endif
 };
 bool listen_request;
+extern struct k_sem listen_sem;
 
 static struct modem_pin modem_pins[] = {
 	/* MDM_POWER */
@@ -982,6 +983,7 @@ MODEM_CMD_DEFINE(on_cmd_socknotify_listen)
 	LOG_DBG("Received new message on listening socket:%s, port:%s",
 		argv[3], argv[5]);
 	listen_request = true;
+	k_sem_give(&listen_sem);
 	return 0;
 }
 
@@ -2372,15 +2374,6 @@ int get_pdp_addr(char** ip_addr){
 	}else{
 		return -1;
 	}
-}
-
-bool poll_listen_socket(void)
-{
-	if (listen_request){
-		listen_request = false;
-		return true;
-	}
-	return false;
 }
 
 

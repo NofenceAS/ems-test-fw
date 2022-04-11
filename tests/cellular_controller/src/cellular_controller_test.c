@@ -14,6 +14,7 @@ static K_SEM_DEFINE(cellular_proto_in, 0, 1);
 static K_SEM_DEFINE(cellular_error, 0, 1);
 static K_SEM_DEFINE(wake_up, 0, 1);
 bool simulate_modem_down = false;
+extern struct k_sem listen_sem;
 
 void test_init(void)
 {
@@ -41,7 +42,6 @@ int8_t received;
 void test_publish_event_with_a_received_msg(void) /* happy scenario - msg
  * received from server is pushed to messaging module! */
 {
-	ztest_returns_value(query_listen_sock, false);
 	received = 30;
 	ztest_returns_value(socket_receive, received);
 	int8_t err = k_sem_take(&cellular_proto_in, K_SECONDS(1));
@@ -58,14 +58,9 @@ void test_ack_from_messaging_module_missed(void)
 {
 	struct check_connection *check = new_check_connection();
 	EVENT_SUBMIT(check);
-	ztest_returns_value(query_listen_sock, false);
 	ztest_returns_value(check_ip, 0);
 	received = 30;
 	ztest_returns_value(socket_receive, received);
-	ztest_returns_value(query_listen_sock, false);
-	ztest_returns_value(query_listen_sock, false);
-	ztest_returns_value(query_listen_sock, false);
-	ztest_returns_value(query_listen_sock, false);
 	int err = k_sem_take(&cellular_error, K_SECONDS(2));
 	zassert_equal(err, 0,
 		      "Expected cellular_error event was not "
@@ -80,9 +75,9 @@ void test_ack_from_messaging_module_missed(void)
 
 void test_notify_messaging_module_when_nudged_from_server(void)
 {
-	ztest_returns_value(socket_receive, 0);
-	ztest_returns_value(query_listen_sock, true);
-	int err = k_sem_take(&wake_up, K_SECONDS(1));
+	k_sem_give(&listen_sem); /*TODO: when unit testing the modem driver,
+ * make sure the semaphore is given as expected.*/
+	int err = k_sem_take(&wake_up, K_MSEC(100));
 	zassert_equal(err, 0,
 		      "Failed to notify messaging module when nudged from "
 		      "server!");
