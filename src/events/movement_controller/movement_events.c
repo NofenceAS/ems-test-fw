@@ -3,7 +3,6 @@
  */
 
 #include "movement_events.h"
-#include "event_manager.h"
 #include <zephyr.h>
 #include <logging/log.h>
 #include <stdio.h>

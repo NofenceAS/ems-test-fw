@@ -38,6 +38,8 @@ FILE(GLOB app_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager/pwr_event.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/time_use/libs/helpers.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/time_use/time_use.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/amc/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/movement_controller/*.c
 )
 target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE ${APP_SOURCE})

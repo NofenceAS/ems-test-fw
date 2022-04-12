@@ -14,7 +14,11 @@ endmenu # ERROR_HANDLER
 
 menu "TIME_USE"
     rsource "./../../src/modules/time_use/Kconfig"
-endmenu # ERROR_HANDLER
+endmenu
+
+menu "MVMT_CONTROLLER"
+    rsource "./../../src/modules/movement_controller/Kconfig"
+endmenu
 
 
 menu "Zephyr Kernel"
