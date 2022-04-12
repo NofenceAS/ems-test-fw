@@ -117,6 +117,7 @@ void main(void)
 	}
 
 	/* Play welcome sound. */
+	/*TODO: only play when battery level is adequate.*/
 	struct sound_event *sound_ev = new_sound_event();
 	sound_ev->type = SND_WELCOME;
 	EVENT_SUBMIT(sound_ev);
