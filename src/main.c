@@ -32,6 +32,7 @@
 
 #include "movement_controller.h"
 #include "movement_events.h"
+#include "time_use.h"
 
 LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -133,6 +134,10 @@ void main(void)
 	err = gnss_controller_init();
 	if (err) {
 		LOG_ERR("Could not initialize GNSS controller. %d", err);
+	}
+	err = time_use_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize time use module. %d", err);
 	}
 
 	/* Once EVERYTHING is initialized correctly and we get connection to

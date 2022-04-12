@@ -14,6 +14,11 @@ project(messaging_testing)
 zephyr_include_directories(
         ${CMAKE_CURRENT_BINARY_DIR}
         ${X3_PROJECT_BINARY}/include/generated/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/collar_stats/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/movement_controller/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/amc/lib/include/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/time_use/lib/include/
 )
 
 FILE(GLOB app_sources 
@@ -29,7 +34,10 @@ FILE(GLOB app_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/error_event.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/storage/storage_event.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/fw_upgrade_events.c
-
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/collar_stats/histogram_events.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager/pwr_event.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/time_use/libs/helpers.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/time_use/time_use.c
 )
 target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE ${APP_SOURCE})
@@ -53,6 +61,5 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/nf_settings/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/drivers/gnss/zephyr
 )
-
 
 add_dependencies(app collar_protocol_headers)

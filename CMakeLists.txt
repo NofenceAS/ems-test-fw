@@ -72,7 +72,6 @@ zephyr_library_include_directories(
         src/events/cellular_controller
   	    src/modules/buzzer
         src/modules/time_use
-        src/modules/time_use/lib/include
         src/events/collar_stats
         ${PROJECT_BINARY_DIR}/include/generated/)
         
