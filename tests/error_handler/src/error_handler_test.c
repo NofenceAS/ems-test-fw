@@ -5,6 +5,7 @@
 #include <ztest.h>
 #include "error_handler.h"
 #include "error_event.h"
+#include "pwr_event.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -30,6 +31,8 @@ void test_init(void)
 
 void test_normal_error_message(void)
 {
+	ztest_returns_value(date_time_now, 0);
+	ztest_returns_value(stg_write_system_diagnostic_log, 0);
 	char *e_msg = "Simulated fw normal error. Overflow.";
 
 	nf_app_error(ERR_FW_UPGRADE, -ENOMEM, e_msg, strlen(e_msg));
@@ -40,6 +43,8 @@ void test_normal_error_message(void)
 
 void test_fatal_error_no_message(void)
 {
+	ztest_returns_value(date_time_now, 0);
+	ztest_returns_value(stg_write_system_diagnostic_log, 0);
 	nf_app_fatal(ERR_FW_UPGRADE, -ENODATA, NULL, 0);
 
 	int err = k_sem_take(&error_event_sem, K_SECONDS(30));
@@ -48,6 +53,8 @@ void test_fatal_error_no_message(void)
 
 void test_warning_exceed_message(void)
 {
+	ztest_returns_value(date_time_now, 0);
+	ztest_returns_value(stg_write_system_diagnostic_log, 0);
 	size_t msg_len = CONFIG_ERROR_USER_MESSAGE_SIZE + 1;
 	char msg[msg_len];
 
