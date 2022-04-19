@@ -67,6 +67,10 @@ menu "GNSS controller"
 rsource "src/modules/gnss_controller/Kconfig"
 endmenu
 
+menu "Movement"
+rsource "src/modules/movement_controller/Kconfig"
+endmenu
+
 menu "PWR Events"
 rsource "src/events/power_manager/Kconfig"
 endmenu
