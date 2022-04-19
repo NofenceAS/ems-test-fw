@@ -128,9 +128,9 @@ void main(void)
 	}
 
 	/* Play welcome sound. */
-	// struct sound_event *sound_ev = new_sound_event();
-	// sound_ev->type = SND_WELCOME;
-	// EVENT_SUBMIT(sound_ev);
+	struct sound_event *sound_ev = new_sound_event();
+	sound_ev->type = SND_WELCOME;
+	EVENT_SUBMIT(sound_ev);
 
 	err = cellular_controller_init();
 	if (err) {
