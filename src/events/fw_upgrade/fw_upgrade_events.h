@@ -40,7 +40,7 @@ struct start_fota_event {
 	char host[CONFIG_FW_UPGRADE_HOST_LEN];
 	char path[CONFIG_FW_UPGRADE_PATH_LEN];
 
-	uint16_t version;
+	uint32_t version;
 };
 
 EVENT_TYPE_DECLARE(dfu_status_event);
