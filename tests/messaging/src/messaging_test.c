@@ -32,13 +32,10 @@ void assert_post_action(const char *file, unsigned int line)
 
 void test_init(void)
 {
-	struct connection_state_event *ev
-		= new_connection_state_event();
+	struct connection_state_event *ev = new_connection_state_event();
 	ev->state = true;
 	EVENT_SUBMIT(ev);
 	ztest_returns_value(eep_read_serial, 0);
-	ztest_returns_value(stg_read_log_data, 0);
-	ztest_returns_value(stg_log_pointing_to_last, false);
 
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
@@ -51,8 +48,7 @@ void test_init(void)
 //ack - fence_ready - ano_ready - msg_out - host_address
 void test_initial_poll_request_out(void)
 {
-	struct connection_state_event *ev
-		= new_connection_state_event();
+	struct connection_state_event *ev = new_connection_state_event();
 	ev->state = true;
 	EVENT_SUBMIT(ev);
 	k_sem_take(&msg_out, K_MSEC(500));
@@ -162,8 +158,7 @@ void test_poll_response_has_host_address(void)
 	msgIn->buf = &encoded_msg[0];
 	msgIn->len = encoded_size + 2;
 	EVENT_SUBMIT(msgIn);
-	struct connection_state_event *ev
-		= new_connection_state_event();
+	struct connection_state_event *ev = new_connection_state_event();
 	ev->state = true;
 	EVENT_SUBMIT(ev);
 
