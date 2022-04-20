@@ -30,6 +30,9 @@
 #define MODULE main
 #include "module_state_event.h"
 
+#include "movement_controller.h"
+#include "movement_events.h"
+
 LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 
 /**
@@ -105,6 +108,11 @@ void main(void)
 	err = amc_module_init();
 	if (err) {
 		LOG_ERR("Could not initialize AMC module. %d", err);
+	}
+
+	err = init_movement_controller();
+	if (err) {
+		LOG_ERR("Could not initialize movement module. %d", err);
 	}
 
 	/* Play welcome sound. */
