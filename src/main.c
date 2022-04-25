@@ -54,22 +54,24 @@ void main(void)
 
 	err = stg_init_storage_controller();
 	if (err) {
-		LOG_ERR("Could not initialize storage controller, %i", err);
+		LOG_ERR("Could not initialize storage controller (%d)", err);
 		return;
 	}
 
 	/* Initialize the event manager. */
 	err = event_manager_init();
 	if (err) {
-		LOG_ERR("Event manager could not initialize. %d", err);
+		LOG_ERR("Could not initialize event manager (%d)", err);
+		return;
 	}
 
 	/* Initialize the watchdog */
 #if defined(CONFIG_WATCHDOG_ENABLE)
 	err = watchdog_init_and_start();
 	if (err) {
-		LOG_ERR("Could not initialize and start watchdog, error: %d",
-			err);
+		char *e_msg = "Could not initialize and start watchdog";
+		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
+		nf_app_error(ERR_WATCHDOG, err, e_msg, strlen(e_msg));
 	}
 #endif
 
@@ -77,8 +79,8 @@ void main(void)
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
 	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
 	if (eeprom_dev == NULL) {
-		char *e_msg = "No EEPROM detected!";
-		LOG_ERR("%s", log_strdup(e_msg));
+		char *e_msg = "No EEPROM device detected!";
+		LOG_ERR("%s (%d)", log_strdup(e_msg), -EIO);
 		nf_app_error(ERR_EEPROM, -EIO, e_msg, strlen(e_msg));
 	}
 	eep_init(eeprom_dev);
@@ -99,7 +101,7 @@ void main(void)
 	err = diagnostics_module_init();
 	if (err) {
 		char *e_msg = "Could not initialize diagnostics module";
-		LOG_ERR("%s", log_strdup(e_msg));
+		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
 		nf_app_error(ERR_DIAGNOSTIC, err, e_msg, strlen(e_msg));
 	}
 #endif
@@ -157,7 +159,10 @@ void main(void)
 
 	err = init_movement_controller();
 	if (err) {
-		LOG_ERR("Could not initialize movement module. %d", err);
+		char *e_msg = "Could not initialize the movement module";
+		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
+		nf_app_error(ERR_MOVEMENT_CONTROLLER, err, e_msg,
+			     strlen(e_msg));
 	}
 
 	/* Play welcome sound. */
