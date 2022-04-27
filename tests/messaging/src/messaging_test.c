@@ -36,7 +36,6 @@ void test_init(void)
 	ev->state = true;
 	EVENT_SUBMIT(ev);
 	ztest_returns_value(eep_read_serial, 0);
-
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
 	messaging_module_init();
