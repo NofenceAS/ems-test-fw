@@ -35,6 +35,8 @@ void test_sys_diag_log(void)
 
 void test_reboot_persistent_system_diag(void)
 {
+	ztest_returns_value(date_time_now, 0);
+
 	zassert_equal(stg_write_system_diagnostic_log(
 			      (uint8_t *)&dummy_sys_diag, dummy_sys_diag_len),
 		      0, "Write system diagnostic error.");
