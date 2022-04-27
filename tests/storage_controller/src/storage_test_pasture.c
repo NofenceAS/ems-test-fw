@@ -67,6 +67,9 @@ void test_pasture_extended_write_read(void)
 
 void test_reboot_persistent_pasture(void)
 {
+	/* We tested with ANO data first, meaning it uses date time to validate */
+	ztest_returns_value(date_time_now, 0);
+
 	zassert_equal(stg_write_pasture_data((uint8_t *)&pasture,
 					     sizeof(pasture)),
 		      0, "Write pasture error.");
