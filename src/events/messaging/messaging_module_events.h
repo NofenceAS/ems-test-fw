@@ -1,5 +1,5 @@
 #include <event_manager.h>
-#include "nf_eeprom.h"
+#include "nf_settings.h"
 #include "collar_protocol.h"
 
 /** @brief Empty event to notify modules that need to shut down before
@@ -153,7 +153,6 @@ struct animal_escape_event {
 };
 
 EVENT_TYPE_DECLARE(animal_escape_event);
-
 
 /** @brief Notify cellular controller to check if cellular connection is ready.
  *Published by the messaging before sending out a new message to the server,

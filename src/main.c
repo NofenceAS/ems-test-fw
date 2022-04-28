@@ -8,12 +8,12 @@
 #include "diagnostics.h"
 #include "fw_upgrade.h"
 #include "fw_upgrade_events.h"
-#include "nf_eeprom.h"
+#include "nf_settings.h"
 #include "ble_controller.h"
 #include "cellular_controller.h"
 #include "ep_module.h"
 #include "amc_handler.h"
-#include "nf_eeprom.h"
+#include "nf_settings.h"
 #include "buzzer.h"
 #include "pwr_module.h"
 
@@ -32,6 +32,7 @@
 
 #include "movement_controller.h"
 #include "movement_events.h"
+#include "time_use.h"
 
 LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -116,6 +117,7 @@ void main(void)
 	}
 
 	/* Play welcome sound. */
+	/*TODO: only play when battery level is adequate.*/
 	struct sound_event *sound_ev = new_sound_event();
 	sound_ev->type = SND_WELCOME;
 	EVENT_SUBMIT(sound_ev);
@@ -133,6 +135,10 @@ void main(void)
 	err = gnss_controller_init();
 	if (err) {
 		LOG_ERR("Could not initialize GNSS controller. %d", err);
+	}
+	err = time_use_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize time use module. %d", err);
 	}
 
 	/* Once EVERYTHING is initialized correctly and we get connection to

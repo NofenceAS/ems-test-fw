@@ -49,8 +49,6 @@ static inline void submit_app_status(enum error_sender_module sender,
 		dyn_msg_size = 0;
 	}
 
-	struct error_event *event = new_error_event(dyn_msg_size);
-
 	/* -EINVALS to error handler, nothing to do about that. */
 	/* Not negative error code. */
 	if (code >= 0) {
@@ -68,6 +66,7 @@ static inline void submit_app_status(enum error_sender_module sender,
 		return;
 	}
 
+	struct error_event *event = new_error_event(dyn_msg_size);
 	event->code = code;
 	event->sender = sender;
 	event->severity = severity;

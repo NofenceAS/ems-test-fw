@@ -14,12 +14,16 @@ project(messaging_testing)
 zephyr_include_directories(
         ${CMAKE_CURRENT_BINARY_DIR}
         ${X3_PROJECT_BINARY}/include/generated/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/collar_stats/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/movement_controller/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/amc/lib/include/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/time_use/lib/include/
 )
 
 FILE(GLOB app_sources 
         mock/*.c
         src/*.c 
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/crc/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/lte/*.c
@@ -32,13 +36,17 @@ FILE(GLOB app_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/fw_upgrade_events.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/environment/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/collar_stats/histogram_events.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/time_use/libs/helpers.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/time_use/time_use.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/amc/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/movement_controller/*.c
 )
 target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE ${APP_SOURCE})
 
 zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/mock
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/crc/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/messaging/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/ble/services
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer
@@ -53,10 +61,10 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/nf_settings/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/drivers/gnss/zephyr
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/environment/
 )
-
 
 add_dependencies(app collar_protocol_headers)

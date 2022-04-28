@@ -71,6 +71,9 @@ zephyr_library_include_directories(
         src/modules/gnss_controller
         src/events/cellular_controller
   	    src/modules/buzzer
+        src/modules/time_use
+        src/events/collar_stats
+        src/events/amc
         ${PROJECT_BINARY_DIR}/include/generated/)
         
 target_sources(app PRIVATE ${APP_MAIN}
@@ -82,8 +85,9 @@ add_subdirectory(src/events/ble)
 add_subdirectory(src/modules/ble)
 add_subdirectory(src/modules/fw_upgrade)
 add_subdirectory(src/modules/storage_controller)
-add_subdirectory(src/eeprom)
+add_subdirectory(src/modules/nf_settings)
 add_subdirectory(src/modules/amc)
+add_subdirectory(src/events/amc)
 add_subdirectory(src/modules/cellular_controller)
 add_subdirectory(src/modules/buzzer)
 
@@ -99,3 +103,6 @@ add_subdirectory(src/modules/electric_pulse)
 add_subdirectory(src/modules/environment)
 add_subdirectory(src/modules/gnss_controller)
 add_subdirectory(src/modules/movement_controller)
+add_subdirectory(src/modules/time_use)
+add_subdirectory(src/events/collar_stats)
+add_subdirectory(src/events/movement_controller)

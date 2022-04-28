@@ -9,6 +9,13 @@
 #include <zephyr.h>
 
 typedef enum {
+	ACTIVITY_NO = 0,
+	ACTIVITY_LOW = 1,
+	ACTIVITY_MED = 2,
+	ACTIVITY_HIGH = 3
+} acc_activity_t;
+
+typedef enum {
 	/** If below sleep threshold. */
 	STATE_SLEEP = 0,
 	/** If above or equal to threshold. */
@@ -31,7 +38,18 @@ struct movement_out_event {
 	movement_state_t state;
 };
 
+struct activity_level {
+	struct event_header header;
+	acc_activity_t level;
+};
+
+struct step_counter_event {
+	struct event_header header;
+	uint32_t steps;
+};
+
 EVENT_TYPE_DECLARE(movement_set_mode_event);
 EVENT_TYPE_DECLARE(movement_out_event);
-
+EVENT_TYPE_DECLARE(activity_level);
+EVENT_TYPE_DECLARE(step_counter_event);
 #endif /* _MOVEMENT_EVENT_H_ */

@@ -3,7 +3,6 @@
  */
 
 #include "movement_events.h"
-#include "event_manager.h"
 #include <zephyr.h>
 #include <logging/log.h>
 #include <stdio.h>
@@ -41,3 +40,7 @@ static int log_movement_set_mode_event(const struct event_header *eh, char *buf,
 
 EVENT_TYPE_DEFINE(movement_set_mode_event, true, log_movement_set_mode_event,
 		  NULL);
+
+EVENT_TYPE_DEFINE(activity_level, true, NULL, NULL);
+
+EVENT_TYPE_DEFINE(step_counter_event, true, NULL, NULL);

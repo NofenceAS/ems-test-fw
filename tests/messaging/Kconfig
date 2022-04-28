@@ -1,10 +1,11 @@
 
 menu "APPLICATION_CODE"
-	menu "MESSAGING"
-    	rsource "./../../src/modules/messaging/Kconfig"
-	endmenu # MESSAGING
-    	rsource "./../../src/modules/fw_upgrade/Kconfig"
-    	rsource "./../../src/events/fw_upgrade/Kconfig"
+    menu "MESSAGING"
+        rsource "./../../src/modules/messaging/Kconfig"
+    endmenu # MESSAGING
+
+    rsource "./../../src/modules/fw_upgrade/Kconfig"
+    rsource "./../../src/events/fw_upgrade/Kconfig"
 endmenu # APPLICATION CODE
 
 menu "ERROR_HANDLER"
@@ -15,6 +16,13 @@ menu "ENVIRONMENT"
 rsource "./../../src/modules/environment/Kconfig"
 endmenu # ENVIRONMENT
 
+menu "TIME_USE"
+    rsource "./../../src/modules/time_use/Kconfig"
+endmenu
+
+menu "MVMT_CONTROLLER"
+    rsource "./../../src/modules/movement_controller/Kconfig"
+endmenu
 menu "Zephyr Kernel"
 source "Kconfig.zephyr"
 endmenu

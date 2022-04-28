@@ -9,7 +9,7 @@
 #include "cellular_controller_events.h"
 #include "messaging_module_events.h"
 #include "collar_protocol.h"
-#include "eeprom.h"
+#include "nf_crc16.h"
 
 static K_SEM_DEFINE(msg_out, 0, 1);
 static K_SEM_DEFINE(new_host, 0, 1);
@@ -35,7 +35,8 @@ void test_init(void)
 	struct connection_state_event *ev = new_connection_state_event();
 	ev->state = true;
 	EVENT_SUBMIT(ev);
-	ztest_returns_value(eep_read_serial, 0);
+	ztest_returns_value(eep_uint32_read, 0);
+
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
 	messaging_module_init();
@@ -70,11 +71,6 @@ void test_initial_poll_request_out(void)
 
 void test_poll_response_has_new_fence(void)
 {
-	ztest_returns_value(stg_write_log_data, 0);
-	ztest_returns_value(stg_write_log_data, 0);
-	ztest_returns_value(stg_read_log_data, 0);
-	ztest_returns_value(stg_log_pointing_to_last, 0);
-
 	/* We need to simulate that we received the message on server, publish
 	 * ACK for messaging module.
 	 */
