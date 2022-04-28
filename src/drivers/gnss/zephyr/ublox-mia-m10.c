@@ -981,7 +981,7 @@ int mia_m10_send_assist_data(uint8_t *data, uint32_t size)
 			return -ETIME;
 		}
 
-		if (mga_ack) {
+		if (!mga_ack) {
 			k_mutex_unlock(&cmd_mutex);
 			return -ECONNREFUSED;
 		}
