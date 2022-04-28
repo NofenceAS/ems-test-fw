@@ -70,6 +70,11 @@ void test_initial_poll_request_out(void)
 
 void test_poll_response_has_new_fence(void)
 {
+	ztest_returns_value(stg_write_log_data, 0);
+	ztest_returns_value(stg_write_log_data, 0);
+	ztest_returns_value(stg_read_log_data, 0);
+	ztest_returns_value(stg_log_pointing_to_last, 0);
+
 	/* We need to simulate that we received the message on server, publish
 	 * ACK for messaging module.
 	 */
