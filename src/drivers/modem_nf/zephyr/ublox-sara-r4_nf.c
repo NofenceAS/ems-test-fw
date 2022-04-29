@@ -1245,6 +1245,8 @@ static int modem_reset(void)
 		SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
 		SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 		SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_ccid, 0U, ""),
+		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
+//		SETUP_CMD_NOHANDLE("AT+CFUN=15"),
 #if !defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 		/* setup PDP context definition */
 		SETUP_CMD_NOHANDLE(
@@ -1279,6 +1281,7 @@ static int modem_reset(void)
 		/* activate the GPRS connection */
 		SETUP_CMD_NOHANDLE("AT+UPSDA=0,3"),
 #else
+		SETUP_CMD_NOHANDLE("AT+URAT?"),
 		SETUP_CMD_NOHANDLE("AT+COPS?"),
 #endif
 	};
