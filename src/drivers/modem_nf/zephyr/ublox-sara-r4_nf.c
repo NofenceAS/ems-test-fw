@@ -191,6 +191,8 @@ struct modem_data {
 static struct modem_data mdata;
 static struct modem_context mctx;
 
+int wake_up(void);
+
 //#if defined(CONFIG_DNS_RESOLVER)
 static struct zsock_addrinfo result;
 static struct sockaddr result_addr;
@@ -1248,6 +1250,7 @@ static int modem_reset(void)
 		SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
 		SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 		SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_ccid, 0U, ""),
+		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
 #if !defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 		/* setup PDP context definition */
 		SETUP_CMD_NOHANDLE(
@@ -1282,6 +1285,7 @@ static int modem_reset(void)
 		/* activate the GPRS connection */
 		SETUP_CMD_NOHANDLE("AT+UPSDA=0,3"),
 #else
+		SETUP_CMD_NOHANDLE("AT+URAT?"),
 		SETUP_CMD_NOHANDLE("AT+COPS?"),
 #endif
 	};
@@ -1310,17 +1314,10 @@ restart:
 	/* Give the modem a while to start responding to simple 'AT' commands.
 	 * Also wait for CSPS=1 or RRCSTATE=1 notification
 	 */
-	ret = -1;
-	while (counter++ < 50 && ret < 0) {
-		k_sleep(K_SECONDS(2));
-		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0,
-				     "AT", &mdata.sem_response,
-				     MDM_CMD_TIMEOUT);
-		if (ret < 0 && ret != -ETIMEDOUT) {
-			break;
-		}
-	}
 
+	if (wake_up() != 0) {
+		goto error;
+	}
 	if (ret < 0) {
 		LOG_ERR("MODEM WAIT LOOP ERROR: %d", ret);
 		goto error;
@@ -2327,6 +2324,25 @@ int get_pdp_addr(char** ip_addr){
 		return -1;
 	}
 }
+
+/* Give the modem a while to start responding to simple 'AT' commands.
+	 * Also wait for CSPS=1 or RRCSTATE=1 notification
+	 */
+int wake_up(void) {
+	int ret = -1;
+	uint8_t counter = 0;
+	while (counter++ < 50 && ret < 0) {
+		k_sleep(K_SECONDS(2));
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0,
+				     "AT", &mdata.sem_response,
+				     MDM_CMD_TIMEOUT);
+		if (ret < 0 && ret != -ETIMEDOUT) {
+			return 0;
+		}
+	}
+	return ret;
+}
+
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL,
 				  &mdata, NULL,
