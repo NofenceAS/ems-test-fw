@@ -1289,6 +1289,7 @@ static int modem_reset(void)
 #else
 		SETUP_CMD_NOHANDLE("AT+URAT?"),
 		SETUP_CMD_NOHANDLE("AT+COPS?"),
+//		SETUP_CMD_NOHANDLE("AT+UCPSMS=0"), /*fails for Telenot 4G*/
 #endif
 	};
 
@@ -2362,18 +2363,60 @@ int wake_up(void) {
 		}
 		k_sleep(K_SECONDS(1));
 	}
+	const struct setup_cmd disable_psv[] = {
+		SETUP_CMD("AT+UPSV=0", "", NULL, 0, ","),
+		SETUP_CMD("ATE0", "", NULL, 0, ","),
+	};
+	ret = modem_cmd_handler_setup_cmds(
+		&mctx.iface, &mctx.cmd_handler, disable_psv,
+		2, &mdata.sem_response,
+		MDM_AT_CMD_TIMEOUT);
 	return ret;
 }
 
 int wake_up_from_upsv(void) {
-	if (mdata.upsv_state != 4) {
-		LOG_DBG("PSV not 4!");
-		return 0;
+	modem_pin_config(&mctx, MDM_POWER, true);
+	if (!modem_has_power()) {
+		LOG_DBG("MDM_POWER_PIN -> DISABLE");
+
+		unsigned int irq_lock_key = irq_lock();
+
+		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
+		k_usleep(50);		/* 50-80 microseconds */
+#else
+		k_sleep(K_SECONDS(1));
+#endif
+		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+
+		irq_unlock(irq_lock_key);
+
+		LOG_DBG("MDM_POWER_PIN -> ENABLE");
+
+#if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
+		LOG_DBG("Waiting for MDM_VINT_PIN = 1");
+		do {
+			k_sleep(K_MSEC(100));
+		} while (!modem_has_power());
+#else
+		k_sleep(K_SECONDS(10));
+#endif
 	}
+	modem_pin_config(&mctx, MDM_POWER, false);
+	/* Wait for modem GPIO RX pin to rise, indicating readiness */
+	LOG_DBG("Waiting for Modem RX = 1");
+	do {
+		k_sleep(K_MSEC(100));
+	} while (!modem_rx_pin_is_high());
+
 	int ret = uart_state_set(PM_DEVICE_STATE_ACTIVE);
 	if (ret != 0){
 		LOG_ERR("Failed to enable uart to modem.");
 		return -ENODEV;
+	}
+	if (mdata.upsv_state != 4) {
+		LOG_DBG("PSV not 4!");
+		return 0;
 	}
 	return wake_up();
 }
@@ -2405,15 +2448,12 @@ int sleep(void){
 		/*TODO: change to a relevent error code, to be handled by
 		 * caller.*/
 	}
-	ret = uart_state_set(PM_DEVICE_STATE_SUSPENDED);
-	if (ret != 0){
-		LOG_ERR("Failed to disable uart to modem.");
-	}
-	if (ret == 0){
-		return 0;
-	}else{
-		return -1;
-	}
+//	ret = uart_state_set(PM_DEVICE_STATE_SUSPENDED);
+//	if (ret != 0){
+//		LOG_ERR("Failed to disable uart to modem.");
+//		return ret;
+//	}
+	return 0;
 }
 
 int modem_nf_wakeup(void) {
