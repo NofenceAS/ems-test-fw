@@ -1462,6 +1462,16 @@ restart:
 
 	LOG_INF("Network is ready.");
 
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+			     NULL, 0, "AT+UCPSMS?",
+			     &mdata.sem_response,
+			     MDM_CMD_TIMEOUT);
+
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+			     NULL, 0, "AT+CPSMS=1",
+			     &mdata.sem_response,
+			     MDM_CMD_TIMEOUT);
+
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* start RSSI query */
 	k_work_reschedule_for_queue(
@@ -2370,10 +2380,10 @@ int wake_up_from_upsv(void) {
 
 int sleep(void){
 	const struct setup_cmd set_psv[] = {
-		SETUP_CMD("AT+UPSV=4", "", NULL, 1, ","),
+		SETUP_CMD("AT+UPSV=4", "", NULL, 0, ","),
 	};
 	const struct setup_cmd get_psv[] = {
-		SETUP_CMD("AT+UPSV?", "", NULL, 1, ","),
+		SETUP_CMD("AT+UPSV?", "", NULL, 0, ","),
 	};
 
 	int ret = modem_cmd_handler_setup_cmds(
