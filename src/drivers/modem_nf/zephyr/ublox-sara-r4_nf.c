@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4_nf, CONFIG_MODEM_LOG_LEVEL);
 #include <net/net_if.h>
 #include <net/net_offload.h>
 #include <net/socket_offload.h>
-
+#include <stdio.h>
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 #include <stdio.h>
 #endif
@@ -768,20 +768,6 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 	printk("new_mdm_pdp_addr = %s\n", mdata.mdm_pdp_addr);
 	return 0;
 }
-
-MODEM_CMD_DEFINE(on_cmd_atcmdinfo_upsv_set)
-{
-	LOG_DBG("set UPSV handler, %d", argc);
-	if (argc > 0) {
-		LOG_INF("UPSV: %s", argv[1]);
-		mdata.upsv_state = atoi(argv[1]);
-		return 0;
-	}
-	else {
-		return -1;
-	}
-}
-
 /*
  * Modem Socket Command Handlers
  */
@@ -1265,7 +1251,7 @@ static int modem_reset(void)
 		SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
 		SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 		SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_ccid, 0U, ""),
-		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
+		SETUP_CMD_NOHANDLE("AT+URAT=7"),
 		SETUP_CMD_NOHANDLE("AT+UPSV=0"),
 #if !defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 		/* setup PDP context definition */
@@ -1383,7 +1369,16 @@ restart:
 	}
 
 	LOG_INF("Waiting for network");
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+			     NULL, 0, "AT+CFUN=0",
+			     &mdata.sem_response,
+			     MDM_CMD_TIMEOUT);
 
+	/* Enable RF */
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+			     NULL, 0, "AT+CFUN=1",
+			     &mdata.sem_response,
+			     MDM_CMD_TIMEOUT);
 	/*
 	 * TODO: A lot of this should be setup as a 3GPP module to handle
 	 * basic connection to the network commands / polling
@@ -2345,6 +2340,7 @@ int get_pdp_addr(char** ip_addr){
 	 * Also wait for CSPS=1 or RRCSTATE=1 notification
 	 */
 int wake_up(void) {
+	LOG_WRN("Waking up modem!");
 	int ret = -1;
 	uint8_t counter = 0;
 	while (counter++ < 50 && ret < 0) {
@@ -2360,17 +2356,49 @@ int wake_up(void) {
 }
 
 int wake_up_from_upsv(void) {
+	if (mdata.upsv_state != 4) {
+		LOG_DBG("PSV not 4!");
+		return 0;
+	}
+	int ret = uart_state_set(PM_DEVICE_STATE_ACTIVE);
+	if (ret != 0){
+		LOG_ERR("Failed to enable uart to modem.");
+		return -ENODEV;
+	}
 	return wake_up();
 }
 
 int sleep(void){
 	const struct setup_cmd set_psv[] = {
-		SETUP_CMD("AT+UPSV=4", "", on_cmd_atcmdinfo_upsv_set, 1, ","),
+		SETUP_CMD("AT+UPSV=4", "", NULL, 1, ","),
 	};
+	const struct setup_cmd get_psv[] = {
+		SETUP_CMD("AT+UPSV?", "", NULL, 1, ","),
+	};
+
 	int ret = modem_cmd_handler_setup_cmds(
 		&mctx.iface, &mctx.cmd_handler, set_psv,
 		1, &mdata.sem_response,
 		MDM_AT_CMD_TIMEOUT);
+	if (ret == 0) {
+		mdata.upsv_state = 4;
+	}
+
+	ret = modem_cmd_handler_setup_cmds(
+		&mctx.iface, &mctx.cmd_handler, get_psv,
+		1, &mdata.sem_response,
+		MDM_AT_CMD_TIMEOUT);
+
+	if (ret!=0){
+		LOG_WRN("Modem PSV not set!");
+		return 0;
+		/*TODO: change to a relevent error code, to be handled by
+		 * caller.*/
+	}
+	ret = uart_state_set(PM_DEVICE_STATE_SUSPENDED);
+	if (ret != 0){
+		LOG_ERR("Failed to disable uart to modem.");
+	}
 	if (ret == 0){
 		return 0;
 	}else{
@@ -2380,6 +2408,10 @@ int sleep(void){
 
 int modem_nf_wakeup(void) {
 	return wake_up_from_upsv();
+}
+
+int modem_nf_sleep(void) {
+	return sleep();
 }
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL,
