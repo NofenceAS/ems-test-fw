@@ -82,6 +82,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_RESET_NOT_ASSERTED 1
 #define MDM_RESET_ASSERTED 0
 
+#define MDM_AT_CMD_TIMEOUT K_MSEC(30)
 #define MDM_CMD_TIMEOUT K_SECONDS(10)
 #define MDM_CMD_USOCL_TIMEOUT K_SECONDS(30)
 #define MDM_DNS_TIMEOUT K_SECONDS(70)
@@ -165,6 +166,7 @@ struct modem_data {
 	char mdm_ccid[2 * MDM_IMSI_LENGTH];
 	char mdm_pdp_addr[MDM_IMSI_LENGTH];
 	int mdm_rssi;
+	int upsv_state;
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
 	/* modem variant */
@@ -767,6 +769,19 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 	return 0;
 }
 
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_upsv_set)
+{
+	LOG_DBG("set UPSV handler, %d", argc);
+	if (argc > 0) {
+		LOG_INF("UPSV: %s", argv[1]);
+		mdata.upsv_state = atoi(argv[1]);
+		return 0;
+	}
+	else {
+		return -1;
+	}
+}
+
 /*
  * Modem Socket Command Handlers
  */
@@ -1251,6 +1266,7 @@ static int modem_reset(void)
 		SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 		SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_ccid, 0U, ""),
 		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
+		SETUP_CMD_NOHANDLE("AT+UPSV=0"),
 #if !defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 		/* setup PDP context definition */
 		SETUP_CMD_NOHANDLE(
@@ -2332,17 +2348,39 @@ int wake_up(void) {
 	int ret = -1;
 	uint8_t counter = 0;
 	while (counter++ < 50 && ret < 0) {
-		k_sleep(K_SECONDS(2));
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0,
 				     "AT", &mdata.sem_response,
-				     MDM_CMD_TIMEOUT);
+				     MDM_AT_CMD_TIMEOUT);
 		if (ret < 0 && ret != -ETIMEDOUT) {
 			return 0;
 		}
+		k_sleep(K_SECONDS(1));
 	}
 	return ret;
 }
 
+int wake_up_from_upsv(void) {
+	return wake_up();
+}
+
+int sleep(void){
+	const struct setup_cmd set_psv[] = {
+		SETUP_CMD("AT+UPSV=4", "", on_cmd_atcmdinfo_upsv_set, 1, ","),
+	};
+	int ret = modem_cmd_handler_setup_cmds(
+		&mctx.iface, &mctx.cmd_handler, set_psv,
+		1, &mdata.sem_response,
+		MDM_AT_CMD_TIMEOUT);
+	if (ret == 0){
+		return 0;
+	}else{
+		return -1;
+	}
+}
+
+int modem_nf_wakeup(void) {
+	return wake_up_from_upsv();
+}
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL,
 				  &mdata, NULL,
