@@ -2375,33 +2375,22 @@ int wake_up(void) {
 }
 
 int wake_up_from_upsv(void) {
-	modem_pin_config(&mctx, MDM_POWER, true);
-	if (!modem_has_power()) {
-		LOG_DBG("MDM_POWER_PIN -> DISABLE");
-
-		unsigned int irq_lock_key = irq_lock();
-
-		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
-#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
-		k_usleep(50);		/* 50-80 microseconds */
-#else
-		k_sleep(K_SECONDS(1));
-#endif
-		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
-
-		irq_unlock(irq_lock_key);
-
-		LOG_DBG("MDM_POWER_PIN -> ENABLE");
-
-#if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
-		LOG_DBG("Waiting for MDM_VINT_PIN = 1");
-		do {
-			k_sleep(K_MSEC(100));
-		} while (!modem_has_power());
-#else
-		k_sleep(K_SECONDS(10));
-#endif
+	if (mdata.upsv_state != 4) {
+		LOG_DBG("PSV not 4!");
+		return 0;
 	}
+	modem_pin_config(&mctx, MDM_POWER, true);
+	unsigned int irq_lock_key = irq_lock();
+	LOG_DBG("MDM_POWER_PIN -> DISABLE");
+	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
+	k_usleep(50);		/* 50-80 microseconds */
+#else
+	k_sleep(K_SECONDS(1));
+#endif
+	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+	irq_unlock(irq_lock_key);
+	LOG_DBG("MDM_POWER_PIN -> ENABLE");
 	modem_pin_config(&mctx, MDM_POWER, false);
 	/* Wait for modem GPIO RX pin to rise, indicating readiness */
 	LOG_DBG("Waiting for Modem RX = 1");
@@ -2413,10 +2402,6 @@ int wake_up_from_upsv(void) {
 	if (ret != 0){
 		LOG_ERR("Failed to enable uart to modem.");
 		return -ENODEV;
-	}
-	if (mdata.upsv_state != 4) {
-		LOG_DBG("PSV not 4!");
-		return 0;
 	}
 	return wake_up();
 }
