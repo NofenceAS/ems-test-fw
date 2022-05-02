@@ -768,6 +768,21 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 	printk("new_mdm_pdp_addr = %s\n", mdata.mdm_pdp_addr);
 	return 0;
 }
+
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_upsv_get)
+{
+	LOG_DBG("UPSV? handler, %d", argc);
+	LOG_INF("modem power mode: ,%s", argv[0]);
+	int ret = memcmp( argv[0],"+UPSV: 4", 8);
+	if (ret == 0) {
+		mdata.upsv_state = 4;
+		LOG_DBG("Modem in power saving mode!");
+	} else {
+		mdata.upsv_state = 0;
+		LOG_DBG("Modem not in power saving mode!");
+	}
+	return 0;
+}
 /*
  * Modem Socket Command Handlers
  */
@@ -1260,6 +1275,8 @@ static int modem_reset(void)
 			"\""),
 		/* start functionality */
 		SETUP_CMD_NOHANDLE("AT+CFUN=1"),
+		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 1U,
+			  ","),
 #endif
 	};
 
@@ -1289,7 +1306,6 @@ static int modem_reset(void)
 #else
 		SETUP_CMD_NOHANDLE("AT+URAT?"),
 		SETUP_CMD_NOHANDLE("AT+COPS?"),
-//		SETUP_CMD_NOHANDLE("AT+UCPSMS=0"), /*fails for Telenot 4G*/
 #endif
 	};
 
@@ -1333,6 +1349,7 @@ restart:
 	if (ret < 0) {
 		goto error;
 	}
+	mdata.upsv_state = -1;
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 	/* autodetect APN from IMSI */
@@ -2371,73 +2388,79 @@ int wake_up(void) {
 		&mctx.iface, &mctx.cmd_handler, disable_psv,
 		2, &mdata.sem_response,
 		MDM_AT_CMD_TIMEOUT);
+	mdata.upsv_state = 0;
 	return ret;
 }
 
 int wake_up_from_upsv(void) {
-	if (mdata.upsv_state != 4) {
-		LOG_DBG("PSV not 4!");
-		return 0;
-	}
-	modem_pin_config(&mctx, MDM_POWER, true);
-	unsigned int irq_lock_key = irq_lock();
-	LOG_DBG("MDM_POWER_PIN -> DISABLE");
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
-#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
-	k_usleep(50);		/* 50-80 microseconds */
-#else
-	k_sleep(K_SECONDS(1));
-#endif
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
-	irq_unlock(irq_lock_key);
-	LOG_DBG("MDM_POWER_PIN -> ENABLE");
-	modem_pin_config(&mctx, MDM_POWER, false);
-	/* Wait for modem GPIO RX pin to rise, indicating readiness */
-	LOG_DBG("Waiting for Modem RX = 1");
-	do {
-		k_sleep(K_MSEC(100));
-	} while (!modem_rx_pin_is_high());
+	if (mdata.upsv_state == 4) {
+		modem_pin_config(&mctx, MDM_POWER, true);
+		unsigned int irq_lock_key = irq_lock();
+		LOG_DBG("MDM_POWER_PIN -> DISABLE");
+		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+		k_sleep(K_SECONDS(1));
+		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+		irq_unlock(irq_lock_key);
+		LOG_DBG("MDM_POWER_PIN -> ENABLE");
+		modem_pin_config(&mctx, MDM_POWER, false);
+		/* Wait for modem GPIO RX pin to rise, indicating readiness */
+		LOG_DBG("Waiting for Modem RX = 1");
+		do {
+			k_sleep(K_MSEC(100));
+		} while (!modem_rx_pin_is_high());
 
-	int ret = uart_state_set(PM_DEVICE_STATE_ACTIVE);
-	if (ret != 0){
-		LOG_ERR("Failed to enable uart to modem.");
-		return -ENODEV;
+		int ret = uart_state_set(PM_DEVICE_STATE_ACTIVE);
+		if (ret != 0) {
+			LOG_ERR("Failed to enable uart to modem.");
+			return -ENODEV;
+		}
+		return wake_up();
 	}
-	return wake_up();
+	return 0;
 }
 
 int sleep(void){
 	const struct setup_cmd set_psv[] = {
 		SETUP_CMD("AT+UPSV=4", "", NULL, 0, ","),
 	};
-	const struct setup_cmd get_psv[] = {
-		SETUP_CMD("AT+UPSV?", "", NULL, 0, ","),
-	};
-
 	int ret = modem_cmd_handler_setup_cmds(
 		&mctx.iface, &mctx.cmd_handler, set_psv,
-		1, &mdata.sem_response,
+		ARRAY_SIZE(set_psv), &mdata.sem_response,
 		MDM_AT_CMD_TIMEOUT);
-	if (ret == 0) {
-		mdata.upsv_state = 4;
+	if (ret != 0) {
+		return -1;
 	}
 
+	const struct setup_cmd read_upsv_cmd[] = {
+		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 1U,
+			  ","),
+	};
 	ret = modem_cmd_handler_setup_cmds(
-		&mctx.iface, &mctx.cmd_handler, get_psv,
-		1, &mdata.sem_response,
+		&mctx.iface, &mctx.cmd_handler, read_upsv_cmd,
+		ARRAY_SIZE(read_upsv_cmd), &mdata.sem_response,
 		MDM_AT_CMD_TIMEOUT);
 
-	if (ret!=0){
-		LOG_WRN("Modem PSV not set!");
-		return 0;
+	if (ret == 0) {
+		if (mdata.upsv_state == 4){
+			LOG_INF("Modem power mode switched to 4!");
+		} else {
+			LOG_ERR("Modem power not mode switched to 4!");
+			return -1;
+		}
+	} else {
+		LOG_DBG("UPSV=4 returned %d, ", ret);
+		LOG_WRN("Error reading UPSV, will keep UART controller up!");
 		/*TODO: change to a relevent error code, to be handled by
 		 * caller.*/
+		return 0;
 	}
-//	ret = uart_state_set(PM_DEVICE_STATE_SUSPENDED);
-//	if (ret != 0){
-//		LOG_ERR("Failed to disable uart to modem.");
-//		return ret;
-//	}
+
+	ret = uart_state_set(PM_DEVICE_STATE_SUSPENDED);
+	if (ret != 0 && mdata.upsv_state == 4){/*TODO: return a different
+ * value based on the condition.*/
+		LOG_ERR("Failed to disable modem uart controller.");
+		return ret;
+	}
 	return 0;
 }
 
