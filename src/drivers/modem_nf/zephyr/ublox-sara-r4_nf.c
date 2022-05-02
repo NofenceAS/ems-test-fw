@@ -82,7 +82,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_RESET_NOT_ASSERTED 1
 #define MDM_RESET_ASSERTED 0
 
-#define MDM_AT_CMD_TIMEOUT K_MSEC(30)
+#define MDM_AT_CMD_TIMEOUT K_MSEC(60) /*UPSV=0 sometimes times out with 30MS*/
 #define MDM_CMD_TIMEOUT K_SECONDS(10)
 #define MDM_CMD_USOCL_TIMEOUT K_SECONDS(30)
 #define MDM_DNS_TIMEOUT K_SECONDS(70)
@@ -2380,6 +2380,7 @@ int wake_up(void) {
 		}
 		k_sleep(K_SECONDS(1));
 	}
+	k_sleep(K_MSEC(100));
 	const struct setup_cmd disable_psv[] = {
 		SETUP_CMD("AT+UPSV=0", "", NULL, 0, ","),
 		SETUP_CMD("ATE0", "", NULL, 0, ","),
