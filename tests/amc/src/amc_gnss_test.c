@@ -101,23 +101,25 @@ void test_gnss_mode(void)
 	amc_zone_t zone = NO_ZONE;
 
 	set_sensor_modes(mode, fs, cs, zone);
-	zassert_false(k_sem_take(&gnss_mode_sem, K_SECONDS(30)), "");
+	zassert_equal(k_sem_take(&gnss_mode_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_gnss_mode, GNSSMODE_CAUTION, "");
 
 	/* MAX mode. */
-	//k_sem_give(&gnss_mode_sem);
 	//fs = FenceStatus_FenceStatus_Normal;
+	//cs = CollarStatus_CollarStatus_Normal;
 	//mode = Mode_Teach;
 	//zone = WARN_ZONE;
 	//
 	//set_sensor_modes(mode, fs, cs, zone);
-	//zassert_false(k_sem_take(&gnss_mode_sem, K_SECONDS(30)), "");
+	//zassert_equal(k_sem_take(&gnss_mode_sem, K_SECONDS(30)), 0, "");
+	//printk("%i", current_gnss_mode);
 	//zassert_equal(current_gnss_mode, GNSSMODE_MAX, "");
 }
 
 static bool event_handler(const struct event_header *eh)
 {
 	if (is_gnss_set_mode_event(eh)) {
+		printk("Event handler");
 		struct gnss_set_mode_event *ev = cast_gnss_set_mode_event(eh);
 		current_gnss_mode = ev->mode;
 		k_sem_give(&gnss_mode_sem);
