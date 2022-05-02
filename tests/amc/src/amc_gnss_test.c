@@ -94,15 +94,25 @@ static gnss_mode_t current_gnss_mode = GNSSMODE_INACTIVE;
 
 void test_gnss_mode(void)
 {
+	/* Caution state with unknown. */
 	FenceStatus fs = FenceStatus_FenceStatus_UNKNOWN;
 	CollarStatus cs = CollarStatus_CollarStatus_UNKNOWN;
 	Mode mode = Mode_Mode_UNKNOWN;
 	amc_zone_t zone = NO_ZONE;
 
-	/* Unknown states. */
 	set_sensor_modes(mode, fs, cs, zone);
 	zassert_false(k_sem_take(&gnss_mode_sem, K_SECONDS(30)), "");
 	zassert_equal(current_gnss_mode, GNSSMODE_CAUTION, "");
+
+	/* MAX mode. */
+	//k_sem_give(&gnss_mode_sem);
+	//fs = FenceStatus_FenceStatus_Normal;
+	//mode = Mode_Teach;
+	//zone = WARN_ZONE;
+	//
+	//set_sensor_modes(mode, fs, cs, zone);
+	//zassert_false(k_sem_take(&gnss_mode_sem, K_SECONDS(30)), "");
+	//zassert_equal(current_gnss_mode, GNSSMODE_MAX, "");
 }
 
 static bool event_handler(const struct event_header *eh)
