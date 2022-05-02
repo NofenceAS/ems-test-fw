@@ -16,4 +16,6 @@ void test_zone_calc(void);
 
 void test_gnss_fix(void);
 
+void test_gnss_mode(void);
+
 #endif /* _AMC_TEST_COMMON_H_ */
