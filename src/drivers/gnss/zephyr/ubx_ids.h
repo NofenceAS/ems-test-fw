@@ -14,6 +14,7 @@
 
 #define UBX_MGA			0x13
 #define UBX_MGA_ANO		0x20
+#define UBX_MGA_ACK		0x60
 
 #define UBX_NAV			0x01
 #define UBX_NAV_DOP		0x04
