@@ -41,3 +41,14 @@ static int log_movement_set_mode_event(const struct event_header *eh, char *buf,
 
 EVENT_TYPE_DEFINE(movement_set_mode_event, true, log_movement_set_mode_event,
 		  NULL);
+
+static int log_movement_timeout_event(const struct event_header *eh, char *buf,
+				      size_t buf_len)
+{
+	struct movement_timeout_event *event = cast_movement_timeout_event(eh);
+
+	return snprintf(buf, buf_len, "Movement timeout adr %p", event);
+}
+
+EVENT_TYPE_DEFINE(movement_timeout_event, true, log_movement_timeout_event,
+		  NULL);
