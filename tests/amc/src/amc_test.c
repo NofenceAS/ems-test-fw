@@ -153,6 +153,7 @@ void test_main(void)
 	ztest_test_suite(amc_collar_fence_tests,
 			 ztest_unit_test(test_init_and_update_pasture),
 			 ztest_unit_test(test_collar_status),
+			 ztest_unit_test(test_collar_mode),
 			 ztest_unit_test(test_fence_status));
 	ztest_run_test_suite(amc_collar_fence_tests);
 }

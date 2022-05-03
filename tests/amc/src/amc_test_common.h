@@ -18,6 +18,7 @@ void test_gnss_fix(void);
 void test_gnss_mode(void);
 
 void test_collar_status(void);
+void test_collar_mode(void);
 void test_fence_status(void);
 
 /* GNSS helper functions. */

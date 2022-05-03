@@ -13,6 +13,9 @@ static FenceStatus current_fence_status = FenceStatus_FenceStatus_UNKNOWN;
 K_SEM_DEFINE(collar_status_sem, 0, 1);
 static CollarStatus current_collar_status = CollarStatus_CollarStatus_UNKNOWN;
 
+K_SEM_DEFINE(collar_mode_sem, 0, 1);
+static Mode current_collar_mode = Mode_Mode_UNKNOWN;
+
 void test_fence_status(void)
 {
 	/* Check if we have valid pasture cached. */
@@ -179,6 +182,36 @@ void test_fence_status(void)
 	zassert_equal(current_fence_status, expected_status, "");
 }
 
+void test_collar_mode(void)
+{
+	/* Unknown -> Teach. */
+	ztest_returns_value(eep_uint8_write, 0);
+	Mode expected_mode = Mode_Teach;
+
+	zassert_equal(calc_mode(), expected_mode, "");
+	zassert_equal(k_sem_take(&collar_mode_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_collar_mode, expected_mode, "");
+
+	/* Teach -> Fence. */
+	/* To reach this, we need to reach the zap and warn count tresholds. 
+	 * I.e ((teach_warn_cnt - teach_zap_cnt) >=
+			    _TEACHMODE_WARN_CNT_LOWLIM)
+	 * needs to be fulfilled. In other words, the animal must have
+	 * managed to get warned 20 times without getting a zap.
+	 */
+	for (int i = 0; i < _TEACHMODE_WARN_CNT_LOWLIM + 1; i++) {
+		/* Mock the eeprom calls. */
+		ztest_returns_value(eep_uint32_write, 0);
+		increment_warn_count();
+	}
+	ztest_returns_value(eep_uint8_write, 0);
+	expected_mode = Mode_Fence;
+
+	zassert_equal(calc_mode(), expected_mode, "");
+	zassert_equal(k_sem_take(&collar_mode_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_collar_mode, expected_mode, "");
+}
+
 void test_collar_status(void)
 {
 	/* Unknown -> normal. */
@@ -239,9 +272,16 @@ static bool event_handler(const struct event_header *eh)
 		k_sem_give(&fence_status_sem);
 		return false;
 	}
+	if (is_update_collar_mode(eh)) {
+		struct update_collar_mode *ev = cast_update_collar_mode(eh);
+		current_collar_mode = ev->collar_mode;
+		k_sem_give(&collar_mode_sem);
+		return false;
+	}
 	return false;
 }
 
 EVENT_LISTENER(test_collar_fence_handler, event_handler);
 EVENT_SUBSCRIBE(test_collar_fence_handler, update_collar_status);
 EVENT_SUBSCRIBE(test_collar_fence_handler, update_fence_status);
+EVENT_SUBSCRIBE(test_collar_fence_handler, update_collar_mode);
