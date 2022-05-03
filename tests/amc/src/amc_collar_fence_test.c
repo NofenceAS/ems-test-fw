@@ -6,6 +6,7 @@
 #include "gnss_controller_events.h"
 #include "messaging_module_events.h"
 #include "amc_cache.h"
+#include "pwr_event.h"
 
 K_SEM_DEFINE(fence_status_sem, 0, 1);
 static FenceStatus current_fence_status = FenceStatus_FenceStatus_UNKNOWN;
@@ -256,6 +257,26 @@ void test_collar_status(void)
 	expected_status = CollarStatus_CollarStatus_Normal;
 	zassert_equal(calc_collar_status(), expected_status, "");
 	/* No event is triggered, since we're in the same state. */
+
+	/* Normal -> Power OFF. */
+	ztest_returns_value(eep_uint8_write, 0);
+	update_movement_state(STATE_NORMAL);
+	update_power_state(PWR_CRITICAL);
+
+	expected_status = CollarStatus_PowerOff;
+	zassert_equal(calc_collar_status(), expected_status, "");
+	zassert_equal(k_sem_take(&collar_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_collar_status, expected_status, "");
+
+	/* Power OFF -> Sleep. */
+	ztest_returns_value(eep_uint8_write, 0);
+	update_movement_state(STATE_SLEEP);
+	update_power_state(PWR_LOW);
+
+	expected_status = CollarStatus_Sleep;
+	zassert_equal(calc_collar_status(), expected_status, "");
+	zassert_equal(k_sem_take(&collar_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_collar_status, expected_status, "");
 }
 
 static bool event_handler(const struct event_header *eh)
