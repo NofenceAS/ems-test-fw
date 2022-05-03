@@ -2372,13 +2372,13 @@ int wake_up(void) {
 	int ret = -1;
 	uint8_t counter = 0;
 	while (counter++ < 50 && ret < 0) {
+		k_sleep(K_SECONDS(1));
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0,
 				     "AT", &mdata.sem_response,
 				     MDM_AT_CMD_TIMEOUT);
 		if (ret < 0 && ret != -ETIMEDOUT) {
 			return 0;
 		}
-		k_sleep(K_SECONDS(1));
 	}
 	k_sleep(K_MSEC(100));
 	const struct setup_cmd disable_psv[] = {
@@ -2399,7 +2399,8 @@ int wake_up_from_upsv(void) {
 		unsigned int irq_lock_key = irq_lock();
 		LOG_DBG("MDM_POWER_PIN -> DISABLE");
 		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
-		k_sleep(K_SECONDS(1));
+		k_sleep(K_MSEC(200)); /* min. value 100 msec (r4 datasheet
+ * section 4.2.10 )*/
 		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
 		irq_unlock(irq_lock_key);
 		LOG_DBG("MDM_POWER_PIN -> ENABLE");
@@ -2409,7 +2410,7 @@ int wake_up_from_upsv(void) {
 		do {
 			k_sleep(K_MSEC(100));
 		} while (!modem_rx_pin_is_high());
-
+		modem_pin_config(&mctx, MDM_POWER, false);
 		int ret = uart_state_set(PM_DEVICE_STATE_ACTIVE);
 		if (ret != 0) {
 			LOG_ERR("Failed to enable uart to modem.");
