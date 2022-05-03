@@ -146,8 +146,8 @@ void test_main(void)
 	ztest_test_suite(amc_zone_tests, ztest_unit_test(test_zone_calc));
 	ztest_run_test_suite(amc_zone_tests);
 
-	ztest_test_suite(amc_gnss_tests, ztest_unit_test(test_gnss_mode),
-			 ztest_unit_test(test_gnss_fix));
+	ztest_test_suite(amc_gnss_tests, ztest_unit_test(test_gnss_fix),
+			 ztest_unit_test(test_gnss_mode));
 	ztest_run_test_suite(amc_gnss_tests);
 }
 
