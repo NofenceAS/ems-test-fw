@@ -62,12 +62,16 @@ void simulate_accepted_fix(void)
 	zassert_equal(gnss_update(&gnss_data), 0, "Failed updating GNSS fix");
 }
 
-void test_gnss_fix(void)
+void amc_gnss_init(void)
 {
 	k_sem_init(&gnss_fix_timeout, 0, 1);
-
 	zassert_equal(gnss_init(gnss_timeout), 0,
 		      "Failed initializing AMC GNSS");
+}
+
+void test_gnss_fix(void)
+{
+	amc_gnss_init();
 
 	/* Send GNSS data, has fix, but not much more */
 	simulate_fix();

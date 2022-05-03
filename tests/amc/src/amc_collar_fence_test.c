@@ -5,10 +5,179 @@
 #include "embedded.pb.h"
 #include "gnss_controller_events.h"
 #include "messaging_module_events.h"
+#include "amc_cache.h"
 
-K_SEM_DEFINE(error_handler_sem, 0, 1);
+K_SEM_DEFINE(fence_status_sem, 0, 1);
+static FenceStatus current_fence_status = FenceStatus_FenceStatus_UNKNOWN;
+
 K_SEM_DEFINE(collar_status_sem, 0, 1);
 static CollarStatus current_collar_status = CollarStatus_CollarStatus_UNKNOWN;
+
+void test_fence_status(void)
+{
+	/* Check if we have valid pasture cached. */
+	zassert_true(fnc_valid_def(), "");
+
+	/* Init GNSS cache etc.. */
+	amc_gnss_init();
+
+	/* Unknown -> NotStarted. */
+	ztest_returns_value(eep_uint8_write, 0);
+
+	FenceStatus expected_status = FenceStatus_NotStarted;
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
+		      expected_status, "");
+	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_fence_status, expected_status, "");
+
+	/* NotStarted -> Normal */
+	simulate_accepted_fix();
+	zassert_equal(zone_set(PSM_ZONE), 0, "");
+
+	ztest_returns_value(eep_uint8_write, 0);
+
+	expected_status = FenceStatus_FenceStatus_Normal;
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
+		      expected_status, "");
+	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_fence_status, expected_status, "");
+
+	/* Normal -> Escaped */
+	/* To get to escaped, we need to have zapped 3 times. Reset the zaps
+	 * and zap 3 times.
+	 */
+	reset_zap_pain_cnt();
+
+	for (int i = 0; i < 3; i++) {
+		/* Mock total zaps and daily zaps. */
+		ztest_returns_value(eep_uint16_write, 0);
+		ztest_returns_value(eep_uint16_write, 0);
+
+		increment_zap_count();
+	}
+
+	simulate_accepted_fix();
+
+	/* Zone is irrelevant, the check is against how many zaps we've given
+	 * regardless of position. 
+	 */
+	zassert_equal(zone_set(NO_ZONE), 0, "");
+
+	ztest_returns_value(eep_uint8_write, 0);
+
+	expected_status = FenceStatus_Escaped;
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
+		      expected_status, "");
+	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_fence_status, expected_status, "");
+
+	/* Escaped -> Normal */
+	simulate_accepted_fix();
+	zassert_equal(zone_set(CAUTION_ZONE), 0, "");
+
+	ztest_returns_value(eep_uint8_write, 0);
+
+	expected_status = FenceStatus_FenceStatus_Normal;
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
+		      expected_status, "");
+	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_fence_status, expected_status, "");
+
+	/* Normal -> Beacon Contact normal */
+	simulate_accepted_fix();
+	zassert_equal(zone_set(CAUTION_ZONE), 0, "");
+
+	ztest_returns_value(eep_uint8_write, 0);
+
+	expected_status = FenceStatus_BeaconContactNormal;
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_NEAR),
+		      expected_status, "");
+	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_fence_status, expected_status, "");
+
+	/* Beacon contact normal ->  Normal*/
+	ztest_returns_value(eep_uint8_write, 0);
+
+	expected_status = FenceStatus_FenceStatus_Normal;
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_OUT_OF_RANGE),
+		      expected_status, "");
+	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_fence_status, expected_status, "");
+
+	/* Normal -> Maybe out of fence */
+	ztest_returns_value(eep_uint8_write, 0);
+
+	/* We get to maybe out of fence if the delta is 900 or more.
+	 * Set timestamp here, then wait 905 seconds. */
+	uint32_t maybe_timestamp = k_uptime_get_32();
+
+	k_sleep(K_SECONDS(905));
+
+	expected_status = FenceStatus_MaybeOutOfFence;
+	zassert_equal(calc_fence_status(maybe_timestamp,
+					BEACON_STATUS_NOT_FOUND),
+		      expected_status, "");
+	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_fence_status, expected_status, "");
+
+	/* Maybe out of fence -> Beacon Contact */
+	ztest_returns_value(eep_uint8_write, 0);
+
+	expected_status = FenceStatus_BeaconContact;
+
+	/* Use same timestamp here, we know it's still as maybe out of fence. */
+	zassert_equal(calc_fence_status(maybe_timestamp,
+					BEACON_STATUS_REGION_NEAR),
+		      expected_status, "");
+	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_fence_status, expected_status, "");
+
+	/* Beacon Contact -> NotStarted */
+	ztest_returns_value(eep_uint8_write, 0);
+
+	expected_status = FenceStatus_NotStarted;
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_FAR),
+		      expected_status, "");
+	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_fence_status, expected_status, "");
+
+	/* NotStarted -> Beacon Contact */
+	ztest_returns_value(eep_uint8_write, 0);
+
+	expected_status = FenceStatus_BeaconContact;
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_NEAR),
+		      expected_status, "");
+	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_fence_status, expected_status, "");
+
+	/* Beacon Contact -> Unknown */
+	/* We only enter this state if pasture is invalid. */
+	pasture_t empty_pasture;
+	memset(&empty_pasture, 0, sizeof(pasture_t));
+	zassert_equal(set_pasture_cache((uint8_t *)&empty_pasture,
+					sizeof(empty_pasture)),
+		      0, "");
+
+	ztest_returns_value(eep_uint8_write, 0);
+
+	expected_status = FenceStatus_FenceStatus_UNKNOWN;
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_FAR),
+		      expected_status, "");
+	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_fence_status, expected_status, "");
+
+	/* Unknown -> Beacon Contact */
+	/* We'll never reach NotStarted from unknown due to our
+	 * pasture being invalid.
+	 */
+	ztest_returns_value(eep_uint8_write, 0);
+
+	expected_status = FenceStatus_BeaconContact;
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_NEAR),
+		      expected_status, "");
+	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_fence_status, expected_status, "");
+}
 
 void test_collar_status(void)
 {
@@ -62,9 +231,17 @@ static bool event_handler(const struct event_header *eh)
 		struct update_collar_status *ev = cast_update_collar_status(eh);
 		current_collar_status = ev->collar_status;
 		k_sem_give(&collar_status_sem);
+		return false;
+	}
+	if (is_update_fence_status(eh)) {
+		struct update_fence_status *ev = cast_update_fence_status(eh);
+		current_fence_status = ev->fence_status;
+		k_sem_give(&fence_status_sem);
+		return false;
 	}
 	return false;
 }
 
 EVENT_LISTENER(test_collar_fence_handler, event_handler);
 EVENT_SUBSCRIBE(test_collar_fence_handler, update_collar_status);
+EVENT_SUBSCRIBE(test_collar_fence_handler, update_fence_status);
