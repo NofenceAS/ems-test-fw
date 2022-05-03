@@ -149,6 +149,10 @@ void test_main(void)
 	ztest_test_suite(amc_gnss_tests, ztest_unit_test(test_gnss_fix),
 			 ztest_unit_test(test_gnss_mode));
 	ztest_run_test_suite(amc_gnss_tests);
+
+	ztest_test_suite(amc_collar_fence_tests,
+			 ztest_unit_test(test_collar_status));
+	ztest_run_test_suite(amc_collar_fence_tests);
 }
 
 EVENT_LISTENER(test_main, event_handler);

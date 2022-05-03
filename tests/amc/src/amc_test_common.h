@@ -18,4 +18,6 @@ void test_gnss_fix(void);
 
 void test_gnss_mode(void);
 
+void test_collar_status(void);
+
 #endif /* _AMC_TEST_COMMON_H_ */
