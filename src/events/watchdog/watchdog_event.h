@@ -17,11 +17,15 @@ enum watchdog_alive_module {
 	WDG_END_OF_LIST
 };
 
+#define WATCHDOG_ALIVE_MAGIC 0xEBA53002
 struct watchdog_alive_event {
 	struct event_header header;
 
-	/** Which module report alive */
+	/* Which module report alive */
 	enum watchdog_alive_module module;
+
+	/* Magic check for data consitency */
+	int magic;
 };
 
 /**
