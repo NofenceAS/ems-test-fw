@@ -11,8 +11,7 @@
 /** @brief Only periodic modules are included in this list */
 enum watchdog_alive_module {
 	WDG_PWR_MODULE = 0,
-	WDG_MESSAGING = 1,
-	WDG_BLE_SCAN = 2,
+	WDG_BLE_SCAN = 1,
 	//WDG_GNSS_CONTROLLER = 3,
 	WDG_END_OF_LIST
 };
