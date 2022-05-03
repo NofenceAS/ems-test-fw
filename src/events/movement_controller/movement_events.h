@@ -31,7 +31,12 @@ struct movement_out_event {
 	movement_state_t state;
 };
 
+struct movement_timeout_event {
+	struct event_header header;
+};
+
 EVENT_TYPE_DECLARE(movement_set_mode_event);
 EVENT_TYPE_DECLARE(movement_out_event);
+EVENT_TYPE_DECLARE(movement_timeout_event);
 
 #endif /* _MOVEMENT_EVENT_H_ */
