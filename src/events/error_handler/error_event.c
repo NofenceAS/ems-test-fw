@@ -45,7 +45,7 @@ static inline void submit_app_status(enum error_sender_module sender,
 	/* Check if string is greater than limit, remove 
 	 * the entire message if exceeding. 
 	 */
-	if (msg_len > CONFIG_ERROR_USER_MESSAGE_SIZE) {
+	if (msg_len > CONFIG_ERROR_MAX_USER_MESSAGE_SIZE) {
 		dyn_msg_size = 0;
 	}
 

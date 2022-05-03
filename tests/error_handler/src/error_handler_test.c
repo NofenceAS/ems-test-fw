@@ -55,7 +55,7 @@ void test_warning_exceed_message(void)
 {
 	ztest_returns_value(date_time_now, 0);
 	ztest_returns_value(stg_write_system_diagnostic_log, 0);
-	size_t msg_len = CONFIG_ERROR_USER_MESSAGE_SIZE + 1;
+	size_t msg_len = CONFIG_ERROR_MAX_USER_MESSAGE_SIZE + 1;
 	char msg[msg_len];
 
 	nf_app_warning(ERR_FW_UPGRADE, -EINVAL, msg, msg_len);
