@@ -121,6 +121,15 @@ struct UBLOX_STORAGE_ATTR ublox_nav_status {
 	uint32_t msss;
 };
 
+/** @brief U-blox MGA-ACK message. */
+struct UBLOX_STORAGE_ATTR ublox_mga_ack {
+	uint8_t type;
+	uint8_t version;
+	uint8_t infoCode;
+	uint8_t msgId;
+	uint8_t msgPayloadStart[4];
+};
+
 /* Helper macros for getting various data types from buffer */
 #define GET_LE8(x)	((x[0]<<0))
 #define GET_LE16(x)	((x[0]<<0)|\

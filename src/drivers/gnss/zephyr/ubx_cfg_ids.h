@@ -18,4 +18,6 @@
 
 #define UBX_CFG_UART1_BAUDRATE			0x40520001
 
+#define UBX_CFG_NAVSPG_ACKAIDING        0x10110025
+
 #endif /* UBX_CFG_IDS_H_ */
