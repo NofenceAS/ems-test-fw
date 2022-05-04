@@ -29,6 +29,7 @@ enum error_sender_module {
 	ERR_MOVEMENT_CONTROLLER = 13,
 	ERR_WATCHDOG = 14,
 	ERR_BEACON = 15,
+	ERR_MODEM = 16,
 	ERR_END_OF_LIST
 };
 
