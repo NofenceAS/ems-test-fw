@@ -9,6 +9,7 @@ void watchdog_report_module_alive(enum watchdog_alive_module module)
 {
 	struct watchdog_alive_event *event = new_watchdog_alive_event();
 	event->module = module;
+	event->magic = WATCHDOG_ALIVE_MAGIC;
 	/* Submit event. */
 	EVENT_SUBMIT(event);
 }
