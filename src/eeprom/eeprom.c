@@ -49,3 +49,23 @@ int eep_read_host_port(char *host_port, size_t bufsize)
 	}
 	return ret;
 }
+
+int eep_write_ble_sec_key(uint8_t *ble_sec_key, size_t bufsize)
+{
+	if (sizeof(bufsize) > EEP_BLE_SEC_KEY_LEN) {
+		return -EOVERFLOW;
+	}
+	/* Note, write the string including null-terminator */
+	return eeprom_write(m_p_device, offsetof(struct eemem, ble_sec_key),
+			    ble_sec_key, bufsize);
+}
+
+int eep_read_ble_sec_key(uint8_t *ble_sec_key, size_t bufsize)
+{
+	if (bufsize < EEP_BLE_SEC_KEY_LEN) {
+		return -EOVERFLOW;
+	}
+	int ret = eeprom_read(m_p_device, offsetof(struct eemem, ble_sec_key),
+			      ble_sec_key, EEP_BLE_SEC_KEY_LEN);
+	return ret;
+}

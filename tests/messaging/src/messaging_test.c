@@ -32,11 +32,12 @@ void assert_post_action(const char *file, unsigned int line)
 
 void test_init(void)
 {
+	ztest_returns_value(eep_read_serial, 0);
 	struct connection_state_event *ev = new_connection_state_event();
 	ev->state = true;
 	EVENT_SUBMIT(ev);
-	ztest_returns_value(eep_read_serial, 0);
 	ztest_returns_value(stg_read_log_data, 0);
+
 	ztest_returns_value(stg_log_pointing_to_last, false);
 
 	zassert_false(event_manager_init(),
