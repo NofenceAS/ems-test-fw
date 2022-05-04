@@ -17,8 +17,8 @@ zephyr_include_directories(
 )
 
 FILE(GLOB app_sources 
-        mock/*.c
-        src/*.c 
+        ${CMAKE_CURRENT_SOURCE_DIR}/mock/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c 
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/crc/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer/*.c
@@ -30,6 +30,8 @@ FILE(GLOB app_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/error_event.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/storage/storage_event.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/fw_upgrade_events.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/watchdog/watchdog_event.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager/pwr_event.c
 
 )
 target_sources(app PRIVATE ${app_sources})
@@ -51,8 +53,10 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/storage/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/drivers/gnss/zephyr
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/watchdog
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../include
 )
 
 

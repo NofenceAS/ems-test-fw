@@ -17,12 +17,19 @@ enum error_sender_module {
 	ERR_AMC = 1,
 	ERR_STORAGE_CONTROLLER = 2,
 	ERR_ENV_SENSOR = 3,
-	ERR_ELECTRIC_PULSE = 4,
+	ERR_EP_MODULE = 4,
 	ERR_PWR_MODULE = 5,
 	ERR_GNSS_CONTROLLER = 6,
 	ERR_SOUND_CONTROLLER = 7,
 	ERR_MESSAGING = 8,
-	ERR_END_OF_LIST = 9
+	ERR_EEPROM = 9,
+	ERR_DIAGNOSTIC = 10,
+	ERR_BLE_MODULE = 11,
+	ERR_CELLULAR_CONTROLLER = 12,
+	ERR_MOVEMENT_CONTROLLER = 13,
+	ERR_WATCHDOG = 14,
+	ERR_BEACON = 15,
+	ERR_END_OF_LIST
 };
 
 /**
@@ -34,7 +41,7 @@ enum error_sender_module {
  * @param[in] code error code from the sender.
  * @param[in] msg custom user message attached to the event. Can be NULL.
  * @param[in] msg_len length of user message, 
- *                    maximum CONFIG_ERROR_USER_MESSAGE_SIZE characters.
+ *                    maximum CONFIG_ERROR_MAX_USER_MESSAGE_SIZE characters.
  */
 void nf_app_fatal(enum error_sender_module sender, int code, char *msg,
 		  size_t msg_len);
@@ -48,7 +55,7 @@ void nf_app_fatal(enum error_sender_module sender, int code, char *msg,
  * @param[in] code error code from the sender.
  * @param[in] msg custom user message attached to the event. Can be NULL.
  * @param[in] msg_len length of user message, 
- *                    maximum CONFIG_ERROR_USER_MESSAGE_SIZE characters.
+ *                    maximum CONFIG_ERROR_MAX_USER_MESSAGE_SIZE characters.
  */
 void nf_app_error(enum error_sender_module sender, int code, char *msg,
 		  size_t msg_len);
@@ -62,7 +69,7 @@ void nf_app_error(enum error_sender_module sender, int code, char *msg,
  * @param[in] code error code from the sender.
  * @param[in] msg custom user message attached to the event. Can be NULL.
  * @param[in] msg_len length of user message, 
- *                    maximum CONFIG_ERROR_USER_MESSAGE_SIZE characters.
+ *                    maximum CONFIG_ERROR_MAX_USER_MESSAGE_SIZE characters.
  */
 void nf_app_warning(enum error_sender_module sender, int code, char *msg,
 		    size_t msg_len);
