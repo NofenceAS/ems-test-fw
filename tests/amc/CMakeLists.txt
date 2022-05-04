@@ -15,8 +15,8 @@ zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 FILE(GLOB app_sources
-        src/*.c 
-        mock/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c 
+        ${CMAKE_CURRENT_SOURCE_DIR}/mock/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/trigonometry/trigonometry.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/fifo/nf_fifo.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/amc/*.c

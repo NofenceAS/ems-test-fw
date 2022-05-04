@@ -359,4 +359,6 @@ typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
 int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
 int bt_le_scan_stop(void);
 
+int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
+
 #endif

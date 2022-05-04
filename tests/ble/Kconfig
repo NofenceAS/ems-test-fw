@@ -4,6 +4,9 @@ menu "BLE"
 rsource "./../../src/modules/ble/Kconfig"
 endmenu # BLE
 
+menu "ERROR_HANDLER"
+rsource "./../../src/modules/error_handler/Kconfig"
+endmenu # ERROR_HANDLER
 menu "Zephyr Kernel"
 source "Kconfig.zephyr"
 endmenu

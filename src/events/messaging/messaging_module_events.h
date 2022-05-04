@@ -2,19 +2,6 @@
 #include "nf_settings.h"
 #include "collar_protocol.h"
 
-/** @brief Empty event to notify modules that need to shut down before
- *         SYS_REBOOT call to shut down gracefully if needed.
- * 
- * @param reboots_at k_uptime_get_32 + timer, 
- *                   telling when the system will reboot.
- */
-struct reboot_scheduled_event {
-	struct event_header header;
-	uint32_t reboots_at;
-};
-
-EVENT_TYPE_DECLARE(reboot_scheduled_event);
-
 /** @brief Empty event published by the messaging module to acknowledge
  *         reception of proto_in messages from the cellular controller. 
  */
