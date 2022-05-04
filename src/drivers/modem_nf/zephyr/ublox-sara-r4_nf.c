@@ -2457,7 +2457,7 @@ int sleep(void){
 		return 0;
 	}
 
-	ret = uart_state_set(PM_DEVICE_STATE_SUSPENDED);
+//	ret = uart_state_set(PM_DEVICE_STATE_SUSPENDED);
 	if (ret != 0 && mdata.upsv_state == 4){/*TODO: return a different
  * value based on the condition.*/
 		LOG_ERR("Failed to disable modem uart controller.");
