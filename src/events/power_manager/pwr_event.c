@@ -38,3 +38,5 @@ EVENT_TYPE_DEFINE(pwr_status_event, IS_ENABLED(CONFIG_LOG_PWR_EVENT),
 EVENT_TYPE_DEFINE(request_pwr_battery_event, true, NULL, NULL);
 
 EVENT_TYPE_DEFINE(request_pwr_charging_event, true, NULL, NULL);
+
+EVENT_TYPE_DEFINE(pwr_reboot_event, true, NULL, NULL);

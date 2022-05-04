@@ -53,7 +53,7 @@ static void test_serial_number(void)
 	ztest_returns_value(mock_eeprom_read, 0);
 	uint32_t serial;
 	ret = eep_uint32_read(EEP_UID, &serial);
-	zassert_equal(ret, 0, "eep_read_serial should return 0");
+	zassert_equal(ret, 0, "eep_uint32_read should return 0");
 	zassert_equal(serial, 1234, "Expected serial number");
 }
 

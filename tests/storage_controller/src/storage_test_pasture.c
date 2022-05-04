@@ -71,6 +71,9 @@ void test_reboot_persistent_pasture(void)
 					     sizeof(pasture)),
 		      0, "Write pasture error.");
 
+	/* Clear ANO partition so that we do not call date_time. */
+	zassert_false(stg_clear_partition(STG_PARTITION_ANO), "");
+
 	/* Reset FCB, pretending to reboot. Checks if persistent storage
 	 * works. Should get the expected read value from the written one above.
 	 */

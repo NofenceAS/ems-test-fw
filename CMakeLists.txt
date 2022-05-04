@@ -70,10 +70,11 @@ zephyr_library_include_directories(
         src/modules/cellular_controller
         src/modules/gnss_controller
         src/events/cellular_controller
-  	    src/modules/buzzer
+  	src/modules/buzzer
         src/modules/time_use
         src/events/collar_stats
         src/events/amc
+        src/events/watchdog
         ${PROJECT_BINARY_DIR}/include/generated/)
         
 target_sources(app PRIVATE ${APP_MAIN}
@@ -90,6 +91,7 @@ add_subdirectory(src/modules/amc)
 add_subdirectory(src/events/amc)
 add_subdirectory(src/modules/cellular_controller)
 add_subdirectory(src/modules/buzzer)
+add_subdirectory(src/modules/error_handler)
 
 add_subdirectory(src/modules/power_manager)
 add_subdirectory(src/events/power_manager)
@@ -101,6 +103,9 @@ add_subdirectory(src/modules/diagnostics)
 add_subdirectory(src/events/electric_pulse)
 add_subdirectory(src/modules/electric_pulse)
 add_subdirectory(src/modules/environment)
+
+add_subdirectory_ifdef(CONFIG_WATCHDOG_ENABLE src/modules/watchdog)
+add_subdirectory_ifdef(CONFIG_WATCHDOG_ENABLE src/events/watchdog)
 add_subdirectory(src/modules/gnss_controller)
 add_subdirectory(src/modules/movement_controller)
 add_subdirectory(src/modules/time_use)
