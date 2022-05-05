@@ -1245,8 +1245,10 @@ static int modem_reset(void)
 		SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
 		SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 		SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_ccid, 0U, ""),
-		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
-//		SETUP_CMD_NOHANDLE("AT+CFUN=15"),
+		SETUP_CMD_NOHANDLE("AT+URAT=7,9"), /*TODO: add CFUN=15 after
+ * setting the URAT. CFUN=15 seems to scramble up the setup sometimes so it
+ * should be carefully placed.*/
+
 #if !defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 		/* setup PDP context definition */
 		SETUP_CMD_NOHANDLE(
