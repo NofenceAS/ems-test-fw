@@ -23,6 +23,8 @@ struct pwr_status_event {
 
 	enum pwr_state_flag pwr_state;
 	uint16_t battery_mv;
+	uint16_t battery_mv_max;
+	uint16_t battery_mv_min;
 	uint16_t charging_ma;
 };
 

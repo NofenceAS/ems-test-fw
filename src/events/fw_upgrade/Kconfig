@@ -9,4 +9,7 @@ config FW_UPGRADE_HOST_LEN
 	int "Max length of firmware upgrade path name"
 	default 64
 
+config FW_LOG_DFU_STATUS_EVENT
+	bool "Log DFU FW event"
+	default n
 endmenu
