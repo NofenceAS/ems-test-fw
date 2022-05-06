@@ -652,6 +652,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_ccid)
 	return 0;
 }
 
+
 #if !defined(CONFIG_MODEM_UBLOX_SARA_U2)
 /*
  * Handler: +CESQ: <rxlev>[0],<ber>[1],<rscp>[2],<ecn0>[3],<rsrq>[4],<rsrp>[5]
@@ -772,14 +773,18 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_upsv_get)
 {
 	LOG_DBG("UPSV? handler, %d", argc);
-	LOG_INF("modem power mode: ,%s", argv[0]);
-	int ret = memcmp( argv[0],"+UPSV: 4", 8);
-	if (ret == 0) {
-		mdata.upsv_state = 4;
-		LOG_DBG("Modem in power saving mode!");
-	} else {
-		mdata.upsv_state = 0;
-		LOG_DBG("Modem not in power saving mode!");
+	LOG_DBG("modem power mode: ,%s", argv[0]);
+	int val = 0;
+	char *ptr = argv[0];
+
+	while (*ptr != '\0' && val ==0) {
+		val = atoi(ptr);
+		ptr++;
+	}
+	mdata.upsv_state = val;
+	LOG_INF("UPSV mode = %d\n", val);
+	if (val != 4 && val != 0) {
+		LOG_WRN("Unexpected value for UPSV mode setting!");
 	}
 	return 0;
 }
@@ -1266,7 +1271,7 @@ static int modem_reset(void)
 		SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
 		SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 		SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_ccid, 0U, ""),
-		SETUP_CMD_NOHANDLE("AT+URAT=7"),
+		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
 		SETUP_CMD_NOHANDLE("AT+UPSV=0"),
 #if !defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 		/* setup PDP context definition */
@@ -1486,7 +1491,7 @@ restart:
 			     MDM_CMD_TIMEOUT);
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
-			     NULL, 0, "AT+CPSMS=1",
+			     NULL, 0, "AT+CPSMS=0",
 			     &mdata.sem_response,
 			     MDM_CMD_TIMEOUT);
 
@@ -2382,14 +2387,15 @@ int wake_up(void) {
 	}
 	k_sleep(K_MSEC(100));
 	const struct setup_cmd disable_psv[] = {
-		SETUP_CMD("AT+UPSV=0", "", NULL, 0, ","),
-		SETUP_CMD("ATE0", "", NULL, 0, ","),
+		SETUP_CMD_NOHANDLE("AT+UPSV=0"),
+		SETUP_CMD_NOHANDLE("ATE0"),
+		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 1U,
+			  ","),
 	};
 	ret = modem_cmd_handler_setup_cmds(
 		&mctx.iface, &mctx.cmd_handler, disable_psv,
-		2, &mdata.sem_response,
+		ARRAY_SIZE(disable_psv), &mdata.sem_response,
 		MDM_AT_CMD_TIMEOUT);
-	mdata.upsv_state = 0;
 	return ret;
 }
 
@@ -2418,12 +2424,15 @@ int wake_up_from_upsv(void) {
 		}
 		return wake_up();
 	}
+//	} else if (mdata.upsv_state == -1) {
+//		return -1;
+//	}
 	return 0;
 }
 
 int sleep(void){
 	const struct setup_cmd set_psv[] = {
-		SETUP_CMD("AT+UPSV=4", "", NULL, 0, ","),
+		SETUP_CMD_NOHANDLE("AT+UPSV=4"),
 	};
 	int ret = modem_cmd_handler_setup_cmds(
 		&mctx.iface, &mctx.cmd_handler, set_psv,
