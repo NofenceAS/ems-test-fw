@@ -32,10 +32,9 @@ enum ble_ctrl_cmd {
 	BLE_CTRL_PASTURE_UPDATE,
 	BLE_CTRL_FENCE_DEF_VER_UPDATE,
 	BLE_CTRL_SCAN_START,
-	BLE_CTRL_SCAN_STOP
+	BLE_CTRL_SCAN_STOP,
+	BLE_CTRL_DISCONNECT_PEER
 };
-
-
 
 /** BLE control event. */
 struct ble_ctrl_event {

@@ -141,7 +141,6 @@ struct animal_escape_event {
 
 EVENT_TYPE_DECLARE(animal_escape_event);
 
-
 /** @brief Notify cellular controller to check if cellular connection is ready.
  *Published by the messaging before sending out a new message to the server,
  * cellular controller should reply with connection_ready event.

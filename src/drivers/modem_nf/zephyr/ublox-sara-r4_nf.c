@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4_nf, CONFIG_MODEM_LOG_LEVEL);
 #include "modem_socket.h"
 #include "modem_cmd_handler.h"
 #include "modem_iface_uart.h"
+#include "error_event.h"
 
 #if !defined(CONFIG_MODEM_UBLOX_SARA_R4_MANUAL_MCCMNO)
 #define CONFIG_MODEM_UBLOX_SARA_R4_MANUAL_MCCMNO ""
@@ -759,7 +760,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 {
 	LOG_DBG("CDGCONT? handler, %d", argc);
 	LOG_INF("ip: %s", argv[3]);
-	memcpy(mdata.mdm_pdp_addr,argv[3],17); //17: "xxx.xxx.xxx.xxx", for
+	memcpy(mdata.mdm_pdp_addr, argv[3], 17); //17: "xxx.xxx.xxx.xxx", for
 	// the check_ip function, we're only interested in the fact that the
 	// first 8 characters are not "0.0.0.0
 	/*TODO: add more sofistication in handling the string if needed.*/
@@ -1004,7 +1005,7 @@ static void modem_rx(void)
 bool modem_has_power(void)
 {
 #if !DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
-	#error "Modem must have VINT pin!"
+#error "Modem must have VINT pin!"
 #endif
 
 	return modem_pin_read(&mctx, MDM_VINT) != 0;
@@ -1166,7 +1167,9 @@ static void modem_rssi_query_work(struct k_work *work)
 			     ARRAY_SIZE(cmds), send_cmd, &mdata.sem_response,
 			     MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("AT+C[E]SQ ret:%d", ret);
+		char *e_msg = "AT+C[E]SQ";
+		LOG_ERR("%s ret:%d", log_strdup(e_msg), ret);
+		nf_app_error(ERR_MODEM, ret, e_msg, strlen(e_msg));
 	}
 
 #if defined(CONFIG_MODEM_CELL_INFO)
@@ -1206,7 +1209,9 @@ static void modem_rssi_query_work(struct k_work *work)
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, send_cmd,
 			     &mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("AT+C[E]SQ ret:%d", ret);
+		char *e_msg = "AT+C[E]SQ";
+		LOG_ERR("%s ret:%d", log_strdup(e_msg), ret);
+		nf_app_error(ERR_MODEM, ret, e_msg, strlen(e_msg));
 	}
 
 #if defined(CONFIG_MODEM_CELL_INFO)
@@ -1376,11 +1381,25 @@ restart:
 	}
 
 	if (ret < 0) {
-		LOG_ERR("AT+COPS ret:%d", ret);
+		char *e_msg = "AT+COPS";
+		LOG_ERR("%s ret:%d", log_strdup(e_msg), ret);
+		nf_app_error(ERR_MODEM, ret, e_msg, strlen(e_msg));
 		goto error;
 	}
 
 	LOG_INF("Waiting for network");
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+			     NULL, 0, "AT+CFUN=0",
+			     &mdata.sem_response,
+			     MDM_CMD_TIMEOUT);
+
+	k_sleep(K_SECONDS(1));
+
+	/* Enable RF */
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+			     NULL, 0, "AT+CFUN=1",
+			     &mdata.sem_response,
+			     MDM_CMD_TIMEOUT);
 
 	/*
 	 * TODO: A lot of this should be setup as a 3GPP module to handle
@@ -1512,7 +1531,7 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 	if (ret < 0) {
 		goto error;
 	}
-/*set linger time to 3000ms
+	/*set linger time to 3000ms
  * TODO: parametrize duration */
 	char buf2[sizeof("AT+USOSO=%d,65535,128,1,00\r")];
 	snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,3000", ret);
@@ -1568,6 +1587,7 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 
 error:
 	LOG_ERR("%s ret:%d", log_strdup(buf), ret);
+	nf_app_error(ERR_MODEM, ret, buf, strlen(buf));
 	modem_socket_put(&mdata.socket_config, sock->sock_fd);
 	errno = -ret;
 	return -1;
@@ -1615,6 +1635,7 @@ static int offload_close(void *obj)
 		// more time compared to other commands.
 		if (ret < 0) {
 			LOG_ERR("%s ret:%d", log_strdup(buf), ret);
+			nf_app_error(ERR_MODEM, ret, buf, strlen(buf));
 		}
 	}
 
@@ -2360,24 +2381,23 @@ int modem_nf_reset(void)
 	return modem_reset();
 }
 
-int get_pdp_addr(char** ip_addr){
+int get_pdp_addr(char **ip_addr)
+{
 	const struct setup_cmd read_sim_ip_cmd[] = {
 		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 6, ","),
 	};
-	int ret = modem_cmd_handler_setup_cmds(
-		&mctx.iface, &mctx.cmd_handler, read_sim_ip_cmd,
-		1, &mdata.sem_response,
-		MDM_REGISTRATION_TIMEOUT);
-	if (ret == 0){
+	int ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
+					       read_sim_ip_cmd, 1,
+					       &mdata.sem_response,
+					       MDM_REGISTRATION_TIMEOUT);
+	if (ret == 0) {
 		*ip_addr = mdata.mdm_pdp_addr;
 		return 0;
-	}else{
+	} else {
 		return -1;
 	}
 }
 
-
-NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL,
-				  &mdata, NULL,
+NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL, &mdata, NULL,
 				  CONFIG_MODEM_UBLOX_SARA_R4_INIT_PRIORITY,
 				  &api_funcs, MDM_MAX_DATA_LENGTH);

@@ -1,0 +1,10 @@
+
+menu "APPLICATION_CODE"
+	menu "MOVEMENT"
+    	rsource "./../../src/modules/movement_controller/Kconfig"
+	endmenu # MESSAGING
+endmenu # APPLICATION CODE
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu
