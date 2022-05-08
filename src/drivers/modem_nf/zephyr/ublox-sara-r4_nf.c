@@ -53,7 +53,6 @@ enum mdm_control_pins {
 	MDM_VINT,
 #endif
 };
-bool listen_request;
 extern struct k_sem listen_sem;
 
 static struct modem_pin modem_pins[] = {
@@ -984,8 +983,9 @@ MODEM_CMD_DEFINE(on_cmd_socknotify_listen)
 {
 	LOG_DBG("Received new message on listening socket:%s, port:%s",
 		argv[3], argv[5]);
-	listen_request = true;
-	k_sem_give(&listen_sem);
+	if (atoi(argv[3]) == 0  && atoi(argv[5]) == 1099) {
+		k_sem_give(&listen_sem);
+	}
 	return 0;
 }
 
@@ -1725,8 +1725,7 @@ static int offload_listen(void *obj, int backlog)
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	int ret;
 	char buf[sizeof("AT+USOLI=#,#####\r")];
-	uint16_t dst_port = 1099;
-	LOG_WRN("Starting listen offload!");
+	LOG_DBG("Starting listen offload!");
 
 	if (sock->id < mdata.socket_config.base_socket_num - 1) {
 		LOG_ERR("Invalid socket_id(%d) from fd:%d", sock->id,
@@ -1742,7 +1741,7 @@ static int offload_listen(void *obj, int backlog)
 		}
 	}
 
-	snprintk(buf, sizeof(buf), "AT+USOLI=%d,%d", sock->id, dst_port);
+	snprintk(buf, sizeof(buf), "AT+USOLI=%d,%d", sock->id, CONFIG_NF_LISTENING_PORT);
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf,
 			     &mdata.sem_response, MDM_CMD_CONN_TIMEOUT);
 	if (ret < 0) {
