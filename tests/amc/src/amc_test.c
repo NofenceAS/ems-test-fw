@@ -29,7 +29,19 @@ void test_init_and_update_pasture(void)
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
 
+	/* Cached pasture. */
 	ztest_returns_value(stg_read_pasture_data, 0);
+
+	/* Cached variables. 1. tot zap count, 2. warn count, 3. zap count day */
+	ztest_returns_value(eep_uint16_read, 0);
+	ztest_returns_value(eep_uint32_read, 0);
+	ztest_returns_value(eep_uint16_read, 0);
+
+	/* Cached modes. Collarmode, fencestatus and collarstatus. */
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_read, 0);
+
 	zassert_false(amc_module_init(), "Error when initializing AMC module");
 }
 
@@ -134,8 +146,16 @@ void test_main(void)
 	ztest_test_suite(amc_zone_tests, ztest_unit_test(test_zone_calc));
 	ztest_run_test_suite(amc_zone_tests);
 
-	ztest_test_suite(amc_gnss_tests, ztest_unit_test(test_gnss_fix));
+	ztest_test_suite(amc_gnss_tests, ztest_unit_test(test_gnss_fix),
+			 ztest_unit_test(test_gnss_mode));
 	ztest_run_test_suite(amc_gnss_tests);
+
+	ztest_test_suite(amc_collar_fence_tests,
+			 ztest_unit_test(test_init_and_update_pasture),
+			 ztest_unit_test(test_collar_status),
+			 ztest_unit_test(test_collar_mode),
+			 ztest_unit_test(test_fence_status));
+	ztest_run_test_suite(amc_collar_fence_tests);
 }
 
 EVENT_LISTENER(test_main, event_handler);

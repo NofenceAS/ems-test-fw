@@ -38,6 +38,11 @@ struct movement_out_event {
 	movement_state_t state;
 };
 
+struct movement_timeout_event {
+	struct event_header header;
+};
+
+
 struct activity_level {
 	struct event_header header;
 	acc_activity_t level;
@@ -50,6 +55,7 @@ struct step_counter_event {
 
 EVENT_TYPE_DECLARE(movement_set_mode_event);
 EVENT_TYPE_DECLARE(movement_out_event);
+EVENT_TYPE_DECLARE(movement_timeout_event);
 EVENT_TYPE_DECLARE(activity_level);
 EVENT_TYPE_DECLARE(step_counter_event);
 #endif /* _MOVEMENT_EVENT_H_ */

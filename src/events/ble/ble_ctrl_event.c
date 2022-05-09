@@ -19,7 +19,8 @@ static char *stringFromEnum(enum ble_ctrl_cmd cmd)
 				   "BLE_CTRL_PASTURE_UPDATE",
 				   "BLE_CTRL_FENCE_DEF_VER_UPDATE",
 				   "BLE_CTRL_SCAN_START",
-				   "BLE_CTRL_SCAN_STOP" };
+				   "BLE_CTRL_SCAN_STOP",
+				   "BLE_CTRL_DISCONNECT_PEER" };
 
 	return strings[cmd];
 }
