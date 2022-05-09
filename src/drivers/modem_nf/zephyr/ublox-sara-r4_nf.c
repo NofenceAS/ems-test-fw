@@ -167,6 +167,7 @@ struct modem_data {
 	char mdm_pdp_addr[MDM_IMSI_LENGTH];
 	int mdm_rssi;
 	int upsv_state;
+	int last_sock;
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
 	/* modem variant */
@@ -808,7 +809,7 @@ MODEM_CMD_DEFINE(on_cmd_sockcreate)
 			modem_socket_put(&mdata.socket_config, sock->sock_fd);
 		}
 	}
-
+	mdata.last_sock = sock->id;
 	/* don't give back semaphore -- OK to follow */
 	return 0;
 }
@@ -1485,16 +1486,6 @@ restart:
 
 	LOG_INF("Network is ready.");
 
-	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
-			     NULL, 0, "AT+UCPSMS?",
-			     &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
-
-	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
-			     NULL, 0, "AT+CPSMS=0",
-			     &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
-
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* start RSSI query */
 	k_work_reschedule_for_queue(
@@ -1544,8 +1535,8 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 	}
 /*set linger time to 3000ms
  * TODO: parametrize duration */
-	char buf2[sizeof("AT+USOSO=%d,65535,128,1,00\r")];
-	snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,3000", ret);
+	char buf2[sizeof("AT+USOSO=#,65535,128,1,00\r")];
+	snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,3000", mdata.last_sock);
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, buf2,
 			     &mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
