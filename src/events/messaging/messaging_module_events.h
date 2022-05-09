@@ -150,3 +150,13 @@ struct check_connection {
 };
 
 EVENT_TYPE_DECLARE(check_connection);
+
+/** @brief Notify cellular controller to check if cellular connection is ready.
+ *Published by the messaging before sending out a new message to the server,
+ * cellular controller should reply with connection_ready event.
+ */
+struct send_poll_request_now {
+	struct event_header header;
+};
+
+EVENT_TYPE_DECLARE(send_poll_request_now);
