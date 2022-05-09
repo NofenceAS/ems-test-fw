@@ -61,6 +61,9 @@ void test_reboot_persistent_log(void)
 	zassert_equal(stg_write_log_data((uint8_t *)&dummy_log, dummy_log_len),
 		      0, "Write log error.");
 
+	/* Clear ANO partition so that we do not call date_time. */
+	zassert_false(stg_clear_partition(STG_PARTITION_ANO), "");
+
 	/* Reset FCB, pretending to reboot. Checks if persistent storage
 	 * works. Should get the expected read value from the written one above.
 	 */

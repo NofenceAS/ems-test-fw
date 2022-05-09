@@ -86,3 +86,6 @@ menu "Zephyr Kernel"
 source "Kconfig.zephyr" 
 endmenu
 
+menu "Watchdog"
+rsource "src/modules/watchdog/Kconfig"
+endmenu

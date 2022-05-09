@@ -113,7 +113,7 @@ static bool event_handler(const struct event_header *eh)
 	if (is_error_event(eh)) {
 		struct error_event *ev = cast_error_event(eh);
 		switch (ev->sender) {
-		case ERR_ELECTRIC_PULSE:
+		case ERR_EP_MODULE:
 			zassert_equal(ev->severity, ERR_SEVERITY_ERROR,
 				      "Mismatched severity.");
 			zassert_equal(ev->code, -EACCES,

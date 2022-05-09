@@ -39,6 +39,10 @@ static bool cmd_ack = false;
 static uint8_t cmd_buf[CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE];
 static uint32_t cmd_size = 0;
 
+/* ANO data ack result */
+static struct k_sem mga_ack_sem;
+static bool mga_ack = false;
+
 /* Semaphore for signalling thread about received data. */
 struct k_sem gnss_rx_sem;
 
@@ -228,7 +232,7 @@ static int mia_m10_nav_pvt_handler(void *context, void *payload, uint32_t size)
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int mia_m10_nav_dop_handler(void *context, void *payload, uint32_t size)
+static int mia_m10_nav_dop_handler(void *context, void *payload, uint32_t size)
 {
 	struct ublox_nav_dop *nav_dop = payload;
 
@@ -250,7 +254,7 @@ int mia_m10_nav_dop_handler(void *context, void *payload, uint32_t size)
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int mia_m10_nav_status_handler(void *context, void *payload, uint32_t size)
+static int mia_m10_nav_status_handler(void *context, void *payload, uint32_t size)
 {
 	struct ublox_nav_status *nav_status = payload;
 
@@ -260,6 +264,26 @@ int mia_m10_nav_status_handler(void *context, void *payload, uint32_t size)
 	gnss_data_in_progress.ttff = nav_status->ttff;
 
 	mia_m10_sync_complete(GNSS_DATA_FLAG_NAV_STATUS);
+
+	return 0;
+}
+
+/**
+ * @brief Handler for incoming MGA-ACK message. 
+ *
+ * @param[in] context Context is unused. 
+ * @param[in] payload Payload containing MGA-ACK data. 
+ * @param[in] size Size of payload. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
+static int mia_m10_mga_ack_handler(void *context, void *payload, uint32_t size)
+{
+	struct ublox_mga_ack *mga_ack_msg = payload;
+
+	/* Check if receiver accepted data */
+	mga_ack = (mga_ack_msg->infoCode == 0);
+	k_sem_give(&mga_ack_sem);
 
 	return 0;
 }
@@ -364,6 +388,17 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 
 	/* Enable NAV-SAT output on UART, no handler */
 	ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Enable MGA-ACK output on UART */
+	ret = mia_m10_config_set_u8(UBX_CFG_NAVSPG_ACKAIDING, 1);
+	if (ret != 0) {
+		return ret;
+	}
+	ret = ublox_register_handler(UBX_MGA, UBX_MGA_ACK,
+				     mia_m10_mga_ack_handler, NULL);
 	if (ret != 0) {
 		return ret;
 	}
@@ -619,6 +654,7 @@ static int mia_m10_init(const struct device *dev)
 	k_mutex_init(&cmd_mutex);
 	k_sem_init(&cmd_ack_sem, 0, 1);
 	k_sem_init(&cmd_data_sem, 0, 1);
+	k_sem_init(&mga_ack_sem, 0, 1);
 
 	k_mutex_init(&gnss_data_mutex);
 	k_mutex_init(&gnss_cb_mutex);
@@ -927,10 +963,27 @@ int mia_m10_send_assist_data(uint8_t *data, uint32_t size)
 			return ret;
 		}
 
-		ret = mia_m10_send_ubx_cmd(cmd_buf, cmd_size, true, false);
+		/* Reset mga response parameters */
+		k_sem_reset(&mga_ack_sem);
+
+		ret = mia_m10_send_ubx_cmd(cmd_buf, cmd_size, false, false);
 		if (ret != 0) {
 			k_mutex_unlock(&cmd_mutex);
 			return ret;
+		}
+
+		/* Wait for ack */
+		if (k_sem_take(&mga_ack_sem,
+			       K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) !=
+		    0) {
+			LOG_ERR("MGA-ACK timed out");
+			k_mutex_unlock(&cmd_mutex);
+			return -ETIME;
+		}
+
+		if (!mga_ack) {
+			k_mutex_unlock(&cmd_mutex);
+			return -ECONNREFUSED;
 		}
 
 		k_mutex_unlock(&cmd_mutex);
