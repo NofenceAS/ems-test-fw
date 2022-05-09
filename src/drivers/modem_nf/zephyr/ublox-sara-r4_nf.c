@@ -983,7 +983,7 @@ MODEM_CMD_DEFINE(on_cmd_socknotify_listen)
 {
 	LOG_DBG("Received new message on listening socket:%s, port:%s",
 		argv[3], argv[5]);
-	if (atoi(argv[3]) == 0  && atoi(argv[5]) == 1099) {
+	if (atoi(argv[3]) == 0  && atoi(argv[5]) == CONFIG_NF_LISTENING_PORT) {
 		k_sem_give(&listen_sem);
 	}
 	return 0;
@@ -1541,7 +1541,9 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
  * TODO: parametrize duration */
 	char buf2[sizeof("AT+USOSO=#,65535,128,1,00\r")];
 	snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,3000", mdata.last_sock);
-	if (mdata.last_sock != 0) {
+	if (mdata.last_sock != 0) { /* TODO: this assumes that socket 0 is
+ * always the listening socket. Should change that to a smarter check in case
+ * the listening socket uses any id other than 0.*/
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, buf2,
 			     &mdata.sem_response, MDM_CMD_TIMEOUT);
 	}
