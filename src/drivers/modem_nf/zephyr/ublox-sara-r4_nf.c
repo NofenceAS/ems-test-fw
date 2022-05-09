@@ -1536,8 +1536,11 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
  * TODO: parametrize duration */
 	char buf2[sizeof("AT+USOSO=#,65535,128,1,00\r")];
 	snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,3000", mdata.last_sock);
-	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, buf2,
+	if (mdata.last_sock != 0) {
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, buf2,
 			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+	}
+
 	if (ret < 0) {
 		LOG_DBG("Failed to set socket linger time!");
 	}
