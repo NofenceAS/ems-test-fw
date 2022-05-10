@@ -16,6 +16,7 @@ zephyr_include_directories(
         ${X3_PROJECT_BINARY}/include/generated/
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/collar_stats/
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/environment/
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/movement_controller/
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/amc/lib/include/
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/time_use/lib/include/
