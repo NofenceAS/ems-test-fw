@@ -43,13 +43,14 @@ FILE(GLOB app_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/time_use/time_use.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/amc/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/movement_controller/*.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/watchdog/watchdog_event.c
+	${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/watchdog/watchdog_event.c
 )
 target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE ${APP_SOURCE})
 
 zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/mock
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/crc/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/messaging/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/ble/services
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer
@@ -63,12 +64,12 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/storage/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager/
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/watchdog
   ${CMAKE_CURRENT_SOURCE_DIR}/../../include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/nf_settings/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/drivers/gnss/zephyr
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager/
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/environment/
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/watchdog
 )
+
 
 add_dependencies(app collar_protocol_headers)

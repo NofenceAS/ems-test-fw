@@ -27,12 +27,12 @@ EVENT_TYPE_DECLARE(gnss_rate);
 
 
 /** @brief Set GNSS mode. */
-struct gnss_set_mode {
+struct gnss_set_mode_event {
 	struct event_header header;
 	gnss_mode_t mode;
 };
 
-EVENT_TYPE_DECLARE(gnss_set_mode);
+EVENT_TYPE_DECLARE(gnss_set_mode_event);
 
 /** @brief Switch off GNSS receiver. e.g: when in beacon. */
 struct gnss_switch_off {
@@ -55,12 +55,4 @@ struct gnss_no_zone {
 };
 
 EVENT_TYPE_DECLARE(gnss_no_zone);
-
-/** @brief GNSS mode, published when the mode changes. */
-struct gnss_mode {
-	struct event_header header;
-	gnss_mode_t mode;
-};
-
-EVENT_TYPE_DECLARE(gnss_mode);
 

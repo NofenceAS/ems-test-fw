@@ -256,8 +256,7 @@ static int mia_m10_nav_dop_handler(void *context, void *payload, uint32_t size)
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static int mia_m10_nav_status_handler(void *context, void *payload,
-				      uint32_t size)
+static int mia_m10_nav_status_handler(void *context, void *payload, uint32_t size)
 {
 	struct ublox_nav_status *nav_status = payload;
 
