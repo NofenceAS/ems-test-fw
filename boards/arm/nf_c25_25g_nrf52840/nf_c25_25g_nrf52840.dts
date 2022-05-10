@@ -8,7 +8,7 @@
 #include <nordic/nrf52840_qiaa.dtsi>
 
 / {
-	model = "Nofence X2.5";
+	model = "Nofence C2.5 Revision 25G";
 	compatible = "nofence,x25";
 
 
