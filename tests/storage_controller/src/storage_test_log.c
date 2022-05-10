@@ -27,6 +27,20 @@ int read_callback_log(uint8_t *data, size_t len)
 	return 0;
 }
 
+uint8_t padding_dummy_bytes[3] = { 0x00, 0x01, 0x03 };
+int read_callback_padding_log(uint8_t *data, size_t len)
+{
+	/* We expect 3 more bytes of padding to the with length
+	 *  in data with size of 5. 
+	 */
+	zassert_equal(len, 8, "");
+
+	size_t payload_size = (uint16_t)((data[1] << 8) + (data[0] & 0x00ff));
+	zassert_equal(payload_size, 3, "");
+	zassert_mem_equal(&padding_dummy_bytes[0], &data[2], payload_size, "");
+	return 0;
+}
+
 static int num_multiple_log_reads = 0;
 static int expected_log_entries = 5;
 
@@ -42,6 +56,27 @@ void test_log(void)
 		      0, "Write log error.");
 	zassert_equal(stg_read_log_data(read_callback_log, 0), 0,
 		      "Read log error.");
+	zassert_false(stg_clear_partition(STG_PARTITION_LOG), "");
+}
+
+void test_log_padding(void)
+{
+	uint8_t byte_array[5];
+
+	size_t len = sizeof(padding_dummy_bytes);
+
+	byte_array[0] = (uint8_t)len;
+	byte_array[1] = (uint8_t)(len >> 8);
+
+	zassert_equal(byte_array[0], 3, "");
+	zassert_equal(byte_array[1], 0, "");
+
+	memcpy(&byte_array[2], &padding_dummy_bytes[0], len);
+
+	zassert_false(stg_clear_partition(STG_PARTITION_LOG), "");
+	zassert_false(stg_write_log_data(byte_array, sizeof(byte_array)), "");
+	zassert_false(stg_read_log_data(read_callback_padding_log, 0), "");
+	zassert_false(stg_clear_partition(STG_PARTITION_LOG), "");
 }
 
 void test_log_extended(void)
