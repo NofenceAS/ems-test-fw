@@ -44,10 +44,3 @@ struct gnss_switch_on {
 };
 
 EVENT_TYPE_DECLARE(gnss_switch_on);
-
-/** @brief Switch on GNSS receiver. */
-struct gnss_no_zone {
-	struct event_header header;
-};
-
-EVENT_TYPE_DECLARE(gnss_no_zone);
