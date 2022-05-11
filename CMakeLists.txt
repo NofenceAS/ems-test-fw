@@ -25,7 +25,9 @@ list(APPEND ZEPHYR_EXTRA_MODULES
 set(BOARD_ROOT ${CMAKE_CURRENT_LIST_DIR})
 
 # The Nofence X3 board exists out-of-tree from zephyr boards
-set(BOARD nf_x25_nrf52840)
+# Default board is a future revision that does not exist yet
+# Force users to select boards for now, uncomment line below later
+# set(BOARD nf_x25_nrf52840)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
