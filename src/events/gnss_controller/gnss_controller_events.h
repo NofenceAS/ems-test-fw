@@ -11,6 +11,7 @@ enum gnss_data_rate {
 struct gnss_data {
 	struct event_header header;
 	gnss_t gnss_data;
+	bool timed_out;
 };
 
 EVENT_TYPE_DECLARE(gnss_data);

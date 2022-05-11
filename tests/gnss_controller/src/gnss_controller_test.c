@@ -144,6 +144,11 @@ void test_old_gnss_last_fix_callback1(void)
 	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_HOT);
+
+	ztest_returns_value(mock_gnss_setup, 0);
+	ztest_returns_value(mock_gnss_set_rate, 0);
+	ztest_returns_value(mock_gnss_get_rate, 0);
+
 	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
 	zassert_equal(err, 0, "Expected gnss fix event was not published!");
 
@@ -152,6 +157,11 @@ void test_old_gnss_last_fix_callback1(void)
 	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_WARM);
+	
+	ztest_returns_value(mock_gnss_setup, 0);
+	ztest_returns_value(mock_gnss_set_rate, 0);
+	ztest_returns_value(mock_gnss_get_rate, 0);
+
 	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
 	zassert_equal(err, 0, "Expected gnss fix event was not published!");
 
@@ -160,6 +170,11 @@ void test_old_gnss_last_fix_callback1(void)
 	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_COLD);
+	
+	ztest_returns_value(mock_gnss_setup, 0);
+	ztest_returns_value(mock_gnss_set_rate, 0);
+	ztest_returns_value(mock_gnss_get_rate, 0);
+
 	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
 	zassert_equal(err, 0, "Expected gnss fix event was not published!");
 
@@ -173,6 +188,11 @@ void test_old_gnss_last_fix_callback1(void)
 	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_HOT);
+	
+	ztest_returns_value(mock_gnss_setup, 0);
+	ztest_returns_value(mock_gnss_set_rate, 0);
+	ztest_returns_value(mock_gnss_get_rate, 0);
+
 	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
 	zassert_equal(err, 0, "Expected gnss fix event was not published!");
 
@@ -181,6 +201,11 @@ void test_old_gnss_last_fix_callback1(void)
 	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_WARM);
+	
+	ztest_returns_value(mock_gnss_setup, 0);
+	ztest_returns_value(mock_gnss_set_rate, 0);
+	ztest_returns_value(mock_gnss_get_rate, 0);
+
 	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
 	zassert_equal(err, 0, "Expected gnss fix event was not published!");
 
@@ -189,6 +214,11 @@ void test_old_gnss_last_fix_callback1(void)
 	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_COLD);
+	
+	ztest_returns_value(mock_gnss_setup, 0);
+	ztest_returns_value(mock_gnss_set_rate, 0);
+	ztest_returns_value(mock_gnss_get_rate, 0);
+
 	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
 	zassert_equal(err, 0, "Expected gnss fix event was not published!");
 
@@ -196,6 +226,11 @@ void test_old_gnss_last_fix_callback1(void)
 	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_COLD);
+	
+	ztest_returns_value(mock_gnss_setup, 0);
+	ztest_returns_value(mock_gnss_set_rate, 0);
+	ztest_returns_value(mock_gnss_get_rate, 0);
+
 	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
 	zassert_equal(err, 0, "Expected gnss fix event was not published!");
 
@@ -220,12 +255,14 @@ static bool event_handler(const struct event_header *eh)
 {
 	int ret;
 	if (is_gnss_data(eh)) {
-		k_sem_give(&gnss_data_out);
-		printk("released semaphore for gnss data cb!\n");
 		struct gnss_data *ev = cast_gnss_data(eh);
 		gnss_t new_data = ev->gnss_data;
-		ret = memcmp(&new_data, &dummy_gnss_data, sizeof(gnss_t));
-		zassert_equal(ret, 0, "Published GNSS data mis-match");
+		if (!ev->timed_out) {
+			printk("released semaphore for gnss data cb!\n");
+			k_sem_give(&gnss_data_out);
+			ret = memcmp(&new_data, &dummy_gnss_data, sizeof(gnss_t));
+			zassert_equal(ret, 0, "Published GNSS data mis-match");
+		}
 		return false;
 	} else if (is_error_event(eh)) {
 		k_sem_give(&error);
