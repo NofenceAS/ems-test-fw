@@ -983,7 +983,7 @@ MODEM_CMD_DEFINE(on_cmd_socknotify_listen)
 {
 	LOG_DBG("Received new message on listening socket:%s, port:%s",
 		argv[3], argv[5]);
-	if (atoi(argv[3]) == 0  && atoi(argv[5]) == 1099) {
+	if (atoi(argv[3]) == 0  && atoi(argv[5]) == CONFIG_NF_LISTENING_PORT) {
 		k_sem_give(&listen_sem);
 	}
 	return 0;
@@ -1265,6 +1265,10 @@ static int modem_reset(void)
 		SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
 		SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 		SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_ccid, 0U, ""),
+		SETUP_CMD_NOHANDLE("AT+URAT=7,9"), /*TODO: add CFUN=15 after
+ * setting the URAT. CFUN=15 seems to scramble up the setup sometimes so it
+ * should be carefully placed.*/
+
 #if !defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 		/* setup PDP context definition */
 		SETUP_CMD_NOHANDLE(
@@ -1299,6 +1303,7 @@ static int modem_reset(void)
 		/* activate the GPRS connection */
 		SETUP_CMD_NOHANDLE("AT+UPSDA=0,3"),
 #else
+		SETUP_CMD_NOHANDLE("AT+URAT?"),
 		SETUP_CMD_NOHANDLE("AT+COPS?"),
 #endif
 	};
@@ -1536,7 +1541,9 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
  * TODO: parametrize duration */
 	char buf2[sizeof("AT+USOSO=#,65535,128,1,00\r")];
 	snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,3000", mdata.last_sock);
-	if (mdata.last_sock != 0) {
+	if (mdata.last_sock != 0) { /* TODO: this assumes that socket 0 is
+ * always the listening socket. Should change that to a smarter check in case
+ * the listening socket uses any id other than 0.*/
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, buf2,
 			     &mdata.sem_response, MDM_CMD_TIMEOUT);
 	}
