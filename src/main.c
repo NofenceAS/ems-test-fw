@@ -109,7 +109,7 @@ void main(void)
 
 	/* Play welcome sound. */
 	struct sound_event *sound_ev = new_sound_event();
-	sound_ev->type = SND_SHORT_100;
+//	sound_ev->type = SND_SHORT_100;
 	EVENT_SUBMIT(sound_ev);
 
 	err = cellular_controller_init();

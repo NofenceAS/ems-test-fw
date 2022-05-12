@@ -2408,11 +2408,6 @@ int wake_up_from_upsv(void) {
 			k_sleep(K_MSEC(100));
 		} while (!modem_rx_pin_is_high());
 		modem_pin_config(&mctx, MDM_POWER, false);
-		int ret = uart_state_set(PM_DEVICE_STATE_ACTIVE);
-		if (ret != 0) {
-			LOG_ERR("Failed to enable uart to modem.");
-			return -ENODEV;
-		}
 		return wake_up();
 	}
 	return 0;
