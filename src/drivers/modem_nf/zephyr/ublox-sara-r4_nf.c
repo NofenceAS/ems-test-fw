@@ -1272,7 +1272,7 @@ static int modem_reset(void)
 		SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
 		SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 		SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_ccid, 0U, ""),
-		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
+		SETUP_CMD_NOHANDLE("AT+URAT=7"),
 		SETUP_CMD_NOHANDLE("AT+UPSV=0"),
 #if !defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 		/* setup PDP context definition */
@@ -2386,7 +2386,7 @@ int wake_up(void) {
 	ret = modem_cmd_handler_setup_cmds(
 		&mctx.iface, &mctx.cmd_handler, disable_psv,
 		ARRAY_SIZE(disable_psv), &mdata.sem_response,
-		MDM_AT_CMD_TIMEOUT);
+		MDM_REGISTRATION_TIMEOUT);
 	return ret;
 }
 
