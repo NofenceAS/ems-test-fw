@@ -8,7 +8,7 @@
 #include <nordic/nrf52840_qiaa.dtsi>
 
 / {
-	model = "Nofence X2.5";
+	model = "Nofence C2.5 Revision 25G";
 	compatible = "nofence,x25";
 
 
@@ -163,15 +163,13 @@ gnss_uart: &uart1 {
 	           <&gpio0 15 GPIO_ACTIVE_LOW>, /* CS BAROMETER */
 	           <&gpio0 12 GPIO_ACTIVE_LOW>; /* CS EEPROM */
 
-	movement_sensor: lis2dw12@0 {
+	movement_sensor: lis2dh@0 {
 		status = "okay";
-		compatible = "st,lis2dw12";
+		compatible = "st,lis2dh";
 		reg = <0>; /* First defined chip select number*/
 		irq-gpios = <&gpio1 11 0>, <&gpio1 12 0>; /* INT1 and INT2 */
 		spi-max-frequency = <8000000>;
-		label = "LIS2DW12-ACCEL";
-		/* https: //github.com/STMicroelectronics/lis2dw12/blob/d8457a1a25a035ac118a94c70f08fdd291ec6501/lis2dw12_reg.h#L680 */
-		power-mode = <0>;
+		label = "LIS2DH-ACCEL";
 	};
 
 	environment_sensor: bme280@1 {
