@@ -2415,9 +2415,6 @@ int wake_up_from_upsv(void) {
 		}
 		return wake_up();
 	}
-//	} else if (mdata.upsv_state == -1) {
-//		return -1;
-//	}
 	return 0;
 }
 
