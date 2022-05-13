@@ -35,9 +35,6 @@ void test_init(void)
 	ev->state = true;
 	EVENT_SUBMIT(ev);
 	ztest_returns_value(eep_uint32_read, 0);
-	ztest_returns_value(stg_read_log_data, 0);
-
-	ztest_returns_value(stg_log_pointing_to_last, false);
 
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
@@ -73,13 +70,13 @@ void test_initial_poll_request_out(void)
 
 void test_poll_request_out_when_nudged_from_server(void)
 {
+	ztest_returns_value(stg_read_log_data, 0);
+	ztest_returns_value(stg_log_pointing_to_last, false);
 	struct cellular_ack_event *ack = new_cellular_ack_event();
 	EVENT_SUBMIT(ack);
-	struct send_poll_request_now* wake_up =
-		new_send_poll_request_now();
+	struct send_poll_request_now *wake_up = new_send_poll_request_now();
 	EVENT_SUBMIT(wake_up);
-	struct connection_state_event *ev
-		= new_connection_state_event();
+	struct connection_state_event *ev = new_connection_state_event();
 	ev->state = true;
 	EVENT_SUBMIT(ev);
 	k_sem_take(&msg_out, K_MSEC(500));
@@ -134,8 +131,7 @@ void test_poll_response_has_new_fence(void)
 	int ret = collar_protocol_encode(&poll_response, &encoded_msg[0],
 					 sizeof(encoded_msg), &encoded_size);
 	zassert_equal(ret, 0, "Could not encode server response!\n");
-	struct connection_state_event *ev
-		= new_connection_state_event();
+	struct connection_state_event *ev = new_connection_state_event();
 	ev->state = true;
 	EVENT_SUBMIT(ev);
 	memcpy(&encoded_msg[2], &encoded_msg[0], encoded_size);
@@ -233,12 +229,13 @@ void test_encode_message(void)
 
 void test_main(void)
 {
-	ztest_test_suite(messaging_tests, ztest_unit_test(test_init),
-			 ztest_unit_test(test_initial_poll_request_out),
-			 ztest_unit_test(test_poll_request_out_when_nudged_from_server),
-			 ztest_unit_test(test_poll_response_has_new_fence),
-			 ztest_unit_test(test_poll_response_has_host_address),
-			 ztest_unit_test(test_encode_message));
+	ztest_test_suite(
+		messaging_tests, ztest_unit_test(test_init),
+		ztest_unit_test(test_initial_poll_request_out),
+		ztest_unit_test(test_poll_request_out_when_nudged_from_server),
+		ztest_unit_test(test_poll_response_has_new_fence),
+		ztest_unit_test(test_poll_response_has_host_address),
+		ztest_unit_test(test_encode_message));
 
 	ztest_run_test_suite(messaging_tests);
 }
