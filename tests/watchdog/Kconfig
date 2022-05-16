@@ -1,0 +1,14 @@
+
+menu "APPLICATION_CODE"
+	menu "WATCHDOG"
+    	rsource "./../../src/modules/watchdog/Kconfig"
+	endmenu # ERROR_HANDLER
+
+	menu "ERROR_HANDLER"
+    	rsource "./../../src/modules/error_handler/Kconfig"
+	endmenu # ERROR_HANDLER
+endmenu # APPLICATION CODE
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu
