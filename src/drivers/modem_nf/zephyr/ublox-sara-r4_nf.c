@@ -168,6 +168,7 @@ struct modem_data {
 	int mdm_rssi;
 	int upsv_state;
 	int last_sock;
+	int session_rat;
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
 	/* modem variant */
@@ -789,6 +790,13 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_upsv_get)
 	}
 	return 0;
 }
+
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cops_get)
+{
+	LOG_DBG("COPS? handler, %d", argc);
+	mdata.session_rat = atoi(argv[3]);
+	return 0;
+}
 /*
  * Modem Socket Command Handlers
  */
@@ -1059,7 +1067,7 @@ static bool modem_rx_pin_is_high(void) {
 	gpio_pin_configure(gpio_dev, rx_pin, GPIO_INPUT);
 	gpio_port_get_raw(gpio_dev, &values);
 	
-	return ((values&(1<<rx_pin)) != 0);
+	return ((values&(1<<rx_pin)) == (1<<rx_pin));
 }
 
 static int pin_init(void)
@@ -1072,10 +1080,7 @@ static int pin_init(void)
 	modem_pin_write(&mctx, MDM_RESET, MDM_RESET_NOT_ASSERTED);
 #endif
 
-	int rc = uart_state_set(PM_DEVICE_STATE_SUSPENDED);
-	LOG_DBG("uart_state_set returns: %d", rc);
-	k_sleep(K_MSEC(100));
-
+	uart_state_set(PM_DEVICE_STATE_SUSPENDED);
 	LOG_DBG("MDM_POWER_PIN -> ENABLE");
 	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
 	k_sleep(K_SECONDS(4));
@@ -1250,6 +1255,7 @@ static int modem_reset(void)
 
 		/* turn off echo */
 		SETUP_CMD_NOHANDLE("ATE0"),
+		SETUP_CMD_NOHANDLE("AT+USIO=1"),
 		/* stop functionality */
 		SETUP_CMD_NOHANDLE("AT+CFUN=0"),
 		/* extended error numbers */
@@ -1272,7 +1278,7 @@ static int modem_reset(void)
 		SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
 		SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 		SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_ccid, 0U, ""),
-		SETUP_CMD_NOHANDLE("AT+URAT=7"),
+		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
 		SETUP_CMD_NOHANDLE("AT+UPSV=0"),
 #if !defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 		/* setup PDP context definition */
@@ -1283,6 +1289,7 @@ static int modem_reset(void)
 		SETUP_CMD_NOHANDLE("AT+CFUN=1"),
 		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 1U,
 			  ","),
+//		SETUP_CMD_NOHANDLE("AT+CFUN=15"),
 #endif
 	};
 
@@ -1311,7 +1318,8 @@ static int modem_reset(void)
 		SETUP_CMD_NOHANDLE("AT+UPSDA=0,3"),
 #else
 		SETUP_CMD_NOHANDLE("AT+URAT?"),
-		SETUP_CMD_NOHANDLE("AT+COPS?"),
+		SETUP_CMD("AT+COPS?", "", on_cmd_atcmdinfo_cops_get, 4U,
+			  ","),
 #endif
 	};
 
@@ -1485,6 +1493,16 @@ restart:
 	}
 
 	LOG_INF("Network is ready.");
+	k_sleep(K_MSEC(250));
+	if (mdata.session_rat != 7) {
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+				     NULL, 0, "AT+CGACT=1",
+				     &mdata.sem_response,
+				     MDM_REGISTRATION_TIMEOUT);
+		k_sleep(K_MSEC(250));
+	} else {
+		LOG_INF("No need to manually activate pdp.");
+	}
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* start RSSI query */
@@ -2346,7 +2364,7 @@ int modem_nf_reset(void)
 
 int get_pdp_addr(char** ip_addr){
 	const struct setup_cmd read_sim_ip_cmd[] = {
-		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 6, ","),
+		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 7, ","),
 	};
 	int ret = modem_cmd_handler_setup_cmds(
 		&mctx.iface, &mctx.cmd_handler, read_sim_ip_cmd,
@@ -2399,15 +2417,17 @@ int wake_up_from_upsv(void) {
 		k_sleep(K_MSEC(200)); /* min. value 100 msec (r4 datasheet
  * section 4.2.10 )*/
 		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
-		irq_unlock(irq_lock_key);
+
 		LOG_DBG("MDM_POWER_PIN -> ENABLE");
 		modem_pin_config(&mctx, MDM_POWER, false);
+		modem_pin_config(&mctx, MDM_POWER, false);
+		irq_unlock(irq_lock_key);
 		/* Wait for modem GPIO RX pin to rise, indicating readiness */
 		LOG_DBG("Waiting for Modem RX = 1");
 		do {
 			k_sleep(K_MSEC(100));
 		} while (!modem_rx_pin_is_high());
-		modem_pin_config(&mctx, MDM_POWER, false);
+
 		return wake_up();
 	}
 	return 0;
@@ -2420,7 +2440,7 @@ int sleep(void){
 	int ret = modem_cmd_handler_setup_cmds(
 		&mctx.iface, &mctx.cmd_handler, set_psv,
 		ARRAY_SIZE(set_psv), &mdata.sem_response,
-		MDM_AT_CMD_TIMEOUT);
+		MDM_REGISTRATION_TIMEOUT);
 	if (ret != 0) {
 		return -1;
 	}
@@ -2429,6 +2449,7 @@ int sleep(void){
 		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 1U,
 			  ","),
 	};
+	k_sleep(K_MSEC(100));
 	ret = modem_cmd_handler_setup_cmds(
 		&mctx.iface, &mctx.cmd_handler, read_upsv_cmd,
 		ARRAY_SIZE(read_upsv_cmd), &mdata.sem_response,
@@ -2443,7 +2464,6 @@ int sleep(void){
 		}
 	} else {
 		LOG_DBG("UPSV=4 returned %d, ", ret);
-		LOG_WRN("Error reading UPSV, will keep UART controller up!");
 		/*TODO: change to a relevent error code, to be handled by
 		 * caller.*/
 		return 0;
