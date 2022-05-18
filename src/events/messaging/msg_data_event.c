@@ -6,13 +6,5 @@
 
 #include "msg_data_event.h"
 
-static int log_msg_data_event(const struct event_header *eh, char *buf,
-			      size_t buf_len)
-{
-	const struct msg_data_event *event = cast_msg_data_event(eh);
-
-	return snprintf(buf, buf_len, "data:%p size:%d", event->dyndata.data, event->dyndata.size);
-}
-
 EVENT_TYPE_DEFINE(msg_data_event, IS_ENABLED(CONFIG_LOG_MSG_DATA_EVENT),
-		  log_msg_data_event, NULL);
+		  NULL, NULL);
