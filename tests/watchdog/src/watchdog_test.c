@@ -4,19 +4,14 @@
 
 #include <ztest.h>
 #include "watchdog_event.h"
-#include "watchdog_app.h"
+//#include "watchdog_app.h"
+#include "watchdog_mock.h"
 #include <stdio.h>
 #include <string.h>
 
 static K_SEM_DEFINE(watchdog_feed_sem, 0, 1);
 
 uint8_t module_alive_array_seen[WDG_END_OF_LIST];
-
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
-#define NOINIT_SECTION ".dtcm_noinit.test_wdt"
-#else
-#define NOINIT_SECTION ".noinit.test_wdt"
-#endif
 
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
@@ -31,12 +26,6 @@ void test_init(void)
 {
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
-}
-
-void test_watchdog_init(void)
-{
-	int err = watchdog_init_and_start();
-	zassert_equal(err, 0, "Watchdog init error");
 }
 
 void test_wathcdog_feed(void)
@@ -62,7 +51,6 @@ void test_wathcdog_timeout(void)
 void test_main(void)
 {
 	ztest_test_suite(watchdog_handler_tests, ztest_unit_test(test_init),
-			 ztest_unit_test(test_watchdog_init),
 			 ztest_unit_test(test_wathcdog_feed),
 			 ztest_unit_test(test_wathcdog_timeout));
 
@@ -83,8 +71,8 @@ static bool event_handler(const struct event_header *eh)
 						 expected_array_seen,
 						 WDG_END_OF_LIST);
 				if (ret == 0) {
+					printk("All modules alive. Feeding watchdog.\n");
 					k_sem_give(&watchdog_feed_sem);
-					printk("All elements received\n");
 				}
 			}
 		}

@@ -17,7 +17,6 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 FILE(GLOB app_sources 
   ${CMAKE_CURRENT_SOURCE_DIR}/mock/*.c
   ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c 
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/watchdog/*.c
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/watchdog/*.c
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging/*.c
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/*.c
@@ -27,7 +26,6 @@ target_include_directories(app PRIVATE ${APP_SOURCE})
 
 zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/mock
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/watchdog
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/watchdog
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/include
