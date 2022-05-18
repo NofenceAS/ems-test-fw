@@ -4,7 +4,6 @@
 
 #include <ztest.h>
 #include "watchdog_event.h"
-#include "watchdog_mock.h"
 #include <stdio.h>
 #include <string.h>
 
