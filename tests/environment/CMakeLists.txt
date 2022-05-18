@@ -11,9 +11,9 @@ zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 FILE(GLOB app_sources 
-        mock/*.c
-        mock/drivers/*.c
-        src/*.c 
+        ${CMAKE_CURRENT_SOURCE_DIR}/mock/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/mock/drivers/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c 
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/environment/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/environment/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/*.c

@@ -11,10 +11,10 @@ zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 FILE(GLOB app_sources 
-        src/*.c 
-        mock/*.c 
-        mock/net/*.c 
-        mock/power/*.c 
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c 
+        ${CMAKE_CURRENT_SOURCE_DIR}/mock/*.c 
+        ${CMAKE_CURRENT_SOURCE_DIR}/mock/net/*.c 
+        ${CMAKE_CURRENT_SOURCE_DIR}/mock/power/*.c 
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/fw_upgrade/*.c

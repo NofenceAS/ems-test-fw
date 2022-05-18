@@ -54,7 +54,7 @@ void test_main(void)
 
 	/* Test ano partition. */
 	ztest_test_suite(storage_ano_test,
-			 ztest_unit_test(test_ano_write_20_years),
+			 ztest_unit_test(test_ano_write_20_days),
 			 ztest_unit_test(test_ano_write_sent),
 			 ztest_unit_test(test_ano_write_all),
 			 ztest_unit_test(test_no_ano_available),
@@ -68,6 +68,12 @@ void test_main(void)
 			 ztest_unit_test(test_request_pasture_multiple),
 			 ztest_unit_test(test_no_pasture_available));
 	ztest_run_test_suite(storage_pasture_test);
+
+	/* Test system diagnostic partition. */
+	ztest_test_suite(storage_sys_diag_test,
+			 ztest_unit_test(test_sys_diag_log),
+			 ztest_unit_test(test_reboot_persistent_system_diag));
+	ztest_run_test_suite(storage_sys_diag_test);
 }
 
 static bool event_handler(const struct event_header *eh)

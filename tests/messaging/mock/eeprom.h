@@ -1,8 +1,12 @@
 
 #include <zephyr.h>
-#ifndef X3_FW_EEPROM_H
-#define X3_FW_EEPROM_H
+#ifndef _EEPROM_H
+#define _EEPROM_H
 
 int eep_read_serial(uint32_t *);
 
-#endif //X3_FW_EEPROM_H
+int eep_read_ble_sec_key(uint8_t *ble_sec_key, size_t bufsize);
+
+int eep_write_ble_sec_key(uint8_t *ble_sec_key, size_t bufsize);
+
+#endif /* _EEPROM_H */
