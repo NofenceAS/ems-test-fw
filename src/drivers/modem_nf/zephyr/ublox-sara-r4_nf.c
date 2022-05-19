@@ -1276,6 +1276,7 @@ static int modem_reset(void)
 		SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_ccid, 0U, ""),
 		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
 		SETUP_CMD_NOHANDLE("AT+UPSV=0"),
+		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
 		SETUP_CMD_NOHANDLE("AT+UDCONF=1,0"), /*https://portal.u-blox.com/s/question/0D52p0000ACRQitCQH/sarar412m-doesnt-respond-when-writing-socket-data-in-binary-mode*/
 #if !defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 		/* setup PDP context definition */
@@ -2399,6 +2400,7 @@ int wake_up(void) {
 	k_sleep(K_MSEC(100));
 	const struct setup_cmd disable_psv[] = {
 		SETUP_CMD_NOHANDLE("AT+UPSV=0"),
+		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
 		SETUP_CMD_NOHANDLE("ATE0"),
 		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 1U,
 			  ","),
@@ -2439,6 +2441,7 @@ int wake_up_from_upsv(void) {
 
 int sleep(void){
 	const struct setup_cmd set_psv[] = {
+		SETUP_CMD_NOHANDLE("AT+CPSMS=1"),
 		SETUP_CMD_NOHANDLE("AT+UPSV=4"),
 	};
 	int ret = modem_cmd_handler_setup_cmds(
