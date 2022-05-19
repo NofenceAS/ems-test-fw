@@ -88,7 +88,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_DNS_TIMEOUT K_SECONDS(70)
 #define MDM_CMD_CONN_TIMEOUT K_SECONDS(120)
 #define MDM_REGISTRATION_TIMEOUT K_SECONDS(180)
-#define MDM_PROMPT_CMD_DELAY K_MSEC(50)
+#define MDM_PROMPT_CMD_DELAY K_MSEC(100)
 
 #define MDM_MAX_DATA_LENGTH 1024
 #define MDM_RECV_MAX_BUF 30
@@ -418,7 +418,6 @@ static ssize_t send_socket_data(void *obj, const struct msghdr *msg,
 	/* Send data directly on modem iface */
 	for (int i = 0; i < msg->msg_iovlen; i++) {
 		int len = MIN(buf_len, msg->msg_iov[i].iov_len);
-
 		if (len == 0) {
 			break;
 		}
@@ -762,13 +761,10 @@ static const struct setup_cmd query_cellinfo_cmds[] = {
  */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 {
-	LOG_DBG("CDGCONT? handler, %d", argc);
-	LOG_INF("ip: %s", argv[3]);
 	memcpy(mdata.mdm_pdp_addr,argv[3],17); //17: "xxx.xxx.xxx.xxx", for
 	// the check_ip function, we're only interested in the fact that the
 	// first 8 characters are not "0.0.0.0
 	/*TODO: add more sofistication in handling the string if needed.*/
-	printk("new_mdm_pdp_addr = %s\n", mdata.mdm_pdp_addr);
 	return 0;
 }
 
@@ -1280,6 +1276,7 @@ static int modem_reset(void)
 		SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_ccid, 0U, ""),
 		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
 		SETUP_CMD_NOHANDLE("AT+UPSV=0"),
+		SETUP_CMD_NOHANDLE("AT+UDCONF=1,0"), /*https://portal.u-blox.com/s/question/0D52p0000ACRQitCQH/sarar412m-doesnt-respond-when-writing-socket-data-in-binary-mode*/
 #if !defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 		/* setup PDP context definition */
 		SETUP_CMD_NOHANDLE(
@@ -1355,7 +1352,7 @@ restart:
 		LOG_ERR("MODEM WAIT LOOP ERROR: %d", ret);
 		goto error;
 	}
-
+	k_sleep(K_MSEC(50));
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
 					   setup_cmds, ARRAY_SIZE(setup_cmds),
 					   &mdata.sem_response,
@@ -1364,6 +1361,7 @@ restart:
 		goto error;
 	}
 	mdata.upsv_state = -1;
+	k_sleep(K_MSEC(50));
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 	/* autodetect APN from IMSI */
@@ -1399,13 +1397,13 @@ restart:
 		LOG_ERR("AT+COPS ret:%d", ret);
 		goto error;
 	}
-
+	k_sleep(K_MSEC(50));
 	LOG_INF("Waiting for network");
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
 			     NULL, 0, "AT+CFUN=0",
 			     &mdata.sem_response,
 			     MDM_CMD_TIMEOUT);
-
+	k_sleep(K_MSEC(500));
 	/* Enable RF */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
 			     NULL, 0, "AT+CFUN=1",
@@ -1496,9 +1494,13 @@ restart:
 	k_sleep(K_MSEC(250));
 	if (mdata.session_rat != 7) {
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
-				     NULL, 0, "AT+CGACT=1",
+				     NULL, 0, "AT+CGACT=1,1",
 				     &mdata.sem_response,
 				     MDM_REGISTRATION_TIMEOUT);
+		if (ret != 0) {
+			LOG_ERR("Problem activating PDP context!");
+			return ret;
+		}
 		k_sleep(K_MSEC(250));
 	} else {
 		LOG_INF("No need to manually activate pdp.");
@@ -2400,6 +2402,8 @@ int wake_up(void) {
 		SETUP_CMD_NOHANDLE("ATE0"),
 		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 1U,
 			  ","),
+		SETUP_CMD_NOHANDLE("AT+USIO=1"),
+		SETUP_CMD_NOHANDLE("AT+UDCONF=1,0"),
 	};
 	ret = modem_cmd_handler_setup_cmds(
 		&mctx.iface, &mctx.cmd_handler, disable_psv,
@@ -2414,7 +2418,7 @@ int wake_up_from_upsv(void) {
 		unsigned int irq_lock_key = irq_lock();
 		LOG_DBG("MDM_POWER_PIN -> DISABLE");
 		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
-		k_sleep(K_MSEC(200)); /* min. value 100 msec (r4 datasheet
+		k_sleep(K_MSEC(120)); /* min. value 100 msec (r4 datasheet
  * section 4.2.10 )*/
 		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
 
