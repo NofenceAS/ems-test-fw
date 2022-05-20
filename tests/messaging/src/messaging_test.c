@@ -70,8 +70,9 @@ void test_initial_poll_request_out(void)
 
 void test_poll_request_out_when_nudged_from_server(void)
 {
-	//ztest_returns_value(stg_read_log_data, 0);
-	//ztest_returns_value(stg_log_pointing_to_last, false);
+	ztest_returns_value(stg_read_log_data, 0);
+	ztest_returns_value(stg_log_pointing_to_last, false);
+	k_sleep(K_SECONDS(5));
 	struct cellular_ack_event *ack = new_cellular_ack_event();
 	EVENT_SUBMIT(ack);
 	struct send_poll_request_now *wake_up = new_send_poll_request_now();
@@ -102,8 +103,6 @@ void test_poll_response_has_new_fence(void)
 	/* We need to simulate that we received the message on server, publish
 	 * ACK for messaging module.
 	 */
-	ztest_returns_value(stg_log_pointing_to_last, false);
-	ztest_returns_value(stg_read_log_data, 0);
 	struct cellular_ack_event *ack = new_cellular_ack_event();
 	EVENT_SUBMIT(ack);
 	k_sem_take(&msg_out, K_NO_WAIT);
@@ -321,21 +320,19 @@ static bool encode_test = false;
 void test_encode_message(void)
 {
 	encode_test = true;
-	k_sem_take(&msg_out, K_NO_WAIT);
-
+	int ret = k_sem_take(&msg_out, K_NO_WAIT);
+	//zassert_equal(ret, 0, "");
 	/* We need to simulate that we received the message on server, publish
 	 * ACK for messaging module.
 	 */
 	struct cellular_ack_event *ev = new_cellular_ack_event();
 	EVENT_SUBMIT(ev);
 
-	int ret = encode_and_send_message(&dummy_nf_msg);
+	ret = encode_and_send_message(&dummy_nf_msg);
 	zassert_equal(ret, 0, "");
 
 	printk("ret %i\n", ret);
 	zassert_equal(k_sem_take(&msg_out, K_SECONDS(30)), 0, "");
-
-	k_sleep(K_SECONDS(1));
 }
 
 /* Test expected error events published by messaging*/
