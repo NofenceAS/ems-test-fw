@@ -1248,7 +1248,7 @@ static int modem_reset(void)
 	int ret = 0, retry_count = 0, counter = 0;
 
 	static const struct setup_cmd pre_setup_cmds[] = {
-		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
+		SETUP_CMD_NOHANDLE("AT+URAT=9"),
 		SETUP_CMD_NOHANDLE("AT+CFUN=15"),
 		};
 
@@ -2430,7 +2430,6 @@ int wake_up(void) {
 
 int wake_up_from_upsv(void) {
 	if (mdata.upsv_state == 4) {
-#ifdef CONFIG_USE_CPSMS
 		modem_pin_config(&mctx, MDM_POWER, true);
 		unsigned int irq_lock_key = irq_lock();
 		LOG_DBG("MDM_POWER_PIN -> DISABLE");
@@ -2448,7 +2447,6 @@ int wake_up_from_upsv(void) {
 		do {
 			k_sleep(K_MSEC(100));
 		} while (!modem_rx_pin_is_high());
-#endif
 		return wake_up();
 	}
 	return 0;
