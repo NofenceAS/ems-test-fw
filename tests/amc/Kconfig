@@ -7,6 +7,10 @@ menu "APPLICATION_CODE"
 	menu "ERROR_HANDLER"
     	rsource "./../../src/modules/error_handler/Kconfig"
 	endmenu # ERROR_HANDLER
+
+	menu "MOVE_CONTROLLER"
+    	rsource "./../../src/modules/movement_controller/Kconfig"
+	endmenu # MOVE_CONTROLLER
 endmenu # APPLICATION CODE
 
 menu "Zephyr Kernel"

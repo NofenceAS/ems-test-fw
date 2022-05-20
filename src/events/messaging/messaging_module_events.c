@@ -32,3 +32,11 @@ EVENT_TYPE_DEFINE(animal_escape_event, true, NULL, NULL);
 EVENT_TYPE_DEFINE(check_connection, true, NULL, NULL);
 
 EVENT_TYPE_DEFINE(send_poll_request_now, true, NULL, NULL);
+
+EVENT_TYPE_DEFINE(warn_correction_start_event, true, NULL, NULL);
+
+EVENT_TYPE_DEFINE(warn_correction_end_event, true, NULL, NULL);
+
+EVENT_TYPE_DEFINE(warn_correction_pause_event, true, NULL, NULL);
+
+EVENT_TYPE_DEFINE(amc_zapped_now_event, true, NULL, NULL);

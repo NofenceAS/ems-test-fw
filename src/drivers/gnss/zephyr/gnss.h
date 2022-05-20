@@ -58,6 +58,15 @@ typedef struct {
 	uint32_t ttff;
 } gnss_struct_t;
 
+typedef enum {
+	GNSSMODE_NOMODE = 0,
+	GNSSMODE_INACTIVE = 1,
+	GNSSMODE_PSM = 2,
+	GNSSMODE_CAUTION = 3,
+	GNSSMODE_MAX = 4,
+	GNSSMODE_SIZE = 5
+} gnss_mode_t;
+
 /** @brief See gnss_struct_t for descriptions. */
 typedef struct {
 	int32_t lat;
@@ -71,7 +80,8 @@ typedef struct {
 	uint16_t h_dop;
 	int16_t height;
 	uint32_t msss;
-	uint8_t gps_mode;
+	gnss_mode_t mode;
+	uint32_t updated_at;
 } gnss_last_fix_struct_t;
 
 /** @brief Struct containing both GNSS status messages and 
