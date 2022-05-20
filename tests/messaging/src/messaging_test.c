@@ -70,8 +70,8 @@ void test_initial_poll_request_out(void)
 
 void test_poll_request_out_when_nudged_from_server(void)
 {
-	ztest_returns_value(stg_read_log_data, 0);
-	ztest_returns_value(stg_log_pointing_to_last, false);
+	//ztest_returns_value(stg_read_log_data, 0);
+	//ztest_returns_value(stg_log_pointing_to_last, false);
 	struct cellular_ack_event *ack = new_cellular_ack_event();
 	EVENT_SUBMIT(ack);
 	struct send_poll_request_now *wake_up = new_send_poll_request_now();
@@ -102,6 +102,8 @@ void test_poll_response_has_new_fence(void)
 	/* We need to simulate that we received the message on server, publish
 	 * ACK for messaging module.
 	 */
+	ztest_returns_value(stg_log_pointing_to_last, false);
+	ztest_returns_value(stg_read_log_data, 0);
 	struct cellular_ack_event *ack = new_cellular_ack_event();
 	EVENT_SUBMIT(ack);
 	k_sem_take(&msg_out, K_NO_WAIT);
