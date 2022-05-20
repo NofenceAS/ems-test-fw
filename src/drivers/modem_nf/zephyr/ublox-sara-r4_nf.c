@@ -88,7 +88,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_DNS_TIMEOUT K_SECONDS(70)
 #define MDM_CMD_CONN_TIMEOUT K_SECONDS(120)
 #define MDM_REGISTRATION_TIMEOUT K_SECONDS(180)
-#define MDM_PROMPT_CMD_DELAY K_MSEC(100)
+#define MDM_PROMPT_CMD_DELAY K_MSEC(50)
 
 #define MDM_MAX_DATA_LENGTH 1024
 #define MDM_RECV_MAX_BUF 30
@@ -652,7 +652,6 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_ccid)
 
 	return 0;
 }
-
 
 #if !defined(CONFIG_MODEM_UBLOX_SARA_U2)
 /*
@@ -1247,11 +1246,17 @@ static void modem_rssi_query_work(struct k_work *work)
 static int modem_reset(void)
 {
 	int ret = 0, retry_count = 0, counter = 0;
+
+	static const struct setup_cmd pre_setup_cmds[] = {
+		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
+		SETUP_CMD_NOHANDLE("AT+CFUN=15"),
+		};
+
 	static const struct setup_cmd setup_cmds[] = {
 
 		/* turn off echo */
+
 		SETUP_CMD_NOHANDLE("ATE0"),
-		SETUP_CMD_NOHANDLE("AT+USIO=1"),
 		/* stop functionality */
 		SETUP_CMD_NOHANDLE("AT+CFUN=0"),
 		/* extended error numbers */
@@ -1274,10 +1279,6 @@ static int modem_reset(void)
 		SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
 		SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 		SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_ccid, 0U, ""),
-		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
-		SETUP_CMD_NOHANDLE("AT+UPSV=0"),
-		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
-		SETUP_CMD_NOHANDLE("AT+UDCONF=1,0"), /*https://portal.u-blox.com/s/question/0D52p0000ACRQitCQH/sarar412m-doesnt-respond-when-writing-socket-data-in-binary-mode*/
 #if !defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 		/* setup PDP context definition */
 		SETUP_CMD_NOHANDLE(
@@ -1287,7 +1288,6 @@ static int modem_reset(void)
 		SETUP_CMD_NOHANDLE("AT+CFUN=1"),
 		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 1U,
 			  ","),
-//		SETUP_CMD_NOHANDLE("AT+CFUN=15"),
 #endif
 	};
 
@@ -1354,6 +1354,21 @@ restart:
 		goto error;
 	}
 	k_sleep(K_MSEC(50));
+
+	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
+					   pre_setup_cmds, ARRAY_SIZE
+					   (pre_setup_cmds),
+					   &mdata.sem_response,
+					   MDM_REGISTRATION_TIMEOUT);
+
+	if (wake_up() != 0) {
+		goto error;
+	}
+	if (ret < 0) {
+		LOG_ERR("MODEM WAIT LOOP ERROR: %d", ret);
+		goto error;
+	}
+	k_sleep(K_MSEC(50));
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
 					   setup_cmds, ARRAY_SIZE(setup_cmds),
 					   &mdata.sem_response,
@@ -1361,7 +1376,6 @@ restart:
 	if (ret < 0) {
 		goto error;
 	}
-	mdata.upsv_state = -1;
 	k_sleep(K_MSEC(50));
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
@@ -2400,12 +2414,12 @@ int wake_up(void) {
 	k_sleep(K_MSEC(100));
 	const struct setup_cmd disable_psv[] = {
 		SETUP_CMD_NOHANDLE("AT+UPSV=0"),
+#ifdef CONFIG_USE_CPSMS
 		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
+#endif
 		SETUP_CMD_NOHANDLE("ATE0"),
 		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 1U,
 			  ","),
-		SETUP_CMD_NOHANDLE("AT+USIO=1"),
-		SETUP_CMD_NOHANDLE("AT+UDCONF=1,0"),
 	};
 	ret = modem_cmd_handler_setup_cmds(
 		&mctx.iface, &mctx.cmd_handler, disable_psv,
@@ -2416,6 +2430,7 @@ int wake_up(void) {
 
 int wake_up_from_upsv(void) {
 	if (mdata.upsv_state == 4) {
+#ifdef CONFIG_USE_CPSMS
 		modem_pin_config(&mctx, MDM_POWER, true);
 		unsigned int irq_lock_key = irq_lock();
 		LOG_DBG("MDM_POWER_PIN -> DISABLE");
@@ -2433,7 +2448,7 @@ int wake_up_from_upsv(void) {
 		do {
 			k_sleep(K_MSEC(100));
 		} while (!modem_rx_pin_is_high());
-
+#endif
 		return wake_up();
 	}
 	return 0;
@@ -2441,7 +2456,9 @@ int wake_up_from_upsv(void) {
 
 int sleep(void){
 	const struct setup_cmd set_psv[] = {
+#ifdef CONFIG_USE_CPSMS
 		SETUP_CMD_NOHANDLE("AT+CPSMS=1"),
+#endif
 		SETUP_CMD_NOHANDLE("AT+UPSV=4"),
 	};
 	int ret = modem_cmd_handler_setup_cmds(
@@ -2476,7 +2493,6 @@ int sleep(void){
 		return 0;
 	}
 
-//	ret = uart_state_set(PM_DEVICE_STATE_SUSPENDED);
 	if (ret != 0 && mdata.upsv_state == 4){/*TODO: return a different
  * value based on the condition.*/
 		LOG_ERR("Failed to disable modem uart controller.");

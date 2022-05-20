@@ -23,6 +23,10 @@ config MODEM_UBLOX_INIT_RESET
 	bool "Perform reset during initialization of driver"
 	default y
 
+config USE_CPSMS
+    bool "Set CPSMS=1 in power saving mode -extended network paging periods"
+	default n
+
 choice MODEM_UBLOX_SARA_VARIANT
 	bool "u-blox SARA variant selection"
 	default MODEM_UBLOX_SARA_R4

@@ -51,3 +51,13 @@ struct connection_state_event {
 };
 
 EVENT_TYPE_DECLARE(connection_state_event);
+
+
+/** @brief Event published by the send message thread to free the allocated
+ * message ram in cellular_controller event handler.
+ * */
+
+struct free_message_mem_event {
+	struct event_header header;
+};
+EVENT_TYPE_DECLARE(free_message_mem_event);

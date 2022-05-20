@@ -21,3 +21,8 @@ EVENT_TYPE_DEFINE(connection_state_event,
 		  true,
 		  NULL,
 		  NULL);
+
+EVENT_TYPE_DEFINE(free_message_mem_event,
+		  true,
+		  NULL,
+		  NULL);
