@@ -1,5 +1,5 @@
 #include <event_manager.h>
-#include "nf_eeprom.h"
+#include "nf_settings.h"
 #include "collar_protocol.h"
 
 /** @brief Empty event published by the messaging module to acknowledge
@@ -160,3 +160,47 @@ struct send_poll_request_now {
 };
 
 EVENT_TYPE_DECLARE(send_poll_request_now);
+
+/** @brief Published by AMC to notify other modules that correction
+ *         has started.
+ */
+struct warn_correction_start_event {
+	struct event_header header;
+	bool has_fence_dist;
+	int16_t fence_dist;
+};
+
+EVENT_TYPE_DECLARE(warn_correction_start_event);
+
+/** @brief Published by AMC to notify other modules that correction
+ *         has ended.
+ */
+struct warn_correction_end_event {
+	struct event_header header;
+	bool has_fence_dist;
+	int16_t fence_dist;
+};
+
+EVENT_TYPE_DECLARE(warn_correction_end_event);
+
+/** @brief Published by AMC to notify other modules that correction
+ *         has paused.
+ */
+struct warn_correction_pause_event {
+	struct event_header header;
+	bool has_fence_dist;
+	int16_t fence_dist;
+	uint32_t warn_duration;
+};
+
+EVENT_TYPE_DECLARE(warn_correction_pause_event);
+
+/** @brief Published by AMC to notify other modules that we gave a zap.
+ */
+struct amc_zapped_now_event {
+	struct event_header header;
+	bool has_fence_dist;
+	int16_t fence_dist;
+};
+
+EVENT_TYPE_DECLARE(amc_zapped_now_event);
