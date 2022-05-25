@@ -24,5 +24,3 @@ static int log_diag_status_event(const struct event_header *eh, char *buf,
 }
 
 EVENT_TYPE_DEFINE(diag_status_event, true, log_diag_status_event, NULL);
-
-EVENT_TYPE_DEFINE(diag_force_teach_event, true, NULL, NULL);

@@ -18,10 +18,4 @@ struct diag_status_event {
 
 EVENT_TYPE_DECLARE(diag_status_event);
 
-struct diag_force_teach_event {
-	struct event_header header;
-};
-
-EVENT_TYPE_DECLARE(diag_force_teach_event);
-
 #endif /* _DIAGNOSTICS_EVENTS_H_ */
