@@ -194,6 +194,7 @@ void test_collar_mode(void)
 	zassert_equal(current_collar_mode, expected_mode, "");
 
 	/* Teach -> Fence. */
+	ztest_returns_value(eep_uint8_write, 0);
 	/* To reach this, we need to reach the zap and warn count tresholds. 
 	 * I.e ((teach_warn_cnt - teach_zap_cnt) >=
 			    _TEACHMODE_WARN_CNT_LOWLIM)
