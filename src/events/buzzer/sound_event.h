@@ -15,7 +15,7 @@
 #define WARN_FREQ_MAX 4200
 
 /** Duration of the warning tone in ms. */
-#define WARN_MIN_DURATION_MS 5000
+#define WARN_MIN_DURATION_MS 8000
 
 enum sound_event_type {
 	SND_OFF = 0,
