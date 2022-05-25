@@ -169,6 +169,7 @@ struct modem_data {
 	int upsv_state;
 	int last_sock;
 	int session_rat;
+	bool pdp_active;
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
 	/* modem variant */
@@ -782,6 +783,22 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_upsv_get)
 	LOG_INF("UPSV mode = %d\n", val);
 	if (val != 4 && val != 0) {
 		LOG_WRN("Unexpected value for UPSV mode setting!");
+	}
+	return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgact_get)
+{
+	LOG_DBG("CGACT? handler, %d", argc);
+	LOG_DBG("PDP context state: ,%s", argv[1]);
+	uint8_t val = (uint8_t)atoi(argv[1]);
+
+	if (val == 1) {
+		mdata.pdp_active = true;
+		LOG_INF("PDP context ACTIVATED!");
+	} else {
+		mdata.pdp_active = false;
+		LOG_INF("PDP context DEACTIVATED!");
 	}
 	return 0;
 }
@@ -1508,14 +1525,27 @@ restart:
 	LOG_INF("Network is ready.");
 	k_sleep(K_MSEC(250));
 	if (mdata.session_rat != 7) {
-		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
-				     NULL, 0, "AT+CGACT=1,1",
-				     &mdata.sem_response,
-				     MDM_REGISTRATION_TIMEOUT);
-		if (ret != 0) {
-			LOG_ERR("Problem activating PDP context!");
-			return ret;
+		const struct setup_cmd check_pdp[] = {
+			SETUP_CMD("AT+CGACT?", "", on_cmd_atcmdinfo_cgact_get,
+				  2U, ","),
+		};
+		ret = modem_cmd_handler_setup_cmds(
+			&mctx.iface, &mctx.cmd_handler, check_pdp,
+			ARRAY_SIZE(check_pdp), &mdata.sem_response,
+			MDM_REGISTRATION_TIMEOUT);
+
+		if (!mdata.pdp_active) {
+			k_sleep(K_MSEC(50));
+			ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+					     NULL, 0, "AT+CGACT=1,1",
+					     &mdata.sem_response,
+					     MDM_REGISTRATION_TIMEOUT);
+			if (ret != 0) {
+				LOG_ERR("Problem activating PDP context!");
+				return ret;
+			}
 		}
+
 		k_sleep(K_MSEC(250));
 	} else {
 		LOG_INF("No need to manually activate pdp.");
