@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4_nf, CONFIG_MODEM_LOG_LEVEL);
 #include <net/net_if.h>
 #include <net/net_offload.h>
 #include <net/socket_offload.h>
-#include <stdio.h>
+
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 #include <stdio.h>
 #endif
@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4_nf, CONFIG_MODEM_LOG_LEVEL);
 #include "modem_socket.h"
 #include "modem_cmd_handler.h"
 #include "modem_iface_uart.h"
+#include "error_event.h"
 
 #if !defined(CONFIG_MODEM_UBLOX_SARA_R4_MANUAL_MCCMNO)
 #define CONFIG_MODEM_UBLOX_SARA_R4_MANUAL_MCCMNO ""
@@ -52,6 +53,7 @@ enum mdm_control_pins {
 	MDM_VINT,
 #endif
 };
+extern struct k_sem listen_sem;
 
 static struct modem_pin modem_pins[] = {
 	/* MDM_POWER */
@@ -419,6 +421,7 @@ static ssize_t send_socket_data(void *obj, const struct msghdr *msg,
 	/* Send data directly on modem iface */
 	for (int i = 0; i < msg->msg_iovlen; i++) {
 		int len = MIN(buf_len, msg->msg_iov[i].iov_len);
+
 		if (len == 0) {
 			break;
 		}
@@ -1017,6 +1020,17 @@ MODEM_CMD_DEFINE(on_cmd_socknotifycreg)
 	return 0;
 }
 
+MODEM_CMD_DEFINE(on_cmd_socknotify_listen)
+{
+	LOG_DBG("Received new message on listening socket:%s, port:%s",
+		argv[3], argv[5]);
+	if (atoi(argv[3]) == 0  && atoi(argv[5]) == CONFIG_NF_LISTENING_PORT) {
+		k_sem_give(&listen_sem);
+	}
+	return 0;
+}
+
+
 /* RX thread */
 static void modem_rx(void)
 {
@@ -1034,7 +1048,7 @@ static void modem_rx(void)
 bool modem_has_power(void)
 {
 #if !DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
-	#error "Modem must have VINT pin!"
+#error "Modem must have VINT pin!"
 #endif
 
 	return modem_pin_read(&mctx, MDM_VINT) != 0;
@@ -1079,7 +1093,7 @@ static bool modem_rx_pin_is_high(void) {
 	gpio_pin_configure(gpio_dev, rx_pin, GPIO_INPUT);
 	gpio_port_get_raw(gpio_dev, &values);
 	
-	return ((values&(1<<rx_pin)) == (1<<rx_pin));
+	return ((values&(1<<rx_pin)) != 0);
 }
 
 static int pin_init(void)
@@ -1093,6 +1107,8 @@ static int pin_init(void)
 #endif
 
 	uart_state_set(PM_DEVICE_STATE_SUSPENDED);
+	k_sleep(K_MSEC(100));
+
 	LOG_DBG("MDM_POWER_PIN -> ENABLE");
 	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
 	k_sleep(K_SECONDS(4));
@@ -1195,7 +1211,9 @@ static void modem_rssi_query_work(struct k_work *work)
 			     ARRAY_SIZE(cmds), send_cmd, &mdata.sem_response,
 			     MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("AT+C[E]SQ ret:%d", ret);
+		char *e_msg = "AT+C[E]SQ";
+		LOG_ERR("%s ret:%d", log_strdup(e_msg), ret);
+		nf_app_error(ERR_MODEM, ret, e_msg, strlen(e_msg));
 	}
 
 #if defined(CONFIG_MODEM_CELL_INFO)
@@ -1235,7 +1253,9 @@ static void modem_rssi_query_work(struct k_work *work)
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, send_cmd,
 			     &mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("AT+C[E]SQ ret:%d", ret);
+		char *e_msg = "AT+C[E]SQ";
+		LOG_ERR("%s ret:%d", log_strdup(e_msg), ret);
+		nf_app_error(ERR_MODEM, ret, e_msg, strlen(e_msg));
 	}
 
 #if defined(CONFIG_MODEM_CELL_INFO)
@@ -1270,9 +1290,7 @@ static int modem_reset(void)
 		};
 
 	static const struct setup_cmd setup_cmds[] = {
-
 		/* turn off echo */
-
 		SETUP_CMD_NOHANDLE("ATE0"),
 		/* stop functionality */
 		SETUP_CMD_NOHANDLE("AT+CFUN=0"),
@@ -1366,6 +1384,7 @@ restart:
 	if (wake_up() != 0) {
 		goto error;
 	}
+
 	if (ret < 0) {
 		LOG_ERR("MODEM WAIT LOOP ERROR: %d", ret);
 		goto error;
@@ -1426,7 +1445,9 @@ restart:
 	}
 
 	if (ret < 0) {
-		LOG_ERR("AT+COPS ret:%d", ret);
+		char *e_msg = "AT+COPS";
+		LOG_ERR("%s ret:%d", log_strdup(e_msg), ret);
+		nf_app_error(ERR_MODEM, ret, e_msg, strlen(e_msg));
 		goto error;
 	}
 	k_sleep(K_MSEC(50));
@@ -1602,8 +1623,13 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
  * TODO: parametrize duration */
 	char buf2[sizeof("AT+USOSO=#,65535,128,1,00\r")];
 	snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,3000", mdata.last_sock);
-	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, buf2,
+	if (mdata.last_sock != 0) { /* TODO: this assumes that socket 0 is
+ * always the listening socket. Should change that to a smarter check in case
+ * the listening socket uses any id other than 0.*/
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, buf2,
 			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+	}
+
 	if (ret < 0) {
 		LOG_DBG("Failed to set socket linger time!");
 	}
@@ -1654,6 +1680,7 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 
 error:
 	LOG_ERR("%s ret:%d", log_strdup(buf), ret);
+	nf_app_error(ERR_MODEM, ret, buf, strlen(buf));
 	modem_socket_put(&mdata.socket_config, sock->sock_fd);
 	errno = -ret;
 	return -1;
@@ -1701,6 +1728,7 @@ static int offload_close(void *obj)
 		// more time compared to other commands.
 		if (ret < 0) {
 			LOG_ERR("%s ret:%d", log_strdup(buf), ret);
+			nf_app_error(ERR_MODEM, ret, buf, strlen(buf));
 		}
 	}
 
@@ -1771,6 +1799,41 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 
 	snprintk(buf, sizeof(buf), "AT+USOCO=%d,\"%s\",%d", sock->id,
 		 modem_context_sprint_ip_addr(addr), dst_port);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf,
+			     &mdata.sem_response, MDM_CMD_CONN_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("%s ret:%d", log_strdup(buf), ret);
+		errno = -ret;
+		return -1;
+	}
+
+	sock->is_connected = true;
+	errno = 0;
+	return 0;
+}
+
+static int offload_listen(void *obj, int backlog)
+{
+	struct modem_socket *sock = (struct modem_socket *)obj;
+	int ret;
+	char buf[sizeof("AT+USOLI=#,#####\r")];
+	LOG_DBG("Starting listen offload!");
+
+	if (sock->id < mdata.socket_config.base_socket_num - 1) {
+		LOG_ERR("Invalid socket_id(%d) from fd:%d", sock->id,
+			sock->sock_fd);
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* make sure we've created the socket */
+	if (sock->id == mdata.socket_config.sockets_len + 1) {
+		if (create_socket(sock, NULL) < 0) {
+			return -1;
+		}
+	}
+
+	snprintk(buf, sizeof(buf), "AT+USOLI=%d,%d", sock->id, CONFIG_NF_LISTENING_PORT);
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf,
 			     &mdata.sem_response, MDM_CMD_CONN_TIMEOUT);
 	if (ret < 0) {
@@ -2140,7 +2203,7 @@ static const struct socket_op_vtable offload_socket_fd_op_vtable = {
 	.connect = offload_connect,
 	.sendto = offload_sendto,
 	.recvfrom = offload_recvfrom,
-	.listen = NULL,
+	.listen = offload_listen,
 	.accept = NULL,
 	.sendmsg = offload_sendmsg,
 	.getsockopt = NULL,
@@ -2312,6 +2375,7 @@ static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("+UUSORD: ", on_cmd_socknotifydata, 2U, ","),
 	MODEM_CMD("+UUSORF: ", on_cmd_socknotifydata, 2U, ","),
 	MODEM_CMD("+CREG: ", on_cmd_socknotifycreg, 1U, ""),
+	MODEM_CMD("+UUSOLI: ", on_cmd_socknotify_listen, 6U, ","),
 };
 
 static int modem_init(const struct device *dev)
@@ -2416,7 +2480,7 @@ int get_pdp_addr(char** ip_addr){
 	int ret = modem_cmd_handler_setup_cmds(
 		&mctx.iface, &mctx.cmd_handler, read_sim_ip_cmd,
 		1, &mdata.sem_response,
-		MDM_CMD_TIMEOUT);
+		MDM_REGISTRATION_TIMEOUT);
 	if (ret == 0){
 		*ip_addr = mdata.mdm_pdp_addr;
 		return 0;
@@ -2424,6 +2488,7 @@ int get_pdp_addr(char** ip_addr){
 		return -1;
 	}
 }
+
 
 /* Give the modem a while to start responding to simple 'AT' commands.
 	 * Also wait for CSPS=1 or RRCSTATE=1 notification
@@ -2482,7 +2547,7 @@ int wake_up_from_upsv(void) {
 	return 0;
 }
 
-int sleep(void){
+static int sleep(void){
 	const struct setup_cmd set_psv[] = {
 #ifdef CONFIG_USE_CPSMS
 		SETUP_CMD_NOHANDLE("AT+CPSMS=1"),

@@ -126,7 +126,7 @@ gnss_uart: &uart1 {
 		compatible = "u-blox,mia-m10";
 		label = "ublox-mia-m10";
 		status = "okay";
-		
+
 		pps-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
 	};
 	/* vin-supply = <&gnss_flash_pwr>; */
@@ -160,9 +160,9 @@ gnss_uart: &uart1 {
 	mosi-pin = <41>;/* P1.09 */
 	miso-pin = <11>;/* P0.11 */
 	cs-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>, /* CS ACCELEROMETER */
-			<&gpio0 15 GPIO_ACTIVE_LOW>, /* CS BAROMETER */
-			<&gpio0 12 GPIO_ACTIVE_LOW>; /* CS EEPROM */
-	
+	           <&gpio0 15 GPIO_ACTIVE_LOW>, /* CS BAROMETER */
+	           <&gpio0 12 GPIO_ACTIVE_LOW>; /* CS EEPROM */
+
 	movement_sensor: lis2dw12@0 {
 		status = "okay";
 		compatible = "st,lis2dh";
@@ -170,6 +170,8 @@ gnss_uart: &uart1 {
 		irq-gpios = <&gpio1 11 0>, <&gpio1 12 0>; /* INT1 and INT2 */
 		spi-max-frequency = <8000000>;
 		label = "LIS2DW12-ACCEL";
+		/* https: //github.com/STMicroelectronics/lis2dw12/blob/d8457a1a25a035ac118a94c70f08fdd291ec6501/lis2dw12_reg.h#L680 */
+		power-mode = <0>;
 	};
 
 	environment_sensor: bme280@1 {

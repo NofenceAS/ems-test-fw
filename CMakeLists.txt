@@ -25,7 +25,9 @@ list(APPEND ZEPHYR_EXTRA_MODULES
 set(BOARD_ROOT ${CMAKE_CURRENT_LIST_DIR})
 
 # The Nofence X3 board exists out-of-tree from zephyr boards
-set(BOARD nf_x25_nrf52840)
+# Default board is a future revision that does not exist yet
+# Force users to select boards for now, uncomment line below later
+# set(BOARD nf_x25_nrf52840)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
@@ -65,10 +67,13 @@ zephyr_library_include_directories(
         src/events/fw_upgrade
         src/modules/environment
         src/events/environment
+        src/modules/movement_controller
+        src/events/movement_controller
         src/modules/cellular_controller
         src/modules/gnss_controller
         src/events/cellular_controller
-  	    src/modules/buzzer
+  	src/modules/buzzer
+        src/events/watchdog
         ${PROJECT_BINARY_DIR}/include/generated/)
         
 target_sources(app PRIVATE ${APP_MAIN}
@@ -80,10 +85,11 @@ add_subdirectory(src/events/ble)
 add_subdirectory(src/modules/ble)
 add_subdirectory(src/modules/fw_upgrade)
 add_subdirectory(src/modules/storage_controller)
-add_subdirectory(src/eeprom)
+add_subdirectory(src/modules/nf_settings)
 add_subdirectory(src/modules/amc)
 add_subdirectory(src/modules/cellular_controller)
 add_subdirectory(src/modules/buzzer)
+add_subdirectory(src/modules/error_handler)
 
 add_subdirectory(src/modules/power_manager)
 add_subdirectory(src/events/power_manager)
@@ -95,4 +101,8 @@ add_subdirectory(src/modules/diagnostics)
 add_subdirectory(src/events/electric_pulse)
 add_subdirectory(src/modules/electric_pulse)
 add_subdirectory(src/modules/environment)
+
+add_subdirectory_ifdef(CONFIG_WATCHDOG_ENABLE src/modules/watchdog)
+add_subdirectory_ifdef(CONFIG_WATCHDOG_ENABLE src/events/watchdog)
 add_subdirectory(src/modules/gnss_controller)
+add_subdirectory(src/modules/movement_controller)

@@ -130,4 +130,8 @@ config MODEM_UBLOX_SARA_RSSI_WORK_PERIOD
 	help
 	  This settings is used to configure the period of RSSI polling
 
+config NF_LISTENING_PORT
+    int "Set listening port on socket 0"
+    default 1099
+
 endif # MODEM_UBLOX_SARA_NF

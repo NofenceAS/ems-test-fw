@@ -8,7 +8,7 @@
 #include <logging/log.h>
 #include <stdio.h>
 
-LOG_MODULE_REGISTER(movement_log_event, 4);
+LOG_MODULE_REGISTER(movement_log_event, CONFIG_MOVE_CONTROLLER_LOG_LEVEL);
 
 /**
  * @brief Request env sensor event function for debugging/information. 

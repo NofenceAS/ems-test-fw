@@ -22,6 +22,8 @@ int8_t send_tcp_q(char *, size_t);
 
 int8_t socket_connect(struct data *, struct sockaddr *, size_t);
 
+int socket_listen(struct data *, uint16_t);
+
 int8_t lte_init(void);
 
 bool lte_is_ready(void);
@@ -37,4 +39,6 @@ int check_ip(void);
 int get_ip(char **);
 
 void send_tcp_fn(void);
+
+bool query_listen_sock(void);
 //int8_t cache_server_address(void);

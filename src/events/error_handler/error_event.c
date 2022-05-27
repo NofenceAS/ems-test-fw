@@ -45,21 +45,20 @@ static inline void submit_app_status(enum error_sender_module sender,
 	/* Check if string is greater than limit, remove 
 	 * the entire message if exceeding. 
 	 */
-	if (msg_len > CONFIG_ERROR_USER_MESSAGE_SIZE) {
+	if (msg_len > CONFIG_ERROR_MAX_USER_MESSAGE_SIZE) {
 		dyn_msg_size = 0;
 	}
-
-
 
 	/* -EINVALS to error handler, nothing to do about that. */
 	/* Not negative error code. */
 	if (code >= 0) {
+		LOG_ERR("Invalid error code %d. Should be negative.", code);
 		return;
 	}
 
 	/* If not part of the ENUMs. */
 	if (sender < 0 || sender >= ERR_END_OF_LIST) {
-		LOG_ERR("Invalid error sender index %i", sender);
+		LOG_ERR("Invalid error sender index %d", sender);
 		return;
 	}
 

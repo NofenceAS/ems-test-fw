@@ -22,11 +22,12 @@ zephyr_library_include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler
         ${CMAKE_CURRENT_SOURCE_DIR}/../../include
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/drivers/gnss/zephyr
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/nf_settings/include
 )
 
 FILE(GLOB app_sources
-        src/*.c
-        mock/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/mock/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/gnss_controller/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/error_event.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/gnss_controller/*.c

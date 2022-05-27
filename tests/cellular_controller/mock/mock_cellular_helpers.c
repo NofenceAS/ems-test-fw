@@ -25,6 +25,11 @@ int8_t socket_connect(struct data *dummy_data, struct sockaddr *dummy_add,
 	return ztest_get_return_value();
 }
 
+int socket_listen(struct data *data, uint16_t port)
+{
+	return ztest_get_return_value();
+}
+
 int reset_modem(void)
 {
 	return ztest_get_return_value();
@@ -82,6 +87,11 @@ int check_ip(void){
 
 int get_ip(char** ip){
 	ARG_UNUSED(ip);
+	return ztest_get_return_value();
+}
+
+bool query_listen_sock(void)
+{
 	return ztest_get_return_value();
 }
 
