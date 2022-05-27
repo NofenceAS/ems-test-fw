@@ -10,12 +10,12 @@
 #include "diagnostics.h"
 #include "fw_upgrade.h"
 #include "fw_upgrade_events.h"
-#include "nf_eeprom.h"
+#include "nf_settings.h"
 #include "ble_controller.h"
 #include "cellular_controller.h"
 #include "ep_module.h"
 #include "amc_handler.h"
-#include "nf_eeprom.h"
+#include "nf_settings.h"
 #include "buzzer.h"
 #include "pwr_module.h"
 #if defined(CONFIG_WATCHDOG_ENABLE)
@@ -86,7 +86,7 @@ void main(void)
 	eep_init(eeprom_dev);
 	/* Fetch and log stored serial number */
 	uint32_t eeprom_stored_serial_nr = 0;
-	eep_read_serial(&eeprom_stored_serial_nr);
+	eep_uint32_read(EEP_UID, &eeprom_stored_serial_nr);
 	if (eeprom_stored_serial_nr) {
 		LOG_INF("Device Serial Number stored in EEPROM: %d",
 			eeprom_stored_serial_nr);

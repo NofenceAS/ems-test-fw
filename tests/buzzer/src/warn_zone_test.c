@@ -19,7 +19,7 @@
  */
 void test_warn_zone_init(void)
 {
-	mock_expect_pwm_hz(WARN_FREQ_MS_PERIOD_INIT);
+	mock_expect_pwm_hz(WARN_FREQ_INIT);
 
 	struct sound_event *ev = new_sound_event();
 	ev->type = SND_WARN;
@@ -48,7 +48,7 @@ void test_warn_zone_init(void)
 void test_warn_zone_timeout(void)
 {
 	/* Issue warn zone, will start playing initial frequency. */
-	mock_expect_pwm_hz(WARN_FREQ_MS_PERIOD_INIT);
+	mock_expect_pwm_hz(WARN_FREQ_INIT);
 
 	struct sound_event *ev = new_sound_event();
 	ev->type = SND_WARN;
@@ -59,10 +59,10 @@ void test_warn_zone_timeout(void)
 	zassert_equal(err, 0, "");
 
 	/* Play MAX event. */
-	mock_expect_pwm_hz(WARN_FREQ_MS_PERIOD_MAX);
+	mock_expect_pwm_hz(WARN_FREQ_MAX);
 
 	struct sound_set_warn_freq_event *ef = new_sound_set_warn_freq_event();
-	ef->freq = WARN_FREQ_MS_PERIOD_MAX;
+	ef->freq = WARN_FREQ_MAX;
 	EVENT_SUBMIT(ef);
 
 	/* Wait for playing MAX event. */
@@ -90,7 +90,7 @@ void test_warn_zone_play_until_range(void)
 	int err;
 
 	/* Issue new warn zone event. Expect INIT freq to be played. */
-	mock_expect_pwm_hz(WARN_FREQ_MS_PERIOD_INIT);
+	mock_expect_pwm_hz(WARN_FREQ_INIT);
 
 	struct sound_event *ev = new_sound_event();
 	ev->type = SND_WARN;
@@ -100,10 +100,8 @@ void test_warn_zone_play_until_range(void)
 	err = k_sem_take(&sound_playing_warn_sem, K_SECONDS(30));
 	zassert_equal(err, 0, "");
 
-	for (int i = WARN_FREQ_MS_PERIOD_MAX;
-	     i > WARN_FREQ_MS_PERIOD_INIT - 100; i -= 50) {
-		if (i <= WARN_FREQ_MS_PERIOD_MAX &&
-		    i >= WARN_FREQ_MS_PERIOD_INIT) {
+	for (int i = WARN_FREQ_MAX; i > WARN_FREQ_INIT - 100; i -= 50) {
+		if (i <= WARN_FREQ_MAX && i >= WARN_FREQ_INIT) {
 			/* Only expect mocked values if its within range. */
 			mock_expect_pwm_hz(i);
 		}
