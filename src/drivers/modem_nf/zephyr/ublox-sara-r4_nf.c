@@ -1628,10 +1628,9 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
  * the listening socket uses any id other than 0.*/
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, buf2,
 			     &mdata.sem_response, MDM_CMD_TIMEOUT);
-	}
-
-	if (ret < 0) {
-		LOG_DBG("Failed to set socket linger time!");
+		if (ret < 0) {
+			LOG_DBG("Failed to set socket linger time!");
+		}
 	}
 
 	if (sock->ip_proto == IPPROTO_TLS_1_2) {
