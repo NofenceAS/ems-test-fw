@@ -4,7 +4,17 @@
 
 #include <sys/ring_buffer.h>
 
-/* GNSS buffers for sending and receiving data. */
+/** GNSS buffers for sending and receiving data.
+  * Default:
+  *     GNSS_HUB_ID_UART <-> GNSS_HUB_ID_DRIVER
+  * Sniffer:
+  *     GNSS_HUB_ID_UART -> GNSS_HUB_ID_DRIVER & GNSS_HUB_ID_DIAGNOSTICS
+  *     GNSS_HUB_ID_UART <- GNSS_HUB_ID_DRIVER
+  * Controller:
+  *     GNSS_HUB_ID_UART <-> GNSS_HUB_ID_DIAGNOSTICS
+  * Simulator: 
+  *     GNSS_HUB_ID_DIAGNOSTICS <-> GNSS_HUB_ID_DRIVER
+  */
 static uint8_t* gnss_tx_buffer = NULL;
 static struct ring_buf gnss_tx_ring_buf;
 
@@ -148,6 +158,8 @@ bool gnss_hub_rx_is_empty(uint8_t hub_id)
 {
 	if (hub_id == GNSS_HUB_ID_DRIVER) {
 		return (gnss_rx_cnt == 0);
+	} else if (hub_id == GNSS_HUB_ID_DIAGNOSTICS) {
+		return (gnss_rx_2_cnt == 0);
 	} else if (hub_id == GNSS_HUB_ID_UART) {
 		return ring_buf_is_empty(&gnss_tx_ring_buf);
 	}
