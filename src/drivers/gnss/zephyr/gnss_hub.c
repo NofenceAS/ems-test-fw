@@ -81,7 +81,7 @@ int gnss_hub_configure(uint8_t mode)
 	}
 
 	/** @todo Implement more modes */
-	if (mode != GNSS_HUB_MODE_DEFAULT) {
+	if (mode == GNSS_HUB_MODE_DEFAULT) {
 		/* Default mode is UART connected to driver */
 	} else if (mode == GNSS_HUB_MODE_SNIFFER) {
 		/* Sniffer mode will forward data to diagnostics */
