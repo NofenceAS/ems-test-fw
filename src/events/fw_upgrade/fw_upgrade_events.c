@@ -25,7 +25,8 @@ static int log_dfu_status_event(const struct event_header *eh, char *buf,
 	return snprintf(buf, buf_len, "DFU_status=%d", event->dfu_status);
 }
 
-EVENT_TYPE_DEFINE(dfu_status_event, true, log_dfu_status_event, NULL);
+EVENT_TYPE_DEFINE(dfu_status_event, IS_ENABLED(FW_LOG_DFU_STATUS_EVENT),
+		  log_dfu_status_event, NULL);
 
 /**
  * @brief DFU status event function for debugging/information. 

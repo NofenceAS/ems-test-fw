@@ -759,12 +759,12 @@ static const struct setup_cmd query_cellinfo_cmds[] = {
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 {
 	LOG_DBG("CDGCONT? handler, %d", argc);
-	LOG_INF("ip: %s", argv[3]);
+	LOG_DBG("ip: %s", argv[3]);
 	memcpy(mdata.mdm_pdp_addr, argv[3], 17); //17: "xxx.xxx.xxx.xxx", for
 	// the check_ip function, we're only interested in the fact that the
 	// first 8 characters are not "0.0.0.0
 	/*TODO: add more sofistication in handling the string if needed.*/
-	printk("new_mdm_pdp_addr = %s\n", mdata.mdm_pdp_addr);
+	LOG_DBG("new_mdm_pdp_addr = %s", log_strdup(mdata.mdm_pdp_addr));
 	return 0;
 }
 
