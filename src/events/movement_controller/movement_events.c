@@ -56,3 +56,5 @@ static int log_movement_timeout_event(const struct event_header *eh, char *buf,
 
 EVENT_TYPE_DEFINE(movement_timeout_event, true, log_movement_timeout_event,
 		  NULL);
+
+EVENT_TYPE_DEFINE(acc_sigma_event, true, NULL, NULL);

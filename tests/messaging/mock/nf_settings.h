@@ -11,6 +11,15 @@ typedef enum { EEP_UID = 0, EEP_WARN_CNT_TOT } eep_uint32_enum_t;
 int eep_uint32_read(eep_uint32_enum_t field, uint32_t *value);
 int eep_uint32_write(eep_uint32_enum_t field, uint32_t value);
 
+typedef enum {
+	EEP_ACC_SIGMA_NOACTIVITY_LIMIT = 0,
+	EEP_OFF_ANIMAL_TIME_LIMIT_SEC,
+	EEP_ACC_SIGMA_SLEEP_LIMIT
+} eep_uint16_enum_t;
+
+int eep_uint16_read(eep_uint16_enum_t field, uint16_t *value);
+int eep_uint16_write(eep_uint16_enum_t field, uint16_t value);
+
 /**
  * @brief writes the ble_security key to persisted storage
  * @param[in] ble_sec_key pointer to security key array.
