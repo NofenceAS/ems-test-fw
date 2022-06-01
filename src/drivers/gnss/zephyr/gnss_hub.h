@@ -15,7 +15,7 @@
 #define GNSS_HUB_MODE_DEFAULT		0
 #define GNSS_HUB_MODE_SNIFFER		1
 #define GNSS_HUB_MODE_CONTROLLER	2
-#define GNSS_HUB_MODE_EMULATOR		3
+#define GNSS_HUB_MODE_SIMULATOR		3
 
 typedef void (*gnss_diag_data_cb_t)(void);
 

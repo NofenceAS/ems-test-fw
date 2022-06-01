@@ -76,11 +76,6 @@ int gnss_hub_set_diagnostics_callback(gnss_diag_data_cb_t cb)
 
 int gnss_hub_configure(uint8_t mode)
 {
-	if (mode > GNSS_HUB_MODE_EMULATOR) {
-		return -EINVAL;
-	}
-
-	/** @todo Implement more modes */
 	if (mode == GNSS_HUB_MODE_DEFAULT) {
 		/* Default mode is UART connected to driver */
 	} else if (mode == GNSS_HUB_MODE_SNIFFER) {
@@ -97,6 +92,8 @@ int gnss_hub_configure(uint8_t mode)
 			}
 			gnss_rx_2_cnt = 0;
 		}
+	} else if (mode == GNSS_HUB_MODE_SIMULATOR) {
+		/* Simulator mode is diagnostics connected to driver */
 	} else {
 		return -EINVAL;
 	}
@@ -120,13 +117,20 @@ int gnss_hub_send(uint8_t hub_id, uint8_t* buffer, uint32_t cnt)
 {
 	int err = 0;
 
-	if (hub_id == GNSS_HUB_ID_DRIVER) {
+	if ((hub_id == GNSS_HUB_ID_DRIVER) && 
+	    ((hub_mode == GNSS_HUB_MODE_DEFAULT) ||
+	     (hub_mode == GNSS_HUB_MODE_SNIFFER) ||
+	     (hub_mode == GNSS_HUB_MODE_SIMULATOR))) {
+
 		ring_buf_put(&gnss_tx_ring_buf, buffer, cnt);
 		gnss_uart_start_send();
-	} else if (hub_id == GNSS_HUB_ID_UART) {
+	} else if ((hub_id == GNSS_HUB_ID_UART) && 
+		   ((hub_mode == GNSS_HUB_MODE_DEFAULT) ||
+		    (hub_mode == GNSS_HUB_MODE_SNIFFER))) {
+
 		/* Put data into main buffer */
 		uint32_t free_space = CONFIG_GNSS_COMM_BUFFER_SIZE - 
-				      gnss_rx_cnt;
+				gnss_rx_cnt;
 		uint32_t to_copy = MIN(cnt, free_space);
 		memcpy(&gnss_rx_buffer[gnss_rx_cnt], buffer, to_copy);
 		gnss_rx_cnt += to_copy;
@@ -147,6 +151,19 @@ int gnss_hub_send(uint8_t hub_id, uint8_t* buffer, uint32_t cnt)
 				diag_data_cb();
 			}
 		}
+	} else if ((hub_id == GNSS_HUB_ID_DIAGNOSTICS) &&
+		   (hub_mode == GNSS_HUB_MODE_SIMULATOR)) {
+		
+		/* Put data into main buffer */
+		uint32_t free_space = CONFIG_GNSS_COMM_BUFFER_SIZE - 
+				gnss_rx_cnt;
+		uint32_t to_copy = MIN(cnt, free_space);
+		memcpy(&gnss_rx_buffer[gnss_rx_cnt], buffer, to_copy);
+		gnss_rx_cnt += to_copy;
+
+		/* Notify driver */
+		k_sem_give(gnss_rx_sem);
+		
 	} else {
 		err = -EIO;
 	}
@@ -156,11 +173,24 @@ int gnss_hub_send(uint8_t hub_id, uint8_t* buffer, uint32_t cnt)
 
 bool gnss_hub_rx_is_empty(uint8_t hub_id)
 {
-	if (hub_id == GNSS_HUB_ID_DRIVER) {
+	if ((hub_id == GNSS_HUB_ID_DRIVER) &&
+	    ((hub_mode == GNSS_HUB_MODE_DEFAULT) || 
+	     (hub_mode == GNSS_HUB_MODE_SNIFFER) || 
+	     (hub_mode == GNSS_HUB_MODE_SIMULATOR))) {
+
 		return (gnss_rx_cnt == 0);
-	} else if (hub_id == GNSS_HUB_ID_DIAGNOSTICS) {
+	} else if ((hub_id == GNSS_HUB_ID_DIAGNOSTICS) && 
+		   (hub_mode == GNSS_HUB_MODE_SIMULATOR)) {
+		
+		return ring_buf_is_empty(&gnss_tx_ring_buf);
+	} else if ((hub_id == GNSS_HUB_ID_DIAGNOSTICS) &&
+		   (hub_mode == GNSS_HUB_MODE_SNIFFER)) {
+		
 		return (gnss_rx_2_cnt == 0);
-	} else if (hub_id == GNSS_HUB_ID_UART) {
+	} else if ((hub_id == GNSS_HUB_ID_UART) && 
+		   ((hub_mode == GNSS_HUB_MODE_DEFAULT) ||
+		    (hub_mode == GNSS_HUB_MODE_SNIFFER))) {
+
 		return ring_buf_is_empty(&gnss_tx_ring_buf);
 	}
 
@@ -171,14 +201,26 @@ int gnss_hub_rx_get_data(uint8_t hub_id, uint8_t** buffer, uint32_t* cnt)
 {
 	int err = 0;
 
-	if (hub_id == GNSS_HUB_ID_DRIVER) {
+	if ((hub_id == GNSS_HUB_ID_DRIVER) &&
+	    ((hub_mode == GNSS_HUB_MODE_DEFAULT) || 
+	     (hub_mode == GNSS_HUB_MODE_SNIFFER) || 
+	     (hub_mode == GNSS_HUB_MODE_SIMULATOR))) {
+
 		*cnt = gnss_rx_cnt;
 		*buffer = gnss_rx_buffer;
 	} else if ((hub_id == GNSS_HUB_ID_DIAGNOSTICS) && 
+		   (hub_mode == GNSS_HUB_MODE_SIMULATOR)) {
+		
+		*cnt = ring_buf_get_claim(&gnss_tx_ring_buf, 
+					  buffer, 
+					  CONFIG_GNSS_COMM_BUFFER_SIZE);
+	} else if ((hub_id == GNSS_HUB_ID_DIAGNOSTICS) && 
 		   (hub_mode == GNSS_HUB_MODE_SNIFFER)) {
+
 		*cnt = gnss_rx_2_cnt;
 		*buffer = gnss_rx_2_buffer;
 	} else if (hub_id == GNSS_HUB_ID_UART) {
+		
 		*cnt = ring_buf_get_claim(&gnss_tx_ring_buf, 
 					  buffer, 
 					  CONFIG_GNSS_COMM_BUFFER_SIZE);
@@ -193,7 +235,11 @@ int gnss_hub_rx_consume(uint8_t hub_id, uint32_t cnt)
 {
 	int err = 0;
 
-	if (hub_id == GNSS_HUB_ID_DRIVER) {
+	if ((hub_id == GNSS_HUB_ID_DRIVER) &&
+	    ((hub_mode == GNSS_HUB_MODE_DEFAULT) || 
+	     (hub_mode == GNSS_HUB_MODE_SNIFFER) || 
+	     (hub_mode == GNSS_HUB_MODE_SIMULATOR))) {
+
 		if (cnt > gnss_rx_cnt) {
 			cnt = gnss_rx_cnt;
 		}
@@ -210,7 +256,12 @@ int gnss_hub_rx_consume(uint8_t hub_id, uint32_t cnt)
 
 		gnss_uart_block(false);
 	} else if ((hub_id == GNSS_HUB_ID_DIAGNOSTICS) && 
+		   (hub_mode == GNSS_HUB_MODE_SIMULATOR)) {
+			   
+		err = ring_buf_get_finish(&gnss_tx_ring_buf, cnt);
+	} else if ((hub_id == GNSS_HUB_ID_DIAGNOSTICS) && 
 		   (hub_mode == GNSS_HUB_MODE_SNIFFER)) {
+
 		if (cnt > gnss_rx_2_cnt) {
 			cnt = gnss_rx_2_cnt;
 		}
@@ -227,6 +278,7 @@ int gnss_hub_rx_consume(uint8_t hub_id, uint32_t cnt)
 
 		gnss_uart_block(false);
 	} else if (hub_id == GNSS_HUB_ID_UART) {
+
 		err = ring_buf_get_finish(&gnss_tx_ring_buf, cnt);
 	} else {
 		err = -EIO;
