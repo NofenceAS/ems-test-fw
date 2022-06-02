@@ -25,7 +25,6 @@ void test_init(void)
 	ztest_returns_value(check_ip, 0);
 	ztest_returns_value(lte_init, 0);
 	ztest_returns_value(eep_read_host_port, 0);
-	ztest_returns_value(check_ip, 0);
 	ztest_returns_value(socket_listen, 0);
 	ztest_returns_value(check_ip, 0);
 	ztest_returns_value(socket_connect, 0);
@@ -76,23 +75,20 @@ void test_ack_from_messaging_module_missed(void)
 	EVENT_SUBMIT(ack);
 }
 
-void test_notify_messaging_module_when_nudged_from_server(void)
+void test_socket_rcv_fails(void)
 {
-	k_sem_give(&listen_sem); /*TODO: when unit testing the modem driver,
- * make sure the semaphore is given as expected.*/
-	int err = k_sem_take(&wake_up, K_MSEC(100));
+	ztest_returns_value(socket_receive, -1);
+	int err;
+	err = k_sem_take(&cellular_error, K_SECONDS(5));
 	zassert_equal(err, 0,
-		      "Failed to notify messaging module when nudged from "
-		      "server!");
+		      "Expected cellular_error event was not"
+		      " published on socket receive error!");
 }
+
 
 void test_socket_connect_fails(void)
 {
 	//simulate sending error to trigger reconnection attempt
-	struct cellular_error_event *err_ev = new_cellular_error_event();
-	err_ev->cause = SOCKET_SEND;
-	err_ev->err_code = -ETIMEDOUT;
-	EVENT_SUBMIT(err_ev);
 	ztest_returns_value(reset_modem, 0);
 	ztest_returns_value(lte_init, 0);
 	ztest_returns_value(check_ip, 0);
@@ -110,22 +106,6 @@ void test_socket_connect_fails(void)
 		      " published on socket connect error!");
 }
 
-void test_socket_rcv_fails(void)
-{
-	ztest_returns_value(reset_modem, 0);
-	ztest_returns_value(lte_init, 0);
-	ztest_returns_value(check_ip, 0);
-	ztest_returns_value(eep_read_host_port, 0);
-	ztest_returns_value(socket_connect, 0);
-	ztest_returns_value(socket_receive, -1);
-	int err;
-	struct check_connection *ev = new_check_connection();
-	EVENT_SUBMIT(ev);
-	err = k_sem_take(&cellular_error, K_SECONDS(5));
-	zassert_equal(err, 0,
-		      "Expected cellular_error event was not"
-		      " published on socket receive error!");
-}
 
 void test_socket_send_fails(void)
 {
@@ -143,6 +123,16 @@ void test_socket_send_fails(void)
 	zassert_equal(err, 0,
 		      "Expected cellular_error event was not"
 		      " published on send error!");
+}
+
+void test_notify_messaging_module_when_nudged_from_server(void)
+{
+	k_sem_give(&listen_sem); /*TODO: when unit testing the modem driver,
+ * make sure the semaphore is given as expected.*/
+	int err = k_sem_take(&wake_up, K_MSEC(100));
+	zassert_equal(err, 0,
+		      "Failed to notify messaging module when nudged from "
+		      "server!");
 }
 
 void test_gsm_device_not_ready(void)
@@ -165,10 +155,10 @@ void test_main(void)
 		cellular_controller_tests, ztest_unit_test(test_init),
 		ztest_unit_test(test_publish_event_with_a_received_msg),
 		ztest_unit_test(test_ack_from_messaging_module_missed),
-		ztest_unit_test(test_notify_messaging_module_when_nudged_from_server),
-		ztest_unit_test(test_socket_connect_fails),
 		ztest_unit_test(test_socket_rcv_fails),
+		ztest_unit_test(test_socket_connect_fails),
 		ztest_unit_test(test_socket_send_fails),
+		ztest_unit_test(test_notify_messaging_module_when_nudged_from_server),
 		ztest_unit_test(test_gsm_device_not_ready));
 
 	ztest_run_test_suite(cellular_controller_tests);

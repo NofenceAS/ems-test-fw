@@ -2534,7 +2534,6 @@ int wake_up_from_upsv(void) {
 
 		LOG_DBG("MDM_POWER_PIN -> ENABLE");
 		modem_pin_config(&mctx, MDM_POWER, false);
-		modem_pin_config(&mctx, MDM_POWER, false);
 		irq_unlock(irq_lock_key);
 		/* Wait for modem GPIO RX pin to rise, indicating readiness */
 		LOG_DBG("Waiting for Modem RX = 1");
