@@ -759,7 +759,6 @@ static int mia_m10_send_ubx_cmd(uint8_t *buffer, uint32_t size,
 		if (k_sem_take(&cmd_ack_sem,
 			       K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) !=
 		    0) {
-			LOG_ERR("ACK timed out");
 			k_mutex_unlock(&cmd_mutex);
 			return -ETIME;
 		}
@@ -768,7 +767,6 @@ static int mia_m10_send_ubx_cmd(uint8_t *buffer, uint32_t size,
 		if (k_sem_take(&cmd_data_sem,
 			       K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) !=
 		    0) {
-			LOG_ERR("DATA timed out");
 			k_mutex_unlock(&cmd_mutex);
 			return -ETIME;
 		}
