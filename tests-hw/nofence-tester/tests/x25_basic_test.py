@@ -18,7 +18,7 @@ def flash(ocd, firmware_image):
 
 def diagnostics_connect(ocd):
     # Allow application to initialize diagnostics
-    time.sleep(5)
+    time.sleep(2)
 
     # Start RTT and list channels
     ocd.rtt_prepare()
@@ -33,11 +33,13 @@ def trigger_ep(diag_cmndr):
     time.sleep(5.0)
 
     # Send max sound event to allow EP
-    if not diag_cmndr.send_cmd(nfidag.GRP_STIMULATOR, nfidag.CMD_BUZZER_WARN):
+    resp = diag_cmndr.send_cmd(nfdiag.GRP_STIMULATOR, nfdiag.CMD_BUZZER_WARN)
+    if (not resp) or (resp["code"] != nfdiag.RESP_ACK):
         raise Exception("Failed sending CMD_MAX_SND")
     
     # Release EP
-    if not diag_cmndr.send_cmd(nfidag.GRP_STIMULATOR, nfidag.CMD_ELECTRICAL_PULSE):
+    resp = diag_cmndr.send_cmd(nfdiag.GRP_STIMULATOR, nfdiag.CMD_ELECTRICAL_PULSE):
+    if (not resp) or (resp["code"] != nfdiag.RESP_ACK):
         raise Exception("Failed sending CMD_TRG_EP")
 
 import bluefence

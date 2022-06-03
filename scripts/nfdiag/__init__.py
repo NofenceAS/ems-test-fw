@@ -3,6 +3,8 @@ from .stream import BLEStream, JLinkStream
 
 import time
 
+RESP_ACK = 0
+
 GRP_SYSTEM = 0x00,
 GRP_SETTINGS = 0x01
 GRP_STIMULATOR = 0x02
