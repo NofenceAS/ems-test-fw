@@ -25,7 +25,19 @@ def diagnostics_connect(ocd):
     # Connect to diagnostics channel
     diag_stream = ocd.rtt_connect("DIAG_UP", 9090)
     
-    return nfdiag.Commander(diag_stream)
+    diag_cmndr = nfdiag.Commander(diag_stream)
+
+    start_time = time.time()
+    got_ping = False
+    while time.time() < (start_time + 5) and (not got_ping):
+        resp = diag_cmndr.send_cmd(0, 0x55)
+        if resp:
+            got_ping = True
+            print("Got ping")
+    if not got_ping:
+        raise Exception("Did not get ping...")
+
+    return diag_cmndr
 
 def trigger_ep(diag_cmndr):
     # EP can not be released before k_uptime_get() returns > MINIMUM_TIME_BETWEEN_BURST
