@@ -388,10 +388,10 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 	}
 
 	/* Enable NAV-SAT output on UART, no handler */
-	ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
+	/*ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
 	if (ret != 0) {
 		return ret;
-	}
+	}*/
 
 	/* Enable MGA-ACK output on UART */
 	ret = mia_m10_config_set_u8(UBX_CFG_NAVSPG_ACKAIDING, 1);
