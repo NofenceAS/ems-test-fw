@@ -3,6 +3,14 @@ from .stream import BLEStream, JLinkStream
 
 import time
 
+GRP_SYSTEM = 0x00,
+GRP_SETTINGS = 0x01
+GRP_STIMULATOR = 0x02
+GRP_STORAGE = 0x03
+
+CMD_BUZZER_WARN = 0xB0
+CMD_ELECTRICAL_PULSE = 0xE0
+
 class NFDiag:
 	def __init__(self):
 		self.stream = JLinkStream()
