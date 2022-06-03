@@ -18,7 +18,7 @@ def flash(ocd, firmware_image):
 
 def diagnostics_connect(ocd):
     # Allow application to initialize diagnostics
-    time.sleep(2)
+    time.sleep(5)
 
     # Start RTT and list channels
     ocd.rtt_prepare()
