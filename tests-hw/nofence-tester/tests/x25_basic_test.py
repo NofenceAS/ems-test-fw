@@ -38,7 +38,7 @@ def trigger_ep(diag_cmndr):
         raise Exception("Failed sending CMD_MAX_SND")
     
     # Release EP
-    resp = diag_cmndr.send_cmd(nfdiag.GRP_STIMULATOR, nfdiag.CMD_ELECTRICAL_PULSE):
+    resp = diag_cmndr.send_cmd(nfdiag.GRP_STIMULATOR, nfdiag.CMD_ELECTRICAL_PULSE)
     if (not resp) or (resp["code"] != nfdiag.RESP_ACK):
         raise Exception("Failed sending CMD_TRG_EP")
 

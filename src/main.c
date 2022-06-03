@@ -62,6 +62,14 @@ void main(void)
 	}
 #endif
 
+	/* Initialize the buzzer */
+	err = buzzer_module_init();
+	if (err) {
+		char *e_msg = "Could not initialize the buzzer module";
+		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
+		nf_app_error(ERR_SOUND_CONTROLLER, err, e_msg, strlen(e_msg));
+	}
+
 	err = stg_init_storage_controller();
 	if (err) {
 		LOG_ERR("Could not initialize storage controller (%d)", err);
@@ -136,14 +144,6 @@ void main(void)
 		char *e_msg = "Could not initialize the power module";
 		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
 		nf_app_error(ERR_PWR_MODULE, err, e_msg, strlen(e_msg));
-	}
-
-	/* Initialize the buzzer */
-	err = buzzer_module_init();
-	if (err) {
-		char *e_msg = "Could not initialize the buzzer module";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_SOUND_CONTROLLER, err, e_msg, strlen(e_msg));
 	}
 
 	/* Initialize animal monitor control module, depends on storage
