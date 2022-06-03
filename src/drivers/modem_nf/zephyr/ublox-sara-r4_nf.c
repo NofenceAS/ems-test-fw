@@ -759,12 +759,12 @@ static const struct setup_cmd query_cellinfo_cmds[] = {
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 {
 	LOG_DBG("CDGCONT? handler, %d", argc);
-	LOG_INF("ip: %s", argv[3]);
+	LOG_DBG("ip: %s", argv[3]);
 	memcpy(mdata.mdm_pdp_addr, argv[3], 17); //17: "xxx.xxx.xxx.xxx", for
 	// the check_ip function, we're only interested in the fact that the
 	// first 8 characters are not "0.0.0.0
 	/*TODO: add more sofistication in handling the string if needed.*/
-	printk("new_mdm_pdp_addr = %s\n", mdata.mdm_pdp_addr);
+	LOG_DBG("new_mdm_pdp_addr = %s", log_strdup(mdata.mdm_pdp_addr));
 	return 0;
 }
 
@@ -1265,7 +1265,7 @@ static int modem_reset(void)
 		SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
 		SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 		SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_ccid, 0U, ""),
-		SETUP_CMD_NOHANDLE("AT+URAT=7,9"), /*TODO: add CFUN=15 after
+		SETUP_CMD_NOHANDLE("AT+URAT=7"), /*TODO: add CFUN=15 after
  * setting the URAT. CFUN=15 seems to scramble up the setup sometimes so it
  * should be carefully placed.*/
 

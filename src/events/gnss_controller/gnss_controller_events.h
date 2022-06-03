@@ -7,20 +7,12 @@ enum gnss_data_rate {
 	HIGH = 1 /* 4Hz */
 };
 
-enum gnss_mode {
-	GNSSMODE_NOMODE = 0,
-	GNSSMODE_INACTIVE = 1,
-	GNSSMODE_PSM = 2,
-	GNSSMODE_CAUTION = 3,
-	GNSSMODE_MAX = 4,
-	GNSSMODE_SIZE = 5
-};
-
 
 /** @brief GNSS data received from the GNSS driver. */
 struct gnss_data {
 	struct event_header header;
 	gnss_t gnss_data;
+	bool timed_out;
 };
 
 EVENT_TYPE_DECLARE(gnss_data);
@@ -36,12 +28,12 @@ EVENT_TYPE_DECLARE(gnss_rate);
 
 
 /** @brief Set GNSS mode. */
-struct gnss_set_mode {
+struct gnss_set_mode_event {
 	struct event_header header;
-	enum gnss_mode mode;
+	gnss_mode_t mode;
 };
 
-EVENT_TYPE_DECLARE(gnss_set_mode);
+EVENT_TYPE_DECLARE(gnss_set_mode_event);
 
 /** @brief Switch off GNSS receiver. e.g: when in beacon. */
 struct gnss_switch_off {
