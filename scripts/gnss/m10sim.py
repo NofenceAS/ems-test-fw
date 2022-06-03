@@ -63,6 +63,7 @@ class M10Simulator(threading.Thread):
     def run(self):
         while self.running:
             try:
+                # TODO - All values here need to come from somewhere, not just hardcoded..
                 itow = int(time.time()*1000)%3600000
                 if self.ubx_nav_status_uart1:
                     msg = UBXMessage('NAV','NAV-STATUS', GET, iTOW=itow, gpsFix=0, flags=0, fixStat=0, flags2=0, ttff=0, msss=0)
