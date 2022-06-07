@@ -1030,6 +1030,13 @@ MODEM_CMD_DEFINE(on_cmd_socknotify_listen)
 	return 0;
 }
 
+MODEM_CMD_DEFINE(on_cmd_socknotify_listen_udp)
+{
+	LOG_DBG("Received new message on UDP listening socket!");
+	k_sem_give(&listen_sem);
+	return 0;
+}
+
 
 /* RX thread */
 static void modem_rx(void)
@@ -2374,6 +2381,7 @@ static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("+UUSORF: ", on_cmd_socknotifydata, 2U, ","),
 	MODEM_CMD("+CREG: ", on_cmd_socknotifycreg, 1U, ""),
 	MODEM_CMD("+UUSOLI: ", on_cmd_socknotify_listen, 6U, ","),
+	MODEM_CMD("+UUSORF: ", on_cmd_socknotify_listen_udp, 2U, ","),
 };
 
 static int modem_init(const struct device *dev)

@@ -88,13 +88,8 @@ void test_socket_rcv_fails(void)
 
 void test_socket_connect_fails(void)
 {
-	//simulate sending error to trigger reconnection attempt
-	ztest_returns_value(reset_modem, 0);
-	ztest_returns_value(lte_init, 0);
-	ztest_returns_value(check_ip, 0);
-	ztest_returns_value(lte_init, 0);
-	ztest_returns_value(eep_read_host_port, 0);
-	ztest_returns_value(socket_listen, 0);
+	k_sleep(K_SECONDS(2)); //wait until the socket receive thread times
+	// out and the previous connection is closed.
 	ztest_returns_value(check_ip, 0);
 	ztest_returns_value(socket_connect, -1);
 	int err;
