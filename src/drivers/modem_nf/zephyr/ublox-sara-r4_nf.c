@@ -1317,8 +1317,7 @@ static int modem_reset(void)
 #if !defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 		/* setup PDP context definition */
 		SETUP_CMD_NOHANDLE(
-			"AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_UBLOX_SARA_R4_APN
-			"\""),
+			"AT+CGDCONT=1,\"IP\",\""CONFIG_MODEM_UBLOX_SARA_R4_APN"\""),
 		/* start functionality */
 		SETUP_CMD_NOHANDLE("AT+CFUN=1"),
 		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 1U,
@@ -1621,7 +1620,7 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 	}
 /*set linger time to 3000ms
  * TODO: parametrize duration */
-	char buf2[sizeof("AT+USOSO=#,65535,128,1,00\r")];
+	char buf2[sizeof("AT+USOSO=#,65535,128,1,####\r")];
 	snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,3000", mdata.last_sock);
 	if (mdata.last_sock != 0) { /* TODO: this assumes that socket 0 is
  * always the listening socket. Should change that to a smarter check in case
@@ -2561,6 +2560,11 @@ static int sleep(void){
 	}
 
 	const struct setup_cmd read_upsv_cmd[] = {
+
+//		SETUP_CMD_NOHANDLE("AT+USOCTL=0,10"), TODO: use this command
+		//		 to confirm that the listening socket is
+		//		 actually listening, and take some action if
+		//		 it is not.
 		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 1U,
 			  ","),
 	};
