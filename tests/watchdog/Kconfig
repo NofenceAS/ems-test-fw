@@ -2,7 +2,12 @@
 menu "APPLICATION_CODE"
 	menu "WATCHDOG"
     	rsource "./../../src/modules/watchdog/Kconfig"
-	endmenu # ERROR_HANDLER
+	endmenu # WATCHDOG
+
+	menu "BLE"
+	rsource "./../../src/modules/ble/Kconfig"
+	endmenu # BLE
+
 
 endmenu # APPLICATION CODE
 
