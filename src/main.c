@@ -179,6 +179,11 @@ void main(void)
 		nf_app_error(ERR_CELLULAR_CONTROLLER, err, e_msg,
 			     strlen(e_msg));
 	}
+	/* Initialize the time module used for the histogram calculation */
+	err = time_use_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize time use module. %d", err);
+	}
 
 	/* Initialize the messaging module */
 	err = messaging_module_init();
@@ -197,11 +202,6 @@ void main(void)
 		nf_app_error(ERR_GNSS_CONTROLLER, err, e_msg, strlen(e_msg));
 	}
 #endif
-	/* Initialize the time module used for the histogram calculation */
-	err = time_use_module_init();
-	if (err) {
-		LOG_ERR("Could not initialize time use module. %d", err);
-	}
 
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,
