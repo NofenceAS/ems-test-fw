@@ -8,6 +8,7 @@
 #include "error_event.h"
 
 #include "diagnostics.h"
+#include "selftest.h"
 #include "fw_upgrade.h"
 #include "fw_upgrade_events.h"
 #include "nf_settings.h"
@@ -52,6 +53,8 @@ void main(void)
 	int err;
 	LOG_INF("Starting Nofence application...");
 
+	selftest_init();
+
 	/* Initialize diagnostics module. */
 #if CONFIG_DIAGNOSTICS
 	err = diagnostics_module_init();
@@ -71,6 +74,7 @@ void main(void)
 	}
 
 	err = stg_init_storage_controller();
+	selftest_mark_state(SELFTEST_FLASH_POS, err == 0);
 	if (err) {
 		LOG_ERR("Could not initialize storage controller (%d)", err);
 		return;
@@ -96,6 +100,7 @@ void main(void)
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
 	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
+	selftest_mark_state(SELFTEST_EEPROM_POS, eeprom_dev != NULL);
 	if (eeprom_dev == NULL) {
 		char *e_msg = "No EEPROM device detected!";
 		LOG_ERR("%s (%d)", log_strdup(e_msg), -EIO);
@@ -158,6 +163,7 @@ void main(void)
 	}
 
 	err = init_movement_controller();
+	selftest_mark_state(SELFTEST_ACCELEROMETER_POS, err == 0);
 	if (err) {
 		char *e_msg = "Could not initialize the movement module";
 		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
@@ -190,6 +196,7 @@ void main(void)
 	/* Initialize the GNSS controller */
 #if CONFIG_GNSS_CONTROLLER
 	err = gnss_controller_init();
+	selftest_mark_state(SELFTEST_GNSS_POS, err == 0);
 	if (err) {
 		char *e_msg = "Could not initialize the GNSS controller.";
 		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
