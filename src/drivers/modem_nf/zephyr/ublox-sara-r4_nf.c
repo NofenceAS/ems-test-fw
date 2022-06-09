@@ -2598,7 +2598,6 @@ static int sleep(void){
 
 	if (ret != 0 && mdata.upsv_state == 4){/*TODO: return a different
  * value based on the condition.*/
-		LOG_ERR("Failed to disable modem uart controller.");
 		return ret;
 	}
 	return 0;
