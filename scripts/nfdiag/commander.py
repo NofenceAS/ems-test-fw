@@ -36,7 +36,7 @@ class Commander(threading.Thread):
 		self.running = False
 		self.join()
 
-	def send_cmd(self, group, cmd, data=None):
+	def send_cmd(self, group, cmd, data=None, timeout=0.5):
 		struct_format = "<BBH"
 		raw_cmd = struct.pack(struct_format, group, cmd, 0)
 		if not (data is None or len(data) == 0):
@@ -53,7 +53,7 @@ class Commander(threading.Thread):
 
 		self.stream.write(cobs.encode(raw_cmd) + b"\x00")
 
-		return self.get_resp(group, cmd)
+		return self.get_resp(group, cmd, timeout=timeout)
 
 	def get_resp(self, group, cmd, timeout=0.5):
 		resp = None

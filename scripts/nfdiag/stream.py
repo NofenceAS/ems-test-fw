@@ -192,16 +192,21 @@ import time
 
 
 HOST = "127.0.0.1"
-# TODO - Make this smarter with regards to existing jlink instances running
-JLINK_EXE = "JLinkExe"
-JLINK_EXE = "C:\\Program Files\\SEGGER\\JLink\\JLink.exe"
-#JLINK_EXE = "C:\\Program Files (x86)\\SEGGER\\JLink\\JLink.exe"
 
 class JLinkStream(threading.Thread):
-    def __init__(self, serial=None):
+    def __init__(self, serial=None, jlink_path=None):
         threading.Thread.__init__(self)
 
         self.jlink_proc = None
+
+        if sys.platform == "linux":
+            JLINK_EXE = "JLinkExe"
+        else:
+            JLINK_EXE = "JLink.exe"
+
+        if jlink_path != None:
+            JLINK_EXE = os.path.join(jlink_path, JLINK_EXE)
+
         if JLINK_EXE:
             cmd = [JLINK_EXE, '-device', 'nRF52840_xxAA', '-if', 'swd', '-speed', '4000', '-autoconnect', '1']
             if serial:

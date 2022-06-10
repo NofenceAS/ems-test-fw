@@ -12,7 +12,6 @@ import struct
 
 # Parse input arguments
 parser = argparse.ArgumentParser(description='Nofence GNSS recorder')
-parser.add_argument('--file', help='Base of filename to log to. Name will be postfixed with [time].gnss')
 parser.add_argument('--ble', help='Serial number of device in advertised name of device for BLE communication')
 parser.add_argument('--rtt', help='Serial number of Segger J-Link to use for RTT communication')
 args = parser.parse_args()
@@ -27,10 +26,13 @@ stream = None
 if args.ble:
 	stream = nfdiag.BLEStream("COM4", serial=args.ble)
 else:
-	stream = nfdiag.JLinkStream(serial=args.rtt)
+	stream = nfdiag.JLinkStream(serial=args.rtt, jlink_path="C:\\Program Files\\SEGGER\\JLink")
 
+try_until = time.time()+10
 while not stream.is_connected():
 	time.sleep(0.1)
+	if time.time() > try_until:
+		raise Exception("Timed out waiting for connection...")
 
 cmndr = nfdiag.Commander(stream)
 
@@ -76,8 +78,8 @@ failure = False
 if resp:
 	test_done, test_passed = struct.unpack("<II", resp["data"])
 
-	print("Tests done = " + str(test_done))
-	print("Tests passed = " + str(test_passed))
+	print("Tests done = " + "{0:b}".format(test_done))
+	print("Tests passed = " + "{0:b}".format(test_passed))
 
 	for selftest in selftests:
 		if test_done&(1<<selftest[0]) == 0:
