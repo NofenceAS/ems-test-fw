@@ -1293,12 +1293,15 @@ static int modem_reset(void)
 
 	static const struct setup_cmd pre_setup_cmds[] = {
 		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
+		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
+		SETUP_CMD_NOHANDLE("AT+COPS=2"),
 		SETUP_CMD_NOHANDLE("AT+CFUN=15"),
 		};
 
 	static const struct setup_cmd setup_cmds[] = {
 		/* turn off echo */
 		SETUP_CMD_NOHANDLE("ATE0"),
+
 		/* stop functionality */
 		SETUP_CMD_NOHANDLE("AT+CFUN=0"),
 		/* extended error numbers */
@@ -1549,6 +1552,8 @@ restart:
 		goto error;
 	}
 
+	k_sleep(K_MSEC(50));
+
 	LOG_INF("Network is ready.");
 	k_sleep(K_MSEC(250));
 	if (mdata.session_rat != 7) {
@@ -1624,19 +1629,6 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 			     &mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		goto error;
-	}
-/*set linger time to 3000ms
- * TODO: parametrize duration */
-	char buf2[sizeof("AT+USOSO=#,65535,128,1,####\r")];
-	snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,3000", mdata.last_sock);
-	if (mdata.last_sock != 0) { /* TODO: this assumes that socket 0 is
- * always the listening socket. Should change that to a smarter check in case
- * the listening socket uses any id other than 0.*/
-		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, buf2,
-			     &mdata.sem_response, MDM_CMD_TIMEOUT);
-		if (ret < 0) {
-			LOG_DBG("Failed to set socket linger time!");
-		}
 	}
 
 	if (sock->ip_proto == IPPROTO_TLS_1_2) {
@@ -2515,10 +2507,9 @@ int wake_up(void) {
 	k_sleep(K_MSEC(100));
 	const struct setup_cmd disable_psv[] = {
 		SETUP_CMD_NOHANDLE("AT+UPSV=0"),
-#ifdef CONFIG_USE_CPSMS
 		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
-#endif
 		SETUP_CMD_NOHANDLE("ATE0"),
+		SETUP_CMD_NOHANDLE("AT+UPSMVER?"),
 		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 1U,
 			  ","),
 	};
@@ -2593,11 +2584,6 @@ static int sleep(void){
 		LOG_DBG("UPSV=4 returned %d, ", ret);
 		/*TODO: change to a relevent error code, to be handled by
 		 * caller.*/
-		return 0;
-	}
-
-	if (ret != 0 && mdata.upsv_state == 4){/*TODO: return a different
- * value based on the condition.*/
 		return ret;
 	}
 	return 0;
@@ -2609,6 +2595,29 @@ int modem_nf_wakeup(void) {
 
 int modem_nf_sleep(void) {
 	return sleep();
+}
+
+int set_socket_linger_time(uint8_t socket_id, int linger_time_ms) {
+	char buf2[sizeof("AT+USOSO=#,65535,128,1,####\r")];
+
+	if (socket_id <= 6) {
+		snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,%d",
+			 socket_id, linger_time_ms);
+	} else {
+		return -EINVAL;
+	}
+	const struct setup_cmd set_linger[] = {
+		SETUP_CMD_NOHANDLE(buf2),
+	};
+
+	int ret = modem_cmd_handler_setup_cmds(
+		&mctx.iface, &mctx.cmd_handler, set_linger,
+		ARRAY_SIZE(set_linger), &mdata.sem_response,
+		MDM_AT_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_DBG("Failed to set socket %d linger time!", socket_id);
+	}
+	return ret;
 }
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL,
