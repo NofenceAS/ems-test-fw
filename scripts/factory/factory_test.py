@@ -54,15 +54,33 @@ print("Trying to ping...")
 start_time = time.time()
 got_ping = False
 while time.time() < (start_time + 5) and (not got_ping):
-	resp = cmndr.send_cmd(0, 0x55)
+	resp = cmndr.send_cmd(nfdiag.GROUP_SYSTEM, nfdiag.CMD_PING)
 	if resp:
 		got_ping = True
 		print("Got ping")
 if not got_ping:
 	raise Exception("Did not get ping...")
 
+# Write settings
+if not cmndr.write_setting(nfdiag.ID_SERIAL, 8010):
+	raise Exception("Failed to write settings")
+if not cmndr.write_setting(nfdiag.ID_HOST_PORT, b"172.31.36.11:4321"):
+	raise Exception("Failed to write settings")
+if not cmndr.write_setting(nfdiag.ID_EMS_PROVIDER, 0):
+	raise Exception("Failed to write settings")
+if not cmndr.write_setting(nfdiag.ID_PRODUCT_RECORD_REV, 2):
+	raise Exception("Failed to write settings")
+if not cmndr.write_setting(nfdiag.ID_BOM_MEC_REV, 5):
+	raise Exception("Failed to write settings")
+if not cmndr.write_setting(nfdiag.ID_BOM_PCB_REV, 3):
+	raise Exception("Failed to write settings")
+if not cmndr.write_setting(nfdiag.ID_HW_VERSION, 255): # What value?
+	raise Exception("Failed to write settings")
+if not cmndr.write_setting(nfdiag.ID_PRODUCT_TYPE, 1):
+	raise Exception("Failed to write settings")
+
 # Running test
-resp = cmndr.send_cmd(0x00, 0x7E, b"")
+resp = cmndr.send_cmd(nfdiag.GROUP_SYSTEM, nfdiag.CMD_TEST, b"")
 
 # Interpret result
 SELFTEST_FLASH_POS = 0
@@ -95,4 +113,51 @@ if resp:
 else:
 	raise Exception("No response when issuing test command")
 
+
+# Read settings
+set_file = open(str(int(time.time())) + "-settings.log", "w")
+
+val = cmndr.read_setting(nfdiag.ID_SERIAL)
+if not val:
+	raise Exception("Failed to read settings")
+set_file.write("ID_SERIAL = " + str(val))
+
+val = cmndr.read_setting(nfdiag.ID_HOST_PORT)
+if not val:
+	raise Exception("Failed to read settings")
+set_file.write("ID_HOST_PORT = " + str(val))
+
+val = cmndr.read_setting(nfdiag.ID_EMS_PROVIDER)
+if not val:
+	raise Exception("Failed to read settings")
+set_file.write("ID_EMS_PROVIDER = " + str(val))
+
+val = cmndr.read_setting(nfdiag.ID_PRODUCT_RECORD_REV)
+if not val:
+	raise Exception("Failed to read settings")
+set_file.write("ID_PRODUCT_RECORD_REV = " + str(val))
+
+val = cmndr.read_setting(nfdiag.ID_BOM_MEC_REV)
+if not val:
+	raise Exception("Failed to read settings")
+set_file.write("ID_BOM_MEC_REV = " + str(val))
+
+val = cmndr.read_setting(nfdiag.ID_BOM_PCB_REV)
+if not val:
+	raise Exception("Failed to read settings")
+set_file.write("ID_BOM_PCB_REV = " + str(val))
+
+val = cmndr.read_setting(nfdiag.ID_HW_VERSION)
+if not val:
+	raise Exception("Failed to read settings")
+set_file.write("ID_HW_VERSION = " + str(val))
+
+val = cmndr.read_setting(nfdiag.ID_PRODUCT_TYPE)
+if not val:
+	raise Exception("Failed to read settings")
+set_file.write("ID_PRODUCT_TYPE = " + str(val))
+
+set_file.close()
+
+# Testing done, tear down
 signal_handler(None, None)

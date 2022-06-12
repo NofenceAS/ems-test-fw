@@ -8,6 +8,33 @@ import time
 import logging
 logging.basicConfig(level=logging.INFO)
 
+# Definitions used for group/command/response
+GROUP_SYSTEM = 0x00,
+CMD_PING = 0x55
+CMD_TEST = 0x7E
+
+GROUP_SETTINGS = 0x01
+ID_SERIAL = (0x00, "I")
+ID_HOST_PORT = (0x01, "s")
+ID_EMS_PROVIDER = (0x02, "B")
+ID_PRODUCT_RECORD_REV = (0x03, "B")
+ID_BOM_MEC_REV = (0x04, "B")
+ID_BOM_PCB_REV = (0x05, "B")
+ID_HW_VERSION = (0x06, "B")
+ID_PRODUCT_TYPE = (0x07, "H")
+CMD_READ = 0x00
+CMD_WRITE = 0x01
+ERASE_ALL = 0xEA
+
+GROUP_STIMULATOR = 0x02
+CMD_BUZZER_WARN = 0xB0
+CMD_ELECTRICAL_PULSE = 0xE0
+
+GROUP_STORAGE = 0x03
+
+RESP_ACK = 0x00
+RESP_DATA = 0x01
+
 class Commander(threading.Thread):
 	def __init__(self, stream):
 		threading.Thread.__init__(self)
@@ -35,6 +62,17 @@ class Commander(threading.Thread):
 	def stop(self):
 		self.running = False
 		self.join()
+
+	def write_setting(id, value):
+		payload = struct.pack("<B" + id[1], id[0], value)
+		return send_cmd(GROUP_SETTINGS, CMD_WRITE, payload)
+	
+	def read_setting(id):
+		payload = struct.pack("<B", id[0])
+		resp = send_cmd(GROUP_SETTINGS, CMD_READ, payload)
+		if resp:
+			value = struct.unpack("<" + id[1], resp["data"])
+		return None
 
 	def send_cmd(self, group, cmd, data=None, timeout=0.5):
 		struct_format = "<BBH"
