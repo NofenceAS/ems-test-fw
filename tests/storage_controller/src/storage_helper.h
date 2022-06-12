@@ -25,6 +25,7 @@ void test_no_log_available(void);
 void test_log_after_reboot(void);
 void test_double_clear(void);
 void test_rotate_handling(void);
+void test_log_padding(void);
 
 /* Ano tests. */
 void test_ano_write_20_days(void);
