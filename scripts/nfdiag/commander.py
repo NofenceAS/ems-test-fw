@@ -9,7 +9,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 # Definitions used for group/command/response
-GROUP_SYSTEM = 0x00,
+GROUP_SYSTEM = 0x00
 CMD_PING = 0x55
 CMD_TEST = 0x7E
 
@@ -63,15 +63,24 @@ class Commander(threading.Thread):
 		self.running = False
 		self.join()
 
-	def write_setting(id, value):
-		payload = struct.pack("<B" + id[1], id[0], value)
-		return send_cmd(GROUP_SETTINGS, CMD_WRITE, payload)
+	def write_setting(self, id, value):
+		if id[1] == "s":
+			payload = struct.pack("<B" + str(len(value)) + id[1], id[0], value)
+		else:
+			payload = struct.pack("<B" + id[1], id[0], value)
+		resp = self.send_cmd(GROUP_SETTINGS, CMD_WRITE, payload)
+		logging.debug(resp)
+		return resp
 	
-	def read_setting(id):
+	def read_setting(self, id):
 		payload = struct.pack("<B", id[0])
-		resp = send_cmd(GROUP_SETTINGS, CMD_READ, payload)
+		resp = self.send_cmd(GROUP_SETTINGS, CMD_READ, payload)
 		if resp:
-			value = struct.unpack("<" + id[1], resp["data"])
+			if id[1] == "s":
+				_,value = struct.unpack("<B" + str(len(resp["data"])-1) + id[1], resp["data"])
+			else:
+				_,value = struct.unpack("<B" + id[1], resp["data"])
+			return value
 		return None
 
 	def send_cmd(self, group, cmd, data=None, timeout=0.5):

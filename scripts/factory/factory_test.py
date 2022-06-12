@@ -26,7 +26,7 @@ stream = None
 if args.ble:
 	stream = nfdiag.BLEStream("COM4", serial=args.ble)
 else:
-	stream = nfdiag.JLinkStream(serial=args.rtt, jlink_path="C:\\Program Files\\SEGGER\\JLink")
+	stream = nfdiag.JLinkStream(serial=args.rtt, jlink_path="C:\\Program Files (x86)\\SEGGER\\JLink")
 
 try_until = time.time()+10
 while not stream.is_connected():
@@ -61,10 +61,11 @@ while time.time() < (start_time + 5) and (not got_ping):
 if not got_ping:
 	raise Exception("Did not get ping...")
 
-# Write settings
+# Write settings 
+ # TODO: What values?
 if not cmndr.write_setting(nfdiag.ID_SERIAL, 8010):
 	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_HOST_PORT, b"172.31.36.11:4321"):
+if not cmndr.write_setting(nfdiag.ID_HOST_PORT, b"172.31.36.11:4321\x00"):
 	raise Exception("Failed to write settings")
 if not cmndr.write_setting(nfdiag.ID_EMS_PROVIDER, 0):
 	raise Exception("Failed to write settings")
@@ -74,7 +75,7 @@ if not cmndr.write_setting(nfdiag.ID_BOM_MEC_REV, 5):
 	raise Exception("Failed to write settings")
 if not cmndr.write_setting(nfdiag.ID_BOM_PCB_REV, 3):
 	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_HW_VERSION, 255): # What value?
+if not cmndr.write_setting(nfdiag.ID_HW_VERSION, 15):
 	raise Exception("Failed to write settings")
 if not cmndr.write_setting(nfdiag.ID_PRODUCT_TYPE, 1):
 	raise Exception("Failed to write settings")
@@ -89,7 +90,7 @@ SELFTEST_ACCELEROMETER_POS = 2
 SELFTEST_GNSS_POS = 3
 selftests = [(SELFTEST_FLASH_POS, "Flash"), 
 			 (SELFTEST_EEPROM_POS, "EEPROM"), 
-			 (SELFTEST_ACCELEROMETER_POS, "Accelerometer"), 
+			 #(SELFTEST_ACCELEROMETER_POS, "Accelerometer"), 
 			 (SELFTEST_GNSS_POS, "GNSS")]
 
 failure = False
@@ -118,44 +119,44 @@ else:
 set_file = open(str(int(time.time())) + "-settings.log", "w")
 
 val = cmndr.read_setting(nfdiag.ID_SERIAL)
-if not val:
+if val is None:
 	raise Exception("Failed to read settings")
-set_file.write("ID_SERIAL = " + str(val))
+set_file.write("ID_SERIAL = " + str(val) + "\n")
 
 val = cmndr.read_setting(nfdiag.ID_HOST_PORT)
-if not val:
+if val is None:
 	raise Exception("Failed to read settings")
-set_file.write("ID_HOST_PORT = " + str(val))
+set_file.write("ID_HOST_PORT = " + str(val) + "\n")
 
 val = cmndr.read_setting(nfdiag.ID_EMS_PROVIDER)
-if not val:
+if val is None:
 	raise Exception("Failed to read settings")
-set_file.write("ID_EMS_PROVIDER = " + str(val))
+set_file.write("ID_EMS_PROVIDER = " + str(val) + "\n")
 
 val = cmndr.read_setting(nfdiag.ID_PRODUCT_RECORD_REV)
-if not val:
+if val is None:
 	raise Exception("Failed to read settings")
-set_file.write("ID_PRODUCT_RECORD_REV = " + str(val))
+set_file.write("ID_PRODUCT_RECORD_REV = " + str(val) + "\n")
 
 val = cmndr.read_setting(nfdiag.ID_BOM_MEC_REV)
-if not val:
+if val is None:
 	raise Exception("Failed to read settings")
-set_file.write("ID_BOM_MEC_REV = " + str(val))
+set_file.write("ID_BOM_MEC_REV = " + str(val) + "\n")
 
 val = cmndr.read_setting(nfdiag.ID_BOM_PCB_REV)
-if not val:
+if val is None:
 	raise Exception("Failed to read settings")
-set_file.write("ID_BOM_PCB_REV = " + str(val))
+set_file.write("ID_BOM_PCB_REV = " + str(val) + "\n")
 
 val = cmndr.read_setting(nfdiag.ID_HW_VERSION)
-if not val:
+if val is None:
 	raise Exception("Failed to read settings")
-set_file.write("ID_HW_VERSION = " + str(val))
+set_file.write("ID_HW_VERSION = " + str(val) + "\n")
 
 val = cmndr.read_setting(nfdiag.ID_PRODUCT_TYPE)
-if not val:
+if val is None:
 	raise Exception("Failed to read settings")
-set_file.write("ID_PRODUCT_TYPE = " + str(val))
+set_file.write("ID_PRODUCT_TYPE = " + str(val) + "\n")
 
 set_file.close()
 
