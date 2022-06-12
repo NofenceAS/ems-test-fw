@@ -139,13 +139,6 @@ void test_poll_request_out_when_nudged_from_server(void)
 	ev->state = true;
 	EVENT_SUBMIT(ev);
 	
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint16_read, 0);
-	
 	k_sem_take(&msg_out, K_MSEC(500));
 	printk("Outbound messages = %d\n", msg_count);
 	zassert_not_equal(pMsg, NULL, "Proto message not published!\n");
