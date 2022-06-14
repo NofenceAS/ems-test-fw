@@ -131,11 +131,12 @@ else:
 ccid = b""
 timeout = time.time()+5
 if len(ccid) == 0:
-	ccid = cmndr.modem_get()
+	ccid = cmndr.modem_get_ccid()
 	if ccid is None:
 		raise Exception("No response while reading CCID")
 	if time.time() > timeout:
 		raise Exception("Timed out waiting for valid CCID. Modem failure!")
+print("Modem CCID: " + str(ccid))
 
 # Read settings
 set_file = open(str(int(time.time())) + "-settings.log", "w")

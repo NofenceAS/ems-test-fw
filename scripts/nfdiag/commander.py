@@ -66,11 +66,11 @@ class Commander(threading.Thread):
 		self.running = False
 		self.join()
 
-	def modem_get(self):
+	def modem_get_ccid(self):
 		resp = self.send_cmd(GROUP_MODEM, CMD_GET_CCID)
 		if resp:
 			value = struct.unpack("<" + str(len(resp["data"])) + "s", resp["data"])
-			return value
+			return int(value[0])
 		return None
 
 	def write_setting(self, id, value):
