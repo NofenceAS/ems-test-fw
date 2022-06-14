@@ -69,8 +69,11 @@ class Commander(threading.Thread):
 	def modem_get_ccid(self):
 		resp = self.send_cmd(GROUP_MODEM, CMD_GET_CCID)
 		if resp:
-			value = struct.unpack("<" + str(len(resp["data"])) + "s", resp["data"])
-			return int(value[0])
+			if resp["code"] == RESP_DATA:
+				value = struct.unpack("<" + str(len(resp["data"])) + "s", resp["data"])
+				return value[0]
+			else:
+				return b""
 		return None
 
 	def write_setting(self, id, value):
