@@ -32,6 +32,9 @@ CMD_ELECTRICAL_PULSE = 0xE0
 
 GROUP_STORAGE = 0x03
 
+GROUP_MODEM = 0x04
+CMD_GET_CCID = 0x00
+
 RESP_ACK = 0x00
 RESP_DATA = 0x01
 
@@ -62,6 +65,13 @@ class Commander(threading.Thread):
 	def stop(self):
 		self.running = False
 		self.join()
+
+	def modem_get(self):
+		resp = self.send_cmd(GROUP_MODEM, CMD_GET_CCID)
+		if resp:
+			value = struct.unpack("<" + str(len(resp["data"])) + "s", resp["data"])
+			return value
+		return None
 
 	def write_setting(self, id, value):
 		if id[1] == "s":
