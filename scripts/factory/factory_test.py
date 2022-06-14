@@ -122,8 +122,6 @@ if resp:
 			print("Failed test: " + selftest[1])
 	if failure:
 		raise Exception("!!!!TEST FAILED!!!!!")
-	else:
-		print("All tests passed!")
 else:
 	raise Exception("No response when issuing test command")
 
@@ -139,7 +137,7 @@ while len(ccid) == 0:
 print("Modem CCID: " + str(int(ccid)))
 
 # Read settings
-set_file = open(str(int(time.time())) + "-settings.log", "w")
+set_file = open(args.suid + "_" + str(int(time.time())) + ".log", "w")
 
 val = cmndr.read_setting(nfdiag.ID_SERIAL)
 if val is None:
@@ -181,7 +179,11 @@ if val is None:
 	raise Exception("Failed to read settings")
 set_file.write("ID_PRODUCT_TYPE = " + str(val) + "\n")
 
+set_file.write("CCID = " + str(int(ccid)) + "\n")
+
 set_file.close()
+
+print("Success!")
 
 # Testing done, tear down
 signal_handler(None, None)
