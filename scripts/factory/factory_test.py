@@ -14,9 +14,9 @@ import struct
 parser = argparse.ArgumentParser(description='Nofence GNSS recorder')
 parser.add_argument('--ble', help='Serial number of device in advertised name of device for BLE communication')
 parser.add_argument('--rtt', help='Serial number of Segger J-Link to use for RTT communication')
-parser.add_argument('--suid', help='DUT Unique serial number')
-parser.add_argument('--pt', help='DUT Product type')
-parser.add_argument('--ems', help='DUT EMS provider')
+parser.add_argument('--suid', help='DUT Unique serial number', required=True)
+parser.add_argument('--pt', help='DUT Product type', required=True)
+parser.add_argument('--ems', help='DUT EMS provider', required=True)
 args = parser.parse_args()
 
 # Build connection
