@@ -14,6 +14,9 @@ import struct
 parser = argparse.ArgumentParser(description='Nofence GNSS recorder')
 parser.add_argument('--ble', help='Serial number of device in advertised name of device for BLE communication')
 parser.add_argument('--rtt', help='Serial number of Segger J-Link to use for RTT communication')
+parser.add_argument('--suid', help='DUT Unique serial number')
+parser.add_argument('--pt', help='DUT Product type')
+parser.add_argument('--ems', help='DUT EMS provider')
 args = parser.parse_args()
 
 # Build connection
@@ -21,6 +24,9 @@ if (args.ble and args.rtt):
 	raise Exception("Can't connect to both BLE and RTT. Choose one!")
 elif (not args.ble) and (not args.rtt):
 	print("Didn't specify a connection. RTT will be used on any available J-Link devices.")
+
+#print(args.suid + " will be flashed into DUT")
+#print(args.pt + " will be flashed into DUT")
 
 stream = None
 if args.ble:
@@ -63,22 +69,28 @@ if not got_ping:
 
 # Write settings 
  # TODO: What values?
-if not cmndr.write_setting(nfdiag.ID_SERIAL, 8010):
+
+if not cmndr.write_setting(nfdiag.ID_SERIAL, int(args.suid)):
 	raise Exception("Failed to write settings")
 if not cmndr.write_setting(nfdiag.ID_HOST_PORT, b"172.31.36.11:4321\x00"):
 	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_EMS_PROVIDER, 0):
+if not cmndr.write_setting(nfdiag.ID_EMS_PROVIDER, int(args.ems)):
 	raise Exception("Failed to write settings")
 if not cmndr.write_setting(nfdiag.ID_PRODUCT_RECORD_REV, 2):
 	raise Exception("Failed to write settings")
 if not cmndr.write_setting(nfdiag.ID_BOM_MEC_REV, 5):
 	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_BOM_PCB_REV, 3):
+if not cmndr.write_setting(nfdiag.ID_BOM_PCB_REV, 2):
 	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_HW_VERSION, 15):
+if not cmndr.write_setting(nfdiag.ID_HW_VERSION, 20):
 	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_PRODUCT_TYPE, 1):
+if not cmndr.write_setting(nfdiag.ID_PRODUCT_TYPE, int(args.pt)):
 	raise Exception("Failed to write settings")
+
+print("DUT Serial No: " + str(cmndr.read_setting(nfdiag.ID_SERIAL)))
+print("HOST PORT: " + str(cmndr.read_setting(nfdiag.ID_HOST_PORT)))
+print("EMS Provider: " + str(cmndr.read_setting(nfdiag.ID_EMS_PROVIDER)))
+print("Product type: " + str(cmndr.read_setting(nfdiag.ID_PRODUCT_TYPE)))
 
 # Running test
 resp = cmndr.send_cmd(nfdiag.GROUP_SYSTEM, nfdiag.CMD_TEST, b"")
@@ -90,7 +102,7 @@ SELFTEST_ACCELEROMETER_POS = 2
 SELFTEST_GNSS_POS = 3
 selftests = [(SELFTEST_FLASH_POS, "Flash"), 
 			 (SELFTEST_EEPROM_POS, "EEPROM"), 
-			 #(SELFTEST_ACCELEROMETER_POS, "Accelerometer"), 
+			 (SELFTEST_ACCELEROMETER_POS, "Accelerometer"), 
 			 (SELFTEST_GNSS_POS, "GNSS")]
 
 failure = False
