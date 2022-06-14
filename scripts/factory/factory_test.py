@@ -26,7 +26,7 @@ stream = None
 if args.ble:
 	stream = nfdiag.BLEStream("COM4", serial=args.ble)
 else:
-	stream = nfdiag.JLinkStream(serial=args.rtt, jlink_path="C:\\Program Files (x86)\\SEGGER\\JLink")
+	stream = nfdiag.JLinkStream(serial=args.rtt, jlink_path=None)
 
 try_until = time.time()+10
 while not stream.is_connected():
@@ -63,7 +63,7 @@ if not got_ping:
 
 # Write settings 
  # TODO: What values?
-if not cmndr.write_setting(nfdiag.ID_SERIAL, 8010):
+if not cmndr.write_setting(nfdiag.ID_SERIAL, 8002):
 	raise Exception("Failed to write settings")
 if not cmndr.write_setting(nfdiag.ID_HOST_PORT, b"172.31.36.11:4321\x00"):
 	raise Exception("Failed to write settings")
