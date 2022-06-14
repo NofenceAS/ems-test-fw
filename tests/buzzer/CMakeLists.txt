@@ -24,5 +24,6 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/mock
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/buzzer
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/pwr_event
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler
 )
