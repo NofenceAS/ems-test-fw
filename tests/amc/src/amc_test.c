@@ -37,7 +37,8 @@ void test_init_and_update_pasture(void)
 	ztest_returns_value(eep_uint32_read, 0);
 	ztest_returns_value(eep_uint16_read, 0);
 
-	/* Cached modes. Collarmode, fencestatus and collarstatus. */
+	/* Cached modes. Collarmode, fencestatus and collarstatus and keepmode. */
+	ztest_returns_value(eep_uint8_read, 0);
 	ztest_returns_value(eep_uint8_read, 0);
 	ztest_returns_value(eep_uint8_read, 0);
 	ztest_returns_value(eep_uint8_read, 0);
