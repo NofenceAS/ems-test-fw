@@ -104,6 +104,7 @@ SELFTEST_FLASH_POS = 0
 SELFTEST_EEPROM_POS = 1
 SELFTEST_ACCELEROMETER_POS = 2
 SELFTEST_GNSS_POS = 3
+
 selftests = [(SELFTEST_FLASH_POS, "Flash"), 
 			 (SELFTEST_EEPROM_POS, "EEPROM"), 
 			 (SELFTEST_ACCELEROMETER_POS, "Accelerometer"),
@@ -127,6 +128,10 @@ if resp:
 		raise Exception("!!!!TEST FAILED!!!!!")
 else:
 	raise Exception("No response when issuing test command")
+
+print("Giving a pulse in 5 seconds!!!!!!!!!!")
+time.sleep(5)
+val = cmndr.electric_pulse_now()
 
 # Read CCID from modem
 ccid = b""
