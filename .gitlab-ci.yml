@@ -28,7 +28,7 @@ firmware:
     - ../zephyr/scripts/twister -i -T tests/
     ## Let our own secret key override the one in the repo
     - echo "$NOFENCE_RSA_PRIVATE_KEY" > child_image/mcuboot/nofence_rsa_private.pem
-    - west build -p -b nf_x25_nrf52840
+    - west build -p -b nf_c25_25g_nrf52840
 
   artifacts:
     name: "firmware"
