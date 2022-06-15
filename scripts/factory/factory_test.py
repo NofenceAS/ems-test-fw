@@ -88,11 +88,14 @@ if not cmndr.write_setting(nfdiag.ID_HW_VERSION, 20):
 if not cmndr.write_setting(nfdiag.ID_PRODUCT_TYPE, int(args.pt)):
 	raise Exception("Failed to write settings")
 
-print("DUT Serial No: " + str(cmndr.read_setting(nfdiag.ID_SERIAL)))
-print("HOST PORT: " + str(cmndr.read_setting(nfdiag.ID_HOST_PORT)))
-print("EMS Provider: " + str(cmndr.read_setting(nfdiag.ID_EMS_PROVIDER)))
-print("Product type: " + str(cmndr.read_setting(nfdiag.ID_PRODUCT_TYPE)))
-
+print("1: Serial No: " + str(cmndr.read_setting(nfdiag.ID_SERIAL)))
+print("2: HOST PORT: " + str(cmndr.read_setting(nfdiag.ID_HOST_PORT)))
+print("3: EMS Provider: " + str(cmndr.read_setting(nfdiag.ID_EMS_PROVIDER)))
+print("4: Product type: " + str(cmndr.read_setting(nfdiag.ID_PRODUCT_TYPE)))
+print("5: Generation: " + str(cmndr.read_setting(nfdiag.ID_PRODUCT_RECORD_REV)))
+print("6: Model: " + str(cmndr.read_setting(nfdiag.ID_BOM_MEC_REV)))
+print("7: PR Version: " + str(cmndr.read_setting(nfdiag.ID_BOM_PCB_REV)))
+print("8: HW Version: " + str(cmndr.read_setting(nfdiag.ID_HW_VERSION)))
 # Running test
 resp = cmndr.send_cmd(nfdiag.GROUP_SYSTEM, nfdiag.CMD_TEST, b"")
 
