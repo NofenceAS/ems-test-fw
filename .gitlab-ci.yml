@@ -33,8 +33,6 @@ firmware:
      ## Let our own secret key override the one in the repo, TODO DRY
     - echo "$NF_SG25_27O_NRF52840_PRIV_KEY" > child_image/mcuboot/nofence_rsa_private.pem
     - west build -p -b nf_sg25_27o_nrf52840 --build-dir build/nf_sg25_27o_nrf52840 
-    - mkdir build
-    - mkdir build/
 
   artifacts:
     name: "firmware"
