@@ -41,35 +41,17 @@ int gnss_uart_set_baudrate(uint32_t baudrate, bool immediate);
 uint32_t gnss_uart_get_baudrate(void);
 
 /**
- * @brief Send data to UART. 
- *
- * @param[in] buffer Buffer with data to send. 
- * @param[in] cnt Number of bytes of data in buffer. 
+ * @brief Trigger UART transmitting. 
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int gnss_uart_send(uint8_t* buffer, uint32_t cnt);
+int gnss_uart_start_send(void);
 
 /**
- * @brief Get received data. Data is available from index 0 up to 
- *        cnt number of bytes. Use gnss_uart_rx_consume to delete data 
- *        that has been handled. 
+ * @brief Block/unblock UART interrupts and scheduler.
  *
- * @param[out] buffer Buffer with received data. 
- * @param[out] cnt Number of bytes of data in buffer. 
- * 
- * @return 0 if everything was ok, error code otherwise
+ * @param[in] block Block if true, unblock if false.
  */
-void gnss_uart_rx_get_data(uint8_t** buffer, uint32_t* cnt);
-
-/**
- * @brief Consume data from receive buffer. Data will be deleted from start 
- *        of buffer, and following data will be moved to start of buffer. 
- *
- * @param[in] cnt Number of bytes to consume. 
- * 
- * @return 0 if everything was ok, error code otherwise
- */
-void gnss_uart_rx_consume(uint32_t cnt);
+void gnss_uart_block(bool block);
 
 #endif /* GNSS_UART_H_ */

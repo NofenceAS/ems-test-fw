@@ -1,5 +1,11 @@
 #include <event_manager.h>
 
+typedef enum {
+	POWER_OFF = 0,
+	POWER_ON = 1,
+	SLEEP = 2,
+} modem_pwr_mode;
+
 /** @brief Empty event published by the cellular controller to acknowledge
  * reception of proto_out messages from the messaging module. */
 
@@ -52,6 +58,11 @@ struct connection_state_event {
 
 EVENT_TYPE_DECLARE(connection_state_event);
 
+struct modem_state {
+	struct event_header header;
+	modem_pwr_mode mode;
+};
+EVENT_TYPE_DECLARE(modem_state);
 
 /** @brief Event published by the send message thread to free the allocated
  * message ram in cellular_controller event handler.
@@ -61,3 +72,4 @@ struct free_message_mem_event {
 	struct event_header header;
 };
 EVENT_TYPE_DECLARE(free_message_mem_event);
+

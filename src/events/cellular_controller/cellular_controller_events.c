@@ -22,6 +22,11 @@ EVENT_TYPE_DEFINE(connection_state_event,
 		  NULL,
 		  NULL);
 
+EVENT_TYPE_DEFINE(modem_state,
+		  true,
+		  NULL,
+		  NULL);
+
 EVENT_TYPE_DEFINE(free_message_mem_event,
 		  true,
 		  NULL,

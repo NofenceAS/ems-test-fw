@@ -204,6 +204,7 @@ int wake_up(void);
 static struct zsock_addrinfo result;
 static struct sockaddr result_addr;
 static char result_canonname[DNS_MAX_NAME_SIZE + 1];
+static bool ccid_ready = false;
 //#endif
 //
 /* helper macro to keep readability */
@@ -653,7 +654,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_ccid)
  * bytes to discard 'ccid:_' */
 	mdata.mdm_ccid[out_len] = '\0';
 	LOG_INF("CCID: %s", log_strdup(mdata.mdm_ccid));
-
+	ccid_ready = true;
 	return 0;
 }
 
@@ -1020,6 +1021,9 @@ MODEM_CMD_DEFINE(on_cmd_socknotifycreg)
 	return 0;
 }
 
+/* Handler: +UUSOLI: <socket>,<ip_address>,
+<port>,<listening_socket>,<local_
+ip_address>,<listening_port> */
 MODEM_CMD_DEFINE(on_cmd_socknotify_listen)
 {
 	LOG_DBG("Received new message on listening socket:%s, port:%s",
@@ -1301,7 +1305,6 @@ static int modem_reset(void)
 	static const struct setup_cmd setup_cmds[] = {
 		/* turn off echo */
 		SETUP_CMD_NOHANDLE("ATE0"),
-
 		/* stop functionality */
 		SETUP_CMD_NOHANDLE("AT+CFUN=0"),
 		/* extended error numbers */
@@ -1471,6 +1474,7 @@ restart:
 			     NULL, 0, "AT+CFUN=1",
 			     &mdata.sem_response,
 			     MDM_CMD_TIMEOUT);
+
 	/*
 	 * TODO: A lot of this should be setup as a 3GPP module to handle
 	 * basic connection to the network commands / polling
@@ -2471,18 +2475,19 @@ int modem_nf_reset(void)
 	return modem_reset();
 }
 
-int get_pdp_addr(char** ip_addr){
+int get_pdp_addr(char **ip_addr)
+{
 	const struct setup_cmd read_sim_ip_cmd[] = {
-		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 7, ","),
+		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 6, ","),
 	};
-	int ret = modem_cmd_handler_setup_cmds(
-		&mctx.iface, &mctx.cmd_handler, read_sim_ip_cmd,
-		1, &mdata.sem_response,
-		MDM_REGISTRATION_TIMEOUT);
-	if (ret == 0){
+	int ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
+					       read_sim_ip_cmd, 1,
+					       &mdata.sem_response,
+					       MDM_REGISTRATION_TIMEOUT);
+	if (ret == 0) {
 		*ip_addr = mdata.mdm_pdp_addr;
 		return 0;
-	}else{
+	} else {
 		return -1;
 	}
 }
@@ -2620,7 +2625,17 @@ int set_socket_linger_time(uint8_t socket_id, int linger_time_ms) {
 	return ret;
 }
 
-NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL,
-				  &mdata, NULL,
+
+int get_ccid(char **ccid)
+{
+	if (ccid_ready) {
+		*ccid = mdata.mdm_ccid;
+		return 0;
+	} else {
+		return -ENODATA;
+	}
+}
+
+NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL, &mdata, NULL,
 				  CONFIG_MODEM_UBLOX_SARA_R4_INIT_PRIORITY,
 				  &api_funcs, MDM_MAX_DATA_LENGTH);
