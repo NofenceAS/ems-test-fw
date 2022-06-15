@@ -57,16 +57,3 @@ int eep_write_ble_sec_key(uint8_t *ble_sec_key, size_t bufsize)
 	ARG_UNUSED(bufsize);
 	return ztest_get_return_value();
 }
-
-int eep_uint16_read(eep_uint16_enum_t field, uint16_t *value)
-{
-	ARG_UNUSED(field);
-	ARG_UNUSED(value);
-	return ztest_get_return_value();
-}
-int eep_uint16_write(eep_uint16_enum_t field, uint16_t value)
-{
-	ARG_UNUSED(field);
-	ARG_UNUSED(value);
-	return ztest_get_return_value();
-}
