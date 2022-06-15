@@ -1,6 +1,14 @@
 import os
+import sys
 import time
 import logging
+
+# Add scripts folder to search path
+base_path = os.path.dirname(os.path.abspath(__file__))
+lib_path = os.path.join(base_path, "../../../scripts")
+sys.path.append(lib_path)
+
+import nfdiag
 
 def flash(ocd, firmware_image):
     ocd.reset(halt=True)
@@ -16,47 +24,34 @@ def diagnostics_connect(ocd):
     ocd.rtt_prepare()
     # Connect to diagnostics channel
     diag_stream = ocd.rtt_connect("DIAG_UP", 9090)
-    return diag_stream
-
-from cobs import cobs
-
-def send_diag_cmd(diag_stream, cmd, expect_data):
-    diag_stream.write(cobs.encode(cmd) + b"\x00")
+    
+    diag_cmndr = nfdiag.Commander(diag_stream)
 
     start_time = time.time()
-    got_resp = False
-    data = b""
-    while (not got_resp) and ((time.time()-start_time) < 0.5):
-        recv = diag_stream.read()
-        if len(recv) > 0:
-            data += recv
-            logging.debug("Raw-data: " + str(data))
-            if len(data) >= 5:
-                ind = data.find(b"\x00")
-                if ind >= 0:
-                    enc = data[:ind]
-                    data = data[ind+1:]
+    got_ping = False
+    while time.time() < (start_time + 5) and (not got_ping):
+        resp = diag_cmndr.send_cmd(0, 0x55)
+        if resp:
+            got_ping = True
+            print("Got ping")
+    if not got_ping:
+        raise Exception("Did not get ping...")
 
-                    logging.debug("COBS-data: " + str(enc))
-                    resp = cobs.decode(enc)
+    return diag_cmndr
 
-                    logging.debug("Decoded data: " + str(resp))
-                    got_resp = True
-    return got_resp
-
-def trigger_ep(diag_stream):
+def trigger_ep(diag_cmndr):
     # EP can not be released before k_uptime_get() returns > MINIMUM_TIME_BETWEEN_BURST
     # Delay for 5 sec
     time.sleep(5.0)
 
     # Send max sound event to allow EP
-    CMD_MAX_SND = b"N\x20"
-    if not send_diag_cmd(diag_stream, CMD_MAX_SND, False):
+    resp = diag_cmndr.send_cmd(nfdiag.GRP_STIMULATOR, nfdiag.CMD_BUZZER_WARN)
+    if (not resp) or (resp["code"] != nfdiag.RESP_ACK):
         raise Exception("Failed sending CMD_MAX_SND")
     
     # Release EP
-    CMD_TRG_EP = b"N\x50"
-    if not send_diag_cmd(diag_stream, CMD_TRG_EP, False):
+    resp = diag_cmndr.send_cmd(nfdiag.GRP_STIMULATOR, nfdiag.CMD_ELECTRICAL_PULSE)
+    if (not resp) or (resp["code"] != nfdiag.RESP_ACK):
         raise Exception("Failed sending CMD_TRG_EP")
 
 import bluefence
@@ -107,13 +102,14 @@ def run(dep):
     
     testcase = report.start_testcase(testsuite, "Diagnostics connect")
     try:
-        diag_stream = diagnostics_connect(ocd)
+        diag_cmndr = diagnostics_connect(ocd)
         report.end_testcase(testcase)
     except Exception as e:
         report.end_testcase(testcase, fail_message="Test raised exception: " + str(e))
         logging.error("Test raised exception: " + str(e))
         return False
 
+    """ Removed until real hardware is used
     testcase = report.start_testcase(testsuite, "BLE advertisement")
     try:
         ble_scan()
@@ -122,10 +118,11 @@ def run(dep):
         report.end_testcase(testcase, fail_message="Test raised exception: " + str(e))
         logging.error("Test raised exception: " + str(e))
         return False
+    """
     
     testcase = report.start_testcase(testsuite, "Trigger EP")
     try:
-        trigger_ep(diag_stream)
+        trigger_ep(diag_cmndr)
         report.end_testcase(testcase)
     except Exception as e:
         report.end_testcase(testcase, fail_message="Test raised exception: " + str(e))

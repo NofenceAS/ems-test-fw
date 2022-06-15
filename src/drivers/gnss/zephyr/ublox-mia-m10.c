@@ -10,7 +10,7 @@
 #include <sys/timeutil.h>
 
 #include "gnss.h"
-#include "gnss_uart.h"
+#include "gnss_hub.h"
 #include "ublox_protocol.h"
 #include "nmea_parser.h"
 
@@ -314,21 +314,21 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 
 	if (try_default_baud_first) {
 		/* Try with default baudrate first */
-		ret = gnss_uart_set_baudrate(MIA_M10_DEFAULT_BAUDRATE, true);
+		ret = gnss_hub_set_uart_baudrate(MIA_M10_DEFAULT_BAUDRATE, true);
 		if (ret != 0) {
 			return ret;
 		}
 	}
 
 	/* Check if communication is working by sending dummy command */
-	uint32_t gnss_baudrate = gnss_uart_get_baudrate();
+	uint32_t gnss_baudrate = gnss_hub_get_uart_baudrate();
 	ret = mia_m10_config_get_u32(UBX_CFG_UART1_BAUDRATE, &gnss_baudrate);
 	if (ret != 0) {
 		/* Communication failed, try other baudrate */
-		gnss_baudrate = (gnss_baudrate == MIA_M10_DEFAULT_BAUDRATE) ?
-					CONFIG_GNSS_MIA_M10_UART_BAUDRATE :
-					MIA_M10_DEFAULT_BAUDRATE;
-		ret = gnss_uart_set_baudrate(gnss_baudrate, true);
+		gnss_baudrate = (gnss_baudrate == MIA_M10_DEFAULT_BAUDRATE) ? 
+				    CONFIG_GNSS_MIA_M10_UART_BAUDRATE : 
+				    MIA_M10_DEFAULT_BAUDRATE;
+		ret = gnss_hub_set_uart_baudrate(gnss_baudrate, true);
 		if (ret != 0) {
 			return ret;
 		}
@@ -342,8 +342,7 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 
 	/* Change UART baudrate if required */
 	if (gnss_baudrate != CONFIG_GNSS_MIA_M10_UART_BAUDRATE) {
-		gnss_uart_set_baudrate(CONFIG_GNSS_MIA_M10_UART_BAUDRATE,
-				       false);
+		gnss_hub_set_uart_baudrate(CONFIG_GNSS_MIA_M10_UART_BAUDRATE, false);
 
 		ret = mia_m10_config_set_u32(UBX_CFG_UART1_BAUDRATE,
 					     CONFIG_GNSS_MIA_M10_UART_BAUDRATE);
@@ -389,10 +388,10 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 	}
 
 	/* Enable NAV-SAT output on UART, no handler */
-	ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
+	/*ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
 	if (ret != 0) {
 		return ret;
-	}
+	}*/
 
 	/* Enable MGA-ACK output on UART */
 	ret = mia_m10_config_set_u8(UBX_CFG_NAVSPG_ACKAIDING, 1);
@@ -618,7 +617,7 @@ static void mia_m10_handle_received_data(void *dev)
 
 		uint8_t *data_buffer;
 		uint32_t data_cnt;
-		gnss_uart_rx_get_data(&data_buffer, &data_cnt);
+		gnss_hub_rx_get_data(GNSS_HUB_ID_DRIVER, &data_buffer, &data_cnt);
 
 		total_parsed_cnt = 0;
 		is_parsing = true;
@@ -634,7 +633,7 @@ static void mia_m10_handle_received_data(void *dev)
 			total_parsed_cnt += parsed_cnt;
 		}
 
-		gnss_uart_rx_consume(total_parsed_cnt);
+		gnss_hub_rx_consume(GNSS_HUB_ID_DRIVER, total_parsed_cnt);
 
 		k_yield();
 	}
@@ -670,9 +669,8 @@ static int mia_m10_init(const struct device *dev)
 	}
 
 	k_sem_init(&gnss_rx_sem, 0, 1);
-	gnss_uart_init(mia_m10_uart_dev, &gnss_rx_sem,
-		       MIA_M10_DEFAULT_BAUDRATE);
-
+	gnss_hub_init(mia_m10_uart_dev, &gnss_rx_sem, MIA_M10_DEFAULT_BAUDRATE);
+	
 	/* Start parser thread */
 	k_thread_create(&gnss_parse_thread, gnss_parse_stack,
 			K_KERNEL_STACK_SIZEOF(gnss_parse_stack),
@@ -750,8 +748,9 @@ static int mia_m10_send_ubx_cmd(uint8_t *buffer, uint32_t size,
 				    mia_m10_resp_ack_cb, NULL);
 
 	/* Send command bytes */
-	ret = gnss_uart_send(buffer, size);
-	if (ret != 0) {
+	ret = gnss_hub_send(GNSS_HUB_ID_DRIVER, buffer, size);
+	if (ret != 0)
+	{
 		return ret;
 	}
 
@@ -760,7 +759,6 @@ static int mia_m10_send_ubx_cmd(uint8_t *buffer, uint32_t size,
 		if (k_sem_take(&cmd_ack_sem,
 			       K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) !=
 		    0) {
-			LOG_ERR("ACK timed out");
 			k_mutex_unlock(&cmd_mutex);
 			return -ETIME;
 		}
@@ -769,7 +767,6 @@ static int mia_m10_send_ubx_cmd(uint8_t *buffer, uint32_t size,
 		if (k_sem_take(&cmd_data_sem,
 			       K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) !=
 		    0) {
-			LOG_ERR("DATA timed out");
 			k_mutex_unlock(&cmd_mutex);
 			return -ETIME;
 		}

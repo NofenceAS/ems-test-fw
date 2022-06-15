@@ -198,6 +198,7 @@ static struct modem_context mctx;
 static struct zsock_addrinfo result;
 static struct sockaddr result_addr;
 static char result_canonname[DNS_MAX_NAME_SIZE + 1];
+static bool ccid_ready = false;
 //#endif
 //
 /* helper macro to keep readability */
@@ -647,7 +648,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_ccid)
  * bytes to discard 'ccid:_' */
 	mdata.mdm_ccid[out_len] = '\0';
 	LOG_INF("CCID: %s", log_strdup(mdata.mdm_ccid));
-
+	ccid_ready = true;
 	return 0;
 }
 
@@ -2405,6 +2406,16 @@ int get_pdp_addr(char **ip_addr)
 		return 0;
 	} else {
 		return -1;
+	}
+}
+
+int get_ccid(char **ccid)
+{
+	if (ccid_ready) {
+		*ccid = mdata.mdm_ccid;
+		return 0;
+	} else {
+		return -ENODATA;
 	}
 }
 
