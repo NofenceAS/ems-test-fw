@@ -76,6 +76,17 @@ class Commander(threading.Thread):
 				return b""
 		return None
 
+	def electric_pulse_now(self):
+		resp = self.send_cmd(GROUP_STIMULATOR, CMD_ELECTRICAL_PULSE)
+		# if resp:
+		# 	if resp["code"] == RESP_DATA:
+		# 		value = struct.unpack("<" + str(len(resp["data"])) + "s", resp["data"])
+		# 		return value[0]
+		# 	else:
+		# 		return b""
+		logging.debug(resp)
+		return resp
+
 	def write_setting(self, id, value):
 		if id[1] == "s":
 			payload = struct.pack("<B" + str(len(value)) + id[1], id[0], value)
