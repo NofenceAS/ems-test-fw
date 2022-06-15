@@ -130,6 +130,16 @@ print("Giving a pulse in 5 seconds!!!!!!!!!!")
 time.sleep(5)
 val = cmndr.electric_pulse_now()
 
+while 1:
+	x = input("Press p to give a pulse!")
+	if x == "p":
+		print("Giving a pulse in 2 seconds!!!!!!!!!!")
+		time.sleep(2)
+		cmndr.electric_pulse_now()
+	elif x == "x":
+		print("Finished test!!")
+		break
+
 # Read CCID from modem
 ccid = b""
 timeout = time.time()+15
