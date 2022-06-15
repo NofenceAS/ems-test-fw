@@ -103,7 +103,7 @@ SELFTEST_ACCELEROMETER_POS = 2
 SELFTEST_GNSS_POS = 3
 selftests = [(SELFTEST_FLASH_POS, "Flash"), 
 			 (SELFTEST_EEPROM_POS, "EEPROM"), 
-			 (SELFTEST_ACCELEROMETER_POS, "Accelerometer"), 
+			 #(SELFTEST_ACCELEROMETER_POS, "Accelerometer"),
 			 (SELFTEST_GNSS_POS, "GNSS")]
 
 failure = False
