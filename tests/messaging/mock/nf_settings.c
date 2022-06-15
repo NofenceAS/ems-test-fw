@@ -44,20 +44,6 @@ int eep_uint32_write(eep_uint32_enum_t field, uint32_t value)
 	return ztest_get_return_value();
 }
 
-int eep_uint8_read(eep_uint8_enum_t field, uint8_t *value)
-{
-	ARG_UNUSED(field);
-	ARG_UNUSED(value);
-	return ztest_get_return_value();
-}
-
-int eep_uint8_write(eep_uint8_enum_t field, uint8_t value)
-{
-	ARG_UNUSED(field);
-	ARG_UNUSED(value);
-	return ztest_get_return_value();
-}
-
 int eep_read_ble_sec_key(uint8_t *ble_sec_key, size_t bufsize)
 {
 	ARG_UNUSED(ble_sec_key);
