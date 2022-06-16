@@ -1482,8 +1482,8 @@ restart:
 
 	/* wait for +CREG: 1(normal) or 5(roaming) */
 	counter = 0;
-	while (counter++ < 40 && mdata.ev_creg != 1 && mdata.ev_creg != 5) {
-		if (counter == 20) {
+	while (counter++ < 100 && mdata.ev_creg != 1 && mdata.ev_creg != 5) {
+		if (counter == 50) {
 			LOG_WRN("Force restart of RF functionality");
 
 			/* Disable RF temporarily */
