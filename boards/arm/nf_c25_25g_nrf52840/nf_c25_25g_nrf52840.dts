@@ -105,6 +105,7 @@ modem_uart: &uart0 {
 	status = "okay";
 	tx-pin = <4>; /* P0.04 */
 	rx-pin = <26>; /* P0.26 */
+	rx-pull-up;
 	sara_r4 {
 		compatible = "u-blox,sara-r4";
 		label = "ublox-sara-r4";

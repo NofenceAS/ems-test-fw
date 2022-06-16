@@ -44,7 +44,7 @@
 		output-ohms = <5600000>;
 		full-ohms = <(5600000 + 10000000)>;
 	};
-	
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -105,6 +105,7 @@ modem_uart: &uart0 {
 	status = "okay";
 	tx-pin = <4>; /* P0.04 */
 	rx-pin = <26>; /* P0.26 */
+	rx-pull-up;
 	sara_r4 {
 		compatible = "u-blox,sara-r4";
 		label = "ublox-sara-r4";
@@ -163,15 +164,13 @@ gnss_uart: &uart1 {
 	           <&gpio0 15 GPIO_ACTIVE_LOW>, /* CS BAROMETER */
 	           <&gpio0 12 GPIO_ACTIVE_LOW>; /* CS EEPROM */
 
-	movement_sensor: lis2dw12@0 {
+	movement_sensor: lis2dh@0 {
 		status = "okay";
-		compatible = "st,lis2dw12";
+		compatible = "st,lis2dh";
 		reg = <0>; /* First defined chip select number*/
 		irq-gpios = <&gpio1 11 0>, <&gpio1 12 0>; /* INT1 and INT2 */
 		spi-max-frequency = <8000000>;
-		label = "LIS2DW12-ACCEL";
-		/* https: //github.com/STMicroelectronics/lis2dw12/blob/d8457a1a25a035ac118a94c70f08fdd291ec6501/lis2dw12_reg.h#L680 */
-		power-mode = <0>;
+		label = "LIS2DH-ACCEL";
 	};
 
 	environment_sensor: bme280@1 {
@@ -207,7 +206,7 @@ gnss_uart: &uart1 {
 	status = "okay";
 	sck-pin = <19>;
 	io-pins = <20>, <23>, <24>, <21>;
-	csn-pins = <18>;
+	csn-pins = <34>;
 	mx25u64: mx25u6432f@0 {
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
