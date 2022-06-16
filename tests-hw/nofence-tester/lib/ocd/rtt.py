@@ -38,7 +38,7 @@ class RTT(threading.Thread):
         except Exception as e:
             logging.debug("Exception when writing to RTT: " + str(e))
     
-    def read(self):
+    def read(self, size=0):
         self.lock.acquire()
         data = self.received_data
         self.received_data = b""
