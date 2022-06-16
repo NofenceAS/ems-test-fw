@@ -28,7 +28,6 @@ void test_init(void)
 	ztest_returns_value(socket_listen, 0);
 	ztest_returns_value(check_ip, 0);
 	ztest_returns_value(socket_connect, 0);
-	ztest_returns_value(socket_receive, 0);
 	int8_t err = cellular_controller_init();
 	struct check_connection *ev = new_check_connection();
 	EVENT_SUBMIT(ev);
