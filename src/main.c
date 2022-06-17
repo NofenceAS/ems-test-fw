@@ -19,6 +19,9 @@
 #include "nf_settings.h"
 #include "buzzer.h"
 #include "pwr_module.h"
+/* For reboot reason. */
+#include <nrf.h>
+
 #if defined(CONFIG_WATCHDOG_ENABLE)
 #include "watchdog_app.h"
 #endif
@@ -51,6 +54,10 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
  */
 void main(void)
 {
+	/* Fetch reset reason, log in the future? */
+	uint32_t reset_reason = NRF_POWER->RESETREAS;
+	NRF_POWER->RESETREAS = NRF_POWER->RESETREAS;
+
 	int err;
 	LOG_INF("Starting Nofence application...");
 
@@ -171,12 +178,6 @@ void main(void)
 			     strlen(e_msg));
 	}
 
-	/* Play welcome sound. */
-	/*TODO: only play when battery level is adequate.*/
-	struct sound_event *sound_ev = new_sound_event();
-	sound_ev->type = SND_WELCOME;
-	EVENT_SUBMIT(sound_ev);
-
 	/* Initialize the cellular controller */
 	err = cellular_controller_init();
 	if (err) {
@@ -209,6 +210,31 @@ void main(void)
 	if (err) {
 		LOG_ERR("Could not initialize time use module. %d", err);
 	}
+
+	/** @todo Check which flags are set on FW upgrade etc.. */
+	/* if (reset_reason != SOME_FW_UPGRADE_FLAG) {. */
+
+	if (log_and_fetch_battery_voltage() > CONFIG_BATTERY_CRITICAL) {
+		/* Play welcome sound. */
+		/*TODO: only play when battery level is adequate.*/
+		struct sound_event *sound_ev = new_sound_event();
+		sound_ev->type = SND_WELCOME;
+		EVENT_SUBMIT(sound_ev);
+	}
+
+	/* Wait for welcome sound to finish, since sound controller
+	 * doesn't queue sounds.
+	 */
+	k_sleep(K_MSEC(1000));
+
+	if (fetch_battery_percent() >= 70) {
+		/* Play battery sound. */
+		struct sound_event *sound_ev = new_sound_event();
+		sound_ev->type = SND_SHORT_100;
+		EVENT_SUBMIT(sound_ev);
+	}
+
+	/** } */
 
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,
