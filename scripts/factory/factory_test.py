@@ -31,7 +31,7 @@ elif (not args.ble) and (not args.rtt):
 
 stream = None
 if args.ble:
-	stream = nfdiag.BLEStream("COM4", serial=args.ble)
+	stream = nfdiag.BLEStream("/dev/ttyACM1", serial=args.ble)
 else:
 	stream = nfdiag.JLinkStream(serial=args.rtt, jlink_path=args.jlinkpath)
 
@@ -70,23 +70,23 @@ if not got_ping:
 
 # Write settings 
  # TODO: What values?
-
-if not cmndr.write_setting(nfdiag.ID_SERIAL, int(args.suid)):
-	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_HOST_PORT, b"172.31.36.11:4321\x00"):
-	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_EMS_PROVIDER, int(args.ems)):
-	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_PRODUCT_RECORD_REV, 2):
-	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_BOM_MEC_REV, 5):
-	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_BOM_PCB_REV, 2):
-	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_HW_VERSION, 20):
-	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_PRODUCT_TYPE, int(args.pt)):
-	raise Exception("Failed to write settings")
+if args.rtt:
+	if not cmndr.write_setting(nfdiag.ID_SERIAL, int(args.suid)):
+		raise Exception("Failed to write settings")
+	if not cmndr.write_setting(nfdiag.ID_HOST_PORT, b"172.31.36.11:4321\x00"):
+		raise Exception("Failed to write settings")
+	if not cmndr.write_setting(nfdiag.ID_EMS_PROVIDER, int(args.ems)):
+		raise Exception("Failed to write settings")
+	if not cmndr.write_setting(nfdiag.ID_PRODUCT_RECORD_REV, 2):
+		raise Exception("Failed to write settings")
+	if not cmndr.write_setting(nfdiag.ID_BOM_MEC_REV, 5):
+		raise Exception("Failed to write settings")
+	if not cmndr.write_setting(nfdiag.ID_BOM_PCB_REV, 2):
+		raise Exception("Failed to write settings")
+	if not cmndr.write_setting(nfdiag.ID_HW_VERSION, 20):
+		raise Exception("Failed to write settings")
+	if not cmndr.write_setting(nfdiag.ID_PRODUCT_TYPE, int(args.pt)):
+		raise Exception("Failed to write settings")
 
 print("1: Serial No: " + str(cmndr.read_setting(nfdiag.ID_SERIAL)))
 print("2: HOST PORT: " + str(cmndr.read_setting(nfdiag.ID_HOST_PORT)))
