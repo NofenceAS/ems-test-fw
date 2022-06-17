@@ -44,7 +44,7 @@
 		output-ohms = <5600000>;
 		full-ohms = <(5600000 + 10000000)>;
 	};
-	
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -105,6 +105,7 @@ modem_uart: &uart0 {
 	status = "okay";
 	tx-pin = <4>; /* P0.04 */
 	rx-pin = <26>; /* P0.26 */
+	rx-pull-up;
 	sara_r4 {
 		compatible = "u-blox,sara-r4";
 		label = "ublox-sara-r4";
@@ -165,7 +166,7 @@ gnss_uart: &uart1 {
 
 	movement_sensor: lis2dh@0 {
 		status = "okay";
-		compatible = "st,lis2dh";
+		compatible = "st,lis2dw12";
 		reg = <0>; /* First defined chip select number*/
 		irq-gpios = <&gpio1 11 0>, <&gpio1 12 0>; /* INT1 and INT2 */
 		spi-max-frequency = <8000000>;

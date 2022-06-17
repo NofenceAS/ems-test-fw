@@ -1,23 +1,14 @@
 #include "gnss_uart.h"
 
+#include "gnss_hub.h"
+
 #include <zephyr.h>
-#include <sys/ring_buffer.h>
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(GNSS_UART, CONFIG_GNSS_LOG_LEVEL);
 
 /* GNSS UART device */
 static const struct device *gnss_uart_dev = NULL;
-
-/* GNSS buffers for sending and receiving data. */
-static uint8_t* gnss_tx_buffer = NULL;
-static struct ring_buf gnss_tx_ring_buf;
-
-static uint8_t* gnss_rx_buffer = NULL;
-static uint32_t gnss_rx_cnt = 0;
-
-/* Semaphore for notifying about available data */
-static struct k_sem* gnss_rx_sem;
 
 /* Baudrate changing can be done by setting baudrate value before signalling 
  * the change in the atomic variable. This is then checked and processed 
@@ -53,15 +44,13 @@ static void gnss_uart_handle_tx(const struct device *uart_dev)
 	uint32_t sent;
 	uint8_t* data;
 
-	size = ring_buf_get_claim(&gnss_tx_ring_buf, 
-					&data, 
-					CONFIG_GNSS_COMM_BUFFER_SIZE);
-	
-	sent = uart_fifo_fill(uart_dev, data, size);
-	
-	err = ring_buf_get_finish(&gnss_tx_ring_buf, sent);
-	if (err != 0) {
-		LOG_ERR("Failed finishing GNSS TX buffer operation.");
+	if (gnss_hub_rx_get_data(GNSS_HUB_ID_UART, &data, &size) == 0) {
+		sent = uart_fifo_fill(uart_dev, data, size);
+
+		err = gnss_hub_rx_consume(GNSS_HUB_ID_UART, sent);
+		if (err != 0) {
+			LOG_ERR("Failed finishing GNSS TX buffer operation.");
+		}
 	}
 }
 
@@ -72,7 +61,7 @@ static void gnss_uart_handle_tx(const struct device *uart_dev)
  */
 static void gnss_uart_handle_complete(const struct device *uart_dev)
 {	
-	if (ring_buf_is_empty(&gnss_tx_ring_buf)) {
+	if (gnss_hub_rx_is_empty(GNSS_HUB_ID_UART)) {
 		uart_irq_tx_disable(uart_dev);
 
 		if (atomic_test_and_clear_bit(
@@ -90,25 +79,13 @@ static void gnss_uart_handle_complete(const struct device *uart_dev)
  */
 static void gnss_uart_handle_rx(const struct device *uart_dev)
 {
-	uint32_t received;
-	uint32_t free_space;
-	
-	free_space = CONFIG_GNSS_COMM_BUFFER_SIZE - gnss_rx_cnt;
+	uint32_t received = 0;
+	uint8_t buf[8];
 
-	if (free_space == 0) {
-		gnss_uart_flush(uart_dev);
-		return;
-	}
-
-	received = uart_fifo_read(uart_dev, 
-				  &gnss_rx_buffer[gnss_rx_cnt], 
-				  free_space);
-	
-	gnss_rx_cnt += received;
-
-	if (received > 0) {
-		k_sem_give(gnss_rx_sem);
-	}
+	do {
+		received = uart_fifo_read(uart_dev, buf, 8);
+		gnss_hub_send(GNSS_HUB_ID_UART, buf, received);
+	} while (received > 0);
 }
 
 /**
@@ -147,32 +124,7 @@ int gnss_uart_init(const struct device *uart_dev,
 		return -EINVAL;
 	}
 
-	/* Allocate buffer if not already done */
-	if (gnss_rx_buffer == NULL)
-	{
-		gnss_rx_buffer = 
-			k_malloc(CONFIG_GNSS_COMM_BUFFER_SIZE);
-
-		if (gnss_rx_buffer == NULL) {
-			return -ENOBUFS;
-		}
-		gnss_rx_cnt = 0;
-	}
-	if (gnss_tx_buffer == NULL)
-	{
-		gnss_tx_buffer = 
-			k_malloc(CONFIG_GNSS_COMM_BUFFER_SIZE);
-
-		if (gnss_tx_buffer == NULL) {
-			return -ENOBUFS;
-		}
-		ring_buf_init(&gnss_tx_ring_buf, 
-			      CONFIG_GNSS_COMM_BUFFER_SIZE, 
-			      gnss_tx_buffer);
-	}
-
 	gnss_uart_dev = uart_dev;
-	gnss_rx_sem = rx_sem;
 	gnss_uart_baudrate = baudrate;
 
 	/* Make sure interrupts are disabled */
@@ -231,36 +183,19 @@ int gnss_uart_set_baudrate(uint32_t baudrate, bool immediate)
 	return ret;
 }
 
-int gnss_uart_send(uint8_t* buffer, uint32_t cnt)
+int gnss_uart_start_send(void)
 {
-	ring_buf_put(&gnss_tx_ring_buf, buffer, cnt);
 	uart_irq_tx_enable(gnss_uart_dev);
 	return 0;
 }
 
-void gnss_uart_rx_get_data(uint8_t** buffer, uint32_t* cnt)
+void gnss_uart_block(bool block)
 {
-	*cnt = gnss_rx_cnt;
-	*buffer = gnss_rx_buffer;
-}
-
-void gnss_uart_rx_consume(uint32_t cnt)
-{
-	if (cnt > gnss_rx_cnt) {
-		cnt = gnss_rx_cnt;
+	if (block) {
+		k_sched_lock();
+		uart_irq_rx_disable(gnss_uart_dev);
+	} else {
+		uart_irq_rx_enable(gnss_uart_dev);
+		k_sched_unlock();
 	}
-
-	/* Consume data from buffer. It is necessary to block
-	* UART RX interrupt to avoid concurrent update of counter
-	* and buffer area. Preemption of thread must be disabled
-	* to minimize the time UART RX interrupts are disabled. 
-	*/
-	k_sched_lock();
-	uart_irq_rx_disable(gnss_uart_dev);
-
-	memmove(gnss_rx_buffer, &gnss_rx_buffer[cnt], cnt);
-	gnss_rx_cnt -= cnt;
-	
-	uart_irq_rx_enable(gnss_uart_dev);
-	k_sched_unlock();
 }
