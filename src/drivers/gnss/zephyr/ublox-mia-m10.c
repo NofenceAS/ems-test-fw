@@ -80,6 +80,10 @@ static gnss_data_cb_t data_cb = NULL;
  */
 static int mia_m10_sync_tow(uint32_t tow)
 {
+	/** @todo Consider making sure ToW is different than previous packet.
+	 *        This can help ensure that a reset is triggered in the 
+	 *        unlikely event that the GNSS is repeating old data. 
+	 */
 	if (tow != gnss_tow_in_progress) {
 		/* Mismatching TOW, reset flags and buffers */
 		memset(&gnss_data_in_progress, 0, sizeof(gnss_struct_t));
