@@ -45,6 +45,11 @@ int8_t send_tcp(char *dummy, size_t dummy_len)
 	return ztest_get_return_value();
 }
 
+int8_t send_tcp_q(char *dummy, size_t dummy_len)
+{
+	return ztest_get_return_value();
+}
+
 int8_t lte_init(void)
 {
 	return ztest_get_return_value();
@@ -90,6 +95,9 @@ bool query_listen_sock(void)
 	return ztest_get_return_value();
 }
 
+void send_tcp_fn(void){
+	return;
+}
 //int8_t cache_server_address(void)
 //{
 //    return ztest_get_return_value();
