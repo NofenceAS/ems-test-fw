@@ -766,7 +766,8 @@ static const struct setup_cmd query_cellinfo_cmds[] = {
  */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 {
-	if (argc < 7) {
+	if (argc < 7) { /*TODO: to improve readability, use defines for the 
+ * expected number of arguments for all commands.*/
 		return -EAGAIN;
 	}
 	memcpy(mdata.mdm_pdp_addr,argv[3],17); //17: "xxx.xxx.xxx.xxx", for
