@@ -766,7 +766,7 @@ static const struct setup_cmd query_cellinfo_cmds[] = {
  */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 {
-	if (argc < 7) { /*TODO: to improve readability, use defines for the 
+	if (argc < 7) { /*TODO: to improve readability, use defines for the
  * expected number of arguments for all commands.*/
 		return -EAGAIN;
 	}
