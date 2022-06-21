@@ -210,6 +210,7 @@ static bool ccid_ready = false;
 /* helper macro to keep readability */
 #define ATOI(s_, value_, desc_) modem_atoi(s_, value_, desc_, __func__)
 
+static int set_socket_linger_time(int, int);
 /**
  * @brief  Convert string to long integer, but handle errors
  *
@@ -765,6 +766,9 @@ static const struct setup_cmd query_cellinfo_cmds[] = {
  */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 {
+	if (argc < 7) {
+		return -EAGAIN;
+	}
 	memcpy(mdata.mdm_pdp_addr,argv[3],17); //17: "xxx.xxx.xxx.xxx", for
 	// the check_ip function, we're only interested in the fact that the
 	// first 8 characters are not "0.0.0.0
@@ -774,6 +778,9 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_upsv_get)
 {
+	if (argc < 1) {
+		return -EAGAIN;
+	}
 	LOG_DBG("UPSV? handler, %d", argc);
 	LOG_DBG("modem power mode: ,%s", argv[0]);
 	int val = 0;
@@ -793,6 +800,9 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_upsv_get)
 
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgact_get)
 {
+	if (argc < 2) {
+		return -EAGAIN;
+	}
 	LOG_DBG("CGACT? handler, %d", argc);
 	LOG_DBG("PDP context state: ,%s", argv[1]);
 	uint8_t val = (uint8_t)atoi(argv[1]);
@@ -809,6 +819,9 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgact_get)
 
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cops_get)
 {
+	if (argc < 4) {
+		return -EAGAIN;
+	}
 	LOG_DBG("COPS? handler, %d", argc);
 	mdata.session_rat = atoi(argv[3]);
 	return 0;
@@ -973,6 +986,9 @@ MODEM_CMD_DEFINE(on_cmd_dns)
 /* Handler: +UUSOCL: <socket_id>[0] */
 MODEM_CMD_DEFINE(on_cmd_socknotifyclose)
 {
+	if (argc < 1) {
+		return -EAGAIN;
+	}
 	struct modem_socket *sock;
 
 	sock = modem_socket_from_id(&mdata.socket_config,
@@ -989,6 +1005,9 @@ MODEM_CMD_DEFINE(on_cmd_socknotifyclose)
 /* Handler: +UUSOR[D|F]: <socket_id>[0],<length>[1] */
 MODEM_CMD_DEFINE(on_cmd_socknotifydata)
 {
+	if (argc < 2) {
+		return -EAGAIN;
+	}
 	int ret, socket_id, new_total;
 	struct modem_socket *sock;
 
@@ -1016,6 +1035,9 @@ MODEM_CMD_DEFINE(on_cmd_socknotifydata)
 /* Handler: +CREG: <stat>[0] */
 MODEM_CMD_DEFINE(on_cmd_socknotifycreg)
 {
+	if (argc < 1) {
+		return -EAGAIN;
+	}
 	mdata.ev_creg = ATOI(argv[0], 0, "stat");
 	LOG_DBG("CREG:%d", mdata.ev_creg);
 	return 0;
@@ -1026,6 +1048,9 @@ MODEM_CMD_DEFINE(on_cmd_socknotifycreg)
 ip_address>,<listening_port> */
 MODEM_CMD_DEFINE(on_cmd_socknotify_listen)
 {
+	if (argc < 6) {
+		return -EAGAIN;
+	}
 	LOG_DBG("Received new message on listening socket:%s, port:%s",
 		argv[3], argv[5]);
 	if (atoi(argv[3]) == 0  && atoi(argv[5]) == CONFIG_NF_LISTENING_PORT) {
@@ -1299,14 +1324,21 @@ static int modem_reset(void)
 		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
 		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
 		SETUP_CMD_NOHANDLE("AT+COPS=2"),
+		/* TODO: consider adding this: SETUP_CMD_NOHANDLE("AT+CRSM=214,
+		 * 28531,0,0,14,
+		 * "FFFFFFFFFFFFFFFFFFFFFFFFFFFF\""),*/
 		SETUP_CMD_NOHANDLE("AT+CFUN=15"),
 		};
 
+
+	static const struct setup_cmd setup_cmds0[] = {
+	/* turn off echo */
+	SETUP_CMD_NOHANDLE("ATE0"),
+	/* stop functionality */
+	SETUP_CMD_NOHANDLE("AT+CFUN=0"),
+		};
+
 	static const struct setup_cmd setup_cmds[] = {
-		/* turn off echo */
-		SETUP_CMD_NOHANDLE("ATE0"),
-		/* stop functionality */
-		SETUP_CMD_NOHANDLE("AT+CFUN=0"),
 		/* extended error numbers */
 		SETUP_CMD_NOHANDLE("AT+CMEE=1"),
 #if defined(CONFIG_BOARD_PARTICLE_BORON)
@@ -1417,6 +1449,13 @@ restart:
 		goto error;
 	}
 	k_sleep(K_MSEC(50));
+
+	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
+					   setup_cmds0, ARRAY_SIZE(setup_cmds0),
+					   &mdata.sem_response,
+					   MDM_REGISTRATION_TIMEOUT);
+	k_sleep(K_MSEC(150));
+
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
 					   setup_cmds, ARRAY_SIZE(setup_cmds),
 					   &mdata.sem_response,
@@ -1424,7 +1463,7 @@ restart:
 	if (ret < 0) {
 		goto error;
 	}
-	k_sleep(K_MSEC(50));
+	k_sleep(K_MSEC(150));
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 	/* autodetect APN from IMSI */
@@ -1634,6 +1673,8 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 	if (ret < 0) {
 		goto error;
 	}
+	k_sleep(K_MSEC(50));
+	set_socket_linger_time(sock->id, 3000);
 
 	if (sock->ip_proto == IPPROTO_TLS_1_2) {
 		char buf[sizeof("AT+USECPRF=#,#,#######\r")];
@@ -2478,7 +2519,7 @@ int modem_nf_reset(void)
 int get_pdp_addr(char **ip_addr)
 {
 	const struct setup_cmd read_sim_ip_cmd[] = {
-		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 6, ","),
+		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 7, ","),
 	};
 	int ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
 					       read_sim_ip_cmd, 1,
@@ -2602,7 +2643,7 @@ int modem_nf_sleep(void) {
 	return sleep();
 }
 
-int set_socket_linger_time(uint8_t socket_id, int linger_time_ms) {
+static int set_socket_linger_time(int socket_id, int linger_time_ms) {
 	char buf2[sizeof("AT+USOSO=#,65535,128,1,####\r")];
 
 	if (socket_id <= 6) {
@@ -2622,6 +2663,7 @@ int set_socket_linger_time(uint8_t socket_id, int linger_time_ms) {
 	if (ret < 0) {
 		LOG_DBG("Failed to set socket %d linger time!", socket_id);
 	}
+	k_sleep(K_MSEC(50));
 	return ret;
 }
 
