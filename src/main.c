@@ -163,6 +163,9 @@ void main(void)
 		nf_app_error(ERR_AMC, err, e_msg, strlen(e_msg));
 	}
 
+	/* Important to initialize the eeprom first, since we use the 
+	 * sleep sigma value from eeprom when we init.
+	 */
 	err = init_movement_controller();
 	selftest_mark_state(SELFTEST_ACCELEROMETER_POS, err == 0);
 	if (err) {
