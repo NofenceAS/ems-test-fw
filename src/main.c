@@ -19,6 +19,7 @@
 #include "nf_settings.h"
 #include "buzzer.h"
 #include "pwr_module.h"
+#include <nrf.h>
 #if defined(CONFIG_WATCHDOG_ENABLE)
 #include "watchdog_app.h"
 #endif
@@ -219,6 +220,9 @@ void main(void)
 	 */
 	mark_new_application_as_valid();
 
-	LOG_INF("Booted application firmware version %i, and marked it as valid.",
-		NF_X25_VERSION_NUMBER);
+	uint32_t reset_reason = NRF_POWER->RESETREAS;
+	NRF_POWER->RESETREAS = NRF_POWER->RESETREAS;
+
+	LOG_INF("Booted application firmware version %i, and marked it as valid. Reset reason %i",
+		NF_X25_VERSION_NUMBER, reset_reason);
 }

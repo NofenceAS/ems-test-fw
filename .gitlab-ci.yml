@@ -26,18 +26,26 @@ firmware:
     - printf "$BUILD_NUMBER" > buildnumber
     - printf "$CI_COMMIT_SHA"
     - ../zephyr/scripts/twister -i -T tests/
-    ## Let our own secret key override the one in the repo
-    - echo "$NOFENCE_RSA_PRIVATE_KEY" > child_image/mcuboot/nofence_rsa_private.pem
-    - west build -p -b nf_x25_nrf52840
+    ## Build all HW versions
+    ## Let our own secret key override the one in the repo, TODO DRY
+    - echo "$NF_C25_25G_NRF52840_PRIV_KEY" > child_image/mcuboot/nofence_rsa_private.pem
+    - west build -p -b nf_c25_25g_nrf52840 --build-dir build/nf_c25_25g_nrf52840
+     ## Let our own secret key override the one in the repo, TODO DRY
+    - echo "$NF_SG25_27O_NRF52840_PRIV_KEY" > child_image/mcuboot/nofence_rsa_private.pem
+    - west build -p -b nf_sg25_27o_nrf52840 --build-dir build/nf_sg25_27o_nrf52840 
 
   artifacts:
     name: "firmware"
     paths:
       - buildnumber
-      - build/zephyr/app_*
-      - build/zephyr/merged.hex
-      - build/zephyr/zephyr.elf
-      - build/nf_version.sh
+      - build/nf_c25_25g_nrf52840/zephyr/app_*
+      - build/nf_sg25_27o_nrf52840/zephyr/app_*
+      - build/nf_c25_25g_nrf52840/zephyr/merged.hex
+      - build/nf_sg25_27o_nrf52840/zephyr/merged.hex
+      - build/nf_c25_25g_nrf52840/zephyr/zephyr.elf
+      - build/nf_sg25_27o_nrf52840/zephyr/zephyr.elf
+      - build/nf_c25_25g_nrf52840/nf_version.sh
+      - build/nf_sg25_27o_nrf52840/nf_version.sh
     reports:
       junit: twister-out/twister_report.xml
 
@@ -106,10 +114,16 @@ production-firmware-deploy:
   image: registry.gitlab.com/nofence/nofence/gitlab-deploy:1
   script:
     - cd ci/deploy/firmware
-    - source "$CI_PROJECT_DIR/build/nf_version.sh"
+    - source "$CI_PROJECT_DIR/build/nf_c25_25g_nrf52840/nf_version.sh"
     - ansible-playbook -i inventory deploy-firmware.yml
-      -e firmware_src_dir="$CI_PROJECT_DIR/build/zephyr"
-      -e firmware_install_dir="/mnt/efs/firmware/x25/$NF_X25_VERSION_NUMBER"
+      -e firmware_src_dir="$CI_PROJECT_DIR/build/nf_c25_25g_nrf52840/zephyr"
+      -e firmware_install_dir="/mnt/efs/firmware/x25/$NF_X25_VERSION_NUMBER/nf_c25_25g_nrf52840"
+      -e firmware_upload_rsync_opts='["--include=app_*","--exclude=nrf52/bootloader/20"]'
+      --limit "$LIMIT"
+    - source "$CI_PROJECT_DIR/build/nf_sg25_27o_nrf52840/nf_version.sh"
+    - ansible-playbook -i inventory deploy-firmware.yml
+      -e firmware_src_dir="$CI_PROJECT_DIR/build/nf_sg25_27o_nrf52840/zephyr"
+      -e firmware_install_dir="/mnt/efs/firmware/x25/$NF_X25_VERSION_NUMBER/nf_sg25_27o_nrf52840"
       -e firmware_upload_rsync_opts='["--include=app_*","--exclude=nrf52/bootloader/20"]'
       --limit "$LIMIT"
 

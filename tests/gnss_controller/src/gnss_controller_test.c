@@ -136,116 +136,142 @@ void test_publish_event_with_gnss_data_callback(void)
 void test_old_gnss_last_fix_callback1(void)
 {
 	test_init_ok();
-	//fix arrives on time
+	// Data arrives on time
 	simulate_new_gnss_data(dummy_gnss_data);
 	int8_t err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
 	zassert_equal(err, 0, "Expected gnss fix event was not published!");
 
-	//fix arrives after 6 seconds
-	k_sleep(K_SECONDS(6));
+	// No data after 5.1s
 	expecting_timeout = true;
-	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_HOT);
-
 	ztest_returns_value(mock_gnss_setup, 0);
 	ztest_returns_value(mock_gnss_set_rate, 0);
 	ztest_returns_value(mock_gnss_get_rate, 0);
+	k_sleep(K_SECONDS(5.1));
 
 	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
 	zassert_equal(err, 0, "Expected gnss fix event was not published!");
 
-	//fix arrives after 11 seconds
-	k_sleep(K_SECONDS(11));
+	// No data after another 5s
 	expecting_timeout = true;
-	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_WARM);
-
 	ztest_returns_value(mock_gnss_setup, 0);
 	ztest_returns_value(mock_gnss_set_rate, 0);
 	ztest_returns_value(mock_gnss_get_rate, 0);
+	k_sleep(K_SECONDS(5));
 
 	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
 	zassert_equal(err, 0, "Expected gnss fix event was not published!");
 
-	//fix arrives after 21 seconds
-	k_sleep(K_SECONDS(21));
+	// No data after another 5s, should get error
 	expecting_timeout = true;
-	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_COLD);
-
 	ztest_returns_value(mock_gnss_setup, 0);
 	ztest_returns_value(mock_gnss_set_rate, 0);
 	ztest_returns_value(mock_gnss_get_rate, 0);
+	k_sleep(K_SECONDS(5));
 
 	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
 	zassert_equal(err, 0, "Expected gnss fix event was not published!");
 
-	//fix arrives on time
+	err = k_sem_take(&error, K_SECONDS(0.1));
+	zassert_equal(err, 0, "Expected error event was not published!");
+
+	// Data arrives on time
 	expecting_timeout = false;
 	simulate_new_gnss_data(dummy_gnss_data);
 	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
 	zassert_equal(err, 0, "Expected gnss fix event was not published!");
 
-	//fix arrives after 6 seconds
-	k_sleep(K_SECONDS(6));
+	// No data after 5.1s
 	expecting_timeout = true;
-	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_HOT);
-
 	ztest_returns_value(mock_gnss_setup, 0);
 	ztest_returns_value(mock_gnss_set_rate, 0);
 	ztest_returns_value(mock_gnss_get_rate, 0);
+	k_sleep(K_SECONDS(5.1));
 
 	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
 	zassert_equal(err, 0, "Expected gnss fix event was not published!");
 
-	//fix arrives after 11 seconds
-	k_sleep(K_SECONDS(11));
+	// No data after another 5s
 	expecting_timeout = true;
-	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_WARM);
-
 	ztest_returns_value(mock_gnss_setup, 0);
 	ztest_returns_value(mock_gnss_set_rate, 0);
 	ztest_returns_value(mock_gnss_get_rate, 0);
+	k_sleep(K_SECONDS(5));
 
 	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
 	zassert_equal(err, 0, "Expected gnss fix event was not published!");
 
-	//fix arrives after 21 seconds
-	k_sleep(K_SECONDS(21));
+	// No data after another 5s, should get error
 	expecting_timeout = true;
-	simulate_new_gnss_data(dummy_gnss_data);
 	ztest_returns_value(mock_gnss_reset, 0);
 	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_COLD);
-
 	ztest_returns_value(mock_gnss_setup, 0);
 	ztest_returns_value(mock_gnss_set_rate, 0);
 	ztest_returns_value(mock_gnss_get_rate, 0);
+	k_sleep(K_SECONDS(5));
 
 	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
 	zassert_equal(err, 0, "Expected gnss fix event was not published!");
 
-	k_sleep(K_SECONDS(21));
-	expecting_timeout = true;
-	simulate_new_gnss_data(dummy_gnss_data);
-	ztest_returns_value(mock_gnss_reset, 0);
-	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_COLD);
-
-	ztest_returns_value(mock_gnss_setup, 0);
-	ztest_returns_value(mock_gnss_set_rate, 0);
-	ztest_returns_value(mock_gnss_get_rate, 0);
-
-	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
-	zassert_equal(err, 0, "Expected gnss fix event was not published!");
-
-	err = k_sem_take(&error, K_SECONDS(26));
+	err = k_sem_take(&error, K_SECONDS(0.1));
 	zassert_equal(err, 0, "Expected error event was not published!");
+
+	// No data after another 5s, should get error
+	expecting_timeout = true;
+	ztest_returns_value(mock_gnss_reset, 0);
+	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_COLD);
+	ztest_returns_value(mock_gnss_setup, 0);
+	ztest_returns_value(mock_gnss_set_rate, 0);
+	ztest_returns_value(mock_gnss_get_rate, 0);
+	k_sleep(K_SECONDS(5));
+
+	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
+	zassert_equal(err, 0, "Expected gnss fix event was not published!");
+
+	err = k_sem_take(&error, K_SECONDS(0.1));
+	zassert_equal(err, 0, "Expected error event was not published!");
+}
+
+void test_semisteady_gnss_data_stream(void)
+{
+	test_init_ok();
+	// Receiving 1000 data points
+	for (int i = 0; i < 1000; i++) {
+		simulate_new_gnss_data(dummy_gnss_data);
+		int8_t err = k_sem_take(&gnss_data_out, K_SECONDS(0.5));
+		zassert_equal(err, 0, "Expected gnss data event was not published!");
+		k_sleep(K_SECONDS(0.25));
+	}
+
+	// No data after 5.1s
+	printk("TIMING OUT!\r\n");
+	expecting_timeout = true;
+	ztest_returns_value(mock_gnss_reset, 0);
+	ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_HOT);
+	ztest_returns_value(mock_gnss_setup, 0);
+	ztest_returns_value(mock_gnss_set_rate, 0);
+	ztest_returns_value(mock_gnss_get_rate, 0);
+	k_sleep(K_SECONDS(5.1));
+
+	int err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
+	zassert_equal(err, 0, "Expected gnss fix event was not published!");
+
+	// Receiving 1000 data points
+	for (int i = 0; i < 1000; i++) {
+		simulate_new_gnss_data(dummy_gnss_data);
+		int8_t err = k_sem_take(&gnss_data_out, K_SECONDS(0.5));
+		zassert_equal(err, 0, "Expected gnss data event was not published!");
+		k_sleep(K_SECONDS(0.25));
+	}
 }
 
 void test_main(void)
@@ -255,9 +281,9 @@ void test_main(void)
 		ztest_unit_test(test_publish_event_with_gnss_data_callback),
 		ztest_unit_test(test_init_fails1),
 		ztest_unit_test(test_init_fails2),
-		ztest_unit_test(test_init_fails3)
-		/** @note re-implement reset logic. */
-		/*ztest_unit_test(test_old_gnss_last_fix_callback1)*/);
+		ztest_unit_test(test_init_fails3),
+		ztest_unit_test(test_old_gnss_last_fix_callback1),
+		ztest_unit_test(test_semisteady_gnss_data_stream));
 
 	ztest_run_test_suite(gnss_controller_tests);
 }
@@ -284,6 +310,7 @@ static bool event_handler(const struct event_header *eh)
 					raw_gnss[i], 0,
 					"Non-zero byte during GNSS timeout!");
 			}
+			k_sem_give(&gnss_data_out);
 		}
 		return false;
 	} else if (is_error_event(eh)) {
