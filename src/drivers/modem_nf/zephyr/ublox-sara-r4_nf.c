@@ -1322,7 +1322,7 @@ static int modem_reset(void)
 	int ret = 0, retry_count = 0, counter = 0;
 
 	static const struct setup_cmd pre_setup_cmds[] = {
-		SETUP_CMD_NOHANDLE("AT+URAT=9"),
+		SETUP_CMD_NOHANDLE("AT+URAT=7"),
 		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
 		SETUP_CMD_NOHANDLE("AT+COPS=2"),
 		/* TODO: consider adding this: SETUP_CMD_NOHANDLE("AT+CRSM=214,
