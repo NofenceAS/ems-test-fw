@@ -31,7 +31,7 @@ elif (not args.ble) and (not args.rtt):
 
 stream = None
 if args.ble:
-	stream = nfdiag.BLEStream("COM4", serial=args.ble)
+	stream = nfdiag.BLEStream("/dev/ttyACM1", serial=args.ble)
 else:
 	stream = nfdiag.JLinkStream(serial=args.rtt, jlink_path=args.jlinkpath)
 
@@ -70,29 +70,32 @@ if not got_ping:
 
 # Write settings 
  # TODO: What values?
+if args.rtt:
+	if not cmndr.write_setting(nfdiag.ID_SERIAL, int(args.suid)):
+		raise Exception("Failed to write settings")
+	if not cmndr.write_setting(nfdiag.ID_HOST_PORT, b"172.31.36.11:4321\x00"):
+		raise Exception("Failed to write settings")
+	if not cmndr.write_setting(nfdiag.ID_EMS_PROVIDER, int(args.ems)):
+		raise Exception("Failed to write settings")
+	if not cmndr.write_setting(nfdiag.ID_PRODUCT_RECORD_REV, 2):
+		raise Exception("Failed to write settings")
+	if not cmndr.write_setting(nfdiag.ID_BOM_MEC_REV, 5):
+		raise Exception("Failed to write settings")
+	if not cmndr.write_setting(nfdiag.ID_BOM_PCB_REV, 2):
+		raise Exception("Failed to write settings")
+	if not cmndr.write_setting(nfdiag.ID_HW_VERSION, 20):
+		raise Exception("Failed to write settings")
+	if not cmndr.write_setting(nfdiag.ID_PRODUCT_TYPE, int(args.pt)):
+		raise Exception("Failed to write settings")
 
-if not cmndr.write_setting(nfdiag.ID_SERIAL, int(args.suid)):
-	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_HOST_PORT, b"172.31.36.11:4321\x00"):
-	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_EMS_PROVIDER, int(args.ems)):
-	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_PRODUCT_RECORD_REV, 2):
-	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_BOM_MEC_REV, 5):
-	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_BOM_PCB_REV, 2):
-	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_HW_VERSION, 20):
-	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_PRODUCT_TYPE, int(args.pt)):
-	raise Exception("Failed to write settings")
-
-print("DUT Serial No: " + str(cmndr.read_setting(nfdiag.ID_SERIAL)))
-print("HOST PORT: " + str(cmndr.read_setting(nfdiag.ID_HOST_PORT)))
-print("EMS Provider: " + str(cmndr.read_setting(nfdiag.ID_EMS_PROVIDER)))
-print("Product type: " + str(cmndr.read_setting(nfdiag.ID_PRODUCT_TYPE)))
-
+print("1: Serial No: " + str(cmndr.read_setting(nfdiag.ID_SERIAL)))
+print("2: HOST PORT: " + str(cmndr.read_setting(nfdiag.ID_HOST_PORT)))
+print("3: EMS Provider: " + str(cmndr.read_setting(nfdiag.ID_EMS_PROVIDER)))
+print("4: Product type: " + str(cmndr.read_setting(nfdiag.ID_PRODUCT_TYPE)))
+print("5: Generation: " + str(cmndr.read_setting(nfdiag.ID_PRODUCT_RECORD_REV)))
+print("6: Model: " + str(cmndr.read_setting(nfdiag.ID_BOM_MEC_REV)))
+print("7: PR Version: " + str(cmndr.read_setting(nfdiag.ID_BOM_PCB_REV)))
+print("8: HW Version: " + str(cmndr.read_setting(nfdiag.ID_HW_VERSION)))
 # Running test
 resp = cmndr.send_cmd(nfdiag.GROUP_SYSTEM, nfdiag.CMD_TEST, b"")
 
@@ -101,9 +104,10 @@ SELFTEST_FLASH_POS = 0
 SELFTEST_EEPROM_POS = 1
 SELFTEST_ACCELEROMETER_POS = 2
 SELFTEST_GNSS_POS = 3
+
 selftests = [(SELFTEST_FLASH_POS, "Flash"), 
 			 (SELFTEST_EEPROM_POS, "EEPROM"), 
-			 (SELFTEST_ACCELEROMETER_POS, "Accelerometer"), 
+			 (SELFTEST_ACCELEROMETER_POS, "Accelerometer"),
 			 (SELFTEST_GNSS_POS, "GNSS")]
 
 failure = False
@@ -124,6 +128,20 @@ if resp:
 		raise Exception("!!!!TEST FAILED!!!!!")
 else:
 	raise Exception("No response when issuing test command")
+
+print("Giving a pulse in 5 seconds!!!!!!!!!!")
+time.sleep(5)
+val = cmndr.electric_pulse_now()
+
+while 1:
+	x = input("Press p to give a pulse!")
+	if x == "p":
+		print("Giving a pulse in 2 seconds!!!!!!!!!!")
+		time.sleep(2)
+		cmndr.electric_pulse_now()
+	elif x == "x":
+		print("Finished test!!")
+		break
 
 # Read CCID from modem
 ccid = b""
