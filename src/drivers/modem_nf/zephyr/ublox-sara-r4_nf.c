@@ -1366,8 +1366,7 @@ static int modem_reset(void)
 			"AT+CGDCONT=1,\"IP\",\""CONFIG_MODEM_UBLOX_SARA_R4_APN"\""),
 		/* start functionality */
 		SETUP_CMD_NOHANDLE("AT+CFUN=1"),
-		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 1U,
-			  ","),
+		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 0U, ""),
 #endif
 	};
 
