@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4_nf, CONFIG_MODEM_LOG_LEVEL);
 #include "modem_cmd_handler.h"
 #include "modem_iface_uart.h"
 #include "error_event.h"
+#include <modem_nf.h>
 
 #if !defined(CONFIG_MODEM_UBLOX_SARA_R4_MANUAL_MCCMNO)
 #define CONFIG_MODEM_UBLOX_SARA_R4_MANUAL_MCCMNO ""
@@ -171,7 +172,12 @@ struct modem_data {
 	int upsv_state;
 	int last_sock;
 	int session_rat;
+	int mnc;
 	bool pdp_active;
+	int rssi;
+	int min_rssi;
+	int max_rssi;
+
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
 	/* modem variant */
@@ -682,6 +688,26 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_cesq)
 
 	return 0;
 }
+
+/*
+ * Handler: +CSQ: <signal_power(RSSI)>[0],<qual>[1]
+ */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
+{
+	int rssi, signal_qual;
+
+	rssi = ATOI(argv[0], 0, "rssi");
+	signal_qual = ATOI(argv[1], 0, "squal");
+	if (rssi >= 0 && rssi <= 31) {
+		mdata.rssi = rssi;
+		mdata.min_rssi = MIN(rssi, mdata.min_rssi);
+		mdata.max_rssi = MAX(rssi, mdata.max_rssi);
+		LOG_INF("RSSI: %d, signal_quality: %d", mctx.data_rssi, signal_qual);
+		LOG_INF("MIN_RSSI, MAX_RSSI = %d, %d", mdata.min_rssi, mdata
+									       .max_rssi);
+	}
+	return 0;
+}
 #endif
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2) ||                                     \
@@ -706,7 +732,6 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 }
 #endif
 
-#if defined(CONFIG_MODEM_CELL_INFO)
 static int unquoted_atoi(const char *s, int base)
 {
 	if (*s == '"') {
@@ -715,6 +740,7 @@ static int unquoted_atoi(const char *s, int base)
 
 	return strtol(s, NULL, base);
 }
+#if defined(CONFIG_MODEM_CELL_INFO)
 
 /*
  * Handler: +COPS: <mode>[0],<format>[1],<oper>[2]
@@ -779,20 +805,17 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_upsv_get)
 {
-	if (argc < 1) {
-		return -EAGAIN;
-	}
 	LOG_DBG("UPSV? handler, %d", argc);
-	LOG_DBG("modem power mode: ,%s", argv[0]);
+	LOG_DBG("modem power mode: %s", argv[1]);
 	int val = 0;
-	char *ptr = argv[0];
+	char *ptr = argv[1];
 
 	while (*ptr != '\0' && val ==0) {
 		val = atoi(ptr);
 		ptr++;
 	}
 	mdata.upsv_state = val;
-	LOG_INF("UPSV mode = %d\n", val);
+	LOG_INF("UPSV mode = %d", val);
 	if (val != 4 && val != 0) {
 		LOG_WRN("Unexpected value for UPSV mode setting!");
 	}
@@ -825,6 +848,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cops_get)
 	}
 	LOG_DBG("COPS? handler, %d", argc);
 	mdata.session_rat = atoi(argv[3]);
+	mdata.mnc = unquoted_atoi(argv[2], 10);
 	return 0;
 }
 /*
@@ -1276,13 +1300,24 @@ static void modem_rssi_query_work(struct k_work *work)
 #else
 static void modem_rssi_query_work(struct k_work *work)
 {
+#if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
+	/* re-start RSSI query work */
+	if (work) {
+		k_work_reschedule_for_queue(
+			&modem_workq, &mdata.rssi_query_work,
+			K_SECONDS(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK_PERIOD));
+	}
+#endif
+	if (mdata.upsv_state == 4) {
+		return;
+	}
 	static const struct modem_cmd cmd =
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
 		MODEM_CMD("+CSQ: ", on_cmd_atcmdinfo_rssi_csq, 2U, ",");
 	static char *send_cmd = "AT+CSQ";
 #else
-		MODEM_CMD("+CESQ: ", on_cmd_atcmdinfo_rssi_cesq, 6U, ",");
-	static char *send_cmd = "AT+CESQ";
+		MODEM_CMD("+CSQ: ", on_cmd_atcmdinfo_rssi_csq, 2U, ",");
+	static char *send_cmd = "AT+CSQ";
 #endif
 	int ret;
 
@@ -1306,23 +1341,18 @@ static void modem_rssi_query_work(struct k_work *work)
 	}
 #endif
 
-#if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
-	/* re-start RSSI query work */
-	if (work) {
-		k_work_reschedule_for_queue(
-			&modem_workq, &mdata.rssi_query_work,
-			K_SECONDS(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK_PERIOD));
-	}
-#endif
+
 }
 #endif
 
 static int modem_reset(void)
 {
 	int ret = 0, retry_count = 0, counter = 0;
+	mdata.min_rssi = 31;
+	mdata.max_rssi = 0;
 
 	static const struct setup_cmd pre_setup_cmds[] = {
-		SETUP_CMD_NOHANDLE("AT+URAT=9"),
+		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
 		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
 		SETUP_CMD_NOHANDLE("AT+COPS=2"),
 		/* TODO: consider adding this: SETUP_CMD_NOHANDLE("AT+CRSM=214,
@@ -1366,8 +1396,7 @@ static int modem_reset(void)
 			"AT+CGDCONT=1,\"IP\",\""CONFIG_MODEM_UBLOX_SARA_R4_APN"\""),
 		/* start functionality */
 		SETUP_CMD_NOHANDLE("AT+CFUN=1"),
-		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 1U,
-			  ","),
+		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 2U, " "),
 #endif
 	};
 
@@ -1492,7 +1521,7 @@ restart:
 	} else {
 		/* register operator automatically */
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0,
-				     "AT+COPS=0,0", &mdata.sem_response,
+				     "AT+COPS=0,2", &mdata.sem_response,
 				     MDM_REGISTRATION_TIMEOUT);
 	}
 
@@ -1549,14 +1578,14 @@ restart:
 	k_sleep(MDM_WAIT_FOR_RSSI_DELAY);
 
 	counter = 0;
-	/* wait for RSSI < 0 and > -1000 */
+	/* wait for RSSI < 31 and > 0 */
 	while (counter++ < MDM_WAIT_FOR_RSSI_COUNT &&
-	       (mctx.data_rssi >= 0 || mctx.data_rssi <= -1000)) {
+	       (mctx.data_rssi < 0 || mctx.data_rssi > 31)) {
 		modem_rssi_query_work(NULL);
 		k_sleep(MDM_WAIT_FOR_RSSI_DELAY);
 	}
 
-	if (mctx.data_rssi >= 0 || mctx.data_rssi <= -1000) {
+	if (mctx.data_rssi < 0 || mctx.data_rssi > 31) {
 		retry_count++;
 		if (retry_count >= MDM_NETWORK_RETRY_COUNT) {
 			LOG_ERR("Failed network init.  Too many attempts!");
@@ -2557,8 +2586,7 @@ int wake_up(void) {
 		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
 		SETUP_CMD_NOHANDLE("ATE0"),
 		SETUP_CMD_NOHANDLE("AT+UPSMVER?"),
-		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 1U,
-			  ","),
+		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 2U, " "),
 	};
 	ret = modem_cmd_handler_setup_cmds(
 		&mctx.iface, &mctx.cmd_handler, disable_psv,
@@ -2611,14 +2639,13 @@ static int sleep(void){
 		//		 to confirm that the listening socket is
 		//		 actually listening, and take some action if
 		//		 it is not.
-		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 1U,
-			  ","),
+		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 2U, " "),
 	};
 	k_sleep(K_MSEC(100));
 	ret = modem_cmd_handler_setup_cmds(
 		&mctx.iface, &mctx.cmd_handler, read_upsv_cmd,
 		ARRAY_SIZE(read_upsv_cmd), &mdata.sem_response,
-		MDM_AT_CMD_TIMEOUT);
+		MDM_REGISTRATION_TIMEOUT);
 
 	if (ret == 0) {
 		if (mdata.upsv_state == 4){
@@ -2668,7 +2695,6 @@ static int set_socket_linger_time(int socket_id, int linger_time_ms) {
 	return ret;
 }
 
-
 int get_ccid(char **ccid)
 {
 	if (ccid_ready) {
@@ -2677,6 +2703,16 @@ int get_ccid(char **ccid)
 	} else {
 		return -ENODATA;
 	}
+}
+
+int get_gsm_info(struct gsm_info *session_info)
+{
+	session_info->rat = mdata.session_rat;
+	session_info->mnc = mdata.mnc;
+	session_info->rssi = mdata.rssi;
+	session_info->min_rssi = mdata.min_rssi;
+	session_info->max_rssi = mdata.max_rssi;
+	return 0;
 }
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL, &mdata, NULL,
