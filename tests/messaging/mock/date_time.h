@@ -10,5 +10,6 @@
 #include <time.h>
 
 int date_time_set(struct tm *tm_date);
+int date_time_now(int64_t *unix_time_ms);
 
 #endif /* _DATE_TIME_MOCK_H_ */
