@@ -52,9 +52,26 @@ struct step_counter_event {
 	uint32_t steps;
 };
 
+typedef enum {
+	NO_ACTIVITY_SIGMA = 0,
+	SLEEP_SIGMA = 1,
+	OFF_ANIMAL_SIGMA = 2
+} sigma_type_t;
+
+struct acc_sigma_event {
+	struct event_header header;
+	sigma_type_t type;
+	union {
+		uint16_t sleep_sigma_value;
+		uint16_t no_activity_sigma;
+		uint16_t off_animal_value;
+	} param;
+};
+
 EVENT_TYPE_DECLARE(movement_set_mode_event);
 EVENT_TYPE_DECLARE(movement_out_event);
 EVENT_TYPE_DECLARE(movement_timeout_event);
 EVENT_TYPE_DECLARE(activity_level);
 EVENT_TYPE_DECLARE(step_counter_event);
+EVENT_TYPE_DECLARE(acc_sigma_event);
 #endif /* _MOVEMENT_EVENT_H_ */

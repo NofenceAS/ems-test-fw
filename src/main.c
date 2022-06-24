@@ -19,6 +19,7 @@
 #include "nf_settings.h"
 #include "buzzer.h"
 #include "pwr_module.h"
+#include <nrf.h>
 #if defined(CONFIG_WATCHDOG_ENABLE)
 #include "watchdog_app.h"
 #endif
@@ -162,6 +163,9 @@ void main(void)
 		nf_app_error(ERR_AMC, err, e_msg, strlen(e_msg));
 	}
 
+	/* Important to initialize the eeprom first, since we use the 
+	 * sleep sigma value from eeprom when we init.
+	 */
 	err = init_movement_controller();
 	selftest_mark_state(SELFTEST_ACCELEROMETER_POS, err == 0);
 	if (err) {
@@ -185,6 +189,11 @@ void main(void)
 		nf_app_error(ERR_CELLULAR_CONTROLLER, err, e_msg,
 			     strlen(e_msg));
 	}
+	/* Initialize the time module used for the histogram calculation */
+	err = time_use_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize time use module. %d", err);
+	}
 
 	/* Initialize the messaging module */
 	err = messaging_module_init();
@@ -204,11 +213,6 @@ void main(void)
 		nf_app_error(ERR_GNSS_CONTROLLER, err, e_msg, strlen(e_msg));
 	}
 #endif
-	/* Initialize the time module used for the histogram calculation */
-	err = time_use_module_init();
-	if (err) {
-		LOG_ERR("Could not initialize time use module. %d", err);
-	}
 
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,
@@ -216,6 +220,9 @@ void main(void)
 	 */
 	mark_new_application_as_valid();
 
-	LOG_INF("Booted application firmware version %i, and marked it as valid.",
-		NF_X25_VERSION_NUMBER);
+	uint32_t reset_reason = NRF_POWER->RESETREAS;
+	NRF_POWER->RESETREAS = NRF_POWER->RESETREAS;
+
+	LOG_INF("Booted application firmware version %i, and marked it as valid. Reset reason %i",
+		NF_X25_VERSION_NUMBER, reset_reason);
 }
