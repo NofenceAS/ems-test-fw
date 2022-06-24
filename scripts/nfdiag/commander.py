@@ -6,11 +6,12 @@ import threading
 import time
 
 import logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 # Definitions used for group/command/response
 GROUP_SYSTEM = 0x00
 CMD_PING = 0x55
+CMD_LOG = 0x70
 CMD_TEST = 0x7E
 
 GROUP_SETTINGS = 0x01
@@ -191,6 +192,7 @@ class Commander(threading.Thread):
 
 				if len(data) > 0:
 					receive_buffer += data
+					logging.debug("New data: " + str(data))
 
 					# Decode COBS format data
 					# Parse as long as 0's are found 
