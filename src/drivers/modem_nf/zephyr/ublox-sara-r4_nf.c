@@ -172,6 +172,10 @@ struct modem_data {
 	int last_sock;
 	int session_rat;
 	bool pdp_active;
+	int rssi;
+	int min_rssi;
+	int max_rssi;
+
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
 	/* modem variant */
@@ -680,6 +684,25 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_cesq)
 		LOG_INF("RSRP/RSSI not known");
 	}
 
+	return 0;
+}
+
+/*
+ * Handler: +CSQ: <signal_power(RSSI)>[0],<qual>[1]
+ */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
+{
+	int rssi, signal_qual;
+
+	rssi = ATOI(argv[0], 0, "rssi");
+	signal_qual = ATOI(argv[1], 0, "squal");
+	if (rssi >= 0 && rssi <= 31) {
+		mdata.rssi = rssi;
+		mdata.min_rssi = MIN(rssi, mdata.min_rssi);
+		mdata.max_rssi = MAX(rssi, mdata.max_rssi);
+		LOG_INF("RSSI: %d, signal_quality: %d", mctx.data_rssi, signal_qual);
+		LOG_INF("MIN_RSSI, MAX_RSSI = %d. %d", mdata.min_rssi, mdata.max_rssi);
+	}
 	return 0;
 }
 #endif
@@ -1276,13 +1299,24 @@ static void modem_rssi_query_work(struct k_work *work)
 #else
 static void modem_rssi_query_work(struct k_work *work)
 {
+#if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
+	/* re-start RSSI query work */
+	if (work) {
+		k_work_reschedule_for_queue(
+			&modem_workq, &mdata.rssi_query_work,
+			K_SECONDS(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK_PERIOD));
+	}
+#endif
+	if (mdata.upsv_state == 4) {
+		return;
+	}
 	static const struct modem_cmd cmd =
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
 		MODEM_CMD("+CSQ: ", on_cmd_atcmdinfo_rssi_csq, 2U, ",");
 	static char *send_cmd = "AT+CSQ";
 #else
-		MODEM_CMD("+CESQ: ", on_cmd_atcmdinfo_rssi_cesq, 6U, ",");
-	static char *send_cmd = "AT+CESQ";
+		MODEM_CMD("+CSQ: ", on_cmd_atcmdinfo_rssi_csq, 2U, ",");
+	static char *send_cmd = "AT+CSQ";
 #endif
 	int ret;
 
@@ -1306,20 +1340,15 @@ static void modem_rssi_query_work(struct k_work *work)
 	}
 #endif
 
-#if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
-	/* re-start RSSI query work */
-	if (work) {
-		k_work_reschedule_for_queue(
-			&modem_workq, &mdata.rssi_query_work,
-			K_SECONDS(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK_PERIOD));
-	}
-#endif
+
 }
 #endif
 
 static int modem_reset(void)
 {
 	int ret = 0, retry_count = 0, counter = 0;
+	mdata.min_rssi = 31;
+	mdata.max_rssi = 0;
 
 	static const struct setup_cmd pre_setup_cmds[] = {
 		SETUP_CMD_NOHANDLE("AT+URAT=7"),
@@ -1549,14 +1578,14 @@ restart:
 	k_sleep(MDM_WAIT_FOR_RSSI_DELAY);
 
 	counter = 0;
-	/* wait for RSSI < 0 and > -1000 */
+	/* wait for RSSI < 31 and > 0 */
 	while (counter++ < MDM_WAIT_FOR_RSSI_COUNT &&
-	       (mctx.data_rssi >= 0 || mctx.data_rssi <= -1000)) {
+	       (mctx.data_rssi < 0 || mctx.data_rssi > 31)) {
 		modem_rssi_query_work(NULL);
 		k_sleep(MDM_WAIT_FOR_RSSI_DELAY);
 	}
 
-	if (mctx.data_rssi >= 0 || mctx.data_rssi <= -1000) {
+	if (mctx.data_rssi < 0 || mctx.data_rssi > 31) {
 		retry_count++;
 		if (retry_count >= MDM_NETWORK_RETRY_COUNT) {
 			LOG_ERR("Failed network init.  Too many attempts!");
@@ -2558,7 +2587,7 @@ int wake_up(void) {
 		SETUP_CMD_NOHANDLE("ATE0"),
 		SETUP_CMD_NOHANDLE("AT+UPSMVER?"),
 		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 1U,
-			  ","),
+			  ""),
 	};
 	ret = modem_cmd_handler_setup_cmds(
 		&mctx.iface, &mctx.cmd_handler, disable_psv,
