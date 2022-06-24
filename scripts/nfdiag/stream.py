@@ -5,7 +5,7 @@ from queue import Queue, Empty
 from pc_ble_driver_py.observers import *
 
 import logging
-logging.basicConfig(level=logging.CRITICAL)
+logging.basicConfig(level=logging.DEBUG)
 
 from cobs import cobs
 

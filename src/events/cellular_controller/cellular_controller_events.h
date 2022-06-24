@@ -62,5 +62,14 @@ struct modem_state {
 	struct event_header header;
 	modem_pwr_mode mode;
 };
-
 EVENT_TYPE_DECLARE(modem_state);
+
+/** @brief Event published by the send message thread to free the allocated
+ * message ram in cellular_controller event handler.
+ * */
+
+struct free_message_mem_event {
+	struct event_header header;
+};
+EVENT_TYPE_DECLARE(free_message_mem_event);
+
