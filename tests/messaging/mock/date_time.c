@@ -8,3 +8,8 @@ int date_time_set(struct tm *tm_date)
 {
 	return ztest_get_return_value();
 }
+
+int date_time_now(int64_t *unix_time_ms)
+{
+	return ztest_get_return_value();
+}

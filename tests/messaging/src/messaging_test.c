@@ -48,6 +48,7 @@ void test_init(void)
 	ztest_returns_value(get_fence_status, 0);
 	ztest_returns_value(get_collar_status, 0);
 	ztest_returns_value(get_total_zap_count, 0);
+	ztest_returns_value(date_time_now, 0);
 
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
@@ -60,6 +61,7 @@ void test_init(void)
 //ack - fence_ready - ano_ready - msg_out - host_address
 void test_initial_poll_request_out(void)
 {
+	ztest_returns_value(date_time_now, 0);
 	ztest_returns_value(stg_read_log_data, 0);
 	ztest_returns_value(stg_log_pointing_to_last, false);
 	/* TODO pshustad, pending if we are going to use the connection_state_event for poll */
@@ -146,6 +148,7 @@ void test_initial_poll_request_out(void)
 
 void test_poll_request_out_when_nudged_from_server(void)
 {
+	ztest_returns_value(date_time_now, 0);
 	/* ztest_returns_value(stg_read_log_data, 0); */
 	/* ztest_returns_value(stg_log_pointing_to_last, false); */
 	k_sleep(K_SECONDS(5));
@@ -177,6 +180,7 @@ void test_poll_request_out_when_nudged_from_server(void)
 
 void test_poll_response_has_new_fence(void)
 {
+	ztest_returns_value(date_time_now, 0);
 	/* We need to simulate that we received the message on server, publish
 	 * ACK for messaging module.
 	 */
