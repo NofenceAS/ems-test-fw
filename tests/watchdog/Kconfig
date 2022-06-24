@@ -1,0 +1,16 @@
+
+menu "APPLICATION_CODE"
+	menu "WATCHDOG"
+    	rsource "./../../src/modules/watchdog/Kconfig"
+	endmenu # WATCHDOG
+
+	menu "BLE"
+	rsource "./../../src/modules/ble/Kconfig"
+	endmenu # BLE
+
+
+endmenu # APPLICATION CODE
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu
