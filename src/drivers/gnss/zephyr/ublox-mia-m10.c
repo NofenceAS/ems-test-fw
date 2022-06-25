@@ -312,6 +312,9 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 	gnss_data_is_valid = false;
 	memset(&gnss_data, 0, sizeof(gnss_t));
 
+	/* Flush all buffers related to GNSS communication */
+	gnss_hub_flush_all();
+
 	/* TODO - Could this wait be removed somehow? */
 	/* Wait to assure startup */
 	k_sleep(K_MSEC(500));
