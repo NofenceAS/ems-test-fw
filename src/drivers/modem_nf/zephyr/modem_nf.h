@@ -9,6 +9,7 @@ typedef struct gsm_info {
 	int rssi;
 	int min_rssi;
 	int max_rssi;
+	uint8_t ccid[20];
 } gsm_info;
 
 int modem_nf_reset(void);

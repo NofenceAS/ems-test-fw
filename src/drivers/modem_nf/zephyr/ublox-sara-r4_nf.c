@@ -2707,12 +2707,18 @@ int get_ccid(char **ccid)
 
 int get_gsm_info(struct gsm_info *session_info)
 {
-	session_info->rat = mdata.session_rat;
-	session_info->mnc = mdata.mnc;
-	session_info->rssi = mdata.rssi;
-	session_info->min_rssi = mdata.min_rssi;
-	session_info->max_rssi = mdata.max_rssi;
-	return 0;
+	if (ccid_ready) {
+		session_info->rat = mdata.session_rat;
+		session_info->mnc = mdata.mnc;
+		session_info->rssi = mdata.rssi;
+		session_info->min_rssi = mdata.min_rssi;
+		session_info->max_rssi = mdata.max_rssi;
+		memcpy(session_info->ccid, mdata.mdm_ccid,
+		       sizeof(session_info->ccid));
+		return 0;
+	} else {
+		return -ENODATA;
+	}
 }
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL, &mdata, NULL,
