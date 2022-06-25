@@ -48,6 +48,7 @@ int gnss_hub_init(const struct device *uart_dev,
 		if (gnss_rx_buffer == NULL) {
 			return -ENOBUFS;
 		}
+		gnss_rx_cnt = 0;
 	}
 	if (gnss_tx_buffer == NULL)
 	{
