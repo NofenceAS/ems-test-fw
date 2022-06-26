@@ -296,3 +296,14 @@ int gnss_hub_rx_consume(uint8_t hub_id, uint32_t cnt)
 
 	return err;
 }
+
+int gnss_hub_flush_all(void)
+{
+	gnss_uart_block(true);
+	gnss_rx_cnt = 0;
+	gnss_rx_2_cnt = 0;
+	ring_buf_reset(&gnss_tx_ring_buf);
+	gnss_uart_block(false);
+
+	return 0;
+}
