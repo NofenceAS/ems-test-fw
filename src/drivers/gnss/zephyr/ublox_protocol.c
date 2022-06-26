@@ -24,6 +24,10 @@ LOG_MODULE_REGISTER(UBLOX_PROTOCOL, CONFIG_GNSS_LOG_LEVEL);
 #define UBLOX_MSG_IDENTIFIER(c,i)	((c<<8)|(i))
 #define UBLOX_MSG_IDENTIFIER_EMPTY	0
 
+/* This can be adjusted, but should never be larger than receive buffer 
+ * Any payloads greater than this will lead to the message being discarded. */
+#define UBLOX_MAX_PAYLOAD_SIZE	512
+
 /* Registered handlers for periodic messages. 
  * Links the message class/ids to callbacks.
  */ 
@@ -293,6 +297,12 @@ uint32_t ublox_parse(uint8_t* data, uint32_t size)
 			 	 (data[UBLOX_OFFS_LENGTH+1]<<8);
 	uint16_t packet_length = (UBLOX_OVERHEAD_SIZE + payload_length);
 	
+	if (payload_length > UBLOX_MAX_PAYLOAD_SIZE) {
+		/* Payload is unreasonably large, 
+		 * return and consume single byte to resync */
+		return 1;
+	}
+
 	if (size < packet_length) {
 		/* Not enough data for packet with payload yet */
 		return 0;
