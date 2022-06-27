@@ -129,6 +129,7 @@ K_KERNEL_STACK_DEFINE(modem_workq_stack,
 		      CONFIG_MODEM_UBLOX_SARA_R4_RX_WORKQ_STACK_SIZE);
 static struct k_work_q modem_workq;
 #endif
+K_SEM_DEFINE(urc_sem, 1, 1);
 
 /* socket read callback data */
 struct socket_read_data {
@@ -1011,19 +1012,17 @@ MODEM_CMD_DEFINE(on_cmd_dns)
 /* Handler: +UUSOCL: <socket_id>[0] */
 MODEM_CMD_DEFINE(on_cmd_socknotifyclose)
 {
-	if (argc < 1) {
-		return -EAGAIN;
-	}
+	k_sem_take(&urc_sem, K_SECONDS(1));
 	struct modem_socket *sock;
 
 	sock = modem_socket_from_id(&mdata.socket_config,
 				    ATOI(argv[0], 0, "socket_id"));
-	if (sock) {
+	if (sock >= 0) {
 		sock->is_connected = false;
 		/* make sure socket data structure is reset */
 		modem_socket_put(&mdata.socket_config, sock->sock_fd);
 	}
-
+	k_sem_give(&urc_sem);
 	return 0;
 }
 
@@ -2597,6 +2596,7 @@ int wake_up(void) {
 
 int wake_up_from_upsv(void) {
 	if (mdata.upsv_state == 4) {
+		k_sem_take(&urc_sem, K_FOREVER);
 		modem_pin_config(&mctx, MDM_POWER, true);
 		unsigned int irq_lock_key = irq_lock();
 		LOG_DBG("MDM_POWER_PIN -> DISABLE");
@@ -2615,6 +2615,7 @@ int wake_up_from_upsv(void) {
 		} while (!modem_rx_pin_is_high());
 		return wake_up();
 	}
+	k_sem_give(&urc_sem);
 	return 0;
 }
 
@@ -2664,7 +2665,9 @@ static int sleep(void){
 }
 
 int modem_nf_wakeup(void) {
-	return wake_up_from_upsv();
+	if (wake_up_from_upsv() != 0) {
+		return modem_reset();
+	}
 }
 
 int modem_nf_sleep(void) {
