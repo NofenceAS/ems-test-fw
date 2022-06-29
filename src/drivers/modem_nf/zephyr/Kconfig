@@ -27,6 +27,10 @@ config USE_CPSMS
     bool "Set CPSMS=1 in power saving mode -extended network paging periods"
 	default n
 
+config USE_EXTENDED_SIGNAL_QUALITY_CHECK
+    bool "use CESQ instead of CSQ when checking for rssi"
+	default n
+
 choice MODEM_UBLOX_SARA_VARIANT
 	bool "u-blox SARA variant selection"
 	default MODEM_UBLOX_SARA_R4
