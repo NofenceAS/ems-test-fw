@@ -19,7 +19,9 @@
 #include "nf_settings.h"
 #include "buzzer.h"
 #include "pwr_module.h"
+/* For reboot reason. */
 #include <nrf.h>
+
 #if defined(CONFIG_WATCHDOG_ENABLE)
 #include "watchdog_app.h"
 #endif
@@ -44,6 +46,9 @@
 #include "movement_events.h"
 #include "time_use.h"
 
+/* Fetched from 52840 datasheet RESETREAS register. */
+#define SOFT_RESET_REASON_FLAG (1 << 2)
+
 LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 
 /**
@@ -52,6 +57,10 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
  */
 void main(void)
 {
+	/* Fetch reset reason, log in the future? */
+	uint32_t reset_reason = NRF_POWER->RESETREAS;
+	NRF_POWER->RESETREAS = NRF_POWER->RESETREAS;
+
 	int err;
 	LOG_INF("Starting Nofence application...");
 
@@ -120,28 +129,6 @@ void main(void)
 
 #endif
 
-	/* Initialize the cellular controller */
-	err = cellular_controller_init();
-	if (err) {
-		char *e_msg = "Could not initialize the cellular controller";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_CELLULAR_CONTROLLER, err, e_msg,
-			     strlen(e_msg));
-	}
-	/* Initialize the time module used for the histogram calculation */
-	err = time_use_module_init();
-	if (err) {
-		LOG_ERR("Could not initialize time use module. %d", err);
-	}
-
-	/* Initialize the messaging module */
-	err = messaging_module_init();
-	if (err) {
-		char *e_msg = "Could not initialize the messaging module.";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_MESSAGING, err, e_msg, strlen(e_msg));
-	}
-
 	/* Initialize BLE module. */
 	err = ble_module_init();
 	if (err) {
@@ -197,11 +184,27 @@ void main(void)
 			     strlen(e_msg));
 	}
 
-	/* Play welcome sound. */
-	/*TODO: only play when battery level is adequate.*/
-	//struct sound_event *sound_ev = new_sound_event();
-	//sound_ev->type = SND_WELCOME;
-	//EVENT_SUBMIT(sound_ev);
+	/* Initialize the cellular controller */
+	err = cellular_controller_init();
+	if (err) {
+		char *e_msg = "Could not initialize the cellular controller";
+		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
+		nf_app_error(ERR_CELLULAR_CONTROLLER, err, e_msg,
+			     strlen(e_msg));
+	}
+	/* Initialize the time module used for the histogram calculation */
+	err = time_use_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize time use module. %d", err);
+	}
+
+	/* Initialize the messaging module */
+	err = messaging_module_init();
+	if (err) {
+		char *e_msg = "Could not initialize the messaging module.";
+		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
+		nf_app_error(ERR_MESSAGING, err, e_msg, strlen(e_msg));
+	}
 
 	/* Initialize the GNSS controller */
 #if CONFIG_GNSS_CONTROLLER
@@ -214,14 +217,40 @@ void main(void)
 	}
 #endif
 
+	bool is_soft_reset = ((reset_reason & SOFT_RESET_REASON_FLAG) != 0);
+
+	LOG_INF("Was soft reset? : %i, Battery percent %i", is_soft_reset,
+		fetch_battery_percent());
+	/* If not set, we can play the sound. */
+	if (!is_soft_reset) {
+		if (log_and_fetch_battery_voltage() > CONFIG_BATTERY_CRITICAL) {
+			if (fetch_battery_percent() >= 75) {
+				/* Play battery sound. */
+				struct sound_event *sound_ev =
+					new_sound_event();
+				sound_ev->type = SND_SHORT_100;
+				EVENT_SUBMIT(sound_ev);
+			}
+
+			/* Wait for battery percent to finish, 
+			 * since sound controller
+			 * doesn't queue sounds.
+			 */
+			k_sleep(K_MSEC(200));
+
+			/* Play welcome sound. */
+			/*TODO: only play when battery level is adequate.*/
+			struct sound_event *sound_ev = new_sound_event();
+			sound_ev->type = SND_WELCOME;
+			EVENT_SUBMIT(sound_ev);
+		}
+	}
+
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,
 	 * it will revert to the previous version on the next reboot that occurs.
 	 */
 	mark_new_application_as_valid();
-
-	uint32_t reset_reason = NRF_POWER->RESETREAS;
-	NRF_POWER->RESETREAS = NRF_POWER->RESETREAS;
 
 	LOG_INF("Booted application firmware version %i, and marked it as valid. Reset reason %i",
 		NF_X25_VERSION_NUMBER, reset_reason);
