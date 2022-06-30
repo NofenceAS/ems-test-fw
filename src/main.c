@@ -224,24 +224,25 @@ void main(void)
 	/* If not set, we can play the sound. */
 	if (!is_soft_reset) {
 		if (log_and_fetch_battery_voltage() > CONFIG_BATTERY_CRITICAL) {
-			/* Play welcome sound. */
-			/*TODO: only play when battery level is adequate.*/
-			struct sound_event *sound_ev = new_sound_event();
-			sound_ev->type = SND_WELCOME;
-			EVENT_SUBMIT(sound_ev);
-
-			/* Wait for welcome sound to finish, since sound controller
-			 * doesn't queue sounds.
-			 */
-			k_sleep(K_MSEC(1000));
-
-			if (fetch_battery_percent() >= 70) {
+			if (fetch_battery_percent() >= 75) {
 				/* Play battery sound. */
 				struct sound_event *sound_ev =
 					new_sound_event();
 				sound_ev->type = SND_SHORT_100;
 				EVENT_SUBMIT(sound_ev);
 			}
+
+			/* Wait for battery percent to finish, 
+			 * since sound controller
+			 * doesn't queue sounds.
+			 */
+			k_sleep(K_MSEC(200));
+
+			/* Play welcome sound. */
+			/*TODO: only play when battery level is adequate.*/
+			struct sound_event *sound_ev = new_sound_event();
+			sound_ev->type = SND_WELCOME;
+			EVENT_SUBMIT(sound_ev);
 		}
 	}
 
