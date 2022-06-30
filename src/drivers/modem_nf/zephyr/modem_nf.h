@@ -17,4 +17,5 @@ int modem_nf_wakeup(void);
 int modem_nf_sleep(void);
 int get_ccid(char **);
 int get_gsm_info(struct gsm_info*);
+void stop_rssi(void);
 #endif /* MODEM_NF_H_ */
