@@ -9,6 +9,10 @@ menu "ERROR_HANDLER"
     	rsource "./../../src/modules/error_handler/Kconfig"
 endmenu # ERROR_HANDLER
 
+menu "FW_UPGRADE"
+    	rsource "./../../src/modules/fw_upgrade/Kconfig"
+endmenu # FW_UPGRADE
+
 menu "Zephyr Kernel"
 source "Kconfig.zephyr"
 endmenu

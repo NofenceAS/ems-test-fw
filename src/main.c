@@ -169,6 +169,9 @@ void main(void)
 		nf_app_error(ERR_AMC, err, e_msg, strlen(e_msg));
 	}
 
+	/* Important to initialize the eeprom first, since we use the 
+	 * sleep sigma value from eeprom when we init.
+	 */
 	err = init_movement_controller();
 	selftest_mark_state(SELFTEST_ACCELEROMETER_POS, err == 0);
 	if (err) {
@@ -185,6 +188,11 @@ void main(void)
 		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
 		nf_app_error(ERR_CELLULAR_CONTROLLER, err, e_msg,
 			     strlen(e_msg));
+	}
+	/* Initialize the time module used for the histogram calculation */
+	err = time_use_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize time use module. %d", err);
 	}
 
 	/* Initialize the messaging module */
@@ -205,11 +213,6 @@ void main(void)
 		nf_app_error(ERR_GNSS_CONTROLLER, err, e_msg, strlen(e_msg));
 	}
 #endif
-	/* Initialize the time module used for the histogram calculation */
-	err = time_use_module_init();
-	if (err) {
-		LOG_ERR("Could not initialize time use module. %d", err);
-	}
 
 	/** @todo Check which flags are set on FW upgrade etc.. */
 	/* if (reset_reason != SOME_FW_UPGRADE_FLAG) {. */
@@ -242,6 +245,6 @@ void main(void)
 	 */
 	mark_new_application_as_valid();
 
-	LOG_INF("Booted application firmware version %i, and marked it as valid.",
-		NF_X25_VERSION_NUMBER);
+	LOG_INF("Booted application firmware version %i, and marked it as valid. Reset reason %i",
+		NF_X25_VERSION_NUMBER, reset_reason);
 }

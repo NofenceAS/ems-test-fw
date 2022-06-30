@@ -4,3 +4,13 @@ int modem_nf_reset(void)
 {
 	return 0;
 }
+
+int modem_nf_wakeup(void)
+{
+	return 0;
+}
+
+int get_gsm_info(struct gsm_info *gsm_session_info)
+{
+	return 0;
+}
