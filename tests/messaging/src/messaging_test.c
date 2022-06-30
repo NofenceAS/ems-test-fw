@@ -64,9 +64,6 @@ void test_init(void)
 	struct update_fence_version *ev_fversion = new_update_fence_version();
 	EVENT_SUBMIT(ev_fversion);
 
-	struct update_flash_erase *ev_erase = new_update_flash_erase();
-	EVENT_SUBMIT(ev_erase);
-
 	struct update_zap_count *ev_zap = new_update_zap_count();
 	EVENT_SUBMIT(ev_zap);
 	k_sleep(K_SECONDS(60));

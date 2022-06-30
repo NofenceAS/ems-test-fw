@@ -120,6 +120,28 @@ void main(void)
 
 #endif
 
+	/* Initialize the cellular controller */
+	err = cellular_controller_init();
+	if (err) {
+		char *e_msg = "Could not initialize the cellular controller";
+		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
+		nf_app_error(ERR_CELLULAR_CONTROLLER, err, e_msg,
+			     strlen(e_msg));
+	}
+	/* Initialize the time module used for the histogram calculation */
+	err = time_use_module_init();
+	if (err) {
+		LOG_ERR("Could not initialize time use module. %d", err);
+	}
+
+	/* Initialize the messaging module */
+	err = messaging_module_init();
+	if (err) {
+		char *e_msg = "Could not initialize the messaging module.";
+		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
+		nf_app_error(ERR_MESSAGING, err, e_msg, strlen(e_msg));
+	}
+
 	/* Initialize BLE module. */
 	err = ble_module_init();
 	if (err) {
@@ -177,31 +199,9 @@ void main(void)
 
 	/* Play welcome sound. */
 	/*TODO: only play when battery level is adequate.*/
-	struct sound_event *sound_ev = new_sound_event();
-	sound_ev->type = SND_WELCOME;
-	EVENT_SUBMIT(sound_ev);
-
-	/* Initialize the cellular controller */
-	err = cellular_controller_init();
-	if (err) {
-		char *e_msg = "Could not initialize the cellular controller";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_CELLULAR_CONTROLLER, err, e_msg,
-			     strlen(e_msg));
-	}
-	/* Initialize the time module used for the histogram calculation */
-	err = time_use_module_init();
-	if (err) {
-		LOG_ERR("Could not initialize time use module. %d", err);
-	}
-
-	/* Initialize the messaging module */
-	err = messaging_module_init();
-	if (err) {
-		char *e_msg = "Could not initialize the messaging module.";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_MESSAGING, err, e_msg, strlen(e_msg));
-	}
+	//struct sound_event *sound_ev = new_sound_event();
+	//sound_ev->type = SND_WELCOME;
+	//EVENT_SUBMIT(sound_ev);
 
 	/* Initialize the GNSS controller */
 #if CONFIG_GNSS_CONTROLLER
