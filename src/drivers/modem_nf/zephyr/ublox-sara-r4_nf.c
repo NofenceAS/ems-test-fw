@@ -1366,11 +1366,12 @@ static int modem_reset(void)
 	SETUP_CMD_NOHANDLE("ATE0"),
 	/* stop functionality */
 	SETUP_CMD_NOHANDLE("AT+CFUN=0"),
+	/* extended error numbers */
+	SETUP_CMD_NOHANDLE("AT+CMEE=1"),
 		};
 
 	static const struct setup_cmd setup_cmds[] = {
-		/* extended error numbers */
-		SETUP_CMD_NOHANDLE("AT+CMEE=1"),
+
 #if defined(CONFIG_BOARD_PARTICLE_BORON)
 		/* use external SIM */
 		SETUP_CMD_NOHANDLE("AT+UGPIOC=23,0,0"),
@@ -1482,8 +1483,8 @@ restart:
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
 					   setup_cmds0, ARRAY_SIZE(setup_cmds0),
 					   &mdata.sem_response,
-					   MDM_REGISTRATION_TIMEOUT);
-	k_sleep(K_MSEC(150));
+					   MDM_AT_CMD_TIMEOUT);
+	k_sleep(K_MSEC(50));
 
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
 					   setup_cmds, ARRAY_SIZE(setup_cmds),
@@ -1492,7 +1493,7 @@ restart:
 	if (ret < 0) {
 		goto error;
 	}
-	k_sleep(K_MSEC(150));
+	k_sleep(K_MSEC(50));
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 	/* autodetect APN from IMSI */
