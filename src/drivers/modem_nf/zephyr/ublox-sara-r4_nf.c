@@ -167,7 +167,7 @@ struct modem_data {
 	char mdm_imei[MDM_IMEI_LENGTH];
 	char mdm_imsi[MDM_IMSI_LENGTH];
 	char mdm_ccid[2 * MDM_IMSI_LENGTH];
-	char mdm_pdp_addr[MDM_IMSI_LENGTH];
+	char mdm_pdp_addr[2*MDM_IMSI_LENGTH];
 	int mdm_rssi;
 	int upsv_state;
 	int last_sock;
@@ -832,7 +832,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgact_get)
 	}
 	LOG_DBG("CGACT? handler, %d", argc);
 	LOG_DBG("PDP context state: ,%s", argv[1]);
-	uint8_t val = (uint8_t)atoi(argv[1]);
+	int val = atoi(argv[1]);
 
 	if (val == 1) {
 		mdata.pdp_active = true;
