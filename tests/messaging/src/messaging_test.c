@@ -45,7 +45,6 @@ void test_init(void)
 	ztest_returns_value(eep_uint8_read, 0);
 	ztest_returns_value(eep_uint16_read, 0);
 	ztest_returns_value(eep_uint32_read, 0);
-	ztest_returns_value(date_time_set, 0);
 	ztest_returns_value(date_time_now, 0);
 
 	/* Cache variables for messaging module. */
@@ -66,6 +65,7 @@ void test_init(void)
 
 	struct update_zap_count *ev_zap = new_update_zap_count();
 	EVENT_SUBMIT(ev_zap);
+
 	k_sleep(K_SECONDS(60));
 
 	zassert_false(event_manager_init(),

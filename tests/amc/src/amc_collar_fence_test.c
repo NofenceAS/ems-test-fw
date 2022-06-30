@@ -25,10 +25,15 @@ void test_fence_status(void)
 	/* Init GNSS cache etc.. */
 	amc_gnss_init();
 
+	/* We expect unknown when we boot. */
+	FenceStatus expected_status = FenceStatus_FenceStatus_UNKNOWN;
+	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_fence_status, expected_status, "");
+
 	/* Unknown -> NotStarted. */
 	ztest_returns_value(eep_uint8_write, 0);
 
-	FenceStatus expected_status = FenceStatus_NotStarted;
+	expected_status = FenceStatus_NotStarted;
 	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
 		      expected_status, "");
 	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
@@ -185,9 +190,14 @@ void test_fence_status(void)
 
 void test_collar_mode(void)
 {
+	/* We expect unknown when we boot. */
+	Mode expected_mode = Mode_Mode_UNKNOWN;
+	zassert_equal(k_sem_take(&collar_mode_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_collar_mode, expected_mode, "");
+
 	/* Unknown -> Teach. */
 	ztest_returns_value(eep_uint8_write, 0);
-	Mode expected_mode = Mode_Teach;
+	expected_mode = Mode_Teach;
 
 	zassert_equal(calc_mode(), expected_mode, "");
 	zassert_equal(k_sem_take(&collar_mode_sem, K_SECONDS(30)), 0, "");
@@ -216,11 +226,16 @@ void test_collar_mode(void)
 
 void test_collar_status(void)
 {
+	/* We expect unknown when we boot. */
+	CollarStatus expected_status = CollarStatus_CollarStatus_UNKNOWN;
+	zassert_equal(k_sem_take(&collar_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_collar_status, expected_status, "");
+
 	/* Unknown -> normal. */
 	ztest_returns_value(eep_uint8_write, 0);
 	update_movement_state(STATE_NORMAL);
 
-	CollarStatus expected_status = CollarStatus_CollarStatus_Normal;
+	expected_status = CollarStatus_CollarStatus_Normal;
 	zassert_equal(calc_collar_status(), expected_status, "");
 	zassert_equal(k_sem_take(&collar_status_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_collar_status, expected_status, "");
