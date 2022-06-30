@@ -90,7 +90,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_CMD_USOCL_TIMEOUT K_SECONDS(30)
 #define MDM_DNS_TIMEOUT K_SECONDS(70)
 #define MDM_CMD_CONN_TIMEOUT K_SECONDS(120)
-#define MDM_REGISTRATION_TIMEOUT K_SECONDS(180)
+#define MDM_REGISTRATION_TIMEOUT K_SECONDS(80)
 #define MDM_PROMPT_CMD_DELAY K_MSEC(50)
 
 #define MDM_MAX_DATA_LENGTH 1024
@@ -1366,11 +1366,11 @@ static int modem_reset(void)
 	SETUP_CMD_NOHANDLE("ATE0"),
 	/* stop functionality */
 	SETUP_CMD_NOHANDLE("AT+CFUN=0"),
-	/* extended error numbers */
-	SETUP_CMD_NOHANDLE("AT+CMEE=1"),
 		};
 
 	static const struct setup_cmd setup_cmds[] = {
+		/* extended error numbers */
+		SETUP_CMD_NOHANDLE("AT+CMEE=1"),
 
 #if defined(CONFIG_BOARD_PARTICLE_BORON)
 		/* use external SIM */
@@ -1483,7 +1483,7 @@ restart:
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
 					   setup_cmds0, ARRAY_SIZE(setup_cmds0),
 					   &mdata.sem_response,
-					   MDM_AT_CMD_TIMEOUT);
+					   MDM_REGISTRATION_TIMEOUT);
 	k_sleep(K_MSEC(50));
 
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
