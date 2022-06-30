@@ -129,7 +129,6 @@ K_KERNEL_STACK_DEFINE(modem_workq_stack,
 		      CONFIG_MODEM_UBLOX_SARA_R4_RX_WORKQ_STACK_SIZE);
 static struct k_work_q modem_workq;
 #endif
-K_SEM_DEFINE(urc_sem, 1, 1);
 
 /* socket read callback data */
 struct socket_read_data {
@@ -204,7 +203,7 @@ struct modem_data {
 
 static struct modem_data mdata;
 static struct modem_context mctx;
-
+static bool stop_rssi_work = false;
 int wake_up(void);
 
 //#if defined(CONFIG_DNS_RESOLVER)
@@ -667,6 +666,8 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_ccid)
 }
 
 #if !defined(CONFIG_MODEM_UBLOX_SARA_U2)
+
+#if defined(USE_EXTENDED_SIGNAL_QUALITY_CHECK)
 /*
  * Handler: +CESQ: <rxlev>[0],<ber>[1],<rscp>[2],<ecn0>[3],<rsrq>[4],<rsrp>[5]
  */
@@ -689,7 +690,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_cesq)
 
 	return 0;
 }
-
+#else
 /*
  * Handler: +CSQ: <signal_power(RSSI)>[0],<qual>[1]
  */
@@ -709,6 +710,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 	}
 	return 0;
 }
+#endif /* USE_EXTENDED_SIGNAL_QUALITY_CHECK */
 #endif
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2) ||                                     \
@@ -1012,7 +1014,6 @@ MODEM_CMD_DEFINE(on_cmd_dns)
 /* Handler: +UUSOCL: <socket_id>[0] */
 MODEM_CMD_DEFINE(on_cmd_socknotifyclose)
 {
-	k_sem_take(&urc_sem, K_SECONDS(1));
 	struct modem_socket *sock;
 
 	sock = modem_socket_from_id(&mdata.socket_config,
@@ -1022,7 +1023,6 @@ MODEM_CMD_DEFINE(on_cmd_socknotifyclose)
 		/* make sure socket data structure is reset */
 		modem_socket_put(&mdata.socket_config, sock->sock_fd);
 	}
-	k_sem_give(&urc_sem);
 	return 0;
 }
 
@@ -1269,7 +1269,7 @@ static void modem_rssi_query_work(struct k_work *work)
 	/* query modem RSSI */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds,
 			     ARRAY_SIZE(cmds), send_cmd, &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
+			     MDM_AT_CMD_TIMEOUT);
 	if (ret < 0) {
 		char *e_msg = "AT+C[E]SQ";
 		LOG_ERR("%s ret:%d", log_strdup(e_msg), ret);
@@ -1307,7 +1307,7 @@ static void modem_rssi_query_work(struct k_work *work)
 			K_SECONDS(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK_PERIOD));
 	}
 #endif
-	if (mdata.upsv_state == 4) {
+	if (mdata.upsv_state == 4 || stop_rssi_work) {
 		return;
 	}
 	static const struct modem_cmd cmd =
@@ -1949,7 +1949,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len, int flags,
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	int ret, next_packet_size;
 	static const struct modem_cmd cmd[] = {
-		MODEM_CMD("+USORF: ", on_cmd_sockreadfrom, 4U, ","),
+//		MODEM_CMD("+USORF: ", on_cmd_sockreadfrom, 4U, ","),
 		MODEM_CMD("+USORD: ", on_cmd_sockread, 2U, ","),
 	};
 	char sendbuf[sizeof("AT+USORF=#,#####\r")];
@@ -1991,8 +1991,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len, int flags,
 		next_packet_size = MDM_MAX_DATA_LENGTH;
 	}
 
-	snprintk(sendbuf, sizeof(sendbuf), "AT+USO%s=%d,%zd",
-		 sock->ip_proto == IPPROTO_UDP ? "RF" : "RD", sock->id,
+	snprintk(sendbuf, sizeof(sendbuf), "AT+USORD=%d,%zd", sock->id,
 		 len < next_packet_size ? len : next_packet_size);
 
 	/* socket read settings */
@@ -2596,26 +2595,30 @@ int wake_up(void) {
 
 int wake_up_from_upsv(void) {
 	if (mdata.upsv_state == 4) {
-		k_sem_take(&urc_sem, K_FOREVER);
-		modem_pin_config(&mctx, MDM_POWER, true);
-		unsigned int irq_lock_key = irq_lock();
-		LOG_DBG("MDM_POWER_PIN -> DISABLE");
-		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
-		k_sleep(K_MSEC(120)); /* min. value 100 msec (r4 datasheet
+		if (k_sem_take(&mdata.cmd_handler_data.sem_tx_lock,
+			       K_FOREVER) == 0) {
+			modem_pin_config(&mctx, MDM_POWER, true);
+			unsigned int irq_lock_key = irq_lock();
+			LOG_DBG("MDM_POWER_PIN -> DISABLE");
+			modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+			k_sleep(K_MSEC(120)); /* min. value 100 msec (r4 datasheet
  * section 4.2.10 )*/
-		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+			modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
 
-		LOG_DBG("MDM_POWER_PIN -> ENABLE");
-		modem_pin_config(&mctx, MDM_POWER, false);
-		irq_unlock(irq_lock_key);
-		/* Wait for modem GPIO RX pin to rise, indicating readiness */
-		LOG_DBG("Waiting for Modem RX = 1");
-		do {
-			k_sleep(K_MSEC(100));
-		} while (!modem_rx_pin_is_high());
-		return wake_up();
+			LOG_DBG("MDM_POWER_PIN -> ENABLE");
+			modem_pin_config(&mctx, MDM_POWER, false);
+			irq_unlock(irq_lock_key);
+			/* Wait for modem GPIO RX pin to rise, indicating readiness */
+			LOG_DBG("Waiting for Modem RX = 1");
+			do {
+				k_sleep(K_MSEC(100));
+			} while (!modem_rx_pin_is_high());
+			k_sem_give(&mdata.sem_response);
+			k_sem_give(&mdata.cmd_handler_data.sem_tx_lock);
+			return wake_up();
+		}
+		return -EAGAIN;
 	}
-	k_sem_give(&urc_sem);
 	return 0;
 }
 
@@ -2668,6 +2671,7 @@ int modem_nf_wakeup(void) {
 	if (wake_up_from_upsv() != 0) {
 		return modem_reset();
 	}
+	return 0;
 }
 
 int modem_nf_sleep(void) {
@@ -2716,6 +2720,10 @@ int get_gsm_info(struct gsm_info *session_info)
 	session_info->min_rssi = mdata.min_rssi;
 	session_info->max_rssi = mdata.max_rssi;
 	return 0;
+}
+
+void stop_rssi(void) {
+	stop_rssi_work = true;
 }
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL, &mdata, NULL,
