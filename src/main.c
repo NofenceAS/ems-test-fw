@@ -46,6 +46,9 @@
 #include "movement_events.h"
 #include "time_use.h"
 
+/* Fetched from 52840 datasheet RESETREAS register. */
+#define SOFT_RESET_REASON_FLAG (1 << 2)
+
 LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 
 /**
@@ -214,30 +217,33 @@ void main(void)
 	}
 #endif
 
-	/** @todo Check which flags are set on FW upgrade etc.. */
-	/* if (reset_reason != SOME_FW_UPGRADE_FLAG) {. */
+	bool is_soft_reset = ((reset_reason & SOFT_RESET_REASON_FLAG) != 0);
 
-	if (log_and_fetch_battery_voltage() > CONFIG_BATTERY_CRITICAL) {
-		/* Play welcome sound. */
-		/*TODO: only play when battery level is adequate.*/
-		struct sound_event *sound_ev = new_sound_event();
-		sound_ev->type = SND_WELCOME;
-		EVENT_SUBMIT(sound_ev);
+	LOG_INF("Was soft reset? : %i, Battery percent %i", is_soft_reset,
+		fetch_battery_percent());
+	/* If not set, we can play the sound. */
+	if (!is_soft_reset) {
+		if (log_and_fetch_battery_voltage() > CONFIG_BATTERY_CRITICAL) {
+			/* Play welcome sound. */
+			/*TODO: only play when battery level is adequate.*/
+			struct sound_event *sound_ev = new_sound_event();
+			sound_ev->type = SND_WELCOME;
+			EVENT_SUBMIT(sound_ev);
+
+			/* Wait for welcome sound to finish, since sound controller
+			 * doesn't queue sounds.
+			 */
+			k_sleep(K_MSEC(1000));
+
+			if (fetch_battery_percent() >= 70) {
+				/* Play battery sound. */
+				struct sound_event *sound_ev =
+					new_sound_event();
+				sound_ev->type = SND_SHORT_100;
+				EVENT_SUBMIT(sound_ev);
+			}
+		}
 	}
-
-	/* Wait for welcome sound to finish, since sound controller
-	 * doesn't queue sounds.
-	 */
-	k_sleep(K_MSEC(1000));
-
-	if (fetch_battery_percent() >= 70) {
-		/* Play battery sound. */
-		struct sound_event *sound_ev = new_sound_event();
-		sound_ev->type = SND_SHORT_100;
-		EVENT_SUBMIT(sound_ev);
-	}
-
-	/** } */
 
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,
