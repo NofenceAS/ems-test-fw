@@ -85,7 +85,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_RESET_NOT_ASSERTED 1
 #define MDM_RESET_ASSERTED 0
 
-#define MDM_AT_CMD_TIMEOUT K_MSEC(60) /*UPSV=0 sometimes times out with 30MS*/
+#define MDM_AT_CMD_TIMEOUT K_MSEC(200) /*UPSV=0 sometimes times out with 30MS*/
 #define MDM_CMD_TIMEOUT K_SECONDS(10)
 #define MDM_CMD_USOCL_TIMEOUT K_SECONDS(30)
 #define MDM_DNS_TIMEOUT K_SECONDS(70)
