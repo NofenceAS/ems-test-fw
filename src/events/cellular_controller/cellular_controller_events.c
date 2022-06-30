@@ -26,3 +26,13 @@ EVENT_TYPE_DEFINE(modem_state,
 		  true,
 		  NULL,
 		  NULL);
+
+EVENT_TYPE_DEFINE(free_message_mem_event,
+		  true,
+		  NULL,
+		  NULL);
+
+EVENT_TYPE_DEFINE(gsm_info_event,
+		  true,
+		  NULL,
+		  NULL);

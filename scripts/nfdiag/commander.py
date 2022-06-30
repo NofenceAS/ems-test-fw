@@ -11,6 +11,7 @@ logging.basicConfig(level=logging.INFO)
 # Definitions used for group/command/response
 GROUP_SYSTEM = 0x00
 CMD_PING = 0x55
+CMD_LOG = 0x70
 CMD_TEST = 0x7E
 
 GROUP_SETTINGS = 0x01
@@ -75,6 +76,17 @@ class Commander(threading.Thread):
 			else:
 				return b""
 		return None
+
+	def electric_pulse_now(self):
+		resp = self.send_cmd(GROUP_STIMULATOR, CMD_ELECTRICAL_PULSE)
+		# if resp:
+		# 	if resp["code"] == RESP_DATA:
+		# 		value = struct.unpack("<" + str(len(resp["data"])) + "s", resp["data"])
+		# 		return value[0]
+		# 	else:
+		# 		return b""
+		logging.debug(resp)
+		return resp
 
 	def write_setting(self, id, value):
 		if id[1] == "s":

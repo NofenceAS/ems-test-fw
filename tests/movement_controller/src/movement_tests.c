@@ -22,6 +22,11 @@ void test_init(void)
 	ztest_returns_value(sensor_attr_set, 0);
 	ztest_returns_value(sensor_trigger_set, 0);
 
+	/* For the sigma values. */
+	ztest_returns_value(eep_uint16_read, 0);
+	ztest_returns_value(eep_uint16_read, 0);
+	ztest_returns_value(eep_uint16_read, 0);
+
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
 	zassert_false(init_movement_controller(),
