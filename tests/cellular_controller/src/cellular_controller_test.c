@@ -68,8 +68,7 @@ void test_ack_from_messaging_module_missed(void)
 		      "published ");
 	err = k_sem_take(&cellular_proto_in, K_MSEC(100));
 	zassert_not_equal(err, 0,
-			  "Unexpected cellular_proto_in event was "
-			  "published ");
+			  "Unexpected cellular_proto_in event was published");
 }
 
 void test_socket_rcv_fails(void)
