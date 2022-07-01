@@ -120,7 +120,7 @@ const gnss_t dummy_gnss_data = {
 	//	uint32_t ttff;
 	},
 	.fix_ok = true,
-	.lastfix = {},
+	.lastfix = {.unix_timestamp = 100},
 	.has_lastfix = true
 };
 
