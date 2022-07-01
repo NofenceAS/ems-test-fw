@@ -61,8 +61,8 @@ void test_ack_from_messaging_module_missed(void)
 	ztest_returns_value(check_ip, 0);
 	received = 30;
 	ztest_returns_value(socket_receive, received);
-
-	int err = k_sem_take(&cellular_error, K_SECONDS(2));
+	k_sem_reset(&cellular_error);
+	int err = k_sem_take(&cellular_error, K_SECONDS(3));
 	zassert_equal(err, 0,
 		      "Expected cellular_error event was not "
 		      "published ");
@@ -70,12 +70,11 @@ void test_ack_from_messaging_module_missed(void)
 	zassert_not_equal(err, 0,
 			  "Unexpected cellular_proto_in event was "
 			  "published ");
-	struct messaging_ack_event *ack = new_messaging_ack_event();
-	EVENT_SUBMIT(ack);
 }
 
 void test_socket_rcv_fails(void)
 {
+	test_init();
 	ztest_returns_value(socket_receive, -1);
 	int err;
 	err = k_sem_take(&cellular_error, K_SECONDS(5));
@@ -87,7 +86,7 @@ void test_socket_rcv_fails(void)
 
 void test_socket_connect_fails(void)
 {
-	k_sleep(K_SECONDS(2)); //wait until the socket receive thread times
+	k_sleep(K_SECONDS(15)); //wait until the socket receive thread times
 	// out and the previous connection is closed.
 	ztest_returns_value(check_ip, 0);
 	ztest_returns_value(socket_connect, -1);

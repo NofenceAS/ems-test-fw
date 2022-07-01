@@ -85,12 +85,12 @@ static struct modem_pin modem_pins[] = {
 #define MDM_RESET_NOT_ASSERTED 1
 #define MDM_RESET_ASSERTED 0
 
-#define MDM_AT_CMD_TIMEOUT K_MSEC(60) /*UPSV=0 sometimes times out with 30MS*/
+#define MDM_AT_CMD_TIMEOUT K_MSEC(200) /*UPSV=0 sometimes times out with 30MS*/
 #define MDM_CMD_TIMEOUT K_SECONDS(10)
 #define MDM_CMD_USOCL_TIMEOUT K_SECONDS(30)
 #define MDM_DNS_TIMEOUT K_SECONDS(70)
 #define MDM_CMD_CONN_TIMEOUT K_SECONDS(120)
-#define MDM_REGISTRATION_TIMEOUT K_SECONDS(180)
+#define MDM_REGISTRATION_TIMEOUT K_SECONDS(80)
 #define MDM_PROMPT_CMD_DELAY K_MSEC(50)
 
 #define MDM_MAX_DATA_LENGTH 1024
@@ -167,7 +167,7 @@ struct modem_data {
 	char mdm_imei[MDM_IMEI_LENGTH];
 	char mdm_imsi[MDM_IMSI_LENGTH];
 	char mdm_ccid[2 * MDM_IMSI_LENGTH];
-	char mdm_pdp_addr[MDM_IMSI_LENGTH];
+	char mdm_pdp_addr[2*MDM_IMSI_LENGTH];
 	int mdm_rssi;
 	int upsv_state;
 	int last_sock;
@@ -832,7 +832,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgact_get)
 	}
 	LOG_DBG("CGACT? handler, %d", argc);
 	LOG_DBG("PDP context state: ,%s", argv[1]);
-	uint8_t val = (uint8_t)atoi(argv[1]);
+	int val = atoi(argv[1]);
 
 	if (val == 1) {
 		mdata.pdp_active = true;
@@ -1371,6 +1371,7 @@ static int modem_reset(void)
 	static const struct setup_cmd setup_cmds[] = {
 		/* extended error numbers */
 		SETUP_CMD_NOHANDLE("AT+CMEE=1"),
+
 #if defined(CONFIG_BOARD_PARTICLE_BORON)
 		/* use external SIM */
 		SETUP_CMD_NOHANDLE("AT+UGPIOC=23,0,0"),
@@ -1483,7 +1484,7 @@ restart:
 					   setup_cmds0, ARRAY_SIZE(setup_cmds0),
 					   &mdata.sem_response,
 					   MDM_REGISTRATION_TIMEOUT);
-	k_sleep(K_MSEC(150));
+	k_sleep(K_MSEC(50));
 
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
 					   setup_cmds, ARRAY_SIZE(setup_cmds),
@@ -1492,7 +1493,7 @@ restart:
 	if (ret < 0) {
 		goto error;
 	}
-	k_sleep(K_MSEC(150));
+	k_sleep(K_MSEC(50));
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 	/* autodetect APN from IMSI */
