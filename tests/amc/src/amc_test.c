@@ -40,6 +40,9 @@ void test_init_and_update_pasture(void)
 	/* Cached mode. */
 	ztest_returns_value(eep_uint8_read, 0);
 
+	/* Cached keep mode. */
+	ztest_returns_value(eep_uint8_read, 0);
+
 	zassert_false(amc_module_init(), "Error when initializing AMC module");
 }
 
