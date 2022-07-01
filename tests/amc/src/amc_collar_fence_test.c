@@ -25,15 +25,8 @@ void test_fence_status(void)
 	/* Init GNSS cache etc.. */
 	amc_gnss_init();
 
-	/* We expect unknown when we boot. */
-	FenceStatus expected_status = FenceStatus_FenceStatus_UNKNOWN;
-	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
-	zassert_equal(current_fence_status, expected_status, "");
-
-	/* Unknown -> NotStarted. */
-	ztest_returns_value(eep_uint8_write, 0);
-
-	expected_status = FenceStatus_NotStarted;
+	/* We expect NotStarted on boot. */
+	FenceStatus expected_status = FenceStatus_NotStarted;
 	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
 		      expected_status, "");
 	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
