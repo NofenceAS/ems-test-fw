@@ -70,8 +70,6 @@ void test_ack_from_messaging_module_missed(void)
 	zassert_not_equal(err, 0,
 			  "Unexpected cellular_proto_in event was "
 			  "published ");
-	struct messaging_ack_event *ack = new_messaging_ack_event();
-	EVENT_SUBMIT(ack);
 }
 
 void test_socket_rcv_fails(void)
