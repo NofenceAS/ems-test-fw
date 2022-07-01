@@ -86,7 +86,7 @@ void test_socket_rcv_fails(void)
 
 void test_socket_connect_fails(void)
 {
-	k_sleep(K_SECONDS(2)); //wait until the socket receive thread times
+	k_sleep(K_SECONDS(15)); //wait until the socket receive thread times
 	// out and the previous connection is closed.
 	ztest_returns_value(check_ip, 0);
 	ztest_returns_value(socket_connect, -1);
