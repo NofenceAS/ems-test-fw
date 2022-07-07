@@ -11,6 +11,7 @@ logging.basicConfig(level=logging.INFO)
 # Definitions used for group/command/response
 GROUP_SYSTEM = 0x00
 CMD_PING = 0x55
+CMD_LOG = 0x70
 CMD_TEST = 0x7E
 
 GROUP_SETTINGS = 0x01
