@@ -68,12 +68,20 @@
 		};
 	};
 
+	pwm_ep {
+		compatible = "pwm-ep";
+		pwm_ep: pwm_ep {
+			pwms = <&pwm1 17>;
+		};
+	};
+
 	/* Convenience aliases */
 	aliases {
 		eeprom = &eeprom0;
 		ep-ctrl = &ep_ctrl;
 		ep-detect = &ep_detect;
 		pwm-buzzer = &pwm_buzzer;
+		pwm-ep = &pwm_ep;
 		gnss = &gnss;
 		charging-dcdc = &charging_dcdc;
 		charging-load = &charging_load;
