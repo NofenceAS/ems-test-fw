@@ -3,7 +3,7 @@
  */
 
 #include <ztest.h>
-#include <drivers/pwm.h>
+#include "pwm.h"
 
 #include "ep_module.h"
 #include "ep_event.h"
@@ -156,24 +156,23 @@ void test_electric_pulse_release_ready(void)
 
 void test_electric_pulse_release_snd_wrn(void)
 {
-	
-	
-	
-	//k_sem_give(&ep_event_sem);
-	/* Simulate the warning event, not highest. */
+	/* Test: Submit an incorrect warning and trigger the electric pulse!
+	 * Only a max warning should ready the electric pulse, not any sound
+	 * warnings. This test submits a "normal" warning, thus, is test should be 
+	 * able to take the error semaphore */
+
+	/* Submit a warning tone event, not a max warning */
 	struct sound_status_event *ev_warn = new_sound_status_event();
 	ev_warn->status = SND_STATUS_PLAYING_WARN;
 	EVENT_SUBMIT(ev_warn);
 
-	/* Allocate event. */
+	/* Submit an electric pulse event */
 	struct ep_status_event *ready_ep_event = new_ep_status_event();
 	ready_ep_event->ep_status = EP_RELEASE;
 	EVENT_SUBMIT(ready_ep_event);
 
 	int err = k_sem_take(&ep_event_sem, K_SECONDS(5));
-
-	/* Semaphore is given on successful test */
-	zassert_equal(err, 0, "ep_event_sem hanged.");
+	zassert_equal(err, 0, "Test did not get an error as expected");
 }
 
 void test_main(void)
@@ -183,9 +182,9 @@ void test_main(void)
 			ztest_unit_test(test_electric_pulse_init),
 			ztest_unit_test(test_electric_pulse_release_without_warning),
 			ztest_unit_test(test_electric_pulse_release_early),
-			ztest_unit_test(test_electric_pulse_release_ready)
+			ztest_unit_test(test_electric_pulse_release_ready),
+			ztest_unit_test(test_electric_pulse_release_snd_wrn)
 			);
-			//ztest_unit_test(test_electric_pulse_release_snd_wrn));
 			 
 	ztest_run_test_suite(ep_tests);
 }
@@ -207,17 +206,20 @@ static bool test_event_handler(const struct event_header *eh)
 	if (is_error_event(eh)) {
 		struct error_event *ev = cast_error_event(eh);
 		switch (ev->sender) {
-			case ERR_EP_MODULE:
-				zassert_equal(ev->severity, ERR_SEVERITY_ERROR, "Mismatched severity.");
-				zassert_equal(ev->code, -EACCES, "Mismatched error code.");
+			case ERR_EP_MODULE: {
+				zassert_equal(ev->severity, ERR_SEVERITY_ERROR, 
+								"Mismatched severity.");
+				zassert_equal(ev->code, -EACCES, 
+								"Mismatched error code.");
 
 				// Give sempahore only after error event
 				k_sem_give(&ep_event_sem);
 				break;
-
-			default:
+			}
+			default: {
 				zassert_unreachable("Unexpected command event.");
 				break;
+			}
 		}
 	}
 	return false;
