@@ -1950,7 +1950,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len, int flags,
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	int ret, next_packet_size;
 	static const struct modem_cmd cmd[] = {
-//		MODEM_CMD("+USORF: ", on_cmd_sockreadfrom, 4U, ","),
+		MODEM_CMD("+USORF: ", on_cmd_sockreadfrom, 4U, ","),
 		MODEM_CMD("+USORD: ", on_cmd_sockread, 2U, ","),
 	};
 	char sendbuf[sizeof("AT+USORF=#,#####\r")];
