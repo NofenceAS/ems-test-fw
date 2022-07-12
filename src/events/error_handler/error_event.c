@@ -41,11 +41,13 @@ static inline void submit_app_status(enum error_sender_module sender,
 				     char *msg, size_t msg_len)
 {
 	size_t dyn_msg_size = msg_len;
-
+#ifdef CONFIG_ZTEST
+	dyn_msg_size = 0;
+#endif
 	/* Check if string is greater than limit, remove 
 	 * the entire message if exceeding. 
 	 */
-	if (msg_len > CONFIG_ERROR_MAX_USER_MESSAGE_SIZE) {
+	if (msg_len >= CONFIG_ERROR_MAX_USER_MESSAGE_SIZE) {
 		dyn_msg_size = 0;
 	}
 
