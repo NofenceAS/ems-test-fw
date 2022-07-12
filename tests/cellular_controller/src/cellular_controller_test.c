@@ -107,7 +107,7 @@ void test_socket_connect_fails(void)
 
 void test_socket_send_fails(void)
 {
-
+	test_init();
 	struct messaging_proto_out_event *test_msgIn =
 		new_messaging_proto_out_event();
 	test_msgIn->buf = &dummy_test_msg[0];
