@@ -42,7 +42,9 @@ static inline void submit_app_status(enum error_sender_module sender,
 {
 	size_t dyn_msg_size = msg_len;
 #ifdef CONFIG_ZTEST
+	#ifdef CONFIG_CELLULAR_CONTROLLER
 	dyn_msg_size = 0;
+	#endif
 #endif
 	/* Check if string is greater than limit, remove 
 	 * the entire message if exceeding. 
