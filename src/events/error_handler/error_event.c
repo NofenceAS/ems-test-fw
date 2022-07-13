@@ -73,7 +73,9 @@ static inline void submit_app_status(enum error_sender_module sender,
 	event->severity = severity;
 
 	if (dyn_msg_size > 0 && msg != NULL) {
-		memcpy(event->dyndata.data, msg, dyn_msg_size);
+		memcpy(event->dyndata.data, msg, dyn_msg_size + 1); /* the
+ * extra byte is to make up for the terminating NULL since strlen does not 
+ * account for it.*/
 	}
 
 	/* Submit event. */
