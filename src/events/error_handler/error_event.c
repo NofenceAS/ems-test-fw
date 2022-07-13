@@ -41,11 +41,11 @@ static inline void submit_app_status(enum error_sender_module sender,
 				     char *msg, size_t msg_len)
 {
 	size_t dyn_msg_size = msg_len;
-#ifdef CONFIG_ZTEST
-	#ifdef CONFIG_CELLULAR_CONTROLLER
-	dyn_msg_size = 0;
-	#endif
-#endif
+//#ifdef CONFIG_ZTEST
+//	#ifdef CONFIG_CELLULAR_CONTROLLER
+//	dyn_msg_size = 0;
+//	#endif
+//#endif
 	/* Check if string is greater than limit, remove 
 	 * the entire message if exceeding. 
 	 */
@@ -77,7 +77,9 @@ static inline void submit_app_status(enum error_sender_module sender,
 	event->severity = severity;
 
 	if (dyn_msg_size > 0 && msg != NULL) {
-		memcpy(event->dyndata.data, msg, dyn_msg_size);
+		memcpy(event->dyndata.data, msg, dyn_msg_size + 1); /* the
+ * extra byte is required here since we are using strlen to determine the
+ * message size, and that does account for the terminating zero.*/
 	}
 
 	/* Submit event. */
