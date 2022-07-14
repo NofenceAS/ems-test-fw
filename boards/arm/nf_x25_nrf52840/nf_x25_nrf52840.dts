@@ -68,12 +68,20 @@
 		};
 	};
 
+	pwm_ep {
+		compatible = "pwm-ep";
+		pwm_ep: pwm_ep {
+			pwms = <&pwm1 17>;
+		};
+	};
+
 	/* Convenience aliases */
 	aliases {
 		eeprom = &eeprom0;
 		ep-ctrl = &ep_ctrl;
 		ep-detect = &ep_detect;
 		pwm-buzzer = &pwm_buzzer;
+		pwm-ep = &pwm_ep;
 		gnss = &gnss;
 		charging-dcdc = &charging_dcdc;
 		charging-load = &charging_load;
@@ -150,6 +158,11 @@ gnss_uart: &uart1 {
 &pwm0 {
 	status = "okay";
 	ch0-pin = <14>;
+};
+
+&pwm1 {
+	status = "okay";
+	ch0-pin = <17>;
 };
 
 &spi0 {
