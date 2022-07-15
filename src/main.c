@@ -75,6 +75,13 @@ void main(void)
 		nf_app_error(ERR_DIAGNOSTIC, err, e_msg, strlen(e_msg));
 	}
 #endif
+	/* Initialize the power manager module. */
+	err = pwr_module_init();
+	if (err) {
+		char *e_msg = "Could not initialize the power module";
+		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
+		nf_app_error(ERR_PWR_MODULE, err, e_msg, strlen(e_msg));
+	}
 
 	/* Initialize the buzzer */
 	err = buzzer_module_init();
@@ -84,18 +91,40 @@ void main(void)
 		nf_app_error(ERR_SOUND_CONTROLLER, err, e_msg, strlen(e_msg));
 	}
 
-	err = stg_init_storage_controller();
-	selftest_mark_state(SELFTEST_FLASH_POS, err == 0);
-	if (err) {
-		LOG_ERR("Could not initialize storage controller (%d)", err);
-		return;
-	}
-
 	/* Initialize the event manager. */
 	err = event_manager_init();
 	if (err) {
 		LOG_ERR("Could not initialize event manager (%d)", err);
 		return;
+	}
+
+	bool is_soft_reset = ((reset_reason & SOFT_RESET_REASON_FLAG) != 0);
+	int bat_percent = fetch_battery_percent();
+	LOG_INF("Was soft reset? : %i, Battery percent %i", is_soft_reset,
+		bat_percent);
+	/* If not set, we can play the sound. */
+	if (!is_soft_reset) {
+		if (bat_percent > 50) {
+			if (bat_percent >= 75) {
+				/* Play battery sound. */
+				struct sound_event *sound_ev =
+					new_sound_event();
+				sound_ev->type = SND_SHORT_100;
+				EVENT_SUBMIT(sound_ev);
+			}
+
+			/* Wait for battery percent to finish,
+			 * since sound controller
+			 * doesn't queue sounds.
+			 */
+			k_sleep(K_MSEC(200));
+
+			/* Play welcome sound. */
+			/*TODO: only play when battery level is adequate.*/
+			struct sound_event *sound_ev = new_sound_event();
+			sound_ev->type = SND_WELCOME;
+			EVENT_SUBMIT(sound_ev);
+		}
 	}
 
 	/* Initialize the watchdog */
@@ -107,6 +136,12 @@ void main(void)
 		nf_app_error(ERR_WATCHDOG, err, e_msg, strlen(e_msg));
 	}
 #endif
+	err = stg_init_storage_controller();
+	selftest_mark_state(SELFTEST_FLASH_POS, err == 0);
+	if (err) {
+		LOG_ERR("Could not initialize storage controller (%d)", err);
+		return;
+	}
 
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
@@ -151,14 +186,6 @@ void main(void)
 		char *e_msg = "Could not initialize electric pulse module";
 		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
 		nf_app_error(ERR_EP_MODULE, err, e_msg, strlen(e_msg));
-	}
-
-	/* Initialize the power manager module. */
-	err = pwr_module_init();
-	if (err) {
-		char *e_msg = "Could not initialize the power module";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_PWR_MODULE, err, e_msg, strlen(e_msg));
 	}
 
 	/* Initialize animal monitor control module, depends on storage
@@ -216,35 +243,6 @@ void main(void)
 		nf_app_error(ERR_GNSS_CONTROLLER, err, e_msg, strlen(e_msg));
 	}
 #endif
-
-	bool is_soft_reset = ((reset_reason & SOFT_RESET_REASON_FLAG) != 0);
-
-	LOG_INF("Was soft reset? : %i, Battery percent %i", is_soft_reset,
-		fetch_battery_percent());
-	/* If not set, we can play the sound. */
-	if (!is_soft_reset) {
-		if (log_and_fetch_battery_voltage() > CONFIG_BATTERY_CRITICAL) {
-			if (fetch_battery_percent() >= 75) {
-				/* Play battery sound. */
-				struct sound_event *sound_ev =
-					new_sound_event();
-				sound_ev->type = SND_SHORT_100;
-				EVENT_SUBMIT(sound_ev);
-			}
-
-			/* Wait for battery percent to finish, 
-			 * since sound controller
-			 * doesn't queue sounds.
-			 */
-			k_sleep(K_MSEC(200));
-
-			/* Play welcome sound. */
-			/*TODO: only play when battery level is adequate.*/
-			struct sound_event *sound_ev = new_sound_event();
-			sound_ev->type = SND_WELCOME;
-			EVENT_SUBMIT(sound_ev);
-		}
-	}
 
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,
