@@ -36,8 +36,3 @@ EVENT_TYPE_DEFINE(gsm_info_event,
 		  true,
 		  NULL,
 		  NULL);
-
-EVENT_TYPE_DEFINE(request_gsm_info_event,
-		  true,
-		  NULL,
-		  NULL);

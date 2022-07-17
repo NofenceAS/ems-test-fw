@@ -79,8 +79,3 @@ struct gsm_info_event {
 	struct gsm_info gsm_info;
 };
 EVENT_TYPE_DECLARE(gsm_info_event);
-
-struct request_gsm_info_event {
-	struct event_header header;
-};
-EVENT_TYPE_DECLARE(request_gsm_info_event);

@@ -18,7 +18,7 @@ void stop_tcp(void);
 
 int8_t send_tcp(char *, size_t);
 
-int send_tcp_q(char *, size_t);
+int8_t send_tcp_q(char *, size_t);
 
 int8_t socket_connect(struct data *, struct sockaddr *, size_t);
 
