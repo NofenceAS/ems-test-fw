@@ -1484,12 +1484,12 @@ restart:
 					   setup_cmds0, ARRAY_SIZE(setup_cmds0),
 					   &mdata.sem_response,
 					   MDM_REGISTRATION_TIMEOUT);
-	k_sleep(K_MSEC(50));
+	k_sleep(K_MSEC(150));
 
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
 					   setup_cmds, ARRAY_SIZE(setup_cmds),
 					   &mdata.sem_response,
-					   MDM_REGISTRATION_TIMEOUT);
+					   MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		goto error;
 	}
@@ -2542,7 +2542,11 @@ error:
 
 int modem_nf_reset(void)
 {
-	return modem_reset();
+	int err = modem_reset();
+	if (err != 0) {
+		k_sleep(K_SECONDS(30));
+		return modem_reset();
+	}
 }
 
 int get_pdp_addr(char **ip_addr)
