@@ -2547,6 +2547,7 @@ int modem_nf_reset(void)
 		k_sleep(K_SECONDS(30));
 		return modem_reset();
 	}
+	return 0;
 }
 
 int get_pdp_addr(char **ip_addr)
