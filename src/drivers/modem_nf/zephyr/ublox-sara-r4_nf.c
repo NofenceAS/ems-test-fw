@@ -1950,7 +1950,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len, int flags,
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	int ret, next_packet_size;
 	static const struct modem_cmd cmd[] = {
-//		MODEM_CMD("+USORF: ", on_cmd_sockreadfrom, 4U, ","),
+		MODEM_CMD("+USORF: ", on_cmd_sockreadfrom, 4U, ","),
 		MODEM_CMD("+USORD: ", on_cmd_sockread, 2U, ","),
 	};
 	char sendbuf[sizeof("AT+USORF=#,#####\r")];
@@ -2724,6 +2724,8 @@ int get_gsm_info(struct gsm_info *session_info)
 	session_info->rssi = mdata.rssi;
 	session_info->min_rssi = mdata.min_rssi;
 	session_info->max_rssi = mdata.max_rssi;
+	if (ccid_ready) memcpy(session_info->ccid, mdata.mdm_ccid,
+	       sizeof(session_info->ccid));
 	return 0;
 }
 
