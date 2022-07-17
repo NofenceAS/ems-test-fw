@@ -66,9 +66,6 @@ void test_init(void)
 	struct update_zap_count *ev_zap = new_update_zap_count();
 	EVENT_SUBMIT(ev_zap);
 
-	struct gsm_info_event *ev_gsm = new_gsm_info_event();
-	EVENT_SUBMIT(ev_gsm);
-
 	k_sleep(K_SECONDS(60));
 
 	zassert_false(event_manager_init(),

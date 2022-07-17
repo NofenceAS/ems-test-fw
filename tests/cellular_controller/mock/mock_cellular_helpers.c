@@ -45,10 +45,8 @@ int8_t send_tcp(char *dummy, size_t dummy_len)
 	return ztest_get_return_value();
 }
 
-int send_tcp_q(char *dummy, size_t dummy_len)
+int8_t send_tcp_q(char *dummy, size_t dummy_len)
 {
-	ARG_UNUSED(dummy);
-	ARG_UNUSED(dummy_len);
 	return ztest_get_return_value();
 }
 
