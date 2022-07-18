@@ -114,7 +114,7 @@ static bool event_handler(const struct event_header *eh)
 	}
 	if (is_step_counter_event(eh)) {
 		struct step_counter_event *ev = cast_step_counter_event(eh);
-		steps = ev->steps - steps;
+		steps = ev->steps;
 		return false;
 	}
 	if (is_gnss_data(eh)) {
@@ -269,11 +269,10 @@ void collect_stats(void)
 			//******************Add Stepcounter value*************************
 			histogram.animal_behave.has_usStepCounter =
 				true;
-			histogram.animal_behave.usStepCounter = 0;
-			if (steps_old != steps) {
-				histogram.animal_behave.usStepCounter = steps;
-				steps_old = steps;
-			}
+			histogram.animal_behave.usStepCounter += steps
+								- steps_old;
+			steps_old = steps;
+
 			//*****************Histogram to predict Current profile of the collar********************
 
 			if (cur_collar_status == CollarStatus_Sleep ||
@@ -401,6 +400,8 @@ void collect_stats(void)
 			m_u16_speedmax = 0;
 			m_u32_speedmean = 0;
 			m_ui16_hs_samples = 0;
+			steps = 0;
+			steps_old = 0;
 		}
 		k_sleep(K_MSEC(150));
 	}
