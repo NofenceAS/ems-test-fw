@@ -1351,12 +1351,12 @@ static int modem_reset(void)
 	mdata.max_rssi = 0;
 
 	static const struct setup_cmd pre_setup_cmds[] = {
-		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
+		SETUP_CMD_NOHANDLE("AT+URAT=7"),
 		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
 		SETUP_CMD_NOHANDLE("AT+COPS=2"),
-		/* TODO: consider adding this: SETUP_CMD_NOHANDLE("AT+CRSM=214,
-		 * 28531,0,0,14,
-		 * "FFFFFFFFFFFFFFFFFFFFFFFFFFFF\""),*/
+		/* TODO: consider adding this: */
+//		 SETUP_CMD_NOHANDLE("AT+CRSM=214,28531,0,0,14,"
+//				   "\"FFFFFFFFFFFFFFFFFFFFFFFFFFFF\""),
 		SETUP_CMD_NOHANDLE("AT+CFUN=15"),
 		};
 
