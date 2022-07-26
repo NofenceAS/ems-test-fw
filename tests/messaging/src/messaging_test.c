@@ -416,7 +416,25 @@ void test_build_log_message(void)
 	zassert_mem_equal(&decode_sec_2, &seq_2, encoded_seq_2_size, "");
 }
 
-NofenceMessage dummy_nf_msg = { .m.seq_msg.has_usBatteryVoltage = 1500 };
+NofenceMessage dummy_nf_msg = {
+	.which_m = NofenceMessage_seq_msg_tag,
+	.header = {
+		.ulId = 10,
+		.ulUnixTimestamp = 11,
+		.ulVersion = 10,
+		.has_ulVersion = true,
+	},
+	.m.seq_msg_2 = {
+		.has_bme280 = true,
+		.bme280.ulPressure = 100,
+		.bme280.ulTemperature = 24,
+		.bme280.ulHumidity = 100,
+		.has_xBatteryQc = true,
+		.xBatteryQc.usVbattMax = 390,
+		.xBatteryQc.usVbattMin = 320,
+		.xBatteryQc.usTemperature = 24,
+	}
+};
 static bool encode_test = false;
 
 void test_encode_message(void)
@@ -427,14 +445,16 @@ void test_encode_message(void)
 	/* We need to simulate that we received the message on server, publish
 	 * ACK for messaging module.
 	 */
-	struct cellular_ack_event *ev = new_cellular_ack_event();
+	struct cellular_ack_event *ev2 = new_cellular_ack_event();
+	EVENT_SUBMIT(ev2);
+	struct connection_state_event *ev = new_connection_state_event();
+	ev->state = true;
 	EVENT_SUBMIT(ev);
-
 	ret = encode_and_send_message(&dummy_nf_msg);
-	zassert_equal(ret, 0, "");
-
-	printk("ret %i\n", ret);
-	zassert_equal(k_sem_take(&msg_out, K_SECONDS(30)), 0, "");
+	zassert_equal(ret, 0, "encode_and_send did not return 0!");
+	zassert_equal(k_sem_take(&msg_out, K_SECONDS(30)), 0, "Failed to take"
+							      " msg_out "
+							      "semaphore!");
 }
 
 /* Test expected error events published by messaging*/
@@ -457,19 +477,19 @@ void test_main(void)
 static bool event_handler(const struct event_header *eh)
 {
 	if (is_messaging_proto_out_event(eh)) {
-		msg_count++;
+		printk("msg_count: %d\n", msg_count++);
 		struct messaging_proto_out_event *ev =
 			cast_messaging_proto_out_event(eh);
+		pMsg = ev->buf;
+		len = ev->len;
 		if (!encode_test) {
 			printk("length of encoded message = %d\n", ev->len);
-			pMsg = ev->buf;
-			len = ev->len;
 		} else {
 			NofenceMessage msg;
 			int ret = collar_protocol_decode(&ev->buf[2],
 							 ev->len - 2, &msg);
+			printk("ret = %d\n", ret);
 			zassert_equal(ret, 0, "");
-
 			uint16_t byteswap_val = BYTESWAP16(ev->len - 2);
 			uint16_t expected_val;
 			memcpy(&expected_val, &ev->buf[0], 2);

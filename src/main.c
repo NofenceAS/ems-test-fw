@@ -104,7 +104,7 @@ void main(void)
 		bat_percent);
 	/* If not set, we can play the sound. */
 	if (!is_soft_reset) {
-		if (bat_percent > 50) {
+		if (bat_percent > 10) {
 			if (bat_percent >= 75) {
 				/* Play battery sound. */
 				struct sound_event *sound_ev =
