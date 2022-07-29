@@ -138,7 +138,7 @@ void test_fence_status(void)
 	ztest_returns_value(eep_uint8_write, 0);
 
 	expected_status = FenceStatus_NotStarted;
-	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_FAR),
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
 		      expected_status, "");
 	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_fence_status, expected_status, "");
@@ -163,7 +163,7 @@ void test_fence_status(void)
 	ztest_returns_value(eep_uint8_write, 0);
 
 	expected_status = FenceStatus_FenceStatus_UNKNOWN;
-	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_FAR),
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
 		      expected_status, "");
 	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_fence_status, expected_status, "");
