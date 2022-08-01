@@ -19,7 +19,9 @@
 #include "nf_settings.h"
 #include "buzzer.h"
 #include "pwr_module.h"
+/* For reboot reason. */
 #include <nrf.h>
+
 #if defined(CONFIG_WATCHDOG_ENABLE)
 #include "watchdog_app.h"
 #endif
@@ -44,6 +46,9 @@
 #include "movement_events.h"
 #include "time_use.h"
 
+/* Fetched from 52840 datasheet RESETREAS register. */
+#define SOFT_RESET_REASON_FLAG (1 << 2)
+
 LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 
 /**
@@ -52,6 +57,10 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
  */
 void main(void)
 {
+	/* Fetch reset reason, log in the future? */
+	uint32_t reset_reason = NRF_POWER->RESETREAS;
+	NRF_POWER->RESETREAS = NRF_POWER->RESETREAS;
+
 	int err;
 	LOG_INF("Starting Nofence application...");
 
@@ -66,6 +75,13 @@ void main(void)
 		nf_app_error(ERR_DIAGNOSTIC, err, e_msg, strlen(e_msg));
 	}
 #endif
+	/* Initialize the power manager module. */
+	err = pwr_module_init();
+	if (err) {
+		char *e_msg = "Could not initialize the power module";
+		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
+		nf_app_error(ERR_PWR_MODULE, err, e_msg, strlen(e_msg));
+	}
 
 	/* Initialize the buzzer */
 	err = buzzer_module_init();
@@ -75,18 +91,40 @@ void main(void)
 		nf_app_error(ERR_SOUND_CONTROLLER, err, e_msg, strlen(e_msg));
 	}
 
-	err = stg_init_storage_controller();
-	selftest_mark_state(SELFTEST_FLASH_POS, err == 0);
-	if (err) {
-		LOG_ERR("Could not initialize storage controller (%d)", err);
-		return;
-	}
-
 	/* Initialize the event manager. */
 	err = event_manager_init();
 	if (err) {
 		LOG_ERR("Could not initialize event manager (%d)", err);
 		return;
+	}
+
+	bool is_soft_reset = ((reset_reason & SOFT_RESET_REASON_FLAG) != 0);
+	int bat_percent = fetch_battery_percent();
+	LOG_INF("Was soft reset? : %i, Battery percent %i", is_soft_reset,
+		bat_percent);
+	/* If not set, we can play the sound. */
+	if (!is_soft_reset) {
+		if (bat_percent > 50) {
+			if (bat_percent >= 75) {
+				/* Play battery sound. */
+				struct sound_event *sound_ev =
+					new_sound_event();
+				sound_ev->type = SND_SHORT_100;
+				EVENT_SUBMIT(sound_ev);
+			}
+
+			/* Wait for battery percent to finish,
+			 * since sound controller
+			 * doesn't queue sounds.
+			 */
+			k_sleep(K_MSEC(200));
+
+			/* Play welcome sound. */
+			/*TODO: only play when battery level is adequate.*/
+			struct sound_event *sound_ev = new_sound_event();
+			sound_ev->type = SND_WELCOME;
+			EVENT_SUBMIT(sound_ev);
+		}
 	}
 
 	/* Initialize the watchdog */
@@ -98,6 +136,12 @@ void main(void)
 		nf_app_error(ERR_WATCHDOG, err, e_msg, strlen(e_msg));
 	}
 #endif
+	err = stg_init_storage_controller();
+	selftest_mark_state(SELFTEST_FLASH_POS, err == 0);
+	if (err) {
+		LOG_ERR("Could not initialize storage controller (%d)", err);
+		return;
+	}
 
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
@@ -144,14 +188,6 @@ void main(void)
 		nf_app_error(ERR_EP_MODULE, err, e_msg, strlen(e_msg));
 	}
 
-	/* Initialize the power manager module. */
-	err = pwr_module_init();
-	if (err) {
-		char *e_msg = "Could not initialize the power module";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_PWR_MODULE, err, e_msg, strlen(e_msg));
-	}
-
 	/* Initialize animal monitor control module, depends on storage
 	 * controller to be initialized first since amc sends
 	 * a request for pasture data on init. 
@@ -174,12 +210,6 @@ void main(void)
 		nf_app_error(ERR_MOVEMENT_CONTROLLER, err, e_msg,
 			     strlen(e_msg));
 	}
-
-	/* Play welcome sound. */
-	/*TODO: only play when battery level is adequate.*/
-	struct sound_event *sound_ev = new_sound_event();
-	sound_ev->type = SND_WELCOME;
-	EVENT_SUBMIT(sound_ev);
 
 	/* Initialize the cellular controller */
 	err = cellular_controller_init();
@@ -219,9 +249,6 @@ void main(void)
 	 * it will revert to the previous version on the next reboot that occurs.
 	 */
 	mark_new_application_as_valid();
-
-	uint32_t reset_reason = NRF_POWER->RESETREAS;
-	NRF_POWER->RESETREAS = NRF_POWER->RESETREAS;
 
 	LOG_INF("Booted application firmware version %i, and marked it as valid. Reset reason %i",
 		NF_X25_VERSION_NUMBER, reset_reason);

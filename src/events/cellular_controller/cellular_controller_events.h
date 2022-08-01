@@ -1,4 +1,5 @@
 #include <event_manager.h>
+#include <modem_nf.h>
 
 typedef enum {
 	POWER_OFF = 0,
@@ -73,3 +74,13 @@ struct free_message_mem_event {
 };
 EVENT_TYPE_DECLARE(free_message_mem_event);
 
+struct gsm_info_event {
+	struct event_header header;
+	struct gsm_info gsm_info;
+};
+EVENT_TYPE_DECLARE(gsm_info_event);
+
+struct request_gsm_info_event {
+	struct event_header header;
+};
+EVENT_TYPE_DECLARE(request_gsm_info_event);

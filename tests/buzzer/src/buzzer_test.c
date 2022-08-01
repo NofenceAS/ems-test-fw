@@ -143,7 +143,7 @@ void test_play_cattle(void)
 
 void test_short_100(void)
 {
-	mock_expect_pwm_hz(100);
+	mock_expect_pwm_hz(1000);
 
 	struct sound_event *ev = new_sound_event();
 	ev->type = SND_SHORT_100;

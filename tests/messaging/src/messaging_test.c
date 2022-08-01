@@ -10,6 +10,8 @@
 #include "messaging_module_events.h"
 #include "collar_protocol.h"
 #include "nf_version.h"
+#include "gnss_controller_events.h"
+#include "storage_event.h"
 
 static K_SEM_DEFINE(msg_out, 0, 1);
 static K_SEM_DEFINE(msg_in, 0, 1);
@@ -44,11 +46,31 @@ void test_init(void)
 	ztest_returns_value(eep_uint8_read, 0);
 	ztest_returns_value(eep_uint16_read, 0);
 	ztest_returns_value(eep_uint32_read, 0);
-	ztest_returns_value(get_mode, 0);
-	ztest_returns_value(get_fence_status, 0);
-	ztest_returns_value(get_collar_status, 0);
-	ztest_returns_value(get_total_zap_count, 0);
 	ztest_returns_value(date_time_now, 0);
+
+	/* Cache variables for messaging module. */
+	struct gnss_data *ev_gnss = new_gnss_data();
+	EVENT_SUBMIT(ev_gnss);
+
+	struct update_collar_mode *ev_cmode = new_update_collar_mode();
+	EVENT_SUBMIT(ev_cmode);
+
+	struct update_collar_status *ev_cstatus = new_update_collar_status();
+	EVENT_SUBMIT(ev_cstatus);
+
+	struct update_fence_status *ev_fstatus = new_update_fence_status();
+	EVENT_SUBMIT(ev_fstatus);
+
+	struct update_fence_version *ev_fversion = new_update_fence_version();
+	EVENT_SUBMIT(ev_fversion);
+
+	struct update_zap_count *ev_zap = new_update_zap_count();
+	EVENT_SUBMIT(ev_zap);
+
+	struct gsm_info_event *ev_gsm = new_gsm_info_event();
+	EVENT_SUBMIT(ev_gsm);
+
+	k_sleep(K_SECONDS(60));
 
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");

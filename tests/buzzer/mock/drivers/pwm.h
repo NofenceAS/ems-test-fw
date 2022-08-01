@@ -21,6 +21,6 @@ int pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
 
 #define PWM_BUZZER_NODE NULL
 #define PWM_BUZZER_LABEL DT_LABEL(DT_ALIAS(dummy_buzzer))
-#define PWM_CHANNEL 0
+#define BUZZER_PWM_CHANNEL 0
 
 #endif /* PWM_MOCK_H_ */
