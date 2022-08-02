@@ -38,6 +38,7 @@ void test_init(void)
 	struct connection_state_event *ev = new_connection_state_event();
 	ev->state = true;
 	EVENT_SUBMIT(ev);
+
 	ztest_returns_value(eep_uint8_read, 0);
 	ztest_returns_value(eep_uint8_read, 0);
 	ztest_returns_value(eep_uint8_read, 0);
