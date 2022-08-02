@@ -262,7 +262,10 @@ void test_main(void)
 			ztest_unit_test(test_init_and_update_pasture),
 			ztest_unit_test(test_set_get_pasture),
 			ztest_unit_test(test_fnc_valid_fence_exists),
-			ztest_unit_test(test_empty_fence));
+			ztest_unit_test(test_empty_fence),
+			ztest_unit_test(test_update_pasture_teach_mode),
+			ztest_unit_test(test_update_pasture_stg_fail),
+			ztest_unit_test(test_update_pasture));
 	ztest_run_test_suite(amc_tests);
 
 	ztest_test_suite(amc_dist_tests,
@@ -281,16 +284,9 @@ void test_main(void)
 			ztest_unit_test(test_gnss_mode));
 	ztest_run_test_suite(amc_gnss_tests);
 
-	ztest_test_suite(amc_pasture_tests,
-			ztest_unit_test(test_init_and_update_pasture),
-			ztest_unit_test(test_update_pasture_teach_mode),
-			ztest_unit_test(test_update_pasture_stg_fail),
-			ztest_unit_test(test_update_pasture));
-	ztest_run_test_suite(amc_pasture_tests);
-
 	ztest_test_suite(amc_collar_fence_tests,
 			ztest_unit_test(test_init_and_update_pasture),
-			//ztest_unit_test(test_collar_status),
+			ztest_unit_test(test_collar_status),
 			ztest_unit_test(test_collar_mode),
 			ztest_unit_test(test_fence_status));
 	ztest_run_test_suite(amc_collar_fence_tests);
