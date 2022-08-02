@@ -138,16 +138,8 @@ void test_update_pasture(void)
 	/* Read keep mode from eeprom */
 	ztest_returns_value(eep_uint8_read, 0);
 
-	/* ..force_teach_mode() */
-	ztest_returns_value(eep_uint32_read, 0);
-	ztest_returns_value(eep_uint16_read, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-
 	/* ..force_fence_status() */
 	ztest_returns_value(eep_uint8_write, 0);
-
-	// /* handle_states_fn()/calc_fence_status() */
-	// ztest_returns_value(eep_uint8_write, 0);
 
 	/* Submit fence update event */
 	struct new_fence_available *event = new_new_fence_available();
@@ -185,6 +177,7 @@ void test_update_pasture_teach_mode(void)
 	ztest_returns_value(eep_uint8_read, -1);
 
 	/* ..force_teach_mode() */
+	ztest_returns_value(eep_uint8_write, 0);
 	ztest_returns_value(eep_uint32_read, 0);
 	ztest_returns_value(eep_uint16_read, 0);
 	ztest_returns_value(eep_uint8_read, 0);
