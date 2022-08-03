@@ -127,6 +127,8 @@ EVENT_TYPE_DECLARE(ano_ready);
  */
 struct animal_warning_event {
 	struct event_header header;
+	bool has_fence_dist;
+	int16_t fence_dist;
 };
 
 EVENT_TYPE_DECLARE(animal_warning_event);
