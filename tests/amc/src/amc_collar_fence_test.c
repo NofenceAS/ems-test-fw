@@ -37,7 +37,8 @@ void test_fence_status(void)
 		/* 9 fence statuses defined, starting with 0, (See Collar-protocol). */
 
 		if ((fence_status_idx == FenceStatus_FenceStatus_UNKNOWN) ||
-			(fence_status_idx == FenceStatus_NotStarted)) {
+			(fence_status_idx == FenceStatus_NotStarted) ||
+			(fence_status_idx == FenceStatus_FenceStatus_Invalid)) {
 			if (fence_status_idx == FenceStatus_NotStarted) {
 				/* Test EEPROM write failure */
 				ztest_returns_value(eep_uint8_write, -1);
@@ -52,7 +53,7 @@ void test_fence_status(void)
 			zassert_equal(current_fence_status, fence_status_idx, 
 						"Force fence status failed to set correct status");
 		} else {
-			/* Should only be able to force "UNKNOWN" and "NotStarted" */
+			/* Should only force "UNKNOWN", "NotStarted" and "Invalid" */
 			zassert_not_equal(force_fence_status(fence_status_idx), 0, 
 						"Was able to force unavailable fence status");
 		}
@@ -72,6 +73,8 @@ void test_fence_status(void)
 	expected_status = FenceStatus_FenceStatus_Normal;
 	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
 		      expected_status, "");
+
+	k_sem_reset(&fence_status_sem);
 	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_fence_status, expected_status, "");
 
@@ -101,6 +104,7 @@ void test_fence_status(void)
 	expected_status = FenceStatus_Escaped;
 	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
 		      expected_status, "");
+	k_sem_reset(&fence_status_sem);
 	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_fence_status, expected_status, "");
 
