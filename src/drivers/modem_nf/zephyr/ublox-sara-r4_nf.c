@@ -1363,13 +1363,12 @@ static int modem_reset(void)
 
 
 	static const struct setup_cmd setup_cmds0[] = {
-	/* turn off echo */
-	SETUP_CMD_NOHANDLE("ATE0"),
 	/* stop functionality */
-	SETUP_CMD_NOHANDLE("AT+CFUN=0"),
+	SETUP_CMD_NOHANDLE("ATE0"),
 		};
 
 	static const struct setup_cmd setup_cmds[] = {
+		SETUP_CMD_NOHANDLE("AT+CFUN=0"),
 		/* extended error numbers */
 		SETUP_CMD_NOHANDLE("AT+CMEE=1"),
 
@@ -1479,13 +1478,13 @@ restart:
 		LOG_ERR("MODEM WAIT LOOP ERROR: %d", ret);
 		goto error;
 	}
-	k_sleep(K_MSEC(50));
+	k_sleep(K_MSEC(250));
 
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
 					   setup_cmds0, ARRAY_SIZE(setup_cmds0),
 					   &mdata.sem_response,
 					   MDM_REGISTRATION_TIMEOUT);
-	k_sleep(K_MSEC(150));
+	k_sleep(K_MSEC(250));
 
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
 					   setup_cmds, ARRAY_SIZE(setup_cmds),
@@ -1494,7 +1493,7 @@ restart:
 	if (ret < 0) {
 		goto error;
 	}
-	k_sleep(K_MSEC(50));
+	k_sleep(K_MSEC(250));
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 	/* autodetect APN from IMSI */
