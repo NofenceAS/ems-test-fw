@@ -79,6 +79,7 @@ EVENT_TYPE_DECLARE(update_fence_status);
 struct update_fence_version {
 	struct event_header header;
 	uint32_t fence_version;
+	uint32_t total_fences;
 };
 
 EVENT_TYPE_DECLARE(update_fence_version);
