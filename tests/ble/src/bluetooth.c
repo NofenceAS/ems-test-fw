@@ -27,7 +27,7 @@ static K_SEM_DEFINE(ble_fence_status_sem, 0, 1);
 static K_SEM_DEFINE(ble_pasture_status_sem, 0, 1);
 static K_SEM_DEFINE(ble_fence_def_ver_sem, 0, 1);
 static K_SEM_DEFINE(beacon_hysteresis_sem, 0, 1);
-static K_SEM_DEFINE(beacon_not_found, 0, 1);
+static K_SEM_DEFINE(beacon_out_of_range, 0, 1);
 
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
@@ -116,7 +116,7 @@ void test_ble_beacon_scanner(void)
 	zassert_equal(err, 0, "Test beacon event execution hanged.");
 }
 
-void test_ble_beacon_not_found(void)
+void test_ble_beacon_out_of_range(void)
 {
 	/* Clear the beacon list */
 	init_beacon_list();
@@ -139,7 +139,7 @@ void test_ble_beacon_not_found(void)
 
 	zassert_equal(range, -EIO, "We received a wrong return code");
 
-	int err = k_sem_take(&beacon_not_found, K_SECONDS(10));
+	int err = k_sem_take(&beacon_out_of_range, K_SECONDS(10));
 	zassert_equal(err, 0, "Test beacon out of range execution hanged.");
 }
 void test_ble_connection(void)
@@ -329,7 +329,7 @@ void test_main(void)
 	ztest_test_suite(test_bluetooth, ztest_unit_test(test_init_ok),
 			 ztest_unit_test(test_init_error),
 			 ztest_unit_test(test_ble_beacon_scanner),
-			 ztest_unit_test(test_ble_beacon_not_found),
+			 ztest_unit_test(test_ble_beacon_out_of_range),
 			 ztest_unit_test(test_ble_connection),
 			 ztest_unit_test(test_ble_disconnection),
 			 ztest_unit_test(test_ble_data_event),
@@ -429,10 +429,10 @@ static bool event_handler(const struct event_header *eh)
 			break;
 		case BEACON_STATUS_NOT_FOUND:
 			printk("Beacon status not found\n");
-			k_sem_give(&beacon_not_found);
 			break;
-		case BEACON_STATUS_OFF:
-			printk("Beacon scanner is turned off\n");
+		case BEACON_STATUS_OUT_OF_RANGE:
+			printk("Beacon status out for range\n");
+			k_sem_give(&beacon_out_of_range);
 			break;
 		}
 		return false;

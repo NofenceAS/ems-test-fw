@@ -12,7 +12,7 @@ static char *stringFromEnum(enum beacon_status_type status)
 	static char *strings[] = { "BEACON_STATUS_REGION_NEAR",
 				   "BEACON_STATUS_REGION_FAR",
 				   "BEACON_STATUS_NOT_FOUND",
-				   "BEACON_STATUS_OFF" };
+				   "BEACON_STATUS_OUT_OF_RANGE" };
 
 	return strings[status];
 }
