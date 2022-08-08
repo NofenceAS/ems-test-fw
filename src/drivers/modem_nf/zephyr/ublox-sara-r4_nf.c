@@ -19,7 +19,6 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4_nf, CONFIG_MODEM_LOG_LEVEL);
 #include <fcntl.h>
 #include <pm/device.h>
 #include <pm/device_runtime.h>
-
 #include <net/net_if.h>
 #include <net/net_offload.h>
 #include <net/socket_offload.h>
@@ -94,7 +93,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_PROMPT_CMD_DELAY K_MSEC(50)
 
 #define MDM_MAX_DATA_LENGTH 1024
-#define MDM_RECV_MAX_BUF 30
+#define MDM_RECV_MAX_BUF 32
 #define MDM_RECV_BUF_SIZE 128
 
 #define MDM_MAX_SOCKETS 6
@@ -795,10 +794,6 @@ static const struct setup_cmd query_cellinfo_cmds[] = {
  */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgdcont)
 {
-	if (argc < 7) { /*TODO: to improve readability, use defines for the
- * expected number of arguments for all commands.*/
-		return -EAGAIN;
-	}
 	memcpy(mdata.mdm_pdp_addr,argv[3],17); //17: "xxx.xxx.xxx.xxx", for
 	// the check_ip function, we're only interested in the fact that the
 	// first 8 characters are not "0.0.0.0
@@ -827,9 +822,6 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_upsv_get)
 
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgact_get)
 {
-	if (argc < 2) {
-		return -EAGAIN;
-	}
 	LOG_DBG("CGACT? handler, %d", argc);
 	LOG_DBG("PDP context state: ,%s", argv[1]);
 	int val = atoi(argv[1]);
@@ -846,9 +838,6 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cgact_get)
 
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cops_get)
 {
-	if (argc < 4) {
-		return -EAGAIN;
-	}
 	LOG_DBG("COPS? handler, %d", argc);
 	mdata.session_rat = atoi(argv[3]);
 	mdata.mnc = unquoted_atoi(argv[2], 10);
@@ -1029,9 +1018,6 @@ MODEM_CMD_DEFINE(on_cmd_socknotifyclose)
 /* Handler: +UUSOR[D|F]: <socket_id>[0],<length>[1] */
 MODEM_CMD_DEFINE(on_cmd_socknotifydata)
 {
-	if (argc < 2) {
-		return -EAGAIN;
-	}
 	int ret, socket_id, new_total;
 	struct modem_socket *sock;
 
@@ -1059,9 +1045,6 @@ MODEM_CMD_DEFINE(on_cmd_socknotifydata)
 /* Handler: +CREG: <stat>[0] */
 MODEM_CMD_DEFINE(on_cmd_socknotifycreg)
 {
-	if (argc < 1) {
-		return -EAGAIN;
-	}
 	mdata.ev_creg = ATOI(argv[0], 0, "stat");
 	LOG_DBG("CREG:%d", mdata.ev_creg);
 	return 0;
@@ -1072,9 +1055,6 @@ MODEM_CMD_DEFINE(on_cmd_socknotifycreg)
 ip_address>,<listening_port> */
 MODEM_CMD_DEFINE(on_cmd_socknotify_listen)
 {
-	if (argc < 6) {
-		return -EAGAIN;
-	}
 	LOG_DBG("Received new message on listening socket:%s, port:%s",
 		argv[3], argv[5]);
 	if (atoi(argv[3]) == 0  && atoi(argv[5]) == CONFIG_NF_LISTENING_PORT) {
@@ -1349,9 +1329,10 @@ static int modem_reset(void)
 	int ret = 0, retry_count = 0, counter = 0;
 	mdata.min_rssi = 31;
 	mdata.max_rssi = 0;
+	memset(mdata.iface_data.rx_rb_buf, 0, mdata.iface_data.rx_rb_buf_len);
 
 	static const struct setup_cmd pre_setup_cmds[] = {
-		SETUP_CMD_NOHANDLE("AT+URAT=9"),
+		SETUP_CMD_NOHANDLE("AT+URAT=7"),
 		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
 		SETUP_CMD_NOHANDLE("AT+COPS=2"),
 		/* TODO: consider adding this: */
