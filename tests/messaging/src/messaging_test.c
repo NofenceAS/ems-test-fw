@@ -42,6 +42,7 @@ void test_init(void)
 	ztest_returns_value(eep_uint8_read, 0);
 	ztest_returns_value(eep_uint8_read, 0);
 	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_read_ble_sec_key, 0);
 	ztest_returns_value(eep_uint8_read, 0);
 	ztest_returns_value(eep_uint16_read, 0);
 	ztest_returns_value(eep_uint32_read, 0);
