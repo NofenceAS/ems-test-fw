@@ -1332,7 +1332,7 @@ static int modem_reset(void)
 	memset(mdata.iface_data.rx_rb_buf, 0, mdata.iface_data.rx_rb_buf_len);
 
 	static const struct setup_cmd pre_setup_cmds[] = {
-		SETUP_CMD_NOHANDLE("AT+URAT=7"),
+		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
 		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
 		SETUP_CMD_NOHANDLE("AT+COPS=2"),
 		/* TODO: consider adding this: */
