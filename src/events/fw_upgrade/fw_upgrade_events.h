@@ -43,7 +43,13 @@ struct start_fota_event {
 	uint32_t version;
 };
 
+/** @brief Cancel on going FOTA. */
+struct cancel_fota_event {
+    struct event_header header;
+};
+
 EVENT_TYPE_DECLARE(dfu_status_event);
 EVENT_TYPE_DECLARE(start_fota_event);
+EVENT_TYPE_DECLARE(cancel_fota_event);
 
 #endif /* _FW_UPGRADE_EVENTS_H_ */

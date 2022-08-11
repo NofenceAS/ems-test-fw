@@ -46,3 +46,4 @@ static int log_start_fota_event(const struct event_header *eh, char *buf,
 }
 
 EVENT_TYPE_DEFINE(start_fota_event, true, log_start_fota_event, NULL);
+EVENT_TYPE_DEFINE(cancel_fota_event, true, NULL, NULL);
