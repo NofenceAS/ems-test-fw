@@ -45,6 +45,7 @@ void test_init_ok(void)
 	ztest_returns_value(eep_uint32_read, 0);
 	ztest_returns_value(bt_enable, 0);
 	ztest_returns_value(bt_nus_init, 0);
+	ztest_returns_value(bt_set_name, 0);
 	ztest_returns_value(bt_le_adv_start, 0);
 	ztest_returns_value(bt_le_scan_start, 0);
 

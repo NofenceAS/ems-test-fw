@@ -187,3 +187,8 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	return ztest_get_return_value();
 }
+
+int bt_set_name(const char *name)
+{
+	return ztest_get_return_value();
+}
