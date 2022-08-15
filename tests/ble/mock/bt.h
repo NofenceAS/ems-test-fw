@@ -361,4 +361,5 @@ int bt_le_scan_stop(void);
 
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
 
+int bt_set_name(const char *name);
 #endif

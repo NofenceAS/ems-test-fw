@@ -10,6 +10,8 @@
 #include "ble_conn_event.h"
 #include "ble_beacon_event.h"
 
+#include "messaging_module_events.h"
+#include "collar_protocol.h"
 #include "ble_controller.h"
 #include "event_manager.h"
 #include "bt.h"
@@ -43,6 +45,7 @@ void test_init_ok(void)
 	ztest_returns_value(eep_uint32_read, 0);
 	ztest_returns_value(bt_enable, 0);
 	ztest_returns_value(bt_nus_init, 0);
+	ztest_returns_value(bt_set_name, 0);
 	ztest_returns_value(bt_le_adv_start, 0);
 	ztest_returns_value(bt_le_scan_start, 0);
 
@@ -223,20 +226,20 @@ void test_ble_ctrl_event_collar_mode(void)
 {
 	/* Safety check, is sempahore already given? */
 	k_sem_take(&ble_collar_mode_sem, K_NO_WAIT);
+
+	/* Update collar mode */
 	ztest_returns_value(bt_le_adv_update_data, 0);
-	struct ble_ctrl_event *event = new_ble_ctrl_event();
-	event->cmd = BLE_CTRL_COLLAR_MODE_UPDATE;
-	event->param.collar_mode = 2;
-	EVENT_SUBMIT(event);
+	struct update_collar_mode *evt = new_update_collar_mode();
+	evt->collar_mode = Mode_Fence;
+	EVENT_SUBMIT(evt);
 
-	/* Wait for it and see. */
-	int err = k_sem_take(&ble_collar_mode_sem, K_SECONDS(10));
-	zassert_equal(err, 0, "Test status event execution hanged.");
+	/* Wait for event to be processed */
+	zassert_equal(k_sem_take(&ble_collar_mode_sem, K_SECONDS(10)), 0, 
+				"Test status event execution hanged");
 
-	/* Semaphore given */
-	zassert_true(bt_mock_is_collar_mode_adv_data_correct(
-			     event->param.collar_mode),
-		     "Adv data not correct");
+	/* Verify advertisement data */
+	zassert_true(bt_mock_is_collar_mode_adv_data_correct(Mode_Fence), 
+				"Adv collar mode not correct");
 }
 
 /* Submit collar status change */
@@ -244,20 +247,20 @@ void test_ble_ctrl_event_collar_status(void)
 {
 	/* Safety check, is sempahore already given? */
 	k_sem_take(&ble_collar_status_sem, K_NO_WAIT);
+
+	/* Update collar status */
 	ztest_returns_value(bt_le_adv_update_data, 0);
-	struct ble_ctrl_event *event = new_ble_ctrl_event();
-	event->cmd = BLE_CTRL_COLLAR_STATUS_UPDATE;
-	event->param.collar_status = 2;
-	EVENT_SUBMIT(event);
+	struct update_collar_status *evt = new_update_collar_status();
+	evt->collar_status = CollarStatus_Stuck;
+	EVENT_SUBMIT(evt);
 
-	/* Wait for it and see. */
-	int err = k_sem_take(&ble_collar_status_sem, K_SECONDS(10));
-	zassert_equal(err, 0, "Test status event execution hanged.");
+	/* Wait for event to be processed */
+	zassert_equal(k_sem_take(&ble_collar_status_sem, K_SECONDS(10)), 0, 
+				"Test status event execution hanged.");
 
-	/* Semaphore given */
-	zassert_true(bt_mock_is_collar_status_adv_data_correct(
-			     event->param.collar_status),
-		     "Adv data not correct");
+	/* Verify advertisement data */
+	zassert_true(bt_mock_is_collar_status_adv_data_correct(CollarStatus_Stuck), 
+				"Adv collar status not correct");
 }
 
 /* Submit Fence status change */
@@ -265,41 +268,20 @@ void test_ble_ctrl_event_fence_status(void)
 {
 	/* Safety check, is sempahore already given? */
 	k_sem_take(&ble_fence_status_sem, K_NO_WAIT);
+
+	/* Update fence status */
 	ztest_returns_value(bt_le_adv_update_data, 0);
-	struct ble_ctrl_event *event = new_ble_ctrl_event();
-	event->cmd = BLE_CTRL_FENCE_STATUS_UPDATE;
-	event->param.fence_status = 2;
-	EVENT_SUBMIT(event);
+	struct update_fence_status *evt = new_update_fence_status();
+	evt->fence_status = FenceStatus_NotStarted;
+	EVENT_SUBMIT(evt);
 
-	/* Wait for it and see. */
-	int err = k_sem_take(&ble_fence_status_sem, K_SECONDS(10));
-	zassert_equal(err, 0, "Test status event execution hanged.");
+	/* Wait for event to be processed */
+	zassert_equal(k_sem_take(&ble_fence_status_sem, K_SECONDS(10)), 0, 
+				"Test status event execution hanged.");
 
-	/* Semaphore given */
-	zassert_true(bt_mock_is_fence_status_adv_data_correct(
-			     event->param.fence_status),
-		     "Adv data not correct");
-}
-
-/* Submit Pasture status change */
-void test_ble_ctrl_event_pasture_status(void)
-{
-	/* Safety check, is sempahore already given? */
-	k_sem_take(&ble_pasture_status_sem, K_NO_WAIT);
-	ztest_returns_value(bt_le_adv_update_data, 0);
-	struct ble_ctrl_event *event = new_ble_ctrl_event();
-	event->cmd = BLE_CTRL_PASTURE_UPDATE;
-	event->param.valid_pasture = 2;
-	EVENT_SUBMIT(event);
-
-	/* Wait for it and see. */
-	int err = k_sem_take(&ble_pasture_status_sem, K_SECONDS(10));
-	zassert_equal(err, 0, "Test status event execution hanged.");
-
-	/* Semaphore given */
-	zassert_true(bt_mock_is_pasture_status_adv_data_correct(
-			     event->param.valid_pasture),
-		     "Adv data not correct");
+	/* Verify advertisement data */
+	zassert_true(bt_mock_is_fence_status_adv_data_correct(FenceStatus_NotStarted),
+				"Adv fence status not correct");
 }
 
 /* Submit Fence Def ver change */
@@ -307,40 +289,100 @@ void test_ble_ctrl_event_fence_def_status(void)
 {
 	/* Safety check, is sempahore already given? */
 	k_sem_take(&ble_fence_def_ver_sem, K_NO_WAIT);
-	ztest_returns_value(bt_le_adv_update_data, 0);
-	struct ble_ctrl_event *event = new_ble_ctrl_event();
-	event->cmd = BLE_CTRL_FENCE_DEF_VER_UPDATE;
-	event->param.fence_def_ver = 100;
-	EVENT_SUBMIT(event);
 
-	/* Wait for it and see. */
-	int err = k_sem_take(&ble_fence_def_ver_sem, K_SECONDS(10));
-	zassert_equal(err, 0, "Test status event execution hanged.");
+	/* Update fence def version */
+	ztest_returns_value(bt_le_adv_update_data, 0); //fence_def_ver_update()
+	ztest_returns_value(bt_le_adv_update_data, 0); //pasture_update()
+	struct update_fence_version *evt = new_update_fence_version();
+	evt->fence_version = 100; //Fence def version no.
+	evt->total_fences = 3; //Fence def Gemoetry
+	EVENT_SUBMIT(evt);
 
-	/* Semaphore given */
-	zassert_true(bt_mock_is_fence_def_ver_adv_data_correct(
-			     event->param.fence_def_ver),
-		     "Adv data not correct");
+	/* Wait for event to be processed */
+	zassert_equal(k_sem_take(&ble_fence_def_ver_sem, K_SECONDS(10)), 0, 
+				"Test status event execution hanged.");
+
+	/* Verify advertisement data (Fence def version) */
+	zassert_true(bt_mock_is_fence_def_ver_adv_data_correct(100), 
+				"Adv fence def version not correct");
+
+	/* Verify advertisement data (valid pasture) */
+	zassert_true(bt_mock_is_pasture_status_adv_data_correct(1 /* valid */), 
+				"Adv valid pasture not correct");
+}
+
+void test_ble_ctrl_event_fence_def_status_invalid(void)
+{
+	/* Safety check, is sempahore already given? */
+	k_sem_take(&ble_fence_def_ver_sem, K_NO_WAIT);
+
+	/* Update fence def version */
+	ztest_returns_value(bt_le_adv_update_data, 0); //fence_def_ver_update()
+	ztest_returns_value(bt_le_adv_update_data, 0); //pasture_update()
+	struct update_fence_version *evt = new_update_fence_version();
+	evt->fence_version = 0; //Fence def version no. (0 = No fence)
+	evt->total_fences = 3; //Fence def Gemoetry
+	EVENT_SUBMIT(evt);
+
+	/* Wait for event to be processed */
+	zassert_equal(k_sem_take(&ble_fence_def_ver_sem, K_SECONDS(10)), 0, 
+				"Test status event execution hanged.");
+
+	/* Verify advertisement data (Fence def version) */
+	zassert_true(bt_mock_is_fence_def_ver_adv_data_correct(0), 
+				"Adv fence def version not correct");
+
+	/* Verify advertisement data (valid pasture) */
+	zassert_true(bt_mock_is_pasture_status_adv_data_correct(0 /* invalid */), 
+				"Adv valid pasture not correct");
+}
+
+void test_ble_ctrl_event_fence_def_status_no_pasture(void)
+{
+	/* Safety check, is sempahore already given? */
+	k_sem_take(&ble_fence_def_ver_sem, K_NO_WAIT);
+
+	/* Update fence def version */
+	ztest_returns_value(bt_le_adv_update_data, 0); //fence_def_ver_update()
+	ztest_returns_value(bt_le_adv_update_data, 0); //pasture_update()
+	struct update_fence_version *evt = new_update_fence_version();
+	evt->fence_version = 100; //Fence def version no.
+	evt->total_fences = 0; //Fence def Gemoetry (0 = No pasture)
+	EVENT_SUBMIT(evt);
+
+	/* Wait for event to be processed */
+	zassert_equal(k_sem_take(&ble_fence_def_ver_sem, K_SECONDS(10)), 0, 
+				"Test status event execution hanged.");
+
+	/* Verify advertisement data (Fence def version) */
+	zassert_true(bt_mock_is_fence_def_ver_adv_data_correct(100), 
+				"Adv fence def version not correct");
+
+	/* Verify advertisement data (valid pasture) */
+	zassert_true(bt_mock_is_pasture_status_adv_data_correct(0 /* invalid */), 
+				"Adv valid pasture not correct");
 }
 
 /* Test case main entry */
 void test_main(void)
 {
-	ztest_test_suite(test_bluetooth, ztest_unit_test(test_init_ok),
-			 ztest_unit_test(test_init_error),
-			 ztest_unit_test(test_ble_beacon_scanner),
-			 ztest_unit_test(test_ble_beacon_out_of_range),
-			 ztest_unit_test(test_ble_connection),
-			 ztest_unit_test(test_ble_disconnection),
-			 ztest_unit_test(test_ble_data_event),
-			 ztest_unit_test(test_ble_ctrl_event_battery),
-			 ztest_unit_test(test_ble_ctrl_event_error_flag),
-			 ztest_unit_test(test_ble_ctrl_event_collar_mode),
-			 ztest_unit_test(test_ble_ctrl_event_collar_status),
-			 ztest_unit_test(test_ble_ctrl_event_fence_status),
-			 ztest_unit_test(test_ble_ctrl_event_pasture_status),
-			 ztest_unit_test(test_ble_ctrl_event_fence_def_status));
-
+	ztest_test_suite(test_bluetooth, 
+				ztest_unit_test(test_init_ok),
+			 	ztest_unit_test(test_init_error),
+			 	ztest_unit_test(test_ble_beacon_scanner),
+			 	ztest_unit_test(test_ble_beacon_out_of_range),
+			 	ztest_unit_test(test_ble_connection),
+			 	ztest_unit_test(test_ble_disconnection),
+			 	ztest_unit_test(test_ble_data_event),
+				ztest_unit_test(test_ble_ctrl_event_battery),
+			 	ztest_unit_test(test_ble_ctrl_event_error_flag),
+			 	ztest_unit_test(test_ble_ctrl_event_collar_mode),
+			 	ztest_unit_test(test_ble_ctrl_event_collar_status),
+			 	ztest_unit_test(test_ble_ctrl_event_fence_status),
+			 	ztest_unit_test(test_ble_ctrl_event_fence_def_status),
+				ztest_unit_test(test_ble_ctrl_event_fence_def_status_invalid),
+				ztest_unit_test(test_ble_ctrl_event_fence_def_status_no_pasture)
+				);
 	ztest_run_test_suite(test_bluetooth);
 }
 
@@ -399,23 +441,20 @@ static bool event_handler(const struct event_header *eh)
 			k_sem_give(&ble_error_flag_sem);
 			break;
 		case BLE_CTRL_COLLAR_MODE_UPDATE:
-			k_sem_give(&ble_collar_mode_sem);
-			break;
+			/* Unused */
 		case BLE_CTRL_COLLAR_STATUS_UPDATE:
-			k_sem_give(&ble_collar_status_sem);
-			break;
+			/* Unused */
 		case BLE_CTRL_FENCE_STATUS_UPDATE:
-			k_sem_give(&ble_fence_status_sem);
-			break;
+			/* Unused */
 		case BLE_CTRL_PASTURE_UPDATE:
-			k_sem_give(&ble_pasture_status_sem);
-			break;
+			/* Unused */
 		case BLE_CTRL_FENCE_DEF_VER_UPDATE:
-			k_sem_give(&ble_fence_def_ver_sem);
+			/* Unused */
 			break;
 		}
 		return false;
 	}
+
 	if (is_ble_beacon_event(eh)) {
 		const struct ble_beacon_event *event =
 			cast_ble_beacon_event(eh);
@@ -437,6 +476,27 @@ static bool event_handler(const struct event_header *eh)
 		}
 		return false;
 	}
+
+	if (is_update_collar_mode(eh)) {
+		k_sem_give(&ble_collar_mode_sem);
+		return false;
+	}
+
+	if (is_update_collar_status(eh)) {
+		k_sem_give(&ble_collar_status_sem);
+		return false;
+	}
+
+	if (is_update_fence_status(eh)) {
+		k_sem_give(&ble_fence_status_sem);
+		return false;
+	}
+
+	if (is_update_fence_version(eh)) {
+		k_sem_give(&ble_fence_def_ver_sem);
+		return false;
+	}
+
 	zassert_true(false, "Wrong event type received");
 	return false;
 }
@@ -445,4 +505,8 @@ EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, ble_data_event);
 EVENT_SUBSCRIBE(test_main, ble_conn_event);
 EVENT_SUBSCRIBE(test_main, ble_beacon_event);
+EVENT_SUBSCRIBE_FINAL(test_main, update_collar_mode);
+EVENT_SUBSCRIBE_FINAL(test_main, update_collar_status);
+EVENT_SUBSCRIBE_FINAL(test_main, update_fence_status);
+EVENT_SUBSCRIBE_FINAL(test_main, update_fence_version);
 EVENT_SUBSCRIBE_FINAL(test_main, ble_ctrl_event);
