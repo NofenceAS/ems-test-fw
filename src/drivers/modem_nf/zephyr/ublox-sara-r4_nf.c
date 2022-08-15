@@ -167,7 +167,6 @@ struct modem_data {
 	char mdm_imsi[MDM_IMSI_LENGTH];
 	char mdm_ccid[2 * MDM_IMSI_LENGTH];
 	char mdm_pdp_addr[2*MDM_IMSI_LENGTH];
-	int mdm_rssi;
 	int upsv_state;
 	int last_sock;
 	int session_rat;
@@ -1332,9 +1331,11 @@ static int modem_reset(void)
 	memset(mdata.iface_data.rx_rb_buf, 0, mdata.iface_data.rx_rb_buf_len);
 	memset(mdata.cmd_handler_data.match_buf, 0, mdata.cmd_handler_data
 							    .match_buf_len);
+	k_sem_reset(&mdata.sem_response);
+	k_sem_reset(&mdata.sem_prompt);
 
 	static const struct setup_cmd pre_setup_cmds[] = {
-		SETUP_CMD_NOHANDLE("AT+URAT=9"),
+		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
 		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
 		SETUP_CMD_NOHANDLE("AT+COPS=2"),
 		/* TODO: consider adding this: */
