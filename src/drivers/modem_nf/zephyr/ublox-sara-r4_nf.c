@@ -385,7 +385,6 @@ static ssize_t send_socket_data(void *obj, const struct msghdr *msg,
 
 	/* Reset prompt '@' semaphore */
 	k_sem_reset(&mdata.sem_prompt);
-
 	ret = modem_cmd_send_nolock(&mctx.iface, &mctx.cmd_handler, NULL, 0U,
 				    send_buf, NULL, K_NO_WAIT);
 	if (ret < 0) {
@@ -1024,20 +1023,22 @@ MODEM_CMD_DEFINE(on_cmd_socknotifydata)
 	new_total = ATOI(argv[1], 0, "length");
 	sock = modem_socket_from_id(&mdata.socket_config, socket_id);
 	if (!sock) {
+		k_sem_give(&mdata.cmd_handler_data.sem_tx_lock);
 		return 0;
 	}
-
 	ret = modem_socket_packet_size_update(&mdata.socket_config, sock,
 					      new_total);
 	if (ret < 0) {
 		LOG_ERR("socket_id:%d left_bytes:%d err: %d", socket_id,
 			new_total, ret);
 	}
-
 	if (new_total > 0) {
 		modem_socket_data_ready(&mdata.socket_config, sock);
 	}
 
+	k_sem_give(&mdata.cmd_handler_data.sem_tx_lock);
+	k_sem_give(&mdata.sem_response);
+	k_busy_wait(50000);
 	return 0;
 }
 
@@ -1680,14 +1681,14 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 	} else {
 		snprintk(buf, sizeof(buf), "AT+USOCR=%d", proto);
 	}
-
+	k_busy_wait(50000);
 	/* create socket */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, buf,
-			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+			     &mdata.sem_response, MDM_REGISTRATION_TIMEOUT);
 	if (ret < 0) {
 		goto error;
 	}
-	k_sleep(K_MSEC(50));
+	k_busy_wait(50000);
 	set_socket_linger_time(sock->id, 3000);
 
 	if (sock->ip_proto == IPPROTO_TLS_1_2) {
@@ -2539,10 +2540,12 @@ int get_pdp_addr(char **ip_addr)
 	const struct setup_cmd read_sim_ip_cmd[] = {
 		SETUP_CMD("AT+CGDCONT?", "", on_cmd_atcmdinfo_cgdcont, 7, ","),
 	};
+	k_busy_wait(50000);
 	int ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
-					       read_sim_ip_cmd, 1,
+					       read_sim_ip_cmd, ARRAY_SIZE(read_sim_ip_cmd),
 					       &mdata.sem_response,
 					       MDM_REGISTRATION_TIMEOUT);
+	k_busy_wait(50000);
 	if (ret == 0) {
 		*ip_addr = mdata.mdm_pdp_addr;
 		return 0;
@@ -2603,7 +2606,7 @@ int wake_up_from_upsv(void) {
 			do {
 				k_sleep(K_MSEC(100));
 			} while (!modem_rx_pin_is_high());
-			k_sem_give(&mdata.sem_response);
+
 			k_sem_give(&mdata.cmd_handler_data.sem_tx_lock);
 			return wake_up();
 		}
