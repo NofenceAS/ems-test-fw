@@ -22,11 +22,13 @@ static int log_env_sensor_event(const struct event_header *eh, char *buf,
 {
 	struct env_sensor_event *event = cast_env_sensor_event(eh);
 
-	return snprintf(buf, buf_len, "Environment sensor, event adr %p",
-			event);
+	return snprintf(
+		buf, buf_len,
+		"Temperature: %.1f *C, Pressure: %.1f kPa, Humidity: %.1f %%",
+		event->temp, event->press, event->humidity);
 }
 
-EVENT_TYPE_DEFINE(env_sensor_event, false, log_env_sensor_event, NULL);
+EVENT_TYPE_DEFINE(env_sensor_event, true, log_env_sensor_event, NULL);
 
 /**
  * @brief Request env sensor event function for debugging/information. 
