@@ -857,9 +857,10 @@ MODEM_CMD_DEFINE(on_cmd_sockcreate)
 		/* on error give up modem socket */
 		if (sock->id == mdata.socket_config.base_socket_num - 1) {
 			modem_socket_put(&mdata.socket_config, sock->sock_fd);
+		} else {
+			mdata.last_sock = sock->id;
 		}
 	}
-	mdata.last_sock = sock->id;
 	/* don't give back semaphore -- OK to follow */
 	return 0;
 }
@@ -1020,37 +1021,19 @@ MODEM_CMD_DEFINE(on_cmd_socknotifydata)
 	socket_id = ATOI(argv[0], 0, "socket_id");
 	new_total = ATOI(argv[1], 0, "length");
 
-	k_sched_lock();
 	sock = modem_socket_from_id(&mdata.socket_config, socket_id);
 	if (!sock) {
 		return 0;
 	}
-	k_sem_give(&mdata.sem_response);
-	k_sched_unlock();
-	k_yield();
-
-	k_sched_lock();
 	ret = modem_socket_packet_size_update(&mdata.socket_config, sock,
 					      new_total);
 	if (ret < 0) {
 		LOG_ERR("socket_id:%d left_bytes:%d err: %d", socket_id,
 			new_total, ret);
 	}
-
-	k_sem_give(&mdata.sem_response);
-	k_sched_unlock();
-	k_yield();
-
-	k_sched_lock();
 	if (new_total > 0) {
 		modem_socket_data_ready(&mdata.socket_config, sock);
 	}
-
-	k_sem_give(&mdata.sem_response);
-	k_sched_unlock();
- 	k_yield();
-	k_busy_wait(50000);
-
 	return 0;
 }
 
@@ -1388,6 +1371,7 @@ static int modem_reset(void)
 			"\""),
 		/* start functionality */
 		SETUP_CMD_NOHANDLE("AT+CFUN=1"),
+		SETUP_CMD("AT+UPSV=0", "", on_cmd_atcmdinfo_upsv_get, 2U, " "),
 		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 2U, " "),
 #endif
 	};
@@ -1694,7 +1678,6 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 		goto error;
 	}
 
-	k_sleep(K_MSEC(50));
 	char buf2[sizeof("AT+USOSO=#,65535,128,1,####\r")];
 
 	snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,%d",
@@ -2539,12 +2522,7 @@ error:
 
 int modem_nf_reset(void)
 {
-	int err = modem_reset();
-	if (err != 0) {
-		k_sleep(K_SECONDS(30));
-		return modem_reset();
-	}
-	return 0;
+	return modem_reset();
 }
 
 int get_pdp_addr(char **ip_addr)
@@ -2582,17 +2560,28 @@ int wake_up(void)
 			return 0;
 		}
 	}
+
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0,
+			     "ATE0", &mdata.sem_response,
+			     MDM_AT_CMD_TIMEOUT);
+
+	if (ret != 0) {
+		return ret;
+	}
+
 	k_sleep(K_MSEC(50));
 	const struct setup_cmd disable_psv[] = {
 		SETUP_CMD_NOHANDLE("AT+UPSV=0"),
 		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
-		SETUP_CMD_NOHANDLE("ATE0"),
 		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 2U, " "),
 	};
-	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
-					   disable_psv, ARRAY_SIZE(disable_psv),
-					   &mdata.sem_response,
-					   MDM_REGISTRATION_TIMEOUT);
+	if (mdata.upsv_state == 4) {
+		ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
+						   disable_psv, ARRAY_SIZE(disable_psv),
+						   &mdata.sem_response,
+						   MDM_REGISTRATION_TIMEOUT);
+	}
+
 	return ret;
 }
 

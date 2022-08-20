@@ -19,6 +19,7 @@
 #include "nf_settings.h"
 #include "buzzer.h"
 #include "pwr_module.h"
+#include "pwr_event.h"
 /* For reboot reason. */
 #include <nrf.h>
 
@@ -75,6 +76,27 @@ void main(void)
 		nf_app_error(ERR_DIAGNOSTIC, err, e_msg, strlen(e_msg));
 	}
 #endif
+
+/* Not all boards have eeprom */
+#if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
+	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
+	selftest_mark_state(SELFTEST_EEPROM_POS, eeprom_dev != NULL);
+	if (eeprom_dev == NULL) {
+		char *e_msg = "No EEPROM device detected!";
+		LOG_ERR("%s (%d)", log_strdup(e_msg), -EIO);
+		nf_app_error(ERR_EEPROM, -EIO, e_msg, strlen(e_msg));
+	}
+	eep_init(eeprom_dev);
+	/* Fetch and log stored serial number */
+	uint32_t serial_id = 0;
+	err = eep_uint32_read(EEP_UID, &serial_id);
+	if (serial_id) {
+		LOG_INF("Device Serial Number stored in EEPROM: %d", serial_id);
+	} else {
+		LOG_WRN("Missing device Serial Number in EEPROM");
+	}
+#endif
+
 	/* Initialize the power manager module. */
 	err = pwr_module_init();
 	if (err) {
@@ -99,24 +121,28 @@ void main(void)
 	}
 
 	bool is_soft_reset = ((reset_reason & SOFT_RESET_REASON_FLAG) != 0);
+	uint8_t soft_reset_reason;
+	if (pwr_module_reboot_reason(&soft_reset_reason) != 0) {
+		soft_reset_reason = REBOOT_UNKNOWN;
+	}
 	int bat_percent = fetch_battery_percent();
-	LOG_INF("Was soft reset? : %i, Battery percent %i", is_soft_reset,
-		bat_percent);
+
+	LOG_ERR("Was soft reset ?:%i, Soft reset reason:%d, Battery percent:%i", 
+				is_soft_reset, soft_reset_reason, bat_percent);
+
 	/* If not set, we can play the sound. */
-	if (!is_soft_reset) {
-		if (bat_percent > 10) {
+	if ((is_soft_reset != true) || 
+		((is_soft_reset == true) && (soft_reset_reason == REBOOT_BLE_RESET))) {
+		if (bat_percent > 50) {
 			if (bat_percent >= 75) {
 				/* Play battery sound. */
-				struct sound_event *sound_ev =
-					new_sound_event();
+				struct sound_event *sound_ev = new_sound_event();
 				sound_ev->type = SND_SHORT_100;
 				EVENT_SUBMIT(sound_ev);
 			}
 
-			/* Wait for battery percent to finish,
-			 * since sound controller
-			 * doesn't queue sounds.
-			 */
+			/* Wait for battery percent to finish, since sound controller 
+			 * doesn't queue sounds. */
 			k_sleep(K_MSEC(200));
 
 			/* Play welcome sound. */
@@ -142,27 +168,6 @@ void main(void)
 		LOG_ERR("Could not initialize storage controller (%d)", err);
 		return;
 	}
-
-/* Not all boards have eeprom */
-#if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
-	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
-	selftest_mark_state(SELFTEST_EEPROM_POS, eeprom_dev != NULL);
-	if (eeprom_dev == NULL) {
-		char *e_msg = "No EEPROM device detected!";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), -EIO);
-		nf_app_error(ERR_EEPROM, -EIO, e_msg, strlen(e_msg));
-	}
-	eep_init(eeprom_dev);
-	/* Fetch and log stored serial number */
-	uint32_t serial_id = 0;
-	err = eep_uint32_read(EEP_UID, &serial_id);
-	if (serial_id) {
-		LOG_INF("Device Serial Number stored in EEPROM: %d", serial_id);
-	} else {
-		LOG_WRN("Missing device Serial Number in EEPROM");
-	}
-
-#endif
 
 	/* Initialize BLE module. */
 	err = ble_module_init();

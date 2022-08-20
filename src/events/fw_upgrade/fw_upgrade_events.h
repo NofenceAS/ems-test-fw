@@ -37,19 +37,14 @@ struct start_fota_event {
 	 *  the protobuf message.
 	 */
 	bool override_default_host;
+	bool reset_download_client;
 	char host[CONFIG_FW_UPGRADE_HOST_LEN];
 	char path[CONFIG_FW_UPGRADE_PATH_LEN];
 
 	uint32_t version;
 };
 
-/** @brief Cancel on going FOTA. */
-struct cancel_fota_event {
-    struct event_header header;
-};
-
 EVENT_TYPE_DECLARE(dfu_status_event);
 EVENT_TYPE_DECLARE(start_fota_event);
-EVENT_TYPE_DECLARE(cancel_fota_event);
 
 #endif /* _FW_UPGRADE_EVENTS_H_ */

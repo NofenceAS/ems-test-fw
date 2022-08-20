@@ -23,6 +23,7 @@
 static K_SEM_DEFINE(normal_pwr_event_sem, 0, 1);
 static K_SEM_DEFINE(low_pwr_event_sem, 0, 1);
 static K_SEM_DEFINE(critical_pwr_event_sem, 0, 1);
+static K_SEM_DEFINE(reboot_pwr_event_sem, 0, 1);
 
 #define VOLTAGE_OFFSET_MV 100
 /* Provide custom assert post action handler to handle the assertion on OOM
@@ -139,6 +140,182 @@ void test_pwr_module_normal_to_critical(void)
 	zassert_equal(err, 0, "critical_pwr_event_sem hanged.");
 }
 
+void test_pwr_module_reboot(void)
+{
+	k_sem_take(&reboot_pwr_event_sem, K_NO_WAIT);
+
+	struct pwr_reboot_event *evt;
+	uint8_t reboot_reason;
+
+	/* Test: REBOOT_NO_REASON */
+
+	/* Send reboot event with reboot reason */
+	ztest_returns_value(eep_uint8_write, 0);
+	evt = new_pwr_reboot_event();
+	evt->reason = REBOOT_NO_REASON;
+	EVENT_SUBMIT(evt);
+
+	/* Wait for event to be processed */
+	zassert_equal(k_sem_take(&reboot_pwr_event_sem, K_SECONDS(10)), 0, 
+				"Test status event execution hanged.");
+
+	/* Wait as power module does EVENT_SUBSCRIBE_FINAL for pwr_reboot_event */
+	k_sleep(K_MSEC(250));
+
+	/* Read reboot reason */
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_write, 0);
+	pwr_module_reboot_reason(&reboot_reason);
+	zassert_equal(reboot_reason, REBOOT_NO_REASON, 
+				"Failed to set reboot reason");
+
+	/* Read reboot reason again (resets to "REBOOT_UNKNOWN" after first read) */
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_write, 0);
+	pwr_module_reboot_reason(&reboot_reason);
+	zassert_equal(reboot_reason, REBOOT_UNKNOWN, 
+				"Failed to reset reboot reason");
+
+	/* Test: REBOOT_BLE_RESET */
+
+	/* Send reboot event with reboot reason */
+	ztest_returns_value(eep_uint8_write, 0);
+	evt = new_pwr_reboot_event();
+	evt->reason = REBOOT_BLE_RESET;
+	EVENT_SUBMIT(evt);
+
+	/* Wait for event to be processed */
+	k_sem_reset(&reboot_pwr_event_sem);
+	zassert_equal(k_sem_take(&reboot_pwr_event_sem, K_SECONDS(10)), 0, 
+				"Test status event execution hanged.");
+
+	/* Wait as power module does EVENT_SUBSCRIBE_FINAL for pwr_reboot_event */
+	k_sleep(K_MSEC(250));
+
+	/* Read reboot reason */
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_write, 0);
+	pwr_module_reboot_reason(&reboot_reason);
+	zassert_equal(reboot_reason, REBOOT_BLE_RESET, 
+				"Failed to set reboot reason");
+
+	/* Read reboot reason again (resets to "REBOOT_UNKNOWN" after first read) */
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_write, 0);
+	pwr_module_reboot_reason(&reboot_reason);
+	zassert_equal(reboot_reason, REBOOT_UNKNOWN, 
+				"Failed to reset reboot reason");
+
+	/* Test: REBOOT_SERVER_RESET */
+
+	/* Send reboot event with reboot reason */
+	ztest_returns_value(eep_uint8_write, 0);
+	evt = new_pwr_reboot_event();
+	evt->reason = REBOOT_SERVER_RESET;
+	EVENT_SUBMIT(evt);
+
+	/* Wait for event to be processed */
+	zassert_equal(k_sem_take(&reboot_pwr_event_sem, K_SECONDS(10)), 0, 
+				"Test status event execution hanged.");
+
+	/* Wait as power module does EVENT_SUBSCRIBE_FINAL for pwr_reboot_event */
+	k_sleep(K_MSEC(250));
+
+	/* Read reboot reason */
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_write, 0);
+	pwr_module_reboot_reason(&reboot_reason);
+	zassert_equal(reboot_reason, REBOOT_SERVER_RESET, 
+				"Failed to set reboot reason");
+
+	/* Read reboot reason again (resets to "REBOOT_UNKNOWN" after first read) */
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_write, 0);
+	pwr_module_reboot_reason(&reboot_reason);
+	zassert_equal(reboot_reason, REBOOT_UNKNOWN, 
+				"Failed to reset reboot reason");
+
+	/* Test: REBOOT_FOTA_RESET */
+
+	/* Send reboot event with reboot reason */
+	ztest_returns_value(eep_uint8_write, 0);
+	evt = new_pwr_reboot_event();
+	evt->reason = REBOOT_FOTA_RESET;
+	EVENT_SUBMIT(evt);
+
+	/* Wait for event to be processed */
+	zassert_equal(k_sem_take(&reboot_pwr_event_sem, K_SECONDS(10)), 0, 
+				"Test status event execution hanged.");
+
+	/* Wait as power module does EVENT_SUBSCRIBE_FINAL for pwr_reboot_event */
+	k_sleep(K_MSEC(250));
+
+	/* Read reboot reason */
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_write, 0);
+	pwr_module_reboot_reason(&reboot_reason);
+	zassert_equal(reboot_reason, REBOOT_FOTA_RESET, 
+				"Failed to set reboot reason");
+
+	/* Read reboot reason again (resets to "REBOOT_UNKNOWN" after first read) */
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_write, 0);
+	pwr_module_reboot_reason(&reboot_reason);
+	zassert_equal(reboot_reason, REBOOT_UNKNOWN, 
+				"Failed to reset reboot reason");
+
+	/* Test: REBOOT_FATAL_ERR */
+
+	/* Send reboot event with reboot reason */
+	ztest_returns_value(eep_uint8_write, 0);
+	evt = new_pwr_reboot_event();
+	evt->reason = REBOOT_FATAL_ERR;
+	EVENT_SUBMIT(evt);
+
+	/* Wait for event to be processed */
+	zassert_equal(k_sem_take(&reboot_pwr_event_sem, K_SECONDS(10)), 0, 
+				"Test status event execution hanged.");
+
+	/* Wait as power module does EVENT_SUBSCRIBE_FINAL for pwr_reboot_event */
+	k_sleep(K_MSEC(250));
+
+	/* Read reboot reason */
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_write, 0);
+	pwr_module_reboot_reason(&reboot_reason);
+	zassert_equal(reboot_reason, REBOOT_FATAL_ERR, 
+				"Failed to set reboot reason");
+
+	/* Read reboot reason again (resets to "REBOOT_UNKNOWN" after first read) */
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_write, 0);
+	pwr_module_reboot_reason(&reboot_reason);
+	zassert_equal(reboot_reason, REBOOT_UNKNOWN, 
+				"Failed to reset reboot reason");
+
+	/* Test: REBOOT_REASON_CNT (Invalid) */
+
+	/* Send reboot event with reboot reason */
+	ztest_returns_value(eep_uint8_write, 0);
+	evt = new_pwr_reboot_event();
+	evt->reason = REBOOT_REASON_CNT;
+	EVENT_SUBMIT(evt);
+
+	/* Wait for event to be processed */
+	zassert_equal(k_sem_take(&reboot_pwr_event_sem, K_SECONDS(10)), 0, 
+				"Test status event execution hanged.");
+
+	/* Wait as power module does EVENT_SUBSCRIBE_FINAL for pwr_reboot_event */
+	k_sleep(K_MSEC(250));
+
+	/* Read reboot reason */
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_write, 0);
+	pwr_module_reboot_reason(&reboot_reason);
+	zassert_equal(reboot_reason, REBOOT_UNKNOWN, 
+				"Failed invalidate reboot reason");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(pwr_tests, ztest_unit_test(test_event_manager_init),
@@ -147,7 +324,9 @@ void test_main(void)
 			 ztest_unit_test(test_pwr_module_critical),
 			 ztest_unit_test(test_pwr_module_low),
 			 ztest_unit_test(test_pwr_module_normal),
-			 ztest_unit_test(test_pwr_module_normal_to_critical));
+			 ztest_unit_test(test_pwr_module_normal_to_critical),
+			 ztest_unit_test(test_pwr_module_reboot)
+			 );
 	ztest_run_test_suite(pwr_tests);
 }
 
@@ -181,6 +360,10 @@ static bool event_handler(const struct event_header *eh)
 			break;
 		}
 	}
+	if (is_pwr_reboot_event(eh)) {
+		k_sem_give(&reboot_pwr_event_sem);
+		return false;
+	}
 	if (is_error_event(eh)) {
 		struct error_event *ev = cast_error_event(eh);
 		switch (ev->sender) {
@@ -200,3 +383,4 @@ static bool event_handler(const struct event_header *eh)
 EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, pwr_status_event);
 EVENT_SUBSCRIBE(test_main, error_event);
+EVENT_SUBSCRIBE(test_main, pwr_reboot_event);
