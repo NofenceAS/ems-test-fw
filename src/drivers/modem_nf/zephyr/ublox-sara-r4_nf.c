@@ -93,8 +93,8 @@ static struct modem_pin modem_pins[] = {
 #define MDM_PROMPT_CMD_DELAY K_MSEC(50)
 
 #define MDM_MAX_DATA_LENGTH 1024
-#define MDM_RECV_MAX_BUF 32
-#define MDM_RECV_BUF_SIZE 128
+#define MDM_RECV_MAX_BUF 16
+#define MDM_RECV_BUF_SIZE 1024
 
 #define MDM_MAX_SOCKETS 6
 #define MDM_BASE_SOCKET_NUM 0
@@ -1326,12 +1326,16 @@ static int modem_reset(void)
 	k_sem_reset(&mdata.sem_prompt);
 
 	static const struct setup_cmd pre_setup_cmds[] = {
-		SETUP_CMD_NOHANDLE("AT+URAT=7"),
+		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
 		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
 		SETUP_CMD_NOHANDLE("AT+COPS=2"),
 		/* TODO: consider adding this: */
 		SETUP_CMD_NOHANDLE("AT+CRSM=214,28531,0,0,14,"
-				   "\"FFFFFFFFFFFFFFFFFFFFFFFFFFFF\""),
+				   "\"FFFFFFFFFFFFFFFFFFFFFFFFFFFF\""), /*PDP
+ * context activation*/
+		SETUP_CMD_NOHANDLE("AT+CRSM=214, 28539, 0, 0, 12,"
+				   "\"FFFFFFFFFFFFFFFFFFFFFFFF\""), /*FPLMN
+ * list*/
 		//		SETUP_CMD_NOHANDLE("AT+COPS=1,2,\"24201\",0"),
 		SETUP_CMD_NOHANDLE("AT+CFUN=15"),
 	};
