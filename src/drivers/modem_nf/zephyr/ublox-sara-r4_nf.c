@@ -86,15 +86,15 @@ static struct modem_pin modem_pins[] = {
 
 #define MDM_AT_CMD_TIMEOUT K_MSEC(200) /*UPSV=0 sometimes times out with 30MS*/
 #define MDM_CMD_TIMEOUT K_SECONDS(10)
-#define MDM_CMD_USOCL_TIMEOUT K_SECONDS(30)
+#define MDM_CMD_USOCL_TIMEOUT K_SECONDS(120)
 #define MDM_DNS_TIMEOUT K_SECONDS(70)
 #define MDM_CMD_CONN_TIMEOUT K_SECONDS(120)
 #define MDM_REGISTRATION_TIMEOUT K_SECONDS(80)
 #define MDM_PROMPT_CMD_DELAY K_MSEC(50)
 
-#define MDM_MAX_DATA_LENGTH 1024
-#define MDM_RECV_MAX_BUF 16
-#define MDM_RECV_BUF_SIZE 1024
+#define MDM_MAX_DATA_LENGTH 512
+#define MDM_RECV_MAX_BUF 64
+#define MDM_RECV_BUF_SIZE 512
 
 #define MDM_MAX_SOCKETS 6
 #define MDM_BASE_SOCKET_NUM 0
@@ -148,7 +148,7 @@ struct modem_data {
 
 	/* modem cmds */
 	struct modem_cmd_handler_data cmd_handler_data;
-	uint8_t cmd_match_buf[MDM_RECV_BUF_SIZE + 1];
+	uint8_t cmd_match_buf[MDM_RECV_BUF_SIZE];
 
 	/* socket data */
 	struct modem_socket_config socket_config;
@@ -1317,6 +1317,7 @@ static void modem_rssi_query_work(struct k_work *work)
 static int modem_reset(void)
 {
 	int ret = 0, retry_count = 0, counter = 0;
+	static uint8_t reset_counter;
 	mdata.min_rssi = 31;
 	mdata.max_rssi = 0;
 	memset(mdata.iface_data.rx_rb_buf, 0, mdata.iface_data.rx_rb_buf_len);
@@ -1329,13 +1330,10 @@ static int modem_reset(void)
 		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
 		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
 		SETUP_CMD_NOHANDLE("AT+COPS=2"),
+		SETUP_CMD_NOHANDLE("AT+UMNOPROF?"),
+		SETUP_CMD_NOHANDLE("AT+URAT=7"),
 		/* TODO: consider adding this: */
-		SETUP_CMD_NOHANDLE("AT+CRSM=214,28531,0,0,14,"
-				   "\"FFFFFFFFFFFFFFFFFFFFFFFFFFFF\""), /*PDP
- * context activation*/
-		SETUP_CMD_NOHANDLE("AT+CRSM=214, 28539, 0, 0, 12,"
-				   "\"FFFFFFFFFFFFFFFFFFFFFFFF\""), /*FPLMN
- * list*/
+
 		//		SETUP_CMD_NOHANDLE("AT+COPS=1,2,\"24201\",0"),
 		SETUP_CMD_NOHANDLE("AT+CFUN=15"),
 	};
@@ -1343,6 +1341,12 @@ static int modem_reset(void)
 	static const struct setup_cmd setup_cmds0[] = {
 		/* stop functionality */
 		SETUP_CMD_NOHANDLE("ATE0"),
+		SETUP_CMD_NOHANDLE("AT+CRSM=214,28531,0,0,14,"
+				   "\"FFFFFFFFFFFFFFFFFFFFFFFFFFFF\""), /*PDP
+ * context activation*/
+		SETUP_CMD_NOHANDLE("AT+CRSM=214, 28539, 0, 0, 12,"
+				   "\"FFFFFFFFFFFFFFFFFFFFFFFF\""), /*FPLMN
+// * list*/
 	};
 
 	static const struct setup_cmd setup_cmds[] = {
@@ -1458,9 +1462,9 @@ restart:
 		goto error;
 	}
 	k_sleep(K_MSEC(250));
-
+	int len = reset_counter++ % 8 == 0? ARRAY_SIZE(setup_cmds0) : 1;
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
-					   setup_cmds0, ARRAY_SIZE(setup_cmds0),
+					   setup_cmds0, len,
 					   &mdata.sem_response,
 					   MDM_REGISTRATION_TIMEOUT);
 	k_sleep(K_MSEC(250));
@@ -2271,7 +2275,8 @@ static bool offload_is_supported(int family, int type, int proto)
 	return true;
 }
 
-NET_SOCKET_REGISTER(ublox_sara_r4, NET_SOCKET_DEFAULT_PRIO, AF_UNSPEC,
+NET_SOCKET_REGISTER(ublox_sara_r4, NET_SOCKET_DEFAULT_PRIO,
+					       AF_UNSPEC,
 		    offload_is_supported, offload_socket);
 
 //#if defined(CONFIG_DNS_RESOLVER)
