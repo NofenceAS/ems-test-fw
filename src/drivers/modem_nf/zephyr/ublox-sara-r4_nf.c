@@ -1280,7 +1280,8 @@ static void modem_rssi_query_work(struct k_work *work)
 			K_SECONDS(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK_PERIOD));
 	}
 #endif
-	if (mdata.upsv_state == 4 || stop_rssi_work) {
+	if ( mdata.upsv_state == 4 || stop_rssi_work ||
+	    (mdata.ev_creg != 5 && mdata.ev_creg != 1) ) {
 		return;
 	}
 	static const struct modem_cmd cmd =
@@ -2448,7 +2449,7 @@ static int modem_init(const struct device *dev)
 	/* initialize the work queue */
 	k_work_queue_start(&modem_workq, modem_workq_stack,
 			   K_KERNEL_STACK_SIZEOF(modem_workq_stack),
-			   K_PRIO_COOP(7), NULL);
+			   K_PRIO_COOP(10), NULL);
 #endif
 
 	/* socket config */
