@@ -40,3 +40,5 @@ EVENT_TYPE_DEFINE(warn_correction_end_event, true, NULL, NULL);
 EVENT_TYPE_DEFINE(warn_correction_pause_event, true, NULL, NULL);
 
 EVENT_TYPE_DEFINE(amc_zapped_now_event, true, NULL, NULL);
+
+EVENT_TYPE_DEFINE(turn_off_fence_event, true, NULL, NULL);

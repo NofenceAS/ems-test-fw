@@ -205,3 +205,12 @@ struct amc_zapped_now_event {
 };
 
 EVENT_TYPE_DECLARE(amc_zapped_now_event);
+
+/** @brief Published by messaging to notify AMC modules to invalidate the
+		current pasture.
+*/
+	struct turn_off_fence_event {
+	struct event_header header;
+};
+
+EVENT_TYPE_DECLARE(turn_off_fence_event);

@@ -38,7 +38,8 @@ void test_fence_status(void)
 
 		if ((fence_status_idx == FenceStatus_FenceStatus_UNKNOWN) ||
 			(fence_status_idx == FenceStatus_NotStarted) ||
-			(fence_status_idx == FenceStatus_FenceStatus_Invalid)) {
+			(fence_status_idx == FenceStatus_FenceStatus_Invalid)
+		    || (fence_status_idx == FenceStatus_TurnedOffByBLE)) {
 			if (fence_status_idx == FenceStatus_NotStarted) {
 				/* Test EEPROM write failure */
 				ztest_returns_value(eep_uint8_write, -1);

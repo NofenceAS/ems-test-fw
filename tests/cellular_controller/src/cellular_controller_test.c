@@ -97,6 +97,8 @@ void test_ack_from_messaging_module_missed(void)
 
 void test_socket_rcv_fails(void)
 {
+	struct free_message_mem_event *dummy_ev = new_free_message_mem_event();
+	EVENT_SUBMIT(dummy_ev);
 	ztest_returns_value(socket_receive, -1);
 	int err;
 	err = k_sem_take(&cellular_error, K_MSEC(600));
