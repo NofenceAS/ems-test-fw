@@ -32,10 +32,8 @@ void test_init(void)
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
 	ztest_returns_value(reset_modem, 0);
-	ztest_returns_value(check_ip, 0);
 	ztest_returns_value(lte_init, 0);
 	ztest_returns_value(eep_read_host_port, 0);
-	ztest_returns_value(socket_listen, 0);
 	ztest_returns_value(check_ip, 0);
 	ztest_returns_value(socket_connect, 0);
 	int8_t err = cellular_controller_init();
@@ -99,6 +97,8 @@ void test_ack_from_messaging_module_missed(void)
 
 void test_socket_rcv_fails(void)
 {
+	struct free_message_mem_event *dummy_ev = new_free_message_mem_event();
+	EVENT_SUBMIT(dummy_ev);
 	ztest_returns_value(socket_receive, -1);
 	int err;
 	err = k_sem_take(&cellular_error, K_MSEC(600));

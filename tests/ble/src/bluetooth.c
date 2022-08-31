@@ -29,7 +29,7 @@ static K_SEM_DEFINE(ble_fence_status_sem, 0, 1);
 static K_SEM_DEFINE(ble_pasture_status_sem, 0, 1);
 static K_SEM_DEFINE(ble_fence_def_ver_sem, 0, 1);
 static K_SEM_DEFINE(beacon_hysteresis_sem, 0, 1);
-static K_SEM_DEFINE(beacon_out_of_range, 0, 1);
+static K_SEM_DEFINE(beacon_not_found, 0, 1);
 
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
@@ -78,9 +78,9 @@ void test_advertise(void)
 
 void test_ble_beacon_scanner(void)
 {
-	const uint32_t now_1 = k_uptime_get_32();
+//	const uint32_t now_1 = k_uptime_get_32();
 	adv_data_t adv_data_1;
-	adv_data_1.rssi = 197; // signed
+	adv_data_1.rssi = 97; // signed
 	bt_addr_t address_1;
 	address_1.val[0] = 0x46;
 	address_1.val[1] = 0x01;
@@ -92,12 +92,17 @@ void test_ble_beacon_scanner(void)
 	addr_1.type = 1;
 	memcpy(addr_1.a.val, address_1.val, sizeof(bt_addr_t));
 	int measured_rssi_1 = -60; // corresponds to 1 meter
-	int range1 = beacon_process_event(now_1, &addr_1, measured_rssi_1,
-					  &adv_data_1);
+	int range1;
+	for (int i=0; i<6; i++) {
+		const uint32_t now_1 = k_uptime_get_32();
+		range1 = beacon_process_event(now_1, &addr_1, measured_rssi_1,
+						  &adv_data_1);
+		k_sleep(K_SECONDS(1));
+	}
 	zassert_equal(range1, 1, "Shortest distance calculation is wrong");
 	k_sleep(K_SECONDS(1));
 
-	const uint32_t now_2 = k_uptime_get_32();
+//	const uint32_t now_2 = k_uptime_get_32();
 	adv_data_t adv_data_2;
 	adv_data_2.rssi = 197; // signed
 	bt_addr_t address_2;
@@ -111,8 +116,14 @@ void test_ble_beacon_scanner(void)
 	addr_2.type = 1;
 	memcpy(addr_2.a.val, address_2.val, sizeof(bt_addr_t));
 	int measured_rssi_2 = -76; // corresponds to 6 meter
-	int range2 = beacon_process_event(now_2, &addr_2, measured_rssi_2,
-					  &adv_data_2);
+	int range2;
+	for (int i=0; i<6; i++) {
+		const uint32_t now_2 = k_uptime_get_32();
+		range2 = beacon_process_event(now_2, &addr_2, measured_rssi_2,
+					      &adv_data_2);
+		k_sleep(K_SECONDS(1));
+	}
+
 	zassert_equal(range2, 1, "Shortest distance calculation is wrong");
 
 	int err = k_sem_take(&beacon_hysteresis_sem, K_SECONDS(5));
@@ -142,8 +153,8 @@ void test_ble_beacon_out_of_range(void)
 
 	zassert_equal(range, -EIO, "We received a wrong return code");
 
-	int err = k_sem_take(&beacon_out_of_range, K_SECONDS(10));
-	zassert_equal(err, 0, "Test beacon out of range execution hanged.");
+//	int err = k_sem_take(&beacon_not_found, K_SECONDS(10));
+//	zassert_equal(err, 0, "Test beacon out of range execution hanged.");
 }
 void test_ble_connection(void)
 {
@@ -468,10 +479,10 @@ static bool event_handler(const struct event_header *eh)
 			break;
 		case BEACON_STATUS_NOT_FOUND:
 			printk("Beacon status not found\n");
+			k_sem_give(&beacon_not_found);
 			break;
-		case BEACON_STATUS_OUT_OF_RANGE:
-			printk("Beacon status out for range\n");
-			k_sem_give(&beacon_out_of_range);
+		case BEACON_STATUS_OFF:
+			printk("Beacon scanner is turned off\n");
 			break;
 		}
 		return false;

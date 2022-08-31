@@ -141,6 +141,7 @@ void test_gnss_mode(void)
 	amc_zone_t zone = NO_ZONE;
 
 	set_sensor_modes(mode, fs, cs, zone);
+	k_sem_reset(&gnss_mode_sem);
 	zassert_equal(k_sem_take(&gnss_mode_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_gnss_mode, GNSSMODE_INACTIVE, "");
 
