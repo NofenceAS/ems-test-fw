@@ -2405,7 +2405,6 @@ static void modem_net_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct modem_data *data = dev->data;
-
 	/* Direct socket offload used instead of net offload: */
 	iface->if_dev->offload = &modem_net_offload;
 	net_if_set_link_addr(iface, modem_get_mac(dev), sizeof(data->mac_addr),
