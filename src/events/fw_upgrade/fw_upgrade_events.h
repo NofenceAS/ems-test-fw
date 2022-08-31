@@ -37,6 +37,7 @@ struct start_fota_event {
 	 *  the protobuf message.
 	 */
 	bool override_default_host;
+	bool reset_download_client;
 	char host[CONFIG_FW_UPGRADE_HOST_LEN];
 	char path[CONFIG_FW_UPGRADE_PATH_LEN];
 
