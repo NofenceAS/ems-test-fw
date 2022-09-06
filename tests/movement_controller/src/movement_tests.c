@@ -20,7 +20,7 @@ void assert_post_action(const char *file, unsigned int line)
 void test_init(void)
 {
 	ztest_returns_value(sensor_attr_set, 0);
-	ztest_returns_value(sensor_trigger_set, 0);
+	//ztest_returns_value(sensor_trigger_set, 0);
 
 	/* For the sigma values. */
 	ztest_returns_value(eep_uint16_read, 0);
