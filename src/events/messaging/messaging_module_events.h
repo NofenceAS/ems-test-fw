@@ -128,6 +128,7 @@ EVENT_TYPE_DECLARE(ano_ready);
  */
 struct animal_warning_event {
 	struct event_header header;
+	int16_t fence_dist;
 };
 
 EVENT_TYPE_DECLARE(animal_warning_event);
@@ -167,7 +168,6 @@ EVENT_TYPE_DECLARE(send_poll_request_now);
  */
 struct warn_correction_start_event {
 	struct event_header header;
-	bool has_fence_dist;
 	int16_t fence_dist;
 };
 
@@ -178,7 +178,6 @@ EVENT_TYPE_DECLARE(warn_correction_start_event);
  */
 struct warn_correction_end_event {
 	struct event_header header;
-	bool has_fence_dist;
 	int16_t fence_dist;
 };
 
@@ -189,7 +188,6 @@ EVENT_TYPE_DECLARE(warn_correction_end_event);
  */
 struct warn_correction_pause_event {
 	struct event_header header;
-	bool has_fence_dist;
 	int16_t fence_dist;
 	uint32_t warn_duration;
 };
@@ -200,7 +198,6 @@ EVENT_TYPE_DECLARE(warn_correction_pause_event);
  */
 struct amc_zapped_now_event {
 	struct event_header header;
-	bool has_fence_dist;
 	int16_t fence_dist;
 };
 
