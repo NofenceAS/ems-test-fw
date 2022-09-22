@@ -127,16 +127,18 @@ void main(void)
 	}
 	int bat_percent = fetch_battery_percent();
 
-	LOG_ERR("Was soft reset ?:%i, Soft reset reason:%d, Battery percent:%i", 
-				is_soft_reset, soft_reset_reason, bat_percent);
+	LOG_ERR("Was soft reset ?:%i, Soft reset reason:%d, Battery percent:%i",
+		is_soft_reset, soft_reset_reason, bat_percent);
 
 	/* If not set, we can play the sound. */
-	if ((is_soft_reset != true) || 
-		((is_soft_reset == true) && (soft_reset_reason == REBOOT_BLE_RESET))) {
+	if ((is_soft_reset != true) ||
+	    ((is_soft_reset == true) &&
+	     (soft_reset_reason == REBOOT_BLE_RESET))) {
 		if (bat_percent > 10) {
 			if (bat_percent >= 75) {
 				/* Play battery sound. */
-				struct sound_event *sound_ev = new_sound_event();
+				struct sound_event *sound_ev =
+					new_sound_event();
 				sound_ev->type = SND_SHORT_100;
 				EVENT_SUBMIT(sound_ev);
 			}
@@ -254,7 +256,7 @@ void main(void)
 	 * it will revert to the previous version on the next reboot that occurs.
 	 */
 	mark_new_application_as_valid();
-
+	LOG_INF("----- Build time: " __DATE__ " " __TIME__ " -----");
 	LOG_INF("Booted application firmware version %i, and marked it as valid. Reset reason %i",
 		NF_X25_VERSION_NUMBER, reset_reason);
 }
