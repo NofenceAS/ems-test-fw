@@ -84,8 +84,6 @@ void test_init(void)
 void test_initial_poll_request_out(void)
 {
 	ztest_returns_value(date_time_now, 0);
-	ztest_returns_value(stg_read_log_data, 0);
-	ztest_returns_value(stg_log_pointing_to_last, false);
 	/* TODO pshustad, pending if we are going to use the connection_state_event for poll */
 	struct connection_state_event *ev = new_connection_state_event();
 	ev->state = true;
@@ -305,159 +303,6 @@ void test_poll_response_has_host_address(void)
 	k_sleep(K_SECONDS(1));
 }
 
-void test_build_log_message(void)
-{
-	NofenceMessage seq_1 = {
-		.which_m = NofenceMessage_seq_msg_tag,
-		.header = {
-			.ulId = 0,
-			.ulUnixTimestamp = 1,
-			.ulVersion = 0,
-			.has_ulVersion = false,
-		},
-		.m.seq_msg = {
-			.has_usBatteryVoltage = true,
-			.usBatteryVoltage = 378,
-			.has_usChargeMah = true,
-			.usChargeMah = 50,
-			.has_xHistogramCurrentProfile = true,
-			.has_xHistogramZone = true,
-			.has_xHistogramAnimalBehave = true,
-			.xHistogramAnimalBehave.has_usRestingTime = true,
-			.xHistogramAnimalBehave.usRestingTime = 10,
-			.xHistogramAnimalBehave.has_usGrazingTime = true,
-			.xHistogramAnimalBehave.usGrazingTime = 10,
-			.xHistogramAnimalBehave.has_usWalkingTime = true,
-			.xHistogramAnimalBehave.usWalkingTime = 10,
-			.xHistogramAnimalBehave.has_usRunningTime = true,
-			.xHistogramAnimalBehave.usRunningTime = 10,
-			.xHistogramAnimalBehave.has_usUnknownTime = true,
-			.xHistogramAnimalBehave.usUnknownTime = 10,
-			.xHistogramAnimalBehave.has_usWalkingDist = true,
-			.xHistogramAnimalBehave.usWalkingDist = 10,
-			.xHistogramAnimalBehave.has_usRunningDist = true,
-			.xHistogramAnimalBehave.usRunningDist = 10,
-			.xHistogramAnimalBehave.has_usStepCounter = true,
-			.xHistogramAnimalBehave.usStepCounter = 10,
-			.has_xHistogramCurrentProfile = true,
-			.xHistogramCurrentProfile.usCC_Sleep = 10,
-			.xHistogramCurrentProfile.usCC_BeaconZone = 10,
-			.xHistogramCurrentProfile.usCC_GNSS_SuperE_Acquition = 10,
-			.xHistogramCurrentProfile.usCC_GNSS_SuperE_Tracking = 10,
-			.xHistogramCurrentProfile.usCC_GNSS_SuperE_POT = 10,
-			.xHistogramCurrentProfile.usCC_GNSS_SuperE_Inactive = 10,
-			.xHistogramCurrentProfile.usCC_GNSS_MAX = 10,
-			.xHistogramCurrentProfile.usCC_Modem_Active = 10,
-			.has_xHistogramZone = true,
-			.xHistogramZone.usBeaconZoneTime = 10,
-			.xHistogramZone.usInSleepTime = 10,
-			.xHistogramZone.usNOZoneTime = 10,
-			.xHistogramZone.usPSMZoneTime = 10,
-			.xHistogramZone.usCAUTIONZoneTime = 10,
-			.xHistogramZone.usMAXZoneTime = 10,
-		}
-	};
-
-	NofenceMessage seq_2 = {
-		.which_m = NofenceMessage_seq_msg_tag,
-		.header = {
-			.ulId = 0,
-			.ulUnixTimestamp = 1,
-			.ulVersion = 0,
-			.has_ulVersion = false,
-		},
-		.m.seq_msg_2 = {
-			.has_bme280 = true,
-			.bme280.ulPressure = 100,
-			.bme280.ulTemperature = 24,
-			.bme280.ulHumidity = 100,
-			.has_xBatteryQc = true,
-			.xBatteryQc.usVbattMax = 390,
-			.xBatteryQc.usVbattMin = 320,
-			.xBatteryQc.usTemperature = 24,	
-		}
-	};
-	int header_size = 2;
-	uint8_t encoded_msg_seq_1[NofenceMessage_size + header_size];
-	memset(encoded_msg_seq_1, 0, sizeof(encoded_msg_seq_1));
-	size_t encoded_seq_1_size = 0;
-
-	uint8_t encoded_msg_seq_2[NofenceMessage_size + header_size];
-	memset(encoded_msg_seq_2, 0, sizeof(encoded_msg_seq_2));
-	size_t encoded_seq_2_size = 0;
-
-	/* Encode sec_1 */
-	int ret = collar_protocol_encode(&seq_1, &encoded_msg_seq_1[2],
-					 sizeof(encoded_msg_seq_1),
-					 &encoded_seq_1_size);
-	zassert_equal(ret, 0, "");
-
-	encoded_msg_seq_1[0] = (uint8_t)encoded_seq_1_size;
-	encoded_msg_seq_1[1] = (uint8_t)(encoded_seq_1_size >> 8);
-
-	/* Encode seq_2 */
-	ret = collar_protocol_encode(&seq_2, &encoded_msg_seq_2[2],
-				     sizeof(encoded_msg_seq_2),
-				     &encoded_seq_2_size);
-	zassert_equal(ret, 0, "");
-
-	encoded_msg_seq_2[0] = (uint8_t)encoded_seq_2_size;
-	encoded_msg_seq_2[1] = (uint8_t)(encoded_seq_2_size >> 8);
-
-	NofenceMessage decode_sec_1;
-	ret = collar_protocol_decode(&encoded_msg_seq_1[2], encoded_seq_1_size,
-				     &decode_sec_1);
-	zassert_equal(ret, 0, "");
-	zassert_mem_equal(&decode_sec_1, &seq_1, encoded_seq_1_size, "");
-
-	NofenceMessage decode_sec_2;
-	ret = collar_protocol_decode(&encoded_msg_seq_2[2], encoded_seq_2_size,
-				     &decode_sec_2);
-	zassert_equal(ret, 0, "");
-	zassert_mem_equal(&decode_sec_2, &seq_2, encoded_seq_2_size, "");
-}
-
-NofenceMessage dummy_nf_msg = {
-	.which_m = NofenceMessage_seq_msg_tag,
-	.header = {
-		.ulId = 10,
-		.ulUnixTimestamp = 11,
-		.ulVersion = 10,
-		.has_ulVersion = true,
-	},
-	.m.seq_msg_2 = {
-		.has_bme280 = true,
-		.bme280.ulPressure = 100,
-		.bme280.ulTemperature = 24,
-		.bme280.ulHumidity = 100,
-		.has_xBatteryQc = true,
-		.xBatteryQc.usVbattMax = 390,
-		.xBatteryQc.usVbattMin = 320,
-		.xBatteryQc.usTemperature = 24,
-	}
-};
-static bool encode_test = false;
-
-void test_encode_message(void)
-{
-	encode_test = true;
-	int ret = k_sem_take(&msg_out, K_NO_WAIT);
-	//zassert_equal(ret, 0, "");
-	/* We need to simulate that we received the message on server, publish
-	 * ACK for messaging module.
-	 */
-	struct cellular_ack_event *ev2 = new_cellular_ack_event();
-	EVENT_SUBMIT(ev2);
-	struct connection_state_event *ev = new_connection_state_event();
-	ev->state = true;
-	EVENT_SUBMIT(ev);
-	ret = encode_and_send_message(&dummy_nf_msg);
-	zassert_equal(ret, 0, "encode_and_send did not return 0!");
-	zassert_equal(k_sem_take(&msg_out, K_SECONDS(30)), 0, "Failed to take"
-							      " msg_out "
-							      "semaphore!");
-}
-
 /* Test expected error events published by messaging*/
 // time_out waiting for ack from cellular_controller
 
@@ -468,9 +313,7 @@ void test_main(void)
 		ztest_unit_test(test_initial_poll_request_out),
 		ztest_unit_test(test_poll_request_out_when_nudged_from_server),
 		ztest_unit_test(test_poll_response_has_new_fence),
-		ztest_unit_test(test_poll_response_has_host_address),
-		ztest_unit_test(test_build_log_message),
-		ztest_unit_test(test_encode_message));
+		ztest_unit_test(test_poll_response_has_host_address));
 
 	ztest_run_test_suite(messaging_tests);
 }
@@ -483,19 +326,15 @@ static bool event_handler(const struct event_header *eh)
 			cast_messaging_proto_out_event(eh);
 		pMsg = ev->buf;
 		len = ev->len;
-		if (!encode_test) {
-			printk("length of encoded message = %d\n", ev->len);
-		} else {
-			NofenceMessage msg;
-			int ret = collar_protocol_decode(&ev->buf[2],
-							 ev->len - 2, &msg);
-			printk("ret = %d\n", ret);
-			zassert_equal(ret, 0, "");
-			uint16_t byteswap_val = BYTESWAP16(ev->len - 2);
-			uint16_t expected_val;
-			memcpy(&expected_val, &ev->buf[0], 2);
-			zassert_equal(byteswap_val, expected_val, "");
-		}
+		NofenceMessage msg;
+		int ret = collar_protocol_decode(&ev->buf[2],
+						 ev->len - 2, &msg);
+		printk("ret = %d\n", ret);
+		zassert_equal(ret, 0, "");
+		uint16_t byteswap_val = BYTESWAP16(ev->len - 2);
+		uint16_t expected_val;
+		memcpy(&expected_val, &ev->buf[0], 2);
+		zassert_equal(byteswap_val, expected_val, "");
 		k_sem_give(&msg_out);
 		return true;
 	}
