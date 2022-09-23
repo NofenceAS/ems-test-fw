@@ -141,6 +141,8 @@ void test_update_pasture(void)
 	/* ..force_fence_status() */
 	ztest_returns_value(eep_uint8_write, 0);
 
+	zone_set(WARN_ZONE);
+	zassert_equal(zone_get(), WARN_ZONE, "Zone not set to WARN_ZONE!");
 	/* Submit fence update event */
 	struct new_fence_available *event = new_new_fence_available();
 	EVENT_SUBMIT(event);
@@ -153,6 +155,8 @@ void test_update_pasture(void)
 				"Failed to force correct fence status");
 	zassert_equal(get_fence_status(), m_current_fence_status, 
 				"Actual fence status is not equal to reported fence status");
+	zassert_equal(zone_get(), NO_ZONE, "Zone not reset to NO_ZONE with "
+					   "the new pasture!");
 }
 
 void test_update_pasture_teach_mode(void)
@@ -209,7 +213,6 @@ void test_update_pasture_stg_fail(void)
 	/* Test: Updating AMC pasture with read from storage error.
 	 * If read from storage fails, send error event and return immediately.
 	 */
-
 	/* Set fence status to "UNKNOWN" before starting the update process */
 	ztest_returns_value(eep_uint8_write, 0);
 	zassert_equal(force_fence_status(FenceStatus_FenceStatus_UNKNOWN), 0, "");
@@ -222,6 +225,11 @@ void test_update_pasture_stg_fail(void)
 	/* handle_states_fn()/calc_fence_status() */
 	ztest_returns_value(eep_uint8_write, 0);
 
+	zassert_equal(zone_get(), NO_ZONE, "Zone not reset to NO_ZONE with "
+					   "failing to read a new pasture "
+					   "from storage!");
+	zone_set(WARN_ZONE);
+	zassert_equal(zone_get(), WARN_ZONE, "Zone not set to WARN_ZONE!");
 	/* Submit fence update event */
 	struct new_fence_available *event = new_new_fence_available();
 	EVENT_SUBMIT(event);
@@ -229,6 +237,42 @@ void test_update_pasture_stg_fail(void)
 	k_sem_reset(&error_sema);
 	zassert_equal(k_sem_take(&error_sema, K_SECONDS(10)), 0, 
 				"Failed to receive update fence error event");
+}
+
+void test_update_pasture_integration(void)
+{
+	ztest_returns_value(eep_uint8_write, 0);
+	zassert_equal(force_fence_status(FenceStatus_FenceStatus_UNKNOWN), 0, "");
+	k_sem_reset(&fence_sema);
+	zassert_equal(k_sem_take(&fence_sema, K_SECONDS(10)), 0, "");
+
+	/* update_pasture_from_stg() */
+	ztest_returns_value(stg_read_pasture_data, 0);
+
+	/* Read keep mode from eeprom */
+	ztest_returns_value(eep_uint8_read, 0);
+
+	/* ..force_fence_status() */
+	ztest_returns_value(eep_uint8_write, 0);
+	k_sleep(K_MSEC(1000));
+
+	zone_set(WARN_ZONE);
+	zassert_equal(zone_get(), WARN_ZONE, "Zone not set to WARN_ZONE!");
+
+	/* Submit fence update event */
+	struct new_fence_available *event = new_new_fence_available();
+	EVENT_SUBMIT(event);
+
+	k_sem_reset(&fence_sema);
+	zassert_equal(k_sem_take(&fence_sema, K_SECONDS(10)), 0,
+		      "Failed to receive update fence status event");
+
+	zassert_equal(m_current_fence_status, FenceStatus_NotStarted,
+		      "Failed to force correct fence status");
+	zassert_equal(get_fence_status(), m_current_fence_status,
+		      "Actual fence status is not equal to reported fence status");
+	zassert_equal(zone_get(), NO_ZONE, "Zone not reset to NO_ZONE with "
+					   "the new pasture!");
 }
 
 static bool event_handler(const struct event_header *eh)
@@ -258,7 +302,8 @@ void test_main(void)
 			ztest_unit_test(test_empty_fence),
 			ztest_unit_test(test_update_pasture_teach_mode),
 			ztest_unit_test(test_update_pasture_stg_fail),
-			ztest_unit_test(test_update_pasture));
+			ztest_unit_test(test_update_pasture),
+			 ztest_unit_test(test_update_pasture_integration));
 	ztest_run_test_suite(amc_tests);
 
 	ztest_test_suite(amc_dist_tests,
