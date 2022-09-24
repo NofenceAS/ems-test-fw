@@ -105,50 +105,36 @@ static int mia_m10_sync_tow(uint32_t tow)
 static int mia_m10_sync_complete(uint32_t flag)
 {
 	gnss_data_flags |= flag;
+	if (gnss_data_flags == (GNSS_DATA_FLAG_NAV_DOP | GNSS_DATA_FLAG_NAV_PVT | 
+				GNSS_DATA_FLAG_NAV_STATUS)) {
 
-	if (gnss_data_flags ==
-	    (GNSS_DATA_FLAG_NAV_DOP | GNSS_DATA_FLAG_NAV_PVT |
-	     GNSS_DATA_FLAG_NAV_STATUS)) {
 		/* Copy data from "in progress" to "working", and call callbacks */
 		if (k_mutex_lock(&gnss_data_mutex, K_MSEC(10)) == 0) {
-			memcpy(&gnss_data.latest, &gnss_data_in_progress,
-			       sizeof(gnss_struct_t));
+			memcpy(&gnss_data.latest, &gnss_data_in_progress, 
+						sizeof(gnss_struct_t));
+
 			gnss_data.latest.updated_at = k_uptime_get_32();
 			gnss_data_is_valid = true;
-			gnss_data.fix_ok =
-				(gnss_data.latest.pvt_flags & 1) != 0;
+			gnss_data.fix_ok = (gnss_data.latest.pvt_flags & 1) != 0;
 
 			if (gnss_data.fix_ok) {
-				gnss_data.lastfix.h_acc_dm =
-					gnss_data.latest.h_acc_dm;
+				gnss_data.lastfix.h_acc_dm = gnss_data.latest.h_acc_dm;
 				gnss_data.lastfix.lat = gnss_data.latest.lat;
 				gnss_data.lastfix.lon = gnss_data.latest.lon;
-				gnss_data.lastfix.unix_timestamp =
-					gnss_unix_timestamp;
-
-				gnss_data.lastfix.head_veh =
-					gnss_data.latest.head_veh;
-				gnss_data.lastfix.pvt_flags =
-					gnss_data.latest.pvt_flags;
-				gnss_data.lastfix.head_acc =
-					gnss_data.latest.head_acc;
-				gnss_data.lastfix.h_dop =
-					gnss_data.latest.h_dop;
-				gnss_data.lastfix.num_sv =
-					gnss_data.latest.num_sv;
-				gnss_data.lastfix.height =
-					gnss_data.latest.height;
-
+				gnss_data.lastfix.unix_timestamp = gnss_unix_timestamp;
+				gnss_data.lastfix.head_veh = gnss_data.latest.head_veh;
+				gnss_data.lastfix.pvt_flags = gnss_data.latest.pvt_flags;
+				gnss_data.lastfix.head_acc = gnss_data.latest.head_acc;
+				gnss_data.lastfix.h_dop = gnss_data.latest.h_dop;
+				gnss_data.lastfix.num_sv = gnss_data.latest.num_sv;
+				gnss_data.lastfix.height = gnss_data.latest.height;
 				gnss_data.lastfix.msss = gnss_data.latest.msss;
-				gnss_data.lastfix.updated_at =
-					gnss_data.latest.updated_at;
+				gnss_data.lastfix.updated_at = gnss_data.latest.updated_at;
 
 				/* GNSS is always in max mode now */
 				gnss_data.lastfix.mode = GNSSMODE_MAX;
-
 				gnss_data.has_lastfix = true;
 			}
-
 			k_mutex_unlock(&gnss_data_mutex);
 		}
 
@@ -156,13 +142,11 @@ static int mia_m10_sync_complete(uint32_t flag)
 			if (data_cb != NULL) {
 				data_cb(&gnss_data);
 			}
-
 			k_mutex_unlock(&gnss_cb_mutex);
 		} else {
 			return -ETIME;
 		}
 	}
-
 	return 0;
 }
 
