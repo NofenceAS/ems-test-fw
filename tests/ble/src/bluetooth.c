@@ -28,7 +28,8 @@ static K_SEM_DEFINE(ble_collar_status_sem, 0, 1);
 static K_SEM_DEFINE(ble_fence_status_sem, 0, 1);
 static K_SEM_DEFINE(ble_pasture_status_sem, 0, 1);
 static K_SEM_DEFINE(ble_fence_def_ver_sem, 0, 1);
-static K_SEM_DEFINE(beacon_hysteresis_sem, 0, 1);
+static K_SEM_DEFINE(beacon_near_sem, 0, 1);
+static K_SEM_DEFINE(beacon_far_sem, 0, 1);
 static K_SEM_DEFINE(beacon_not_found, 0, 1);
 
 /* Provide custom assert post action handler to handle the assertion on OOM
@@ -68,19 +69,13 @@ void test_init_error(void)
 		      "Error when initializing ble module");
 }
 
-void test_advertise(void)
-{
-	// TODO: Let adv be event controlled
-	// Currently ble_module_init() also starts adv.
-	// Check if adv is on after ble_ready
-	// Submut event to start adv
-}
-
 void test_ble_beacon_scanner(void)
 {
-//	const uint32_t now_1 = k_uptime_get_32();
 	adv_data_t adv_data_1;
-	adv_data_1.rssi = 97; // signed
+	/* Beacon RSSI advertised. The value is fixed and fetched from adv payload.
+	 * Expect the value unsigned. 197 corresponds to -59 in transmitted RSSI.
+	 */
+	adv_data_1.rssi = 197;
 	bt_addr_t address_1;
 	address_1.val[0] = 0x46;
 	address_1.val[1] = 0x01;
@@ -93,18 +88,20 @@ void test_ble_beacon_scanner(void)
 	memcpy(addr_1.a.val, address_1.val, sizeof(bt_addr_t));
 	int measured_rssi_1 = -60; // corresponds to 1 meter
 	int range1;
-	for (int i=0; i<6; i++) {
+	for (int i = 0; i < 6; i++) {
 		const uint32_t now_1 = k_uptime_get_32();
 		range1 = beacon_process_event(now_1, &addr_1, measured_rssi_1,
-						  &adv_data_1);
+					      &adv_data_1);
 		k_sleep(K_SECONDS(1));
 	}
 	zassert_equal(range1, 1, "Shortest distance calculation is wrong");
 	k_sleep(K_SECONDS(1));
 
-//	const uint32_t now_2 = k_uptime_get_32();
 	adv_data_t adv_data_2;
-	adv_data_2.rssi = 197; // signed
+	/* Beacon RSSI advertised. The value is fixed and fetched from adv payload.
+	 * Expect the value unsigned. 197 corresponds to -59 in transmitted RSSI.
+	 */
+	adv_data_2.rssi = 197;
 	bt_addr_t address_2;
 	address_2.val[0] = 0x46;
 	address_2.val[1] = 0x01;
@@ -115,9 +112,9 @@ void test_ble_beacon_scanner(void)
 	bt_addr_le_t addr_2;
 	addr_2.type = 1;
 	memcpy(addr_2.a.val, address_2.val, sizeof(bt_addr_t));
-	int measured_rssi_2 = -76; // corresponds to 6 meter
+	int measured_rssi_2 = -76; // corresponds to 12 meter
 	int range2;
-	for (int i=0; i<6; i++) {
+	for (int i = 0; i < 6; i++) {
 		const uint32_t now_2 = k_uptime_get_32();
 		range2 = beacon_process_event(now_2, &addr_2, measured_rssi_2,
 					      &adv_data_2);
@@ -126,8 +123,164 @@ void test_ble_beacon_scanner(void)
 
 	zassert_equal(range2, 1, "Shortest distance calculation is wrong");
 
-	int err = k_sem_take(&beacon_hysteresis_sem, K_SECONDS(5));
+	int err = k_sem_take(&beacon_near_sem, K_SECONDS(5));
 	zassert_equal(err, 0, "Test beacon event execution hanged.");
+}
+
+void test_calculation_beacon_scanner(void)
+{
+	/* In this test we test with beacons from high to low distances */
+	/* Clear the beacon list */
+	init_beacon_list();
+	adv_data_t adv_data_1;
+	/* Beacon RSSI advertised. The value is fixed and fetched from adv payload.
+	 * Expect the value unsigned. 197 corresponds to -59 in transmitted RSSI.
+	 */
+	adv_data_1.rssi = 197;
+	bt_addr_t address_1;
+	address_1.val[0] = 0x46;
+	address_1.val[1] = 0x01;
+	address_1.val[2] = 0x00;
+	address_1.val[3] = 0x30;
+	address_1.val[4] = 0x02;
+	address_1.val[5] = 0xc2;
+	bt_addr_le_t addr_1;
+	addr_1.type = 1;
+	memcpy(addr_1.a.val, address_1.val, sizeof(bt_addr_t));
+	int measured_rssi;
+	uint32_t time_now;
+	int range;
+	for (int i = 0; i < 3; i++) {
+		measured_rssi = -83; // corresponds to 30 meter
+		time_now = k_uptime_get_32();
+		range = beacon_process_event(time_now, &addr_1, measured_rssi,
+					     &adv_data_1);
+		k_sleep(K_SECONDS(1));
+	}
+	/* Expect -EIO if num readings is less than 4 */
+	printk("Range: %d\n", range);
+	zassert_equal(range, -EIO, "Shortest distance calculation is wrong");
+
+	/* Add one more reading and see this in list */
+	time_now = k_uptime_get_32();
+	measured_rssi = -83; // corresponds to 30 meter
+	k_sem_reset(&beacon_far_sem);
+	range = beacon_process_event(time_now, &addr_1, measured_rssi,
+				     &adv_data_1);
+	zassert_equal(range, 30, "Shortest distance calculation is wrong");
+	zassert_equal(k_sem_take(&beacon_far_sem, K_SECONDS(30)), 0, "");
+	k_sleep(K_SECONDS(1));
+
+	measured_rssi = -81; // corresponds to 23 meter
+	time_now = k_uptime_get_32();
+	k_sem_reset(&beacon_far_sem);
+	range = beacon_process_event(time_now, &addr_1, measured_rssi,
+				     &adv_data_1);
+	zassert_equal(range, 23, "Shortest distance calculation is wrong");
+	zassert_equal(k_sem_take(&beacon_far_sem, K_SECONDS(30)), 0, "");
+	k_sleep(K_SECONDS(1));
+
+	measured_rssi = -77; // corresponds to 14 meter
+	time_now = k_uptime_get_32();
+	k_sem_reset(&beacon_far_sem);
+	range = beacon_process_event(time_now, &addr_1, measured_rssi,
+				     &adv_data_1);
+	zassert_equal(range, 14, "Shortest distance calculation is wrong");
+	zassert_equal(k_sem_take(&beacon_far_sem, K_SECONDS(30)), 0, "");
+	k_sleep(K_SECONDS(1));
+
+	measured_rssi = -68; // corresponds to 4 meter
+	time_now = k_uptime_get_32();
+	k_sem_reset(&beacon_near_sem);
+	range = beacon_process_event(time_now, &addr_1, measured_rssi,
+				     &adv_data_1);
+	zassert_equal(range, 4, "Shortest distance calculation is wrong");
+	zassert_equal(k_sem_take(&beacon_near_sem, K_SECONDS(30)), 0, "");
+	k_sleep(K_SECONDS(1));
+
+	measured_rssi = -64; // corresponds to 2 meter
+	time_now = k_uptime_get_32();
+	k_sem_reset(&beacon_near_sem);
+	range = beacon_process_event(time_now, &addr_1, measured_rssi,
+				     &adv_data_1);
+	zassert_equal(range, 2, "Shortest distance calculation is wrong");
+	zassert_equal(k_sem_take(&beacon_near_sem, K_SECONDS(30)), 0, "");
+	k_sleep(K_SECONDS(1));
+
+	measured_rssi = -63; // corresponds to 1 meter
+	time_now = k_uptime_get_32();
+	k_sem_reset(&beacon_near_sem);
+	range = beacon_process_event(time_now, &addr_1, measured_rssi,
+				     &adv_data_1);
+	zassert_equal(range, 1, "Shortest distance calculation is wrong");
+	zassert_equal(k_sem_take(&beacon_near_sem, K_SECONDS(30)), 0, "");
+}
+
+void test_beacon_shortest_dist(void)
+{
+	/* In this test we test with beacons from low to high distances */
+	/* Clear the beacon list */
+	init_beacon_list();
+	k_sem_reset(&beacon_near_sem);
+
+	adv_data_t adv_data_1;
+	/* Beacon RSSI advertised. The value is fixed and fetched from adv payload.
+	 * Expect the value unsigned. 197 corresponds to -59 in transmitted RSSI.
+	 */
+	adv_data_1.rssi = 197;
+	bt_addr_t address_1;
+	address_1.val[0] = 0x46;
+	address_1.val[1] = 0x01;
+	address_1.val[2] = 0x00;
+	address_1.val[3] = 0x30;
+	address_1.val[4] = 0x02;
+	address_1.val[5] = 0xc2;
+	bt_addr_le_t addr_1;
+	addr_1.type = 1;
+	memcpy(addr_1.a.val, address_1.val, sizeof(bt_addr_t));
+	int measured_rssi_1;
+	uint32_t time_now_1;
+	int range_1;
+	for (int i = 0; i < 4; i++) {
+		measured_rssi_1 = -68; // corresponds to 4 meter
+		time_now_1 = k_uptime_get_32();
+		range_1 = beacon_process_event(time_now_1, &addr_1,
+					       measured_rssi_1, &adv_data_1);
+		k_sleep(K_SECONDS(1));
+	}
+	printk("Shortest range: %d\n", range_1);
+	zassert_equal(range_1, 4, "Shortest distance calculation is wrong");
+	k_sleep(K_SECONDS(1));
+	adv_data_t adv_data_2;
+	/* Beacon RSSI advertised. The value is fixed and fetched from adv payload.
+	 * Expect the value unsigned. 197 corresponds to -59 in transmitted RSSI.
+	 */
+	adv_data_2.rssi = 197;
+	bt_addr_t address_2;
+	address_2.val[0] = 0x48;
+	address_2.val[1] = 0x01;
+	address_2.val[2] = 0x00;
+	address_2.val[3] = 0x30;
+	address_2.val[4] = 0x02;
+	address_2.val[5] = 0xc2;
+	bt_addr_le_t addr_2;
+	addr_2.type = 1;
+	memcpy(addr_2.a.val, address_2.val, sizeof(bt_addr_t));
+	int measured_rssi_2;
+	uint32_t time_now_2;
+	int range_2;
+	for (int i = 0; i < 4; i++) {
+		measured_rssi_2 = -83; // corresponds to 30 meter
+		time_now_2 = k_uptime_get_32();
+		range_2 = beacon_process_event(time_now_2, &addr_2,
+					       measured_rssi_2, &adv_data_2);
+		k_sleep(K_SECONDS(1));
+	}
+	printk("Shortest range: %d\n", range_2);
+	/* We expect the distance to be 4, since this is the shortest registred in the list */
+	zassert_equal(range_2, 4, "Shortest distance calculation is wrong");
+
+	zassert_equal(k_sem_take(&beacon_near_sem, K_SECONDS(30)), 0, "");
 }
 
 void test_ble_beacon_out_of_range(void)
@@ -135,9 +288,11 @@ void test_ble_beacon_out_of_range(void)
 	/* Clear the beacon list */
 	init_beacon_list();
 
-	const uint32_t now = k_uptime_get_32();
 	adv_data_t adv_data;
-	adv_data.rssi = 197; // signed
+	/* Beacon RSSI advertised. The value is fixed and fetched from adv payload.
+	 * Expect the value unsigned. 197 corresponds to -59 in transmitted RSSI.
+	 */
+	adv_data.rssi = 197;
 	bt_addr_t address;
 	address.val[0] = 0x46;
 	address.val[1] = 0x01;
@@ -148,14 +303,20 @@ void test_ble_beacon_out_of_range(void)
 	bt_addr_le_t addr;
 	addr.type = 1;
 	memcpy(addr.a.val, address.val, sizeof(bt_addr_t));
-	int measured_rssi = -120; // corresponds to 6 meter
-	int range = beacon_process_event(now, &addr, measured_rssi, &adv_data);
-
+	int measured_rssi;
+	uint32_t time_now;
+	int range;
+	for (int i = 0; i < 4; i++) {
+		measured_rssi = -88; // corresponds to 54 meter
+		time_now = k_uptime_get_32();
+		range = beacon_process_event(time_now, &addr, measured_rssi,
+					     &adv_data);
+		k_sleep(K_SECONDS(1));
+	}
+	/* Since the distance is greater than 50 m we return -EIO */
 	zassert_equal(range, -EIO, "We received a wrong return code");
-
-//	int err = k_sem_take(&beacon_not_found, K_SECONDS(10));
-//	zassert_equal(err, 0, "Test beacon out of range execution hanged.");
 }
+
 void test_ble_connection(void)
 {
 	struct ble_conn_event *event = new_ble_conn_event();
@@ -245,12 +406,12 @@ void test_ble_ctrl_event_collar_mode(void)
 	EVENT_SUBMIT(evt);
 
 	/* Wait for event to be processed */
-	zassert_equal(k_sem_take(&ble_collar_mode_sem, K_SECONDS(10)), 0, 
-				"Test status event execution hanged");
+	zassert_equal(k_sem_take(&ble_collar_mode_sem, K_SECONDS(10)), 0,
+		      "Test status event execution hanged");
 
 	/* Verify advertisement data */
-	zassert_true(bt_mock_is_collar_mode_adv_data_correct(Mode_Fence), 
-				"Adv collar mode not correct");
+	zassert_true(bt_mock_is_collar_mode_adv_data_correct(Mode_Fence),
+		     "Adv collar mode not correct");
 }
 
 /* Submit collar status change */
@@ -266,12 +427,13 @@ void test_ble_ctrl_event_collar_status(void)
 	EVENT_SUBMIT(evt);
 
 	/* Wait for event to be processed */
-	zassert_equal(k_sem_take(&ble_collar_status_sem, K_SECONDS(10)), 0, 
-				"Test status event execution hanged.");
+	zassert_equal(k_sem_take(&ble_collar_status_sem, K_SECONDS(10)), 0,
+		      "Test status event execution hanged.");
 
 	/* Verify advertisement data */
-	zassert_true(bt_mock_is_collar_status_adv_data_correct(CollarStatus_Stuck), 
-				"Adv collar status not correct");
+	zassert_true(
+		bt_mock_is_collar_status_adv_data_correct(CollarStatus_Stuck),
+		"Adv collar status not correct");
 }
 
 /* Submit Fence status change */
@@ -287,12 +449,13 @@ void test_ble_ctrl_event_fence_status(void)
 	EVENT_SUBMIT(evt);
 
 	/* Wait for event to be processed */
-	zassert_equal(k_sem_take(&ble_fence_status_sem, K_SECONDS(10)), 0, 
-				"Test status event execution hanged.");
+	zassert_equal(k_sem_take(&ble_fence_status_sem, K_SECONDS(10)), 0,
+		      "Test status event execution hanged.");
 
 	/* Verify advertisement data */
-	zassert_true(bt_mock_is_fence_status_adv_data_correct(FenceStatus_NotStarted),
-				"Adv fence status not correct");
+	zassert_true(bt_mock_is_fence_status_adv_data_correct(
+			     FenceStatus_NotStarted),
+		     "Adv fence status not correct");
 }
 
 /* Submit Fence Def ver change */
@@ -310,16 +473,16 @@ void test_ble_ctrl_event_fence_def_status(void)
 	EVENT_SUBMIT(evt);
 
 	/* Wait for event to be processed */
-	zassert_equal(k_sem_take(&ble_fence_def_ver_sem, K_SECONDS(10)), 0, 
-				"Test status event execution hanged.");
+	zassert_equal(k_sem_take(&ble_fence_def_ver_sem, K_SECONDS(10)), 0,
+		      "Test status event execution hanged.");
 
 	/* Verify advertisement data (Fence def version) */
-	zassert_true(bt_mock_is_fence_def_ver_adv_data_correct(100), 
-				"Adv fence def version not correct");
+	zassert_true(bt_mock_is_fence_def_ver_adv_data_correct(100),
+		     "Adv fence def version not correct");
 
 	/* Verify advertisement data (valid pasture) */
-	zassert_true(bt_mock_is_pasture_status_adv_data_correct(1 /* valid */), 
-				"Adv valid pasture not correct");
+	zassert_true(bt_mock_is_pasture_status_adv_data_correct(1 /* valid */),
+		     "Adv valid pasture not correct");
 }
 
 void test_ble_ctrl_event_fence_def_status_invalid(void)
@@ -336,16 +499,17 @@ void test_ble_ctrl_event_fence_def_status_invalid(void)
 	EVENT_SUBMIT(evt);
 
 	/* Wait for event to be processed */
-	zassert_equal(k_sem_take(&ble_fence_def_ver_sem, K_SECONDS(10)), 0, 
-				"Test status event execution hanged.");
+	zassert_equal(k_sem_take(&ble_fence_def_ver_sem, K_SECONDS(10)), 0,
+		      "Test status event execution hanged.");
 
 	/* Verify advertisement data (Fence def version) */
-	zassert_true(bt_mock_is_fence_def_ver_adv_data_correct(0), 
-				"Adv fence def version not correct");
+	zassert_true(bt_mock_is_fence_def_ver_adv_data_correct(0),
+		     "Adv fence def version not correct");
 
 	/* Verify advertisement data (valid pasture) */
-	zassert_true(bt_mock_is_pasture_status_adv_data_correct(0 /* invalid */), 
-				"Adv valid pasture not correct");
+	zassert_true(
+		bt_mock_is_pasture_status_adv_data_correct(0 /* invalid */),
+		"Adv valid pasture not correct");
 }
 
 void test_ble_ctrl_event_fence_def_status_no_pasture(void)
@@ -362,38 +526,41 @@ void test_ble_ctrl_event_fence_def_status_no_pasture(void)
 	EVENT_SUBMIT(evt);
 
 	/* Wait for event to be processed */
-	zassert_equal(k_sem_take(&ble_fence_def_ver_sem, K_SECONDS(10)), 0, 
-				"Test status event execution hanged.");
+	zassert_equal(k_sem_take(&ble_fence_def_ver_sem, K_SECONDS(10)), 0,
+		      "Test status event execution hanged.");
 
 	/* Verify advertisement data (Fence def version) */
-	zassert_true(bt_mock_is_fence_def_ver_adv_data_correct(100), 
-				"Adv fence def version not correct");
+	zassert_true(bt_mock_is_fence_def_ver_adv_data_correct(100),
+		     "Adv fence def version not correct");
 
 	/* Verify advertisement data (valid pasture) */
-	zassert_true(bt_mock_is_pasture_status_adv_data_correct(0 /* invalid */), 
-				"Adv valid pasture not correct");
+	zassert_true(
+		bt_mock_is_pasture_status_adv_data_correct(0 /* invalid */),
+		"Adv valid pasture not correct");
 }
 
 /* Test case main entry */
 void test_main(void)
 {
-	ztest_test_suite(test_bluetooth, 
-				ztest_unit_test(test_init_ok),
-			 	ztest_unit_test(test_init_error),
-			 	ztest_unit_test(test_ble_beacon_scanner),
-			 	ztest_unit_test(test_ble_beacon_out_of_range),
-			 	ztest_unit_test(test_ble_connection),
-			 	ztest_unit_test(test_ble_disconnection),
-			 	ztest_unit_test(test_ble_data_event),
-				ztest_unit_test(test_ble_ctrl_event_battery),
-			 	ztest_unit_test(test_ble_ctrl_event_error_flag),
-			 	ztest_unit_test(test_ble_ctrl_event_collar_mode),
-			 	ztest_unit_test(test_ble_ctrl_event_collar_status),
-			 	ztest_unit_test(test_ble_ctrl_event_fence_status),
-			 	ztest_unit_test(test_ble_ctrl_event_fence_def_status),
-				ztest_unit_test(test_ble_ctrl_event_fence_def_status_invalid),
-				ztest_unit_test(test_ble_ctrl_event_fence_def_status_no_pasture)
-				);
+	ztest_test_suite(
+		test_bluetooth, ztest_unit_test(test_init_ok),
+		ztest_unit_test(test_init_error),
+		ztest_unit_test(test_ble_beacon_scanner),
+		ztest_unit_test(test_calculation_beacon_scanner),
+		ztest_unit_test(test_beacon_shortest_dist),
+		ztest_unit_test(test_ble_beacon_out_of_range),
+		ztest_unit_test(test_ble_connection),
+		ztest_unit_test(test_ble_disconnection),
+		ztest_unit_test(test_ble_data_event),
+		ztest_unit_test(test_ble_ctrl_event_battery),
+		ztest_unit_test(test_ble_ctrl_event_error_flag),
+		ztest_unit_test(test_ble_ctrl_event_collar_mode),
+		ztest_unit_test(test_ble_ctrl_event_collar_status),
+		ztest_unit_test(test_ble_ctrl_event_fence_status),
+		ztest_unit_test(test_ble_ctrl_event_fence_def_status),
+		ztest_unit_test(test_ble_ctrl_event_fence_def_status_invalid),
+		ztest_unit_test(
+			test_ble_ctrl_event_fence_def_status_no_pasture));
 	ztest_run_test_suite(test_bluetooth);
 }
 
@@ -472,10 +639,11 @@ static bool event_handler(const struct event_header *eh)
 		switch (event->status) {
 		case BEACON_STATUS_REGION_NEAR:
 			printk("Beacon status region near detected\n");
-			k_sem_give(&beacon_hysteresis_sem);
+			k_sem_give(&beacon_near_sem);
 			break;
 		case BEACON_STATUS_REGION_FAR:
 			printk("Beacon status region far\n");
+			k_sem_give(&beacon_far_sem);
 			break;
 		case BEACON_STATUS_NOT_FOUND:
 			printk("Beacon status not found\n");
