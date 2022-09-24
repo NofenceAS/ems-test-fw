@@ -2692,6 +2692,7 @@ int get_ccid(char **ccid)
 
 int get_gsm_info(struct gsm_info *session_info)
 {
+	memset(session_info, 0, sizeof(struct gsm_info));
 	session_info->rat = mdata.session_rat;
 	session_info->mnc = mdata.mnc;
 	session_info->rssi = mdata.rssi;

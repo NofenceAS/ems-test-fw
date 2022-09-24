@@ -108,6 +108,7 @@ EVENT_TYPE_DECLARE(update_zap_count);
  */
 struct new_fence_available {
 	struct event_header header;
+	uint32_t new_fence_version;
 };
 
 EVENT_TYPE_DECLARE(new_fence_available);

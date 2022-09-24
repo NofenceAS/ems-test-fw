@@ -48,6 +48,8 @@ void simulate_easy_fix(void)
 	gnss_data.latest.h_dop = 80;
 	gnss_data.latest.h_acc_dm = 65;
 	gnss_data.latest.height = 100;
+	gnss_data.latest.lat = 0;
+	gnss_data.latest.lon = 0;
 	zassert_equal(gnss_update(&gnss_data), 0, "Failed updating GNSS fix");
 }
 
