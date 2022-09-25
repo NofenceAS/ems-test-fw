@@ -2592,6 +2592,7 @@ int wake_up(void)
 
 int wake_up_from_upsv(void)
 {
+	uart_state_set(PM_DEVICE_STATE_ACTIVE);
 	if (mdata.upsv_state == 4) {
 		if (k_sem_take(&mdata.cmd_handler_data.sem_tx_lock,
 			       K_SECONDS(2)) == 0) {
@@ -2667,6 +2668,23 @@ static int sleep(void)
 	return 0;
 }
 
+static int pwr_off(void)
+{
+	const struct setup_cmd pwr_off_gracefully[] = {
+		SETUP_CMD_NOHANDLE("AT+CPWROFF"),
+	};
+	int ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
+					       pwr_off_gracefully, ARRAY_SIZE(pwr_off_gracefully),
+					       &mdata.sem_response,
+					       MDM_PROMPT_CMD_DELAY);
+	if (ret != 0) {
+		return -1;
+	}
+	uart_state_set(PM_DEVICE_STATE_SUSPENDED);
+	/*TODO: force power off if AT interface is not available*/
+	return 0;
+}
+
 int modem_nf_wakeup(void)
 {
 	if (wake_up_from_upsv() != 0) {
@@ -2678,6 +2696,10 @@ int modem_nf_wakeup(void)
 int modem_nf_sleep(void)
 {
 	return sleep();
+}
+
+int modem_nf_pwr_off(void) {
+	return pwr_off();
 }
 
 int get_ccid(char **ccid)
