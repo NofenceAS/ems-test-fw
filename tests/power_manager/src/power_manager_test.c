@@ -350,11 +350,6 @@ static bool event_handler(const struct event_header *eh)
 			k_sem_give(&critical_pwr_event_sem);
 			/* Do nothing here */
 			break;
-		case PWR_BATTERY:
-			/* This state is periodic sent based on CONFIG_BATTRY_POLLER_WORK_SEC 
-			   Can be used to fetch battery volatge 
-			*/
-			break;
 		default:
 			zassert_unreachable("Unexpected command event.");
 			break;

@@ -91,6 +91,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_CMD_CONN_TIMEOUT K_SECONDS(120)
 #define MDM_REGISTRATION_TIMEOUT K_SECONDS(80)
 #define MDM_PROMPT_CMD_DELAY K_MSEC(50)
+#define MDM_PWR_OFF_CMD_TIMEOUT K_SECONDS(40)
 
 #define MDM_MAX_DATA_LENGTH 512
 #define MDM_RECV_MAX_BUF 64
@@ -1319,6 +1320,7 @@ static int modem_reset(void)
 {
 	int ret = 0, retry_count = 0, counter = 0;
 	static uint8_t reset_counter;
+	stop_rssi_work = false;
 	mdata.min_rssi = 31;
 	mdata.max_rssi = 0;
 	memset(mdata.iface_data.rx_rb_buf, 0, mdata.iface_data.rx_rb_buf_len);
@@ -2670,19 +2672,35 @@ static int sleep(void)
 
 static int pwr_off(void)
 {
+	stop_rssi();
 	const struct setup_cmd pwr_off_gracefully[] = {
 		SETUP_CMD_NOHANDLE("AT+CPWROFF"),
 	};
-	int ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
-					       pwr_off_gracefully, ARRAY_SIZE(pwr_off_gracefully),
-					       &mdata.sem_response,
-					       MDM_PROMPT_CMD_DELAY);
+	enum pm_device_state current_state;
+	int ret = pm_device_state_get(MDM_UART_DEV, &current_state);
 	if (ret != 0) {
-		return -1;
+		return -EIO;
+	}
+	if (current_state == PM_DEVICE_STATE_SUSPENDED) {
+		return -EALREADY;
+	} else {
+		int ret = wake_up_from_upsv();
+		k_sleep(K_MSEC(100));
+		ret = modem_cmd_handler_setup_cmds(
+			&mctx.iface, &mctx.cmd_handler, pwr_off_gracefully,
+			ARRAY_SIZE(pwr_off_gracefully), &mdata.sem_response,
+			MDM_PWR_OFF_CMD_TIMEOUT);
+		if (ret != 0) {
+			LOG_ERR("Modem PWROFF failed!");
+			/*TODO: use power line if AT interface is not
+			 * available.*/
+			uart_state_set(PM_DEVICE_STATE_SUSPENDED);
+			return -EIO;
+		}
 	}
 	uart_state_set(PM_DEVICE_STATE_SUSPENDED);
-	/*TODO: force power off if AT interface is not available*/
-	return 0;
+	k_sleep(K_MSEC(100));
+	return ret;
 }
 
 int modem_nf_wakeup(void)
