@@ -146,6 +146,7 @@ void test_update_pasture(void)
 	zassert_equal(zone_get(), WARN_ZONE, "Zone not set to WARN_ZONE!");
 	/* Submit fence update event */
 	struct new_fence_available *event = new_new_fence_available();
+	event->new_fence_version = 1337;
 	EVENT_SUBMIT(event);
 
 	k_sem_reset(&fence_sema);
@@ -195,6 +196,7 @@ void test_update_pasture_teach_mode(void)
 
 	/* Submit fence update event */
 	struct new_fence_available *event = new_new_fence_available();
+	event->new_fence_version = 1337;
 	EVENT_SUBMIT(event);
 
 	k_sem_reset(&fence_sema);

@@ -91,6 +91,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_CMD_CONN_TIMEOUT K_SECONDS(120)
 #define MDM_REGISTRATION_TIMEOUT K_SECONDS(80)
 #define MDM_PROMPT_CMD_DELAY K_MSEC(50)
+#define MDM_PWR_OFF_CMD_TIMEOUT K_SECONDS(40)
 
 #define MDM_MAX_DATA_LENGTH 512
 #define MDM_RECV_MAX_BUF 64
@@ -699,7 +700,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 		mdata.rssi = rssi;
 		mdata.min_rssi = MIN(rssi, mdata.min_rssi);
 		mdata.max_rssi = MAX(rssi, mdata.max_rssi);
-		LOG_INF("RSSI: %d, signal_quality: %d", mctx.data_rssi,
+		LOG_INF("RSSI: %d, signal_quality: %d", mdata.rssi,
 			signal_qual);
 		LOG_INF("MIN_RSSI, MAX_RSSI = %d, %d", mdata.min_rssi,
 			mdata.max_rssi);
@@ -1319,6 +1320,7 @@ static int modem_reset(void)
 {
 	int ret = 0, retry_count = 0, counter = 0;
 	static uint8_t reset_counter;
+	stop_rssi_work = false;
 	mdata.min_rssi = 31;
 	mdata.max_rssi = 0;
 	memset(mdata.iface_data.rx_rb_buf, 0, mdata.iface_data.rx_rb_buf_len);
@@ -2592,6 +2594,7 @@ int wake_up(void)
 
 int wake_up_from_upsv(void)
 {
+	uart_state_set(PM_DEVICE_STATE_ACTIVE);
 	if (mdata.upsv_state == 4) {
 		if (k_sem_take(&mdata.cmd_handler_data.sem_tx_lock,
 			       K_SECONDS(2)) == 0) {
@@ -2667,6 +2670,39 @@ static int sleep(void)
 	return 0;
 }
 
+static int pwr_off(void)
+{
+	stop_rssi();
+	const struct setup_cmd pwr_off_gracefully[] = {
+		SETUP_CMD_NOHANDLE("AT+CPWROFF"),
+	};
+	enum pm_device_state current_state;
+	int ret = pm_device_state_get(MDM_UART_DEV, &current_state);
+	if (ret != 0) {
+		return -EIO;
+	}
+	if (current_state == PM_DEVICE_STATE_SUSPENDED) {
+		return -EALREADY;
+	} else {
+		int ret = wake_up_from_upsv();
+		k_sleep(K_MSEC(100));
+		ret = modem_cmd_handler_setup_cmds(
+			&mctx.iface, &mctx.cmd_handler, pwr_off_gracefully,
+			ARRAY_SIZE(pwr_off_gracefully), &mdata.sem_response,
+			MDM_PWR_OFF_CMD_TIMEOUT);
+		if (ret != 0) {
+			LOG_ERR("Modem PWROFF failed!");
+			/*TODO: use power line if AT interface is not
+			 * available.*/
+			uart_state_set(PM_DEVICE_STATE_SUSPENDED);
+			return -EIO;
+		}
+	}
+	uart_state_set(PM_DEVICE_STATE_SUSPENDED);
+	k_sleep(K_MSEC(100));
+	return ret;
+}
+
 int modem_nf_wakeup(void)
 {
 	if (wake_up_from_upsv() != 0) {
@@ -2678,6 +2714,10 @@ int modem_nf_wakeup(void)
 int modem_nf_sleep(void)
 {
 	return sleep();
+}
+
+int modem_nf_pwr_off(void) {
+	return pwr_off();
 }
 
 int get_ccid(char **ccid)

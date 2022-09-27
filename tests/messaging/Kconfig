@@ -23,6 +23,10 @@ endmenu
 menu "MVMT_CONTROLLER"
     rsource "./../../src/modules/movement_controller/Kconfig"
 endmenu
+
+menu "PWR_MANAGER"
+    rsource "./../../src/modules/power_manager/Kconfig"
+endmenu
 menu "Zephyr Kernel"
 source "Kconfig.zephyr"
 endmenu

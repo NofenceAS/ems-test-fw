@@ -10,10 +10,9 @@
 
 /** @brief Enum for different electric pulse status */
 enum pwr_state_flag {
-	PWR_NORMAL = 0,
+	PWR_CRITICAL = 0,
 	PWR_LOW,
-	PWR_CRITICAL,
-	PWR_BATTERY,
+	PWR_NORMAL,
 	PWR_CHARGING
 };
 

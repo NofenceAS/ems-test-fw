@@ -8,6 +8,7 @@
 #include "messaging_module_events.h"
 #include "mock_cellular_helpers.h"
 #include "error_event.h"
+#include "pwr_event.h"
 
 /* semaphores to check publishing of the cellular controller events. */
 static K_SEM_DEFINE(cellular_ack, 0, 1);
@@ -27,6 +28,13 @@ void reset_test_semaphores(void) {
 void test_init(void)
 {
 	reset_test_semaphores();
+	struct pwr_status_event *batt_ev = new_pwr_status_event();
+	batt_ev->pwr_state = PWR_NORMAL;
+	batt_ev->battery_mv = 4;
+	batt_ev->battery_mv_max = 4;
+	batt_ev->battery_mv = 4;
+	EVENT_SUBMIT(batt_ev);
+
 	struct check_connection *ev = new_check_connection();
 	EVENT_SUBMIT(ev);
 	zassert_false(event_manager_init(),

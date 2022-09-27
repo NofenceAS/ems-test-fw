@@ -18,3 +18,8 @@ int get_gsm_info(struct gsm_info *gsm_session_info)
 void stop_rssi (void){
 	return;
 }
+
+int modem_nf_pwr_off(void)
+{
+	return 0;
+}
