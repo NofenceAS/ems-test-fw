@@ -700,7 +700,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 		mdata.rssi = rssi;
 		mdata.min_rssi = MIN(rssi, mdata.min_rssi);
 		mdata.max_rssi = MAX(rssi, mdata.max_rssi);
-		LOG_INF("RSSI: %d, signal_quality: %d", mdata.data_rssi,
+		LOG_INF("RSSI: %d, signal_quality: %d", mdata.rssi,
 			signal_qual);
 		LOG_INF("MIN_RSSI, MAX_RSSI = %d, %d", mdata.min_rssi,
 			mdata.max_rssi);
