@@ -2450,7 +2450,7 @@ static int modem_init(const struct device *dev)
 	/* initialize the work queue */
 	k_work_queue_start(&modem_workq, modem_workq_stack,
 			   K_KERNEL_STACK_SIZEOF(modem_workq_stack),
-			   K_PRIO_COOP(10), NULL);
+			   K_PRIO_COOP(1), NULL);
 #endif
 
 	/* socket config */
