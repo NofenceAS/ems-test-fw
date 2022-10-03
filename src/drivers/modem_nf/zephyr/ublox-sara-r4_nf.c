@@ -2620,7 +2620,7 @@ int wake_up_from_upsv(void)
 		}
 		return -EAGAIN;
 	}
-	return 0;
+	return wake_up();
 }
 
 static int sleep(void)
