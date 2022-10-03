@@ -2564,7 +2564,9 @@ int wake_up(void)
 				     "AT", &mdata.sem_response,
 				     MDM_AT_CMD_TIMEOUT);
 		if (ret < 0 && ret != -ETIMEDOUT) {
-			return 0;
+			return ret;
+		} else if (ret == 0) {
+			break;
 		}
 	}
 
