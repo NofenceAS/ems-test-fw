@@ -133,7 +133,7 @@ void main(void)
 	/* If not set, we can play the sound. */
 	if ((is_soft_reset != true) || 
 		((is_soft_reset == true) && (soft_reset_reason == REBOOT_BLE_RESET))) {
-		if (bat_percent > 10) {
+		if (bat_percent > 20) {
 			if (bat_percent >= 75) {
 				/* Play battery sound. */
 				struct sound_event *sound_ev =
