@@ -194,17 +194,6 @@ void main(void)
 		nf_app_error(ERR_EP_MODULE, err, e_msg, strlen(e_msg));
 	}
 
-	/* Initialize animal monitor control module, depends on storage
-	 * controller to be initialized first since amc sends
-	 * a request for pasture data on init. 
-	 */
-	err = amc_module_init();
-	if (err) {
-		char *e_msg = "Could not initialize the AMC module";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_AMC, err, e_msg, strlen(e_msg));
-	}
-
 	/* Important to initialize the eeprom first, since we use the 
 	 * sleep sigma value from eeprom when we init.
 	 */
@@ -249,6 +238,17 @@ void main(void)
 		nf_app_error(ERR_GNSS_CONTROLLER, err, e_msg, strlen(e_msg));
 	}
 #endif
+
+	/* Initialize animal monitor control module, depends on storage
+	 * controller to be initialized first since amc sends
+	 * a request for pasture data on init.
+	 */
+	err = amc_module_init();
+	if (err) {
+		char *e_msg = "Could not initialize the AMC module";
+		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
+		nf_app_error(ERR_AMC, err, e_msg, strlen(e_msg));
+	}
 
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,
