@@ -4,6 +4,7 @@ menu "APPLICATION_CODE"
         rsource "./../../src/modules/messaging/Kconfig"
     endmenu # MESSAGING
 
+    rsource "./../../src/modules/cellular_controller/Kconfig"
     rsource "./../../src/modules/fw_upgrade/Kconfig"
     rsource "./../../src/events/fw_upgrade/Kconfig"
 endmenu # APPLICATION CODE
