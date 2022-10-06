@@ -1,29 +1,15 @@
-&flashcontroller0 {
-        reg = <0x00000000 DT_SIZE_K(4096)>;
-};
+/* u-blox SARA-R4 Modem */
+modem_uart: &uart0 {
 
-&flash0 {
-        reg = <0x00000000 DT_SIZE_K(4096)>;
-        partitions {
-                compatible = "fixed-partitions";
-                #address-cells = <1>;
-                #size-cells = <1>;
+	current-speed = <115200>;
+	status = "okay";
 
-                log_partition: partition@0 {
-                        label = "log_partition";
-                        reg = <0x00000000 0x00080000>;
-                };
-                ano_partition: partition@80000 {
-                        label = "ano_partition";
-                        reg = <0x00080000 0x00020000>;
-                };
-                pasture_partition: partition@a0000 {
-                        label = "pasture_partition";
-                        reg = <0x000a0000 0x00020000>;
-                };
-                system_diagnostic: partition@c0000 {
-                        label = "system_diagnostic";
-                        reg = <0x000c0000 0x00020000>;
-                };
-        };
+	sara_r4 {
+		compatible = "u-blox,sara-r4";
+		label = "ublox-sara-r4";
+		status = "okay";
+		mdm-power-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+		/* mdm-reset-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>; */
+		mdm-vint-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+	};
 };
