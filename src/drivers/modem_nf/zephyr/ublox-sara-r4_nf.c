@@ -1329,6 +1329,11 @@ static int modem_reset(void)
 	k_sem_reset(&mdata.sem_response);
 	k_sem_reset(&mdata.sem_prompt);
 
+	static const struct setup_cmd mno_profile_cmds[] = {
+		SETUP_CMD_NOHANDLE("AT+UMNOPROF=100"),
+		SETUP_CMD_NOHANDLE("AT+CFUN=15"),
+	};
+
 	static const struct setup_cmd pre_setup_cmds[] = {
 		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
 		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
@@ -1446,7 +1451,16 @@ restart:
 		goto error;
 	}
 	k_sleep(K_MSEC(50));
+	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
+					   mno_profile_cmds,
+					   ARRAY_SIZE(mno_profile_cmds),
+					   &mdata.sem_response,
+					   MDM_REGISTRATION_TIMEOUT);
+	if (wake_up() != 0) {
+		goto error;
+	}
 
+	k_sleep(K_MSEC(50));
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
 					   pre_setup_cmds,
 					   ARRAY_SIZE(pre_setup_cmds),
