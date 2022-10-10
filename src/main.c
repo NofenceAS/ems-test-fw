@@ -53,58 +53,6 @@
 
 LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 
-/* NVS Test Components */
-// #include <drivers/flash.h>
-// #include <storage/flash_map.h>
-// #include <fs/nvs.h>
-
-// static const struct device* mp_device;
-// static const struct flash_area* mp_flash_area;
-// static struct nvs_fs m_file_system;
-
-// struct k_work_delayable nvs_read_flash_work;
-// // struct k_work_delayable nvs_write_flash_work;
-
-// static struct nvs_fs m_fs;
-// static const struct flash_area *m_area12;
-// #define TEST_1_ID 1
-// #define TEST_2_ID 2
-
-// void nvs_read_flash_fn()
-// {
-// 	printk("NVS Read flash work");
-
-// 	char buff[16];
-
-// 	int rc = nvs_read(&m_fs, TEST_1_ID, &buff, sizeof(buff));
-// 	if (rc > 0) 
-// 	{
-// 		printk("Id: %d, Address: %s\n", TEST_1_ID, buff);
-// 	} 
-// 	else
-// 	{
-// 		printk("No address found at id %d\n", TEST_1_ID);
-// 	}
-
-// 	uint32_t cnt_read = 0;
-// 	rc = nvs_read(&m_fs, TEST_2_ID, &cnt_read, sizeof(cnt_read));
-// 	if (rc != 0)
-// 	{
-// 		printk("Value read at id %d = %d\n", TEST_2_ID, cnt_read);
-// 	}
-// 	else
-// 	{
-// 		printk("No value found at id %d\n", TEST_2_ID);
-// 	}
-// }
-
-// // void nvs_write_flash_fn()
-// // {
-// // 	printk("NVS Write flash work");
-// // }
-
-// /* End NVS Test Components */
-
 /**
  * The Nofence X3 main entry point. This is
  * called from the Zephyr kernel.
@@ -149,6 +97,11 @@ void main(void)
 		LOG_WRN("Missing device Serial Number in EEPROM");
 	}
 #endif
+
+	err = stg_config_init();
+	if (err != 0) {
+		LOG_ERR("STG Config failed to initialize");
+	}
 
 	/* Initialize the power manager module. */
 	err = pwr_module_init();
@@ -325,248 +278,178 @@ void main(void)
 
 
 
-    // int err12;
-	// int flash_area_id;
-
-	// flash_area_id = FLASH_AREA_ID(config_partition);
-
-	// err12 = flash_area_open(flash_area_id, &mp_flash_area);
-	// if (err12 != 0) 
-    // {
-    //     LOG_ERR("Unable to open config storage flash area");
-	// 	return;
-	// }
-
-    // LOG_DBG("STG Config: AreaID(%d), FaID(%d), FaOff(%d), FaSize(%d)", 
-    //     flash_area_id, 
-    //     (uint8_t)mp_flash_area->fa_id, 
-    //     (int)mp_flash_area->fa_off, 
-    //     (int)mp_flash_area->fa_size);
-
-	// mp_device = device_get_binding(mp_flash_area->fa_dev_name);
-	// if (mp_device == NULL) 
-    // {
-	// 	LOG_ERR("Unable to get config storage device");
-    //     return;
-	// }
-
-	// m_file_system.offset = (int)mp_flash_area->fa_off;
-	// m_file_system.sector_size = 4096;
-	// m_file_system.sector_count = 2;
-
-	// err12 = nvs_init(&m_file_system, mp_device->name);
-	// if (err12 != 0) 
-    // {
-	// 	LOG_ERR("Fail to initialize config storage");
-    //     return;
-	// }
-
-	// uint8_t value_write = 1;
-	// uint8_t value_read = 0;
-
-    // err12 = nvs_write(&m_file_system, (uint16_t)STG_U32_WARN_CNT_TOT, &value_write, sizeof(uint8_t));
-    // if (err12 < 0)
-    // {
-    //     LOG_ERR("STG u32 write, failed write to storage at id %d", 20);
-    //     return;
-    // }
-
-    // err12 = nvs_read(&m_file_system, (uint16_t)STG_U32_WARN_CNT_TOT, &value_read, sizeof(uint8_t));
-	// if (err12 < 0) 
-	// {
-	// 	LOG_ERR("STG u32 read, failed to read storage at id %d", 20);
-    //     return;
-	// } 
-	// LOG_INF("STG read, value = %d", value_read);
-
-	// value_write = 2;
-	// err12 = nvs_write(&m_file_system, (uint16_t)STG_U32_WARN_CNT_TOT, &value_write, sizeof(uint8_t));
-    // if (err12 < 0)
-    // {
-    //     LOG_ERR("STG u32 write, failed write to storage at id %d", 20);
-    //     return;
-    // }
-
-    // err12 = nvs_read(&m_file_system, (uint16_t)STG_U32_WARN_CNT_TOT, &value_read, sizeof(uint8_t));
-	// if (err12 < 0) 
-	// {
-	// 	LOG_ERR("STG u32 read, failed to read storage at id %d", 20);
-    //     return;
-	// } 
-	// LOG_INF("STG read, value = %d", value_read);
 
 
+	// /* UID */
+	// uint32_t serial = 0;
+	// ret = eep_uint32_read(EEP_UID, &serial);
+	// if (ret != 0) { LOG_ERR("Failed to read eep serial number"); }
+	// LOG_INF("Serial number = %d", serial);
+
+	// ret = stg_config_u32_write(STG_U32_UID, serial);
+	// if (ret != 0) { LOG_ERR("Failed to write serial number"); }
+
+	// /* EMS */
+	// uint8_t ems_provider = 0;
+	// ret = eep_uint8_read(EEP_EMS_PROVIDER, &ems_provider);
+	// if (ret != 0) { LOG_ERR("Failed to read EMS provider"); }
+	// LOG_INF("EMS provider = %d", ems_provider);
+
+	// ret = stg_config_u8_write(STG_U8_EMS_PROVIDER, ems_provider);
+	// if (ret != 0) { LOG_ERR("Failed to write EMS provider"); }
+
+	// /* Prod. type */
+	// uint16_t prod_type = 0;
+	// ret = eep_uint16_read(EEP_PRODUCT_TYPE, &prod_type);
+	// if (ret != 0) { LOG_ERR("Failed to read product type"); }
+	// LOG_INF("Product type = %d", prod_type);
+
+	// ret = stg_config_u16_write(STG_U16_PRODUCT_TYPE, prod_type);
+	// if (ret != 0) { LOG_ERR("Failed to write product type"); }
+
+	// /* HW version */
+	// uint8_t hw_ver = 0;
+	// ret = eep_uint8_read(EEP_HW_VERSION, &hw_ver);
+	// if (ret != 0) { LOG_ERR("Failed to read hw version"); }
+	// LOG_INF("HW version = %d", hw_ver);
+
+	// ret = stg_config_u8_write(STG_U8_HW_VERSION, hw_ver);
+	// if (ret != 0) { LOG_ERR("Failed to write EMS provider"); }
+
+	// /* BOM PCB REV */
+	// uint8_t bom_pcb_rev = 0;
+	// ret = eep_uint8_read(EEP_BOM_PCB_REV, &bom_pcb_rev);
+	// if (ret != 0) { LOG_ERR("Failed to read pcb rev"); }
+	// LOG_INF("BOM PCB Rev = %d", bom_pcb_rev);
+
+	// ret = stg_config_u8_write(STG_U8_BOM_PCB_REV, bom_pcb_rev);
+	// if (ret != 0) { LOG_ERR("Failed to write EMS provider"); }
+
+	// /* BOM MEC REV */
+	// uint8_t bom_mec_rev = 0;
+	// ret = eep_uint8_read(EEP_BOM_MEC_REV, &bom_mec_rev);
+	// if (ret != 0) { LOG_ERR("Failed to write mec rev"); }
+	// LOG_INF("BOM MEC Rev = %d", bom_mec_rev);
+
+	// ret = stg_config_u8_write(STG_U8_BOM_MEC_REV, bom_mec_rev);
+	// if (ret != 0) { LOG_ERR("Failed to write EMS provider"); }
+
+	// /* Product Record Rev */
+	// uint8_t product_record_rev = 0;
+	// ret = eep_uint8_read(EEP_PRODUCT_RECORD_REV, &product_record_rev);
+	// if (ret != 0) { LOG_ERR("Failed to write product record rev"); }
+
+	// ret = stg_config_u8_write(STG_U8_PRODUCT_RECORD_REV, product_record_rev);
+	// if (ret != 0) { LOG_ERR("Failed to write EMS provider"); }
+
+	// /* Host port */
+	// char buf[24];
+	// ret = eep_read_host_port(&buf[0], 24);
+	// if (ret != 0) { LOG_ERR("Failed to read host port"); }
+	// LOG_INF("Host port = %s", buf);
+
+	// ret = stg_config_str_write(STG_STR_HOST_PORT, buf, STG_CONFIG_HOST_PORT_BUF_LEN-1);
+	// if (ret != 0) { LOG_ERR("Failed to read host port number"); }
+
+
+	// /* Readback */
+	// uint32_t serial_rb = 0;
+	// ret = stg_config_u32_read(STG_U32_UID, &serial_rb);
+	// if (ret != 0) { LOG_ERR("Failed to read serial number"); }
+	// LOG_INF("STG Serial no = %d", serial_rb);
+
+	// /* EMS */
+	// uint8_t ems_provider_rb = 0;
+	// ret = stg_config_u8_read(STG_U8_EMS_PROVIDER, &ems_provider_rb);
+	// if (ret != 0) { LOG_ERR("Failed to read EMS provider"); }
+	// LOG_INF("STG EMS = %d", ems_provider_rb);
+
+	// /* Prod. type */
+	// uint16_t prod_type_rb = 0;
+	// ret = stg_config_u16_read(STG_U16_PRODUCT_TYPE, &prod_type_rb);
+	// if (ret != 0) { LOG_ERR("Failed to read product type"); }
+	// LOG_INF("STG Prod type = %d", prod_type_rb);
+
+	// /* HW version */
+	// uint8_t hw_ver_rb = 0;
+	// ret = stg_config_u8_read(STG_U8_HW_VERSION, &hw_ver_rb);
+	// if (ret != 0) { LOG_ERR("Failed to read EMS provider"); }
+	// LOG_INF("STG HW Ver = %d", hw_ver_rb);
+
+	// /* BOM PCB REV */
+	// uint8_t bom_pcb_rev_rb = 0;
+	// ret = stg_config_u8_read(STG_U8_BOM_PCB_REV, &bom_pcb_rev_rb);
+	// if (ret != 0) { LOG_ERR("Failed to read EMS provider"); }
+	// LOG_INF("STG PCB Rev = %d", bom_pcb_rev_rb);
+
+	// /* BOM MEC REV */
+	// uint8_t bom_mec_rev_rb = 0;
+	// ret = stg_config_u8_read(STG_U8_BOM_MEC_REV, &bom_mec_rev_rb);
+	// if (ret != 0) { LOG_ERR("Failed to read EMS provider"); }
+	// LOG_INF("STG MEC Rev = %d", bom_mec_rev_rb);
+
+	// /* Product Record Rev */
+	// uint8_t product_record_rev_rb = 0;
+	// ret = stg_config_u8_read(STG_U8_PRODUCT_RECORD_REV, &product_record_rev_rb);
+	// if (ret != 0) { LOG_ERR("Failed to read EMS provider"); }
+	// LOG_INF("STG Record Rev = %d", product_record_rev_rb);
+
+	// /* Host port */
+	// char port[STG_CONFIG_HOST_PORT_BUF_LEN];
+	// uint8_t port_len = 0;
+	// ret = stg_config_str_read(STG_STR_HOST_PORT, port, &port_len);
+	// if (ret != 0) { LOG_ERR("Failed to read host port"); }
+	// LOG_INF("STG Host port = (%d)%s", port_len, port);
 
 
 
-
-
-
-
-
-
-
-
-	// err = stg_config_init();
-	// if (err != 0)
-	// {
-	// 	LOG_ERR("STG Config failed to initialize");
-	// }
-	// else
-	// {
-	// 	LOG_INF("STG Config initialized");
-	// }
 
 	// uint8_t val = 0;
 
 	// stg_config_u8_write(STG_U8_EMS_PROVIDER, 1);
 
 	// stg_config_u8_read(STG_U8_EMS_PROVIDER, &val);
-	// LOG_INF("STG Config: Id:%d, Value:%d", STG_U8_EMS_PROVIDER, val);
+	// // LOG_INF("STG Config: Id:%d, Value:%d", STG_U8_EMS_PROVIDER, val);
 
 	// stg_config_u8_write(STG_U8_EMS_PROVIDER, 2);
 
 	// stg_config_u8_read(STG_U8_EMS_PROVIDER, &val);
-	// LOG_INF("STG Config: Id:%d, Value:%d", STG_U8_EMS_PROVIDER, val);
+	// // LOG_INF("STG Config: Id:%d, Value:%d", STG_U8_EMS_PROVIDER, val);
 
 	// stg_config_u8_read(STG_U8_EMS_PROVIDER, &val);
 	// LOG_INF("STG Config: Id:%d, Value:%d", STG_U8_EMS_PROVIDER, val);
 
-	// uint32_t val = 0;
-
-	//stg_config_u32_write(STG_U32_UID, 1);
-
-	// stg_config_u32_read(STG_U32_UID, &val);
-	// LOG_INF("STG Config: Id:%d, Value:%d", STG_U32_UID, val);
-
-	// stg_config_u32_write(STG_U32_UID, 3);
-
-	// stg_config_u32_read(STG_U32_UID, &val);
-	// LOG_INF("STG Config: Id:%d, Value:%d", STG_U32_UID, val);
-
-	// stg_config_u32_read(STG_U32_UID, &val);
-	// LOG_INF("STG Config: Id:%d, Value:%d", STG_U32_UID, val);
 
 
+	// char port[STG_CONFIG_HOST_PORT_BUF_LEN];
+	// memset(port, 0, STG_CONFIG_HOST_PORT_BUF_LEN);
+	// strcpy(port, "1.1.1.2\0");
 
-	// /* NVS TEST */
-	// //k_work_init_delayable(&nvs_read_flash_work, nvs_read_flash_fn);
-	// // k_work_init_delayable(&nvs_write_flash_work, nvs_write_flash_fn);
-
-	// const struct device *dev12;
-	// const struct flash_area *area12;
-	// int area12_id;
-	// struct flash_pages_info info;
-	// char buff[16];
-
-	// area12_id = FLASH_AREA_ID(config_partition);
-	// area12 = m_area12;
-
-	// err = flash_area_open(area12_id, &area12);
-	// if (err != 0) {
-	// 	LOG_ERR("NVS error opening flash area");
-	// 	return;
-	// }
-
-	// LOG_INF("NVS: AreaID(%d), FaID(%d), FaOff(%d), FaSize(%d)", 
-	// 			area12_id, (uint8_t)area12->fa_id, (int)area12->fa_off, (int)area12->fa_size);
-
-	// /* Check if area has a flash device available. */
-	// dev12 = device_get_binding(area12->fa_dev_name);
-	// if (dev12 == NULL) {
-	// 	LOG_ERR("NVS could not get device");
-	// }
-
-	// flash_area_close(area12);
-
-
-
-	// m_fs.offset = (int)area12->fa_off;
-	// err = flash_get_page_info_by_offs(dev12, m_fs.offset, &info);
-	// if (err != 0) {
-	// 	LOG_ERR("NVS unable to get page info...");
-	// 	return;
-	// }
-
-	// m_fs.sector_size = 4096;
-	// m_fs.sector_count = 2;
-
-	// err = nvs_init(&m_fs, dev12->name);
-	// if (err != 0) {
-	// 	LOG_ERR("Internal Flash Initialisation Failed");
-	// }
-	// else{
-	// 	LOG_INF("Internal Flash Initialisation Passed");
-	// }
-
-	// int rc = nvs_read(&m_fs, TEST_1_ID, &buff, sizeof(buff));
-	// if (rc > 0) 
+	// err = stg_config_str_write(STG_STR_HOST_PORT, port, strlen(port));
+	// if (err != 0)
 	// {
-	// 	LOG_INF("Id: %d, Address: %s", TEST_1_ID, buff);
-	// } 
-	// else  
-	// {
-	// 	strcpy(buff, "192.168.1.1");
-	// 	LOG_INF("No address found, adding %s at id %d", buff, TEST_1_ID);
-	// 	(void)nvs_write(&m_fs, TEST_1_ID, &buff, strlen(buff)+1);
+	// 	LOG_ERR("Shoit");
 	// }
 
-	// rc = nvs_read(&m_fs, TEST_1_ID, &buff, sizeof(buff));
-	// if (rc > 0) 
+	// char port_read[STG_CONFIG_HOST_PORT_BUF_LEN]; 
+	// uint8_t port_read_length = 0;
+	// err = stg_config_str_read(STG_STR_HOST_PORT, port_read, &port_read_length);
+	// if (err != 0)
 	// {
-	// 	LOG_INF("Id: %d, Address: %s", TEST_1_ID, buff);
-	// } 
-	// else
-	// {
-	// 	LOG_ERR("Still no content");
-	// }
-
-
-
-	// uint32_t cnt_read = 0;
-	// rc = nvs_read(&m_fs, TEST_2_ID, &cnt_read, sizeof(cnt_read));
-	// if (rc != 0)
-	// {
-	// 	printk("Value read at id %d = %d\n", TEST_2_ID, cnt_read);
+	// 	LOG_ERR("Shoit 1");
 	// }
 	// else
 	// {
-	// 	printk("No value found at id %d\n", TEST_2_ID);
+	// 	LOG_INF("Port: Len=%d, buff=%s", port_read_length, port_read);
 	// }
 
-	// k_work_schedule(&nvs_read_flash_work, K_SECONDS(30));
-
-
-	// uint32_t cnt = 0;
-	// uint32_t cnt_read = 0;
-	// for (int i = 0; i < 1000; i++)
+	// err = stg_config_str_read(STG_STR_HOST_PORT, port_read, &port_read_length);
+	// if (err != 0)
 	// {
-	// 	rc = nvs_read(&m_fs, TEST_2_ID, &cnt_read, sizeof(cnt_read));
-	// 	if (rc != 0)
-	// 	{
-	// 		printk("Value read at id %d = %d\n", TEST_2_ID, cnt_read);
-	// 	}
-	// 	else
-	// 	{
-	// 		printk("No value found at id %d\n", TEST_2_ID);
-	// 	}
-
-	// 	printk("Writing at id %d, value = %d\n", TEST_2_ID, cnt);
-	// 	(void)nvs_write(&m_fs, TEST_2_ID, &cnt, sizeof(cnt));
-
-	// 	cnt++;
-	// 	k_sleep(K_MSEC(100));
+	// 	LOG_ERR("Shoit 1");
 	// }
-
-	// rc = nvs_read(&m_fs, TEST_1_ID, &buf, sizeof(buf));
-	// if (rc > 0) { /* item was found, show it */
-	// 	printk("Id: %d, Address: %s\n", TEST_1_ID, buf);
+	// else
+	// {
+	// 	LOG_INF("Port: Len=%d, buff=%s", port_read_length, port_read);
 	// }
-
-
-	// k_sleep(K_SECONDS(5));
-	// return;
-
-	/* END NVS TEST */
-
 }
