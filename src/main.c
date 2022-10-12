@@ -4,15 +4,14 @@
 #include <logging/log.h>
 #include <sys/printk.h>
 #include <zephyr.h>
+#include <nrf.h>
 
 #include "error_event.h"
-
 #include "diagnostics.h"
 #include "selftest.h"
 #include "fw_upgrade.h"
 #include "fw_upgrade_events.h"
-#include "stg_config.h" //NVS
-#include "nf_settings.h"
+#include "stg_config.h"
 #include "ble_controller.h"
 #include "cellular_controller.h"
 #include "ep_module.h"
@@ -21,16 +20,12 @@
 #include "buzzer.h"
 #include "pwr_module.h"
 #include "pwr_event.h"
-/* For reboot reason. */
-#include <nrf.h>
 
 #if defined(CONFIG_WATCHDOG_ENABLE)
 #include "watchdog_app.h"
 #endif
 
 #include "messaging.h"
-#include "cellular_controller.h"
-#include "error_event.h"
 
 #if CONFIG_GNSS_CONTROLLER
 #include "gnss_controller.h"
@@ -38,19 +33,15 @@
 
 #include "storage.h"
 #include "nf_version.h"
-
 #include "env_sensor_event.h"
-
-#define MODULE main
 #include "module_state_event.h"
-
 #include "movement_controller.h"
 #include "movement_events.h"
 #include "time_use.h"
 
 /* Fetched from 52840 datasheet RESETREAS register. */
 #define SOFT_RESET_REASON_FLAG (1 << 2)
-
+#define MODULE main
 LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 
 /**
@@ -78,6 +69,11 @@ void main(void)
 	}
 #endif
 
+	err = stg_config_init();
+	if (err != 0) {
+		LOG_ERR("STG Config failed to initialize");
+	}
+
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
 	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
@@ -90,18 +86,13 @@ void main(void)
 	eep_init(eeprom_dev);
 	/* Fetch and log stored serial number */
 	uint32_t serial_id = 0;
-	err = eep_uint32_read(EEP_UID, &serial_id);
+	err = stg_config_u32_read(STG_U32_UID, &serial_id);
 	if (serial_id) {
-		LOG_INF("Device Serial Number stored in EEPROM: %d", serial_id);
+		LOG_INF("Device Serial Number stored in ext flash: %d", serial_id);
 	} else {
-		LOG_WRN("Missing device Serial Number in EEPROM");
+		LOG_WRN("Missing device Serial Number in ext flash");
 	}
 #endif
-
-	err = stg_config_init();
-	if (err != 0) {
-		LOG_ERR("STG Config failed to initialize");
-	}
 
 	/* Initialize the power manager module. */
 	err = pwr_module_init();
@@ -272,184 +263,157 @@ void main(void)
 		NF_X25_VERSION_NUMBER, reset_reason);
 
 
+	
 
+	/* EEP vs STG u8 */
+	bool eep_stg_overwrite = false;
 
+	int ret;
+	uint8_t eep_u8_val;
+	uint8_t stg_u8_val;
+	for (int i = 0; i < (EEP_RESET_REASON + 1); i++)
+	{
+		/* Read EEP */
+		eep_u8_val = 0;
+		ret = eep_uint8_read(i, &eep_u8_val);
+		if (ret != 0) 
+		{
+			LOG_ERR("EEP(u8) Failed to read id %d, err %d", i, ret);
+		}
+		/* Read STG */
+		stg_u8_val = 0;
+		ret = stg_config_u8_read(i, &stg_u8_val);
+		if (ret != 0) 
+		{
+			LOG_ERR("STG(u8) Failed to read id %d, err %d", i, ret);
+		}
+		LOG_INF("EEPvsSTG(u8): Id = %d, EEP = %d, STG = %d", i, eep_u8_val, stg_u8_val);
 
+		if (eep_stg_overwrite == true)
+		{
+			if (eep_u8_val != stg_u8_val)
+			{
+				ret = stg_config_u8_write(i, eep_u8_val);
+				if (ret != 0)
+				{
+					LOG_ERR("STG(u8) Failed to write id %d, err %d", i, ret);
+				}
 
+				stg_u8_val = 0;
+				ret = stg_config_u8_read(i, &stg_u8_val);
+				if (ret != 0) 
+				{
+					LOG_ERR("STG(u8) Failed to read id %d, err %d", i, ret);
+				}
+				LOG_INF("EEPvsSTG(u8): Id = %d, EEP = %d, STG = %d", i, eep_u8_val, stg_u8_val);
+			}
+		}
+	}
+	uint16_t eep_u16_val;
+	uint16_t stg_u16_val;
+	for (int i = 0; i < (EEP_PRODUCT_TYPE + 1); i++)
+	{
+		/* Read EEP */
+		eep_u16_val = 0;
+		ret = eep_uint16_read(i, &eep_u16_val);
+		if (ret != 0) 
+		{
+			LOG_ERR("EEP(u16) Failed to read id %d, err %d", i, ret);
+		}
+		/* Read STG */
+		stg_u16_val = 0;
+		ret = stg_config_u16_read(i+14, &stg_u16_val);
+		if (ret != 0) 
+		{
+			LOG_ERR("STG(u16) Failed to read id %d(+14), err %d", i, ret);
+		}
+		LOG_INF("EEPvsSTG(u16): Id = %d(+14), EEP = %d, STG = %d", i, eep_u16_val, stg_u16_val);
 
+		if (eep_stg_overwrite == true)
+		{
+			if (eep_u16_val != stg_u16_val)
+			{
+				ret = stg_config_u16_write(i+14, eep_u16_val);
+				if (ret != 0)
+				{
+					LOG_ERR("STG(u16) Failed to write id %d(+14), err %d", i, ret);
+				}
 
+				stg_u16_val = 0;
+				ret = stg_config_u16_read(i+14, &stg_u16_val);
+				if (ret != 0) 
+				{
+					LOG_ERR("STG(u16) Failed to read id %d(+14), err %d", i, ret);
+				}
+				LOG_INF("EEPvsSTG(u16): Id = %d(+14), EEP = %d, STG = %d", i, eep_u16_val, stg_u16_val);
+			}
+		}
+	}
+	uint32_t eep_u32_val;
+	uint32_t stg_u32_val;
+	for (int i = 0; i < (EEP_WARN_CNT_TOT + 1); i++)
+	{
+		/* Read EEP */
+		eep_u32_val = 0;
+		ret = eep_uint32_read(i, &eep_u32_val);
+		if (ret != 0) 
+		{
+			LOG_ERR("EEP(u32) Failed to read id %d, err %d", i, ret);
+		}
+		/* Read STG */
+		stg_u32_val = 0;
+		ret = stg_config_u32_read(i+20, &stg_u32_val);
+		if (ret != 0) 
+		{
+			LOG_ERR("STG(u32) Failed to read id %d(+20), err %d", i, ret);
+		}
+		LOG_INF("EEPvsSTG(u32): Id = %d(+20), EEP = %d, STG = %d", i, eep_u32_val, stg_u32_val);
 
+		if (eep_stg_overwrite == true)
+		{
+			if (eep_u32_val != stg_u32_val)
+			{
+				ret = stg_config_u32_write(i+20, eep_u32_val);
+				if (ret != 0)
+				{
+					LOG_ERR("STG(u32) Failed to write id %d(+20), err %d", i, ret);
+				}
 
-	// /* UID */
-	// uint32_t serial = 0;
-	// ret = eep_uint32_read(EEP_UID, &serial);
-	// if (ret != 0) { LOG_ERR("Failed to read eep serial number"); }
-	// LOG_INF("Serial number = %d", serial);
+				stg_u32_val = 0;
+				ret = stg_config_u32_read(i+20, &stg_u32_val);
+				if (ret != 0) 
+				{
+					LOG_ERR("STG(u32) Failed to read id %d(+20), err %d", i, ret);
+				}
+				LOG_INF("EEPvsSTG(u32): Id = %d(+20), EEP = %d, STG = %d", i, eep_u32_val, stg_u32_val);
+			}
+		}
+	}
 
-	// ret = stg_config_u32_write(STG_U32_UID, serial);
-	// if (ret != 0) { LOG_ERR("Failed to write serial number"); }
+	/* Host port */
+	char buff[24];
+	ret = eep_read_host_port(&buff[0], 24);
+	if (ret != 0)
+	{
+		LOG_ERR("EEP Failed to read host port");
+	}
 
-	// /* EMS */
-	// uint8_t ems_provider = 0;
-	// ret = eep_uint8_read(EEP_EMS_PROVIDER, &ems_provider);
-	// if (ret != 0) { LOG_ERR("Failed to read EMS provider"); }
-	// LOG_INF("EMS provider = %d", ems_provider);
+	char port[24];
+	uint8_t len = 0;
+	ret = stg_config_str_read(STG_STR_HOST_PORT, port, &len);
+	if (ret != 0)
+	{
+		LOG_ERR("STG Failed to read host port");
+	}
+	LOG_INF("EEPvsSTG(Host port): EEP = %s, STG = %s", buff, port);
 
-	// ret = stg_config_u8_write(STG_U8_EMS_PROVIDER, ems_provider);
-	// if (ret != 0) { LOG_ERR("Failed to write EMS provider"); }
+	uint8_t eep_sec_key[8];
+	memset(eep_sec_key, 0, sizeof(eep_sec_key));
+	ret = eep_read_ble_sec_key(eep_sec_key, sizeof(eep_sec_key));
+	if (ret != 0)
+	{
+		LOG_ERR("EEP Failed to read BLE sec key");
+	}
+	LOG_INF("EEPvsSTG(BLE Key): EEP = %s", eep_sec_key);
 
-	// /* Prod. type */
-	// uint16_t prod_type = 0;
-	// ret = eep_uint16_read(EEP_PRODUCT_TYPE, &prod_type);
-	// if (ret != 0) { LOG_ERR("Failed to read product type"); }
-	// LOG_INF("Product type = %d", prod_type);
-
-	// ret = stg_config_u16_write(STG_U16_PRODUCT_TYPE, prod_type);
-	// if (ret != 0) { LOG_ERR("Failed to write product type"); }
-
-	// /* HW version */
-	// uint8_t hw_ver = 0;
-	// ret = eep_uint8_read(EEP_HW_VERSION, &hw_ver);
-	// if (ret != 0) { LOG_ERR("Failed to read hw version"); }
-	// LOG_INF("HW version = %d", hw_ver);
-
-	// ret = stg_config_u8_write(STG_U8_HW_VERSION, hw_ver);
-	// if (ret != 0) { LOG_ERR("Failed to write EMS provider"); }
-
-	// /* BOM PCB REV */
-	// uint8_t bom_pcb_rev = 0;
-	// ret = eep_uint8_read(EEP_BOM_PCB_REV, &bom_pcb_rev);
-	// if (ret != 0) { LOG_ERR("Failed to read pcb rev"); }
-	// LOG_INF("BOM PCB Rev = %d", bom_pcb_rev);
-
-	// ret = stg_config_u8_write(STG_U8_BOM_PCB_REV, bom_pcb_rev);
-	// if (ret != 0) { LOG_ERR("Failed to write EMS provider"); }
-
-	// /* BOM MEC REV */
-	// uint8_t bom_mec_rev = 0;
-	// ret = eep_uint8_read(EEP_BOM_MEC_REV, &bom_mec_rev);
-	// if (ret != 0) { LOG_ERR("Failed to write mec rev"); }
-	// LOG_INF("BOM MEC Rev = %d", bom_mec_rev);
-
-	// ret = stg_config_u8_write(STG_U8_BOM_MEC_REV, bom_mec_rev);
-	// if (ret != 0) { LOG_ERR("Failed to write EMS provider"); }
-
-	// /* Product Record Rev */
-	// uint8_t product_record_rev = 0;
-	// ret = eep_uint8_read(EEP_PRODUCT_RECORD_REV, &product_record_rev);
-	// if (ret != 0) { LOG_ERR("Failed to write product record rev"); }
-
-	// ret = stg_config_u8_write(STG_U8_PRODUCT_RECORD_REV, product_record_rev);
-	// if (ret != 0) { LOG_ERR("Failed to write EMS provider"); }
-
-	// /* Host port */
-	// char buf[24];
-	// ret = eep_read_host_port(&buf[0], 24);
-	// if (ret != 0) { LOG_ERR("Failed to read host port"); }
-	// LOG_INF("Host port = %s", buf);
-
-	// ret = stg_config_str_write(STG_STR_HOST_PORT, buf, STG_CONFIG_HOST_PORT_BUF_LEN-1);
-	// if (ret != 0) { LOG_ERR("Failed to read host port number"); }
-
-
-	// /* Readback */
-	// uint32_t serial_rb = 0;
-	// ret = stg_config_u32_read(STG_U32_UID, &serial_rb);
-	// if (ret != 0) { LOG_ERR("Failed to read serial number"); }
-	// LOG_INF("STG Serial no = %d", serial_rb);
-
-	// /* EMS */
-	// uint8_t ems_provider_rb = 0;
-	// ret = stg_config_u8_read(STG_U8_EMS_PROVIDER, &ems_provider_rb);
-	// if (ret != 0) { LOG_ERR("Failed to read EMS provider"); }
-	// LOG_INF("STG EMS = %d", ems_provider_rb);
-
-	// /* Prod. type */
-	// uint16_t prod_type_rb = 0;
-	// ret = stg_config_u16_read(STG_U16_PRODUCT_TYPE, &prod_type_rb);
-	// if (ret != 0) { LOG_ERR("Failed to read product type"); }
-	// LOG_INF("STG Prod type = %d", prod_type_rb);
-
-	// /* HW version */
-	// uint8_t hw_ver_rb = 0;
-	// ret = stg_config_u8_read(STG_U8_HW_VERSION, &hw_ver_rb);
-	// if (ret != 0) { LOG_ERR("Failed to read EMS provider"); }
-	// LOG_INF("STG HW Ver = %d", hw_ver_rb);
-
-	// /* BOM PCB REV */
-	// uint8_t bom_pcb_rev_rb = 0;
-	// ret = stg_config_u8_read(STG_U8_BOM_PCB_REV, &bom_pcb_rev_rb);
-	// if (ret != 0) { LOG_ERR("Failed to read EMS provider"); }
-	// LOG_INF("STG PCB Rev = %d", bom_pcb_rev_rb);
-
-	// /* BOM MEC REV */
-	// uint8_t bom_mec_rev_rb = 0;
-	// ret = stg_config_u8_read(STG_U8_BOM_MEC_REV, &bom_mec_rev_rb);
-	// if (ret != 0) { LOG_ERR("Failed to read EMS provider"); }
-	// LOG_INF("STG MEC Rev = %d", bom_mec_rev_rb);
-
-	// /* Product Record Rev */
-	// uint8_t product_record_rev_rb = 0;
-	// ret = stg_config_u8_read(STG_U8_PRODUCT_RECORD_REV, &product_record_rev_rb);
-	// if (ret != 0) { LOG_ERR("Failed to read EMS provider"); }
-	// LOG_INF("STG Record Rev = %d", product_record_rev_rb);
-
-	// /* Host port */
-	// char port[STG_CONFIG_HOST_PORT_BUF_LEN];
-	// uint8_t port_len = 0;
-	// ret = stg_config_str_read(STG_STR_HOST_PORT, port, &port_len);
-	// if (ret != 0) { LOG_ERR("Failed to read host port"); }
-	// LOG_INF("STG Host port = (%d)%s", port_len, port);
-
-
-
-
-	// uint8_t val = 0;
-
-	// stg_config_u8_write(STG_U8_EMS_PROVIDER, 1);
-
-	// stg_config_u8_read(STG_U8_EMS_PROVIDER, &val);
-	// // LOG_INF("STG Config: Id:%d, Value:%d", STG_U8_EMS_PROVIDER, val);
-
-	// stg_config_u8_write(STG_U8_EMS_PROVIDER, 2);
-
-	// stg_config_u8_read(STG_U8_EMS_PROVIDER, &val);
-	// // LOG_INF("STG Config: Id:%d, Value:%d", STG_U8_EMS_PROVIDER, val);
-
-	// stg_config_u8_read(STG_U8_EMS_PROVIDER, &val);
-	// LOG_INF("STG Config: Id:%d, Value:%d", STG_U8_EMS_PROVIDER, val);
-
-
-
-	// char port[STG_CONFIG_HOST_PORT_BUF_LEN];
-	// memset(port, 0, STG_CONFIG_HOST_PORT_BUF_LEN);
-	// strcpy(port, "1.1.1.2\0");
-
-	// err = stg_config_str_write(STG_STR_HOST_PORT, port, strlen(port));
-	// if (err != 0)
-	// {
-	// 	LOG_ERR("Shoit");
-	// }
-
-	// char port_read[STG_CONFIG_HOST_PORT_BUF_LEN]; 
-	// uint8_t port_read_length = 0;
-	// err = stg_config_str_read(STG_STR_HOST_PORT, port_read, &port_read_length);
-	// if (err != 0)
-	// {
-	// 	LOG_ERR("Shoit 1");
-	// }
-	// else
-	// {
-	// 	LOG_INF("Port: Len=%d, buff=%s", port_read_length, port_read);
-	// }
-
-	// err = stg_config_str_read(STG_STR_HOST_PORT, port_read, &port_read_length);
-	// if (err != 0)
-	// {
-	// 	LOG_ERR("Shoit 1");
-	// }
-	// else
-	// {
-	// 	LOG_INF("Port: Len=%d, buff=%s", port_read_length, port_read);
-	// }
 }
