@@ -6,9 +6,8 @@
 #include "storage.h"
 #include "storage_event.h"
 #include "storage_helper.h"
-
+// #include "stg_config_test.c"
 #include "error_event.h"
-
 #include "ano_structure.h"
 #include "log_structure.h"
 #include "pasture_structure.h"
@@ -38,8 +37,9 @@ void test_init(void)
 void test_main(void)
 {
 	/* Init FCBs and event manager setup. */
-	ztest_test_suite(storage_init, ztest_unit_test(test_event_manager_init),
-			 ztest_unit_test(test_init));
+	ztest_test_suite(storage_init, 
+		ztest_unit_test(test_event_manager_init),
+		ztest_unit_test(test_init));
 	ztest_run_test_suite(storage_init);
 
 	/* Test log partition. */
@@ -75,6 +75,11 @@ void test_main(void)
 			 ztest_unit_test(test_sys_diag_log),
 			 ztest_unit_test(test_reboot_persistent_system_diag));
 	ztest_run_test_suite(storage_sys_diag_test);
+
+	// /* Test configuration parameters */
+	// ztest_test_suite(stg_config_test, 
+	// 	ztest_unit_test(test_stg_init),
+	// ztest_run_test_suite(stg_config_test);
 }
 
 static bool event_handler(const struct event_header *eh)

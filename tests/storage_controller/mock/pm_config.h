@@ -15,6 +15,7 @@
 #define PM_ANO_PARTITION_SIZE 0x20000
 #define PM_PASTURE_PARTITION_SIZE 0x20000
 #define PM_SYSTEM_DIAGNOSTIC_SIZE 0x20000
+#define PM_CONFIG_PARTITION_SIZE 0x2000
 
 /* Max flash page size for writing operations. */
 #define FLASH_PAGE_MAX_CNT 256
