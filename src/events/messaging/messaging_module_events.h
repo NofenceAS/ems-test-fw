@@ -191,6 +191,7 @@ struct warn_correction_pause_event {
 	struct event_header header;
 	int16_t fence_dist;
 	uint32_t warn_duration;
+	Reason reason;
 };
 
 EVENT_TYPE_DECLARE(warn_correction_pause_event);
