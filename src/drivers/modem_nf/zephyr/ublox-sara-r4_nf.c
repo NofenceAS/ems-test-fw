@@ -1329,6 +1329,11 @@ static int modem_reset(void)
 	k_sem_reset(&mdata.sem_response);
 	k_sem_reset(&mdata.sem_prompt);
 
+	static const struct setup_cmd mno_profile_cmds[] = {
+		SETUP_CMD_NOHANDLE("AT+UMNOPROF=100"),
+		SETUP_CMD_NOHANDLE("AT+CFUN=15"),
+	};
+
 	static const struct setup_cmd pre_setup_cmds[] = {
 		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
 		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
@@ -1446,7 +1451,16 @@ restart:
 		goto error;
 	}
 	k_sleep(K_MSEC(50));
+	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
+					   mno_profile_cmds,
+					   ARRAY_SIZE(mno_profile_cmds),
+					   &mdata.sem_response,
+					   MDM_REGISTRATION_TIMEOUT);
+	if (wake_up() != 0) {
+		goto error;
+	}
 
+	k_sleep(K_MSEC(50));
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
 					   pre_setup_cmds,
 					   ARRAY_SIZE(pre_setup_cmds),
@@ -2450,7 +2464,7 @@ static int modem_init(const struct device *dev)
 	/* initialize the work queue */
 	k_work_queue_start(&modem_workq, modem_workq_stack,
 			   K_KERNEL_STACK_SIZEOF(modem_workq_stack),
-			   K_PRIO_COOP(10), NULL);
+			   K_PRIO_COOP(1), NULL);
 #endif
 
 	/* socket config */
@@ -2564,7 +2578,9 @@ int wake_up(void)
 				     "AT", &mdata.sem_response,
 				     MDM_AT_CMD_TIMEOUT);
 		if (ret < 0 && ret != -ETIMEDOUT) {
-			return 0;
+			return ret;
+		} else if (ret == 0) {
+			break;
 		}
 	}
 
@@ -2620,7 +2636,7 @@ int wake_up_from_upsv(void)
 		}
 		return -EAGAIN;
 	}
-	return 0;
+	return wake_up();
 }
 
 static int sleep(void)
