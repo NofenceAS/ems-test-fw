@@ -159,7 +159,7 @@ void test_calculation_beacon_scanner(void)
 	}
 	/* Expect -EIO if num readings is less than 4 */
 	printk("Range: %d\n", range);
-//	zassert_equal(range, -EIO, "Shortest distance calculation is wrong");
+	zassert_equal(range, -EIO, "Shortest distance calculation is wrong");
 
 	/* Add one more reading and see this in list */
 	time_now = k_uptime_get_32();
