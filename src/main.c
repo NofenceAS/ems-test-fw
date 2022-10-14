@@ -258,11 +258,7 @@ void main(void)
 		NF_X25_VERSION_NUMBER, reset_reason);
 
 
-	
-
 	/* EEP vs STG u8 */
-	bool eep_stg_overwrite = false;
-
 	int ret;
 	uint8_t eep_u8_val;
 	uint8_t stg_u8_val;
@@ -283,26 +279,6 @@ void main(void)
 			LOG_ERR("STG(u8) Failed to read id %d, err %d", i, ret);
 		}
 		LOG_INF("EEPvsSTG(u8): Id = %d, EEP = %d, STG = %d", i, eep_u8_val, stg_u8_val);
-
-		if (eep_stg_overwrite == true)
-		{
-			if (eep_u8_val != stg_u8_val)
-			{
-				ret = stg_config_u8_write(i, eep_u8_val);
-				if (ret != 0)
-				{
-					LOG_ERR("STG(u8) Failed to write id %d, err %d", i, ret);
-				}
-
-				stg_u8_val = 0;
-				ret = stg_config_u8_read(i, &stg_u8_val);
-				if (ret != 0) 
-				{
-					LOG_ERR("STG(u8) Failed to read id %d, err %d", i, ret);
-				}
-				LOG_INF("EEPvsSTG(u8): Id = %d, EEP = %d, STG = %d", i, eep_u8_val, stg_u8_val);
-			}
-		}
 	}
 	uint16_t eep_u16_val;
 	uint16_t stg_u16_val;
@@ -323,26 +299,6 @@ void main(void)
 			LOG_ERR("STG(u16) Failed to read id %d(+14), err %d", i, ret);
 		}
 		LOG_INF("EEPvsSTG(u16): Id = %d(+14), EEP = %d, STG = %d", i, eep_u16_val, stg_u16_val);
-
-		if (eep_stg_overwrite == true)
-		{
-			if (eep_u16_val != stg_u16_val)
-			{
-				ret = stg_config_u16_write(i+14, eep_u16_val);
-				if (ret != 0)
-				{
-					LOG_ERR("STG(u16) Failed to write id %d(+14), err %d", i, ret);
-				}
-
-				stg_u16_val = 0;
-				ret = stg_config_u16_read(i+14, &stg_u16_val);
-				if (ret != 0) 
-				{
-					LOG_ERR("STG(u16) Failed to read id %d(+14), err %d", i, ret);
-				}
-				LOG_INF("EEPvsSTG(u16): Id = %d(+14), EEP = %d, STG = %d", i, eep_u16_val, stg_u16_val);
-			}
-		}
 	}
 	uint32_t eep_u32_val;
 	uint32_t stg_u32_val;
@@ -363,26 +319,6 @@ void main(void)
 			LOG_ERR("STG(u32) Failed to read id %d(+20), err %d", i, ret);
 		}
 		LOG_INF("EEPvsSTG(u32): Id = %d(+20), EEP = %d, STG = %d", i, eep_u32_val, stg_u32_val);
-
-		if (eep_stg_overwrite == true)
-		{
-			if (eep_u32_val != stg_u32_val)
-			{
-				ret = stg_config_u32_write(i+20, eep_u32_val);
-				if (ret != 0)
-				{
-					LOG_ERR("STG(u32) Failed to write id %d(+20), err %d", i, ret);
-				}
-
-				stg_u32_val = 0;
-				ret = stg_config_u32_read(i+20, &stg_u32_val);
-				if (ret != 0) 
-				{
-					LOG_ERR("STG(u32) Failed to read id %d(+20), err %d", i, ret);
-				}
-				LOG_INF("EEPvsSTG(u32): Id = %d(+20), EEP = %d, STG = %d", i, eep_u32_val, stg_u32_val);
-			}
-		}
 	}
 
 	/* Host port */
@@ -409,6 +345,13 @@ void main(void)
 	{
 		LOG_ERR("EEP Failed to read BLE sec key");
 	}
-	LOG_INF("EEPvsSTG(BLE Key): EEP = %s", eep_sec_key);
 
+	char key[8];
+	uint8_t key_len = 0;
+	ret = stg_config_str_read(STG_STR_BLE_KEY, key, &key_len);
+	if (ret != 0)
+	{
+		LOG_ERR("STG Failed to read host port");
+	}
+	LOG_INF("EEPvsSTG(Host port): EEP = %s, STG = %s", eep_sec_key, key);
 }

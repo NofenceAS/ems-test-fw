@@ -73,5 +73,4 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/drivers/modem_nf/zephyr
 )
 
-
 add_dependencies(app collar_protocol_headers)
