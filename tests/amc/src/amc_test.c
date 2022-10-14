@@ -38,18 +38,18 @@ void test_init_and_update_pasture(void)
 
 	/* ..init_states_and_variables, cached variables. 1. tot zap count, 
 	 * 2. warn count, 3. zap count day */
-	ztest_returns_value(eep_uint16_read, 0);
-	ztest_returns_value(eep_uint32_read, 0);
-	ztest_returns_value(eep_uint16_read, 0);
+	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_returns_value(stg_config_u32_read, 0);
+	ztest_returns_value(stg_config_u16_read, 0);
 
 	/* ..init_states_and_variables, cached mode. */
-	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
 
 	/* update_pasture_from_stg */
 	ztest_returns_value(stg_read_pasture_data, 0);
 
 	/* Cached keep mode. */
-	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
 
 	zassert_false(amc_module_init(), "Error when initializing AMC module");
 }
@@ -128,7 +128,7 @@ void test_update_pasture(void)
 	 */
 
 	/* Set fence status to "UNKNOWN" before starting the update process */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	zassert_equal(force_fence_status(FenceStatus_FenceStatus_UNKNOWN), 0, "");
 	k_sem_reset(&fence_sema);
 	zassert_equal(k_sem_take(&fence_sema, K_SECONDS(10)), 0, "");
@@ -137,10 +137,10 @@ void test_update_pasture(void)
 	ztest_returns_value(stg_read_pasture_data, 0);
 
 	/* Read keep mode from eeprom */
-	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
 
 	/* ..force_fence_status() */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	zone_set(WARN_ZONE);
 	zassert_equal(zone_get(), WARN_ZONE, "Zone not set to WARN_ZONE!");
@@ -171,7 +171,7 @@ void test_update_pasture_teach_mode(void)
 	 */
 
 	/* Set fence status to "UNKNOWN" before starting the update process */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	zassert_equal(force_fence_status(FenceStatus_FenceStatus_UNKNOWN), 0, "");
 	k_sem_reset(&fence_sema);
 	zassert_equal(k_sem_take(&fence_sema, K_SECONDS(10)), 0, "");
@@ -180,19 +180,19 @@ void test_update_pasture_teach_mode(void)
 	ztest_returns_value(stg_read_pasture_data, 0);
 
 	/* Fails to read keep_mode from eeprom */
-	ztest_returns_value(eep_uint8_read, -1);
+	ztest_returns_value(stg_config_u8_read, -1);
 
 	/* ..force_teach_mode() */
-	ztest_returns_value(eep_uint8_write, 0);
-	ztest_returns_value(eep_uint32_read, 0);
-	ztest_returns_value(eep_uint16_read, 0);
-	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
+	ztest_returns_value(stg_config_u32_read, 0);
+	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
 
 	/* ..force_fence_status() */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	/* handle_states_fn()/calc_fence_status() */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	/* Submit fence update event */
 	struct new_fence_available *event = new_new_fence_available();
@@ -217,7 +217,7 @@ void test_update_pasture_stg_fail(void)
 	 * If read from storage fails, send error event and return immediately.
 	 */
 	/* Set fence status to "UNKNOWN" before starting the update process */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	zassert_equal(force_fence_status(FenceStatus_FenceStatus_UNKNOWN), 0, "");
 	k_sem_reset(&fence_sema);
 	zassert_equal(k_sem_take(&fence_sema, K_SECONDS(10)), 0, "");
@@ -226,7 +226,7 @@ void test_update_pasture_stg_fail(void)
 	ztest_returns_value(stg_read_pasture_data, -1); //Fails to read
 
 	/* handle_states_fn()/calc_fence_status() */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	zassert_equal(zone_get(), NO_ZONE, "Zone not reset to NO_ZONE with "
 					   "failing to read a new pasture "
@@ -301,10 +301,10 @@ void test_update_pasture_integration(void)
 	ztest_returns_value(stg_read_pasture_data, 0);
 
 	/* Read keep mode from eeprom */
-	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
 
 	/* ..force_fence_status() */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	/* Submit fence update event */
 	struct new_fence_available *event = new_new_fence_available();

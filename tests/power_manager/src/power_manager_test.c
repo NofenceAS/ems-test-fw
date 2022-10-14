@@ -149,7 +149,7 @@ void test_pwr_module_reboot(void)
 	/* Test: REBOOT_NO_REASON */
 
 	/* Send reboot event with reboot reason */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	evt = new_pwr_reboot_event();
 	evt->reason = REBOOT_NO_REASON;
 	EVENT_SUBMIT(evt);
@@ -162,15 +162,15 @@ void test_pwr_module_reboot(void)
 	k_sleep(K_MSEC(250));
 
 	/* Read reboot reason */
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	pwr_module_reboot_reason(&reboot_reason);
 	zassert_equal(reboot_reason, REBOOT_NO_REASON, 
 				"Failed to set reboot reason");
 
 	/* Read reboot reason again (resets to "REBOOT_UNKNOWN" after first read) */
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	pwr_module_reboot_reason(&reboot_reason);
 	zassert_equal(reboot_reason, REBOOT_UNKNOWN, 
 				"Failed to reset reboot reason");
@@ -178,7 +178,7 @@ void test_pwr_module_reboot(void)
 	/* Test: REBOOT_BLE_RESET */
 
 	/* Send reboot event with reboot reason */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	evt = new_pwr_reboot_event();
 	evt->reason = REBOOT_BLE_RESET;
 	EVENT_SUBMIT(evt);
@@ -192,15 +192,15 @@ void test_pwr_module_reboot(void)
 	k_sleep(K_MSEC(250));
 
 	/* Read reboot reason */
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	pwr_module_reboot_reason(&reboot_reason);
 	zassert_equal(reboot_reason, REBOOT_BLE_RESET, 
 				"Failed to set reboot reason");
 
 	/* Read reboot reason again (resets to "REBOOT_UNKNOWN" after first read) */
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	pwr_module_reboot_reason(&reboot_reason);
 	zassert_equal(reboot_reason, REBOOT_UNKNOWN, 
 				"Failed to reset reboot reason");
@@ -208,7 +208,7 @@ void test_pwr_module_reboot(void)
 	/* Test: REBOOT_SERVER_RESET */
 
 	/* Send reboot event with reboot reason */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	evt = new_pwr_reboot_event();
 	evt->reason = REBOOT_SERVER_RESET;
 	EVENT_SUBMIT(evt);
@@ -221,15 +221,15 @@ void test_pwr_module_reboot(void)
 	k_sleep(K_MSEC(250));
 
 	/* Read reboot reason */
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	pwr_module_reboot_reason(&reboot_reason);
 	zassert_equal(reboot_reason, REBOOT_SERVER_RESET, 
 				"Failed to set reboot reason");
 
 	/* Read reboot reason again (resets to "REBOOT_UNKNOWN" after first read) */
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	pwr_module_reboot_reason(&reboot_reason);
 	zassert_equal(reboot_reason, REBOOT_UNKNOWN, 
 				"Failed to reset reboot reason");
@@ -237,7 +237,7 @@ void test_pwr_module_reboot(void)
 	/* Test: REBOOT_FOTA_RESET */
 
 	/* Send reboot event with reboot reason */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	evt = new_pwr_reboot_event();
 	evt->reason = REBOOT_FOTA_RESET;
 	EVENT_SUBMIT(evt);
@@ -250,15 +250,15 @@ void test_pwr_module_reboot(void)
 	k_sleep(K_MSEC(250));
 
 	/* Read reboot reason */
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	pwr_module_reboot_reason(&reboot_reason);
 	zassert_equal(reboot_reason, REBOOT_FOTA_RESET, 
 				"Failed to set reboot reason");
 
 	/* Read reboot reason again (resets to "REBOOT_UNKNOWN" after first read) */
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	pwr_module_reboot_reason(&reboot_reason);
 	zassert_equal(reboot_reason, REBOOT_UNKNOWN, 
 				"Failed to reset reboot reason");
@@ -266,7 +266,7 @@ void test_pwr_module_reboot(void)
 	/* Test: REBOOT_FATAL_ERR */
 
 	/* Send reboot event with reboot reason */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	evt = new_pwr_reboot_event();
 	evt->reason = REBOOT_FATAL_ERR;
 	EVENT_SUBMIT(evt);
@@ -279,15 +279,15 @@ void test_pwr_module_reboot(void)
 	k_sleep(K_MSEC(250));
 
 	/* Read reboot reason */
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	pwr_module_reboot_reason(&reboot_reason);
 	zassert_equal(reboot_reason, REBOOT_FATAL_ERR, 
 				"Failed to set reboot reason");
 
 	/* Read reboot reason again (resets to "REBOOT_UNKNOWN" after first read) */
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	pwr_module_reboot_reason(&reboot_reason);
 	zassert_equal(reboot_reason, REBOOT_UNKNOWN, 
 				"Failed to reset reboot reason");
@@ -295,7 +295,7 @@ void test_pwr_module_reboot(void)
 	/* Test: REBOOT_REASON_CNT (Invalid) */
 
 	/* Send reboot event with reboot reason */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	evt = new_pwr_reboot_event();
 	evt->reason = REBOOT_REASON_CNT;
 	EVENT_SUBMIT(evt);
@@ -308,8 +308,8 @@ void test_pwr_module_reboot(void)
 	k_sleep(K_MSEC(250));
 
 	/* Read reboot reason */
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	pwr_module_reboot_reason(&reboot_reason);
 	zassert_equal(reboot_reason, REBOOT_UNKNOWN, 
 				"Failed invalidate reboot reason");

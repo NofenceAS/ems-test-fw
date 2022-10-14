@@ -38,14 +38,16 @@ void test_init(void)
 	struct connection_state_event *ev = new_connection_state_event();
 	ev->state = true;
 	EVENT_SUBMIT(ev);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_read_ble_sec_key, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint16_read, 0);
-	ztest_returns_value(eep_uint32_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_str_read, 0);
+	//ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_returns_value(stg_config_u32_read, 0);
 	ztest_returns_value(date_time_now, 0);
 
 	/* Cache variables for messaging module. */

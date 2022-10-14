@@ -39,8 +39,8 @@ void test_electric_pulse_init(void)
 
 	/* EP module initialization of sheep collar */
 	product_type = PRODUCT_TYPE_SHEEP;
-	ztest_returns_value(eep_uint16_read, 0);
-	ztest_return_data(eep_uint16_read, value, &product_type);
+	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_return_data(stg_config_u16_read, value, &product_type);
 	zassert_equal(ep_module_init(), 0, 
 					"EP module initialization returned incorrect value");
 
@@ -52,20 +52,20 @@ void test_electric_pulse_init(void)
 					"EP module initialization provided incorrect product type");
 
 	/* EP module initialization with EEPROM read failure */
-	ztest_returns_value(eep_uint16_read, -1);
-	ztest_return_data(eep_uint16_read, value, &product_type);
+	ztest_returns_value(stg_config_u16_read, -1);
+	ztest_return_data(stg_config_u16_read, value, &product_type);
 	zassert_not_equal(ep_module_init(), 0, 
 						"EP module initialization returned incorrect value");
 
-	ztest_returns_value(eep_uint16_read, 1);
-	ztest_return_data(eep_uint16_read, value, &product_type);
+	ztest_returns_value(stg_config_u16_read, 1);
+	ztest_return_data(stg_config_u16_read, value, &product_type);
 	zassert_not_equal(ep_module_init(), 0, 
 						"EP module initialization returned incorrect value");
 
 	/* EP module initialization of cattle collar */
 	product_type = PRODUCT_TYPE_CATTLE;
-	ztest_returns_value(eep_uint16_read, 0);
-	ztest_return_data(eep_uint16_read, value, &product_type);
+	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_return_data(stg_config_u16_read, value, &product_type);
 	zassert_equal(ep_module_init(), 0, "Test failed to initializing EP module");
 
 	if ((product_type != PRODUCT_TYPE_SHEEP) && 
@@ -77,8 +77,8 @@ void test_electric_pulse_init(void)
 
 	/* EP module initialization of unknown collar */
 	product_type = UINT16_MAX;
-	ztest_returns_value(eep_uint16_read, 0);
-	ztest_return_data(eep_uint16_read, value, &product_type);
+	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_return_data(stg_config_u16_read, value, &product_type);
 	zassert_equal(ep_module_init(), 0, "Test failed to initializing EP module");
 
 	if ((product_type != PRODUCT_TYPE_SHEEP) && 

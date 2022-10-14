@@ -161,12 +161,7 @@ void main(void)
 	}
 #endif
 
-	err = stg_fcb_reset_and_init();
-	if (err != 0) {
-		LOG_ERR("Failed to reset storage controller (%d)", err);
-	}
-
-	//err = stg_init_storage_controller();
+	err = stg_init_storage_controller();
 	selftest_mark_state(SELFTEST_FLASH_POS, err == 0);
 	if (err) {
 		LOG_ERR("Could not initialize storage controller (%d)", err);

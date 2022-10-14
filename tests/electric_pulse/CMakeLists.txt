@@ -28,5 +28,6 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/electric_pulse
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/electric_pulse
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer
 )
