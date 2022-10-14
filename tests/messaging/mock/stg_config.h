@@ -50,6 +50,4 @@ int stg_config_u32_write(stg_config_param_id_t id, const uint32_t value);
 int stg_config_str_read(stg_config_param_id_t id, char *str, uint8_t *len);
 int stg_config_str_write(stg_config_param_id_t id, const char *str, const uint8_t len);
 
-int stg_config_erase_all(void);
-
 #endif /* MOCK_STG_CONFIG_H */

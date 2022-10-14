@@ -38,7 +38,4 @@ void test_reboot_persistent_ano(void);
 void test_sys_diag_log(void);
 void test_reboot_persistent_system_diag(void);
 
-/* STG Config parameters */
-void test_stg_init(void);
-
 #endif /* _STORAGE_HELPER_H_ */

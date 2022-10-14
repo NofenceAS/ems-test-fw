@@ -25,10 +25,5 @@
                         label = "system_diagnostic";
                         reg = <0x000c0000 0x00020000>;
                 };
-
-                config_partition: partition@0x1E0000 {
-                        label = "config_partition";
-                        reg = <0x001E0000 0x00002000>;
-                };
         };
 };
