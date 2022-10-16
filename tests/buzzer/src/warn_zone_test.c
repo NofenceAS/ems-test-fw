@@ -33,7 +33,7 @@ void test_warn_zone_init(void)
 
 	/* We should timeout here, since we do not get a new frequency update. */
 	err = k_sem_take(&error_timeout_sem, K_SECONDS(30));
-	zassert_equal(err, 0, "Should not timeout in this test.");
+	zassert_equal(err, 0, "Didn't timeout as expected!");
 
 	/* Finish with playing IDLE. */
 	err = k_sem_take(&sound_idle_sem, K_SECONDS(30));
