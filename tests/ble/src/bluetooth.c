@@ -57,6 +57,10 @@ void assert_post_action(const char *file, unsigned int line)
 	printk("assert_post_action - file: %s (line: %u)\n", file, line);
 }
 
+/* TODO: mock away the scan callback function to be able to test more
+ * realistic situations with multiple beacons with random distances to the
+ * collar. */
+
 void test_init_ok(void)
 {
 	ztest_returns_value(eep_uint32_read, 0);
