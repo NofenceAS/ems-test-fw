@@ -42,7 +42,7 @@ void test_init(void)
 	ztest_returns_value(stg_config_u8_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0);
-	ztest_returns_value(stg_config_str_read, 0);
+	ztest_returns_value(stg_config_blob_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0);
 	ztest_returns_value(stg_config_u16_read, 0);
 	ztest_returns_value(stg_config_u32_read, 0);
