@@ -26,7 +26,7 @@ uint8_t *pMsg = NULL;
 size_t len;
 uint8_t msg_count = 0;
 char host[24] = "########################";
-
+static bool simulated_connection_state = true;
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
  */
@@ -75,9 +75,7 @@ void test_init(void)
 		      "Error when initializing event manager");
 
 	messaging_module_init();
-	struct connection_state_event *ev2 = new_connection_state_event();
-	ev2->state = true;
-	EVENT_SUBMIT(ev2);
+
 	k_sleep(K_SECONDS(0.1));
 	struct cellular_ack_event *ack = new_cellular_ack_event();
 	EVENT_SUBMIT(ack);
@@ -158,10 +156,6 @@ void test_second_poll_request_has_no_boot_parameters(void)
 	k_sem_reset(&msg_out);
 	k_sleep(K_MINUTES(poll_interval));
 
-	struct connection_state_event *ev1 = new_connection_state_event();
-	ev1->state = true;
-	EVENT_SUBMIT(ev1);
-
 	zassert_equal(k_sem_take(&msg_out, K_MSEC(500)), 0, "");
 	zassert_not_equal(pMsg, NULL, "Proto message not published!\n");
 	err = collar_protocol_decode(pMsg + 2, len - 2, &decode);
@@ -181,9 +175,6 @@ void test_poll_request_out_when_nudged_from_server(void)
 
 	struct send_poll_request_now *wake_up = new_send_poll_request_now();
 	EVENT_SUBMIT(wake_up);
-	struct connection_state_event *ev = new_connection_state_event();
-	ev->state = true;
-	EVENT_SUBMIT(ev);
 
 	k_sem_take(&msg_out, K_MSEC(500));
 	printk("Outbound messages = %d\n", msg_count);
@@ -236,10 +227,6 @@ void test_poll_response_has_new_fence(void)
 	int ret = collar_protocol_encode(&poll_response, &encoded_msg[0],
 					 sizeof(encoded_msg), &encoded_size);
 	zassert_equal(ret, 0, "Could not encode server response!\n");
-
-	struct connection_state_event *ev = new_connection_state_event();
-	ev->state = true;
-	EVENT_SUBMIT(ev);
 
 	memcpy(&encoded_msg[2], &encoded_msg[0], encoded_size);
 	struct cellular_proto_in_event *msgIn = new_cellular_proto_in_event();
@@ -297,9 +284,6 @@ void test_poll_response_has_host_address(void)
 	msgIn->buf = &encoded_msg[0];
 	msgIn->len = encoded_size + 2;
 	EVENT_SUBMIT(msgIn);
-	struct connection_state_event *ev = new_connection_state_event();
-	ev->state = true;
-	EVENT_SUBMIT(ev);
 
 	ret = k_sem_take(&new_host, K_SECONDS(2));
 	zassert_equal(ret, 0, "New host event not published!\n");
@@ -332,10 +316,6 @@ void test_poll_request_retry_after_missing_ack_from_cellular_controller(void)
 
 	k_sem_reset(&msg_out);
 	k_sleep(K_MINUTES(1+poll_interval));
-
-	struct connection_state_event *ev1 = new_connection_state_event();
-	ev1->state = true;
-	EVENT_SUBMIT(ev1);
 
 	zassert_equal(k_sem_take(&msg_out, K_MSEC(500)), 0, "");
 
@@ -403,6 +383,12 @@ static bool event_handler(const struct event_header *eh)
 		k_sem_give(&error_sem);
 		return false;
 	}
+	if (is_check_connection(eh)) {
+		struct connection_state_event *ev1 = new_connection_state_event();
+		ev1->state = simulated_connection_state;
+		EVENT_SUBMIT(ev1);
+		return false;
+	}
 	return false;
 }
 
@@ -411,3 +397,4 @@ EVENT_SUBSCRIBE(test_main, messaging_proto_out_event);
 EVENT_SUBSCRIBE(test_main, messaging_ack_event);
 EVENT_SUBSCRIBE(test_main, messaging_host_address_event);
 EVENT_SUBSCRIBE(test_main, error_event);
+EVENT_SUBSCRIBE(test_main, check_connection);
