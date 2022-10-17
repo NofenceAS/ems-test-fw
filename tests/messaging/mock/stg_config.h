@@ -34,7 +34,7 @@ typedef enum {
     STG_U32_UID, 
     STG_U32_WARN_CNT_TOT,
     STG_STR_HOST_PORT,
-    STG_STR_BLE_KEY,
+    STG_BLOB_BLE_KEY,
 	STG_PARAM_ID_CNT
 }stg_config_param_id_t;
 
@@ -50,4 +50,8 @@ int stg_config_u32_write(stg_config_param_id_t id, const uint32_t value);
 int stg_config_str_read(stg_config_param_id_t id, char *str, uint8_t *len);
 int stg_config_str_write(stg_config_param_id_t id, const char *str, const uint8_t len);
 
+int stg_config_blob_read(stg_config_param_id_t id, uint8_t *arr, uint8_t *len);
+int stg_config_blob_write(stg_config_param_id_t id, const uint8_t *arr, 
+		const uint8_t len);
+		
 #endif /* MOCK_STG_CONFIG_H */

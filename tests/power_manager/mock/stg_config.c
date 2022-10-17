@@ -69,6 +69,23 @@ int stg_config_str_write(stg_config_param_id_t id, const char *str, const uint8_
 	return ztest_get_return_value();
 }
 
+int stg_config_blob_read(stg_config_param_id_t id, uint8_t *arr, uint8_t *len)
+{
+ 	ARG_UNUSED(id);
+	ARG_UNUSED(arr);
+    ARG_UNUSED(len);
+	return ztest_get_return_value();
+}
+
+int stg_config_blob_write(stg_config_param_id_t id, const uint8_t *arr, 
+		const uint8_t len)
+{
+ 	ARG_UNUSED(id);
+	ARG_UNUSED(arr);
+    ARG_UNUSED(len);
+	return ztest_get_return_value();
+}
+
 int stg_config_erase_all()
 {
     return ztest_get_return_value();
