@@ -51,7 +51,7 @@ void test_electric_pulse_init(void)
 	zassert_equal(product_type, PRODUCT_TYPE_SHEEP, 
 					"EP module initialization provided incorrect product type");
 
-	/* EP module initialization with EEPROM read failure */
+	/* EP module initialization with storage read failure */
 	ztest_returns_value(stg_config_u16_read, -1);
 	ztest_return_data(stg_config_u16_read, value, &product_type);
 	zassert_not_equal(ep_module_init(), 0, 

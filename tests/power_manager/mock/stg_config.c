@@ -6,13 +6,13 @@
 #include "stg_config.h"
 #include <ztest.h>
 
-static uint8_t m_eeprom_val = 0;
+static uint8_t m_val = 0;
 
 int stg_config_u8_read(stg_config_param_id_t id, uint8_t *value)
 {
 	ARG_UNUSED(id);
 	ARG_UNUSED(value);
-	*value = m_eeprom_val;
+	*value = m_val;
 	return ztest_get_return_value();
 }
 
@@ -20,7 +20,7 @@ int stg_config_u8_write(stg_config_param_id_t id, const uint8_t value)
 {
 	ARG_UNUSED(id);
 	ARG_UNUSED(value);
-	m_eeprom_val = value;
+	m_val = value;
 	return ztest_get_return_value();
 }
 

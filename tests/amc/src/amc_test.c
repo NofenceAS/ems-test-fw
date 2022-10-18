@@ -136,7 +136,7 @@ void test_update_pasture(void)
 	/* update_pasture_from_stg() */
 	ztest_returns_value(stg_read_pasture_data, 0);
 
-	/* Read keep mode from eeprom */
+	/* Read keep mode from storage */
 	ztest_returns_value(stg_config_u8_read, 0);
 
 	/* ..force_fence_status() */
@@ -163,8 +163,8 @@ void test_update_pasture(void)
 
 void test_update_pasture_teach_mode(void)
 {
-	/* Test: Updating AMC pasture where reading keep_mode for eeprom fails.
-	 * Reads pasture from storage, as read from eeprom fails the default
+	/* Test: Updating AMC pasture where reading keep_mode for storage fails.
+	 * Reads pasture from storage, as read from storage fails the default
 	 * behaviour should be to force teach mode, sets new cached pasture for 
 	 * future use, sends new fence definition and fence status (NotStarted) to 
 	 * server. 
@@ -179,7 +179,7 @@ void test_update_pasture_teach_mode(void)
 	/* update_pasture_from_stg() */
 	ztest_returns_value(stg_read_pasture_data, 0);
 
-	/* Fails to read keep_mode from eeprom */
+	/* Fails to read keep_mode from storage */
 	ztest_returns_value(stg_config_u8_read, -1);
 
 	/* ..force_teach_mode() */
@@ -300,7 +300,7 @@ void test_update_pasture_integration(void)
 	/* update_pasture_from_stg() */
 	ztest_returns_value(stg_read_pasture_data, 0);
 
-	/* Read keep mode from eeprom */
+	/* Read keep mode from storage */
 	ztest_returns_value(stg_config_u8_read, 0);
 
 	/* ..force_fence_status() */

@@ -41,7 +41,7 @@ void test_fence_status(void)
 			(fence_status_idx == FenceStatus_FenceStatus_Invalid)
 		    || (fence_status_idx == FenceStatus_TurnedOffByBLE)) {
 			if (fence_status_idx == FenceStatus_NotStarted) {
-				/* Test EEPROM write failure */
+				/* Test storage write failure */
 				ztest_returns_value(stg_config_u8_write, -1);
 				zassert_not_equal(force_fence_status(FenceStatus_NotStarted), 0, 
 							"Force fence status failed");
@@ -241,7 +241,7 @@ void test_collar_mode(void)
 	 * managed to get warned 20 times without getting a zap.
 	 */
 	for (int i = 0; i < _TEACHMODE_WARN_CNT_LOWLIM + 1; i++) {
-		/* Mock the eeprom calls. */
+		/* Mock the storage calls. */
 		ztest_returns_value(stg_config_u32_write, 0);
 		increment_warn_count();
 	}
