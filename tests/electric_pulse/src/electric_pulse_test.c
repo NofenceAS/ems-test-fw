@@ -15,6 +15,9 @@
 
 static K_SEM_DEFINE(ep_event_sem, 0, 1);
 
+K_SEM_DEFINE(ep_trigger_ready, 0, 1);
+extern struct k_sem ep_trigger_ready;
+
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
  */
