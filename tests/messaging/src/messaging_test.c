@@ -12,10 +12,13 @@
 #include "nf_version.h"
 #include "gnss_controller_events.h"
 #include "storage_event.h"
+#include "histogram_events.h"
+#include "error_event.h"
 
 static K_SEM_DEFINE(msg_out, 0, 1);
 static K_SEM_DEFINE(msg_in, 0, 1);
 static K_SEM_DEFINE(new_host, 0, 1);
+static K_SEM_DEFINE(error_sem, 0, 1);
 
 #define BYTESWAP16(x) (((x) << 8) | ((x) >> 8))
 
@@ -23,7 +26,7 @@ uint8_t *pMsg = NULL;
 size_t len;
 uint8_t msg_count = 0;
 char host[24] = "########################";
-
+static bool simulated_connection_state = true;
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
  */
@@ -35,9 +38,6 @@ void assert_post_action(const char *file, unsigned int line)
 
 void test_init(void)
 {
-	struct connection_state_event *ev = new_connection_state_event();
-	ev->state = true;
-	EVENT_SUBMIT(ev);
 	ztest_returns_value(eep_uint8_read, 0);
 	ztest_returns_value(eep_uint8_read, 0);
 	ztest_returns_value(eep_uint8_read, 0);
@@ -70,30 +70,33 @@ void test_init(void)
 	struct gsm_info_event *ev_gsm = new_gsm_info_event();
 	EVENT_SUBMIT(ev_gsm);
 
-	k_sleep(K_SECONDS(60));
 
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
+
 	messaging_module_init();
 
-	k_sleep(K_SECONDS(10));
+	k_sleep(K_SECONDS(0.1));
+	struct cellular_ack_event *ack = new_cellular_ack_event();
+	EVENT_SUBMIT(ack);
+
+	/* the build_log function is scheduled after 25 seconds,
+	 * will only send out messages from the flash -if any since
+	 * m_transfer_boot_params is true until we get the initial poll
+	 * response from the server.*/
+	ztest_returns_value(stg_read_log_data, 0);
+	ztest_returns_value(stg_log_pointing_to_last, false);
+	k_sleep(K_SECONDS(25));
 }
 
 /* Test expected events published by messaging*/
 //ack - fence_ready - ano_ready - msg_out - host_address
-void test_initial_poll_request_out(void)
-{
+int poll_interval =15;
+void test_second_poll_request_has_no_boot_parameters(void)
+{/*assumes 15min poll interval, 25sec delay for build_log work
+ * checks: second poll request sent out without the boot parameters*/
 	ztest_returns_value(date_time_now, 0);
 	/* TODO pshustad, pending if we are going to use the connection_state_event for poll */
-	struct connection_state_event *ev = new_connection_state_event();
-	ev->state = true;
-	EVENT_SUBMIT(ev);
-
-	struct cellular_ack_event *ack = new_cellular_ack_event();
-	EVENT_SUBMIT(ack);
-
-	k_sem_take(&msg_out, K_MSEC(500));
-	zassert_not_equal(pMsg, NULL, "Proto message not published!\n");
 
 	NofenceMessage decode;
 	int err = collar_protocol_decode(pMsg + 2, len - 2, &decode);
@@ -135,6 +138,7 @@ void test_initial_poll_request_out(void)
 	uint8_t encoded_msg[NofenceMessage_size];
 	memset(encoded_msg, 0, sizeof(encoded_msg));
 	size_t encoded_size;
+
 	int ret = collar_protocol_encode(&poll_response, &encoded_msg[0],
 					 sizeof(encoded_msg), &encoded_size);
 	zassert_equal(ret, 0, "Could not encode server response!\n");
@@ -146,39 +150,31 @@ void test_initial_poll_request_out(void)
 
 	/* wait for fake poll reply to be processed */
 	zassert_equal(k_sem_take(&msg_in, K_MSEC(500)), 0, "");
-	k_sleep(K_SECONDS(1));
 	/* Now test the second poll message */
 	pMsg = NULL;
 
-	struct send_poll_request_now *wake_up = new_send_poll_request_now();
-	EVENT_SUBMIT(wake_up);
-	struct connection_state_event *ev1 = new_connection_state_event();
-	ev1->state = true;
-	EVENT_SUBMIT(ev1);
+	k_sem_reset(&msg_out);
+	k_sleep(K_MINUTES(poll_interval));
 
-	zassert_equal(k_sem_take(&msg_out, K_MSEC(5000)), 0, "");
+	zassert_equal(k_sem_take(&msg_out, K_MSEC(500)), 0, "");
 	zassert_not_equal(pMsg, NULL, "Proto message not published!\n");
 	err = collar_protocol_decode(pMsg + 2, len - 2, &decode);
 	zassert_equal(err, 0, "Corrupt proto message!\n");
 	zassert_equal(decode.which_m, NofenceMessage_poll_message_req_tag,
 		      "Wrong message");
 	zassert_false(decode.m.poll_message_req.has_versionInfo, "");
-	k_sleep(K_SECONDS(1));
+
+	struct cellular_ack_event *ack2 = new_cellular_ack_event();
+	EVENT_SUBMIT(ack2);
 }
 
 void test_poll_request_out_when_nudged_from_server(void)
 {
 	ztest_returns_value(date_time_now, 0);
-	/* ztest_returns_value(stg_read_log_data, 0); */
-	/* ztest_returns_value(stg_log_pointing_to_last, false); */
 	k_sleep(K_SECONDS(5));
-	struct cellular_ack_event *ack = new_cellular_ack_event();
-	EVENT_SUBMIT(ack);
+
 	struct send_poll_request_now *wake_up = new_send_poll_request_now();
 	EVENT_SUBMIT(wake_up);
-	struct connection_state_event *ev = new_connection_state_event();
-	ev->state = true;
-	EVENT_SUBMIT(ev);
 
 	k_sem_take(&msg_out, K_MSEC(500));
 	printk("Outbound messages = %d\n", msg_count);
@@ -190,22 +186,20 @@ void test_poll_request_out_when_nudged_from_server(void)
 	zassert_equal(err, 0, "Corrupt proto message!\n");
 	printk("%d\n", decode.which_m);
 	zassert_equal(decode.which_m, NofenceMessage_poll_message_req_tag,
-		      "Expected "
-		      "fence def. "
-		      "request- not "
-		      "sent!\n");
+		      "Expected poll request not sent!\n");
 
-	k_sleep(K_SECONDS(1));
+	zassert_equal(decode.which_m, NofenceMessage_poll_message_req_tag,
+		      "Wrong message type, poll request expected!");
+	zassert_false(decode.m.poll_message_req.has_versionInfo, "");
+
+	struct cellular_ack_event *ack = new_cellular_ack_event();
+	EVENT_SUBMIT(ack);
 }
 
 void test_poll_response_has_new_fence(void)
 {
 	ztest_returns_value(date_time_now, 0);
-	/* We need to simulate that we received the message on server, publish
-	 * ACK for messaging module.
-	 */
-	struct cellular_ack_event *ack = new_cellular_ack_event();
-	EVENT_SUBMIT(ack);
+
 	k_sem_take(&msg_out, K_NO_WAIT);
 	int dummy_fence = 4;
 	NofenceMessage decode;
@@ -233,9 +227,7 @@ void test_poll_response_has_new_fence(void)
 	int ret = collar_protocol_encode(&poll_response, &encoded_msg[0],
 					 sizeof(encoded_msg), &encoded_size);
 	zassert_equal(ret, 0, "Could not encode server response!\n");
-	struct connection_state_event *ev = new_connection_state_event();
-	ev->state = true;
-	EVENT_SUBMIT(ev);
+
 	memcpy(&encoded_msg[2], &encoded_msg[0], encoded_size);
 	struct cellular_proto_in_event *msgIn = new_cellular_proto_in_event();
 	msgIn->buf = &encoded_msg[0];
@@ -253,13 +245,14 @@ void test_poll_response_has_new_fence(void)
 	zassert_equal(decode.m.fence_definition_req.ulFenceDefVersion,
 		      dummy_fence, "Wrong fence version requested!\n");
 
-	k_sleep(K_SECONDS(10));
+	struct cellular_ack_event *ack = new_cellular_ack_event();
+	EVENT_SUBMIT(ack);
 }
 
 void test_poll_response_has_host_address(void)
 {
 	char dummy_host[] = "111.222.333.4444:12345";
-	//	NofenceMessage decode;
+
 	NofenceMessage poll_response = {
 		.which_m = NofenceMessage_poll_message_resp_tag,
 		.header = {
@@ -291,29 +284,67 @@ void test_poll_response_has_host_address(void)
 	msgIn->buf = &encoded_msg[0];
 	msgIn->len = encoded_size + 2;
 	EVENT_SUBMIT(msgIn);
-	struct connection_state_event *ev = new_connection_state_event();
-	ev->state = true;
-	EVENT_SUBMIT(ev);
 
 	ret = k_sem_take(&new_host, K_SECONDS(2));
 	zassert_equal(ret, 0, "New host event not published!\n");
 	ret = memcmp(host, dummy_host, sizeof(dummy_host[0] * 22));
 	zassert_equal(ret, 0, "Host address mismatch!\n");
-
-	k_sleep(K_SECONDS(1));
 }
 
-/* Test expected error events published by messaging*/
-// time_out waiting for ack from cellular_controller
+void test_poll_request_retry_after_missing_ack_from_cellular_controller(void)
+{/*assumes 15min poll interval, 25sec delay for build_log work */
+
+	NofenceMessage decode;
+	k_sem_reset(&error_sem);
+	/* log_work thread start*/
+	collar_histogram dummy_histogram;
+	memset(&dummy_histogram, 1, sizeof(struct collar_histogram));
+	while (k_msgq_put(&histogram_msgq, &dummy_histogram,
+			  K_NO_WAIT) != 0) {
+		k_msgq_purge(&histogram_msgq);
+	}
+	ztest_returns_value(stg_write_log_data, 0);
+	ztest_returns_value(date_time_now, 0);
+	ztest_returns_value(stg_write_log_data, 0);
+	ztest_returns_value(date_time_now, 0);
+	ztest_returns_value(stg_read_log_data, 0);
+	ztest_returns_value(stg_log_pointing_to_last, false);
+	/* log_work thread end*/
+
+	/* poll request #1: no cellular ack will be received for this one*/
+	ztest_returns_value(date_time_now, 0);
+
+	k_sem_reset(&msg_out);
+	k_sleep(K_MINUTES(1+poll_interval));
+
+	zassert_equal(k_sem_take(&msg_out, K_MSEC(500)), 0, "");
+
+	zassert_equal(k_sem_take(&error_sem, K_SECONDS
+				 (CONFIG_CC_ACK_TIMEOUT_SEC)), 0, "");
+
+	zassert_not_equal(pMsg, NULL, "Proto message not published!\n");
+	int err = collar_protocol_decode(pMsg + 2, len - 2, &decode);
+	zassert_equal(err, 0, "Corrupt proto message!\n");
+	zassert_equal(decode.which_m, NofenceMessage_poll_message_req_tag,
+		      "Wrong message");
+	zassert_false(decode.m.poll_message_req.has_versionInfo, "");
+
+	/* poll request #2*/
+	ztest_returns_value(date_time_now, 0);
+	k_sleep(K_MINUTES(poll_interval));
+}
 
 void test_main(void)
 {
 	ztest_test_suite(
 		messaging_tests, ztest_unit_test(test_init),
-		ztest_unit_test(test_initial_poll_request_out),
+		ztest_unit_test(test_second_poll_request_has_no_boot_parameters),
 		ztest_unit_test(test_poll_request_out_when_nudged_from_server),
 		ztest_unit_test(test_poll_response_has_new_fence),
-		ztest_unit_test(test_poll_response_has_host_address));
+		ztest_unit_test(test_poll_response_has_host_address)
+		,ztest_unit_test
+				(test_poll_request_retry_after_missing_ack_from_cellular_controller)
+		);
 
 	ztest_run_test_suite(messaging_tests);
 }
@@ -348,6 +379,16 @@ static bool event_handler(const struct event_header *eh)
 	if (is_messaging_ack_event(eh)) {
 		k_sem_give(&msg_in);
 	}
+	if (is_error_event(eh)) {
+		k_sem_give(&error_sem);
+		return false;
+	}
+	if (is_check_connection(eh)) {
+		struct connection_state_event *ev1 = new_connection_state_event();
+		ev1->state = simulated_connection_state;
+		EVENT_SUBMIT(ev1);
+		return false;
+	}
 	return false;
 }
 
@@ -355,3 +396,5 @@ EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, messaging_proto_out_event);
 EVENT_SUBSCRIBE(test_main, messaging_ack_event);
 EVENT_SUBSCRIBE(test_main, messaging_host_address_event);
+EVENT_SUBSCRIBE(test_main, error_event);
+EVENT_SUBSCRIBE(test_main, check_connection);

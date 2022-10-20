@@ -132,13 +132,11 @@ void main(void)
 
 	/* If not set, we can play the sound. */
 	if ((is_soft_reset != true) ||
-	    ((is_soft_reset == true) &&
-	     (soft_reset_reason == REBOOT_BLE_RESET))) {
-		if (bat_percent > 10) {
+	    ((is_soft_reset == true) && (soft_reset_reason == REBOOT_BLE_RESET))) {
+		if (bat_percent > 20) {
 			if (bat_percent >= 75) {
 				/* Play battery sound. */
-				struct sound_event *sound_ev =
-					new_sound_event();
+				struct sound_event *sound_ev = new_sound_event();
 				sound_ev->type = SND_SHORT_100;
 				EVENT_SUBMIT(sound_ev);
 			}
@@ -195,17 +193,6 @@ void main(void)
 		nf_app_error(ERR_EP_MODULE, err, e_msg, strlen(e_msg));
 	}
 
-	/* Initialize animal monitor control module, depends on storage
-	 * controller to be initialized first since amc sends
-	 * a request for pasture data on init. 
-	 */
-	err = amc_module_init();
-	if (err) {
-		char *e_msg = "Could not initialize the AMC module";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_AMC, err, e_msg, strlen(e_msg));
-	}
-
 	/* Important to initialize the eeprom first, since we use the 
 	 * sleep sigma value from eeprom when we init.
 	 */
@@ -214,8 +201,7 @@ void main(void)
 	if (err) {
 		char *e_msg = "Could not initialize the movement module";
 		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_MOVEMENT_CONTROLLER, err, e_msg,
-			     strlen(e_msg));
+		nf_app_error(ERR_MOVEMENT_CONTROLLER, err, e_msg, strlen(e_msg));
 	}
 
 	/* Initialize the cellular controller */
@@ -223,8 +209,7 @@ void main(void)
 	if (err) {
 		char *e_msg = "Could not initialize the cellular controller";
 		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_CELLULAR_CONTROLLER, err, e_msg,
-			     strlen(e_msg));
+		nf_app_error(ERR_CELLULAR_CONTROLLER, err, e_msg, strlen(e_msg));
 	}
 	/* Initialize the time module used for the histogram calculation */
 	err = time_use_module_init();
@@ -250,6 +235,17 @@ void main(void)
 		nf_app_error(ERR_GNSS_CONTROLLER, err, e_msg, strlen(e_msg));
 	}
 #endif
+
+	/* Initialize animal monitor control module, depends on storage
+	 * controller to be initialized first since amc sends
+	 * a request for pasture data on init.
+	 */
+	err = amc_module_init();
+	if (err) {
+		char *e_msg = "Could not initialize the AMC module";
+		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
+		nf_app_error(ERR_AMC, err, e_msg, strlen(e_msg));
+	}
 
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,

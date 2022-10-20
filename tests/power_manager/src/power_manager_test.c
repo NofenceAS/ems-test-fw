@@ -67,7 +67,7 @@ void test_pwr_module_init(void)
 		      "Error when initializing pwr module");
 
 	/* Normal mode is initialized as default */
-	int err = k_sem_take(&normal_pwr_event_sem, K_SECONDS(5));
+	int err = k_sem_take(&normal_pwr_event_sem, K_SECONDS(3));
 	zassert_equal(err, 0, "normal_pwr_event_sem hanged.");
 }
 
@@ -83,7 +83,7 @@ void test_pwr_module_normal(void)
 		adc_emul_const_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_mv);
 	zassert_ok(ret, "adc_emul_const_value_set() failed with code %d", ret);
 
-	int err = k_sem_take(&normal_pwr_event_sem, K_SECONDS(5));
+	int err = k_sem_take(&normal_pwr_event_sem, K_SECONDS(3));
 	zassert_equal(err, 0, "normal_pwr_event_sem hanged.");
 }
 
@@ -97,8 +97,7 @@ void test_pwr_module_low(void)
 	int ret =
 		adc_emul_const_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_mv);
 	zassert_ok(ret, "adc_emul_const_value_set() failed with code %d", ret);
-
-	int err = k_sem_take(&low_pwr_event_sem, K_SECONDS(5));
+	int err = k_sem_take(&low_pwr_event_sem, K_SECONDS(3));
 	zassert_equal(err, 0, "low_pwr_event_sem hanged.");
 
 	/* Check stuff when event is received here */
@@ -115,7 +114,7 @@ void test_pwr_module_critical(void)
 		adc_emul_const_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_mv);
 	zassert_ok(ret, "adc_emul_const_value_set() failed with code %d", ret);
 
-	int err = k_sem_take(&critical_pwr_event_sem, K_SECONDS(5));
+	int err = k_sem_take(&critical_pwr_event_sem, K_SECONDS(3));
 	zassert_equal(err, 0, "critical_pwr_event_sem hanged.");
 
 	/* Check stuff when event is received here */
@@ -136,7 +135,7 @@ void test_pwr_module_normal_to_critical(void)
 	zassert_equal(err, -EAGAIN,
 		      "Error: jump directly to critical not allowed");
 
-	err = k_sem_take(&critical_pwr_event_sem, K_SECONDS(5));
+	err = k_sem_take(&critical_pwr_event_sem, K_SECONDS(3));
 	zassert_equal(err, 0, "critical_pwr_event_sem hanged.");
 }
 
@@ -349,11 +348,6 @@ static bool event_handler(const struct event_header *eh)
 			printk("PWR CRTICAL\n");
 			k_sem_give(&critical_pwr_event_sem);
 			/* Do nothing here */
-			break;
-		case PWR_BATTERY:
-			/* This state is periodic sent based on CONFIG_BATTRY_POLLER_WORK_SEC 
-			   Can be used to fetch battery volatge 
-			*/
 			break;
 		default:
 			zassert_unreachable("Unexpected command event.");
