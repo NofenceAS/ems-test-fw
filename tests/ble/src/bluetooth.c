@@ -74,9 +74,11 @@ void test_init_ok(void)
 	ztest_returns_value(bt_le_adv_start, 0);
 	ztest_returns_value(bt_le_scan_start, 0);
 
-	zassert_equal(event_manager_init(), 0, "Error when initializing event manager");
+	zassert_equal(event_manager_init(), 0,
+		      "Error when initializing event manager");
 
-	zassert_equal(ble_module_init(), 0, "Error when initializing ble module");
+	zassert_equal(ble_module_init(), 0,
+		      "Error when initializing ble module");
 }
 
 /* Checik if ble_module_init fails sucessfully */
@@ -88,9 +90,11 @@ void test_init_error(void)
 	ztest_returns_value(eep_uint8_read, 0);
 	ztest_returns_value(eep_uint8_read, 0);
 	ztest_returns_value(bt_enable, -2);
-	zassert_equal(event_manager_init(), 0, "Error when initializing event manager");
+	zassert_equal(event_manager_init(), 0,
+		      "Error when initializing event manager");
 
-	zassert_equal(ble_module_init(), -2, "Error when initializing ble module");
+	zassert_equal(ble_module_init(), -2,
+		      "Error when initializing ble module");
 }
 
 /**
@@ -119,10 +123,11 @@ void test_ble_beacon_scanner(void)
 	memcpy(addr_1.a.val, address_1.val, sizeof(bt_addr_t));
 	int measured_rssi_1 = -60; // corresponds to 1 meter
 	const uint32_t now_1 = k_uptime_get_32();
-	m_shortest_dist =
-		beacon_process_event(now_1, &addr_1, measured_rssi_1, &adv_data_1);
+	m_shortest_dist = beacon_process_event(now_1, &addr_1, measured_rssi_1,
+					       &adv_data_1);
 
-	zassert_equal(m_shortest_dist, 1, "Shortest distance calculation is wrong");
+	zassert_equal(m_shortest_dist, 1,
+		      "Shortest distance calculation is wrong");
 	k_sleep(K_SECONDS(1));
 
 	adv_data_t adv_data_2;
@@ -142,10 +147,11 @@ void test_ble_beacon_scanner(void)
 	memcpy(addr_2.a.val, address_2.val, sizeof(bt_addr_t));
 	int measured_rssi_2 = -76; // corresponds to 12 meter
 	const uint32_t now_2 = k_uptime_get_32();
-	m_shortest_dist =
-		beacon_process_event(now_2, &addr_2, measured_rssi_2, &adv_data_2);
+	m_shortest_dist = beacon_process_event(now_2, &addr_2, measured_rssi_2,
+					       &adv_data_2);
 	// Since the list contain another beacon with distance 1, we expect this to be smaller and returned
-	zassert_equal(m_shortest_dist, 1, "Shortest distance calculation is wrong");
+	zassert_equal(m_shortest_dist, 1,
+		      "Shortest distance calculation is wrong");
 
 	/* Evaluate BEACON */
 	evaluate_beacon();
@@ -179,44 +185,50 @@ void test_calculation_beacon_scanner(void)
 	memcpy(addr_1.a.val, address_1.val, sizeof(bt_addr_t));
 	int measured_rssi = -83; // corresponds to 30 meter
 	uint32_t time_now = k_uptime_get_32();
-	m_shortest_dist =
-		beacon_process_event(time_now, &addr_1, measured_rssi, &adv_data_1);
-	zassert_equal(m_shortest_dist, 30, "Shortest distance calculation is wrong");
+	m_shortest_dist = beacon_process_event(time_now, &addr_1, measured_rssi,
+					       &adv_data_1);
+	zassert_equal(m_shortest_dist, 30,
+		      "Shortest distance calculation is wrong");
 	k_sleep(K_SECONDS(1));
 
 	measured_rssi = -81; // corresponds to 23 meter
 	time_now = k_uptime_get_32();
-	m_shortest_dist =
-		beacon_process_event(time_now, &addr_1, measured_rssi, &adv_data_1);
-	zassert_equal(m_shortest_dist, 23, "Shortest distance calculation is wrong");
+	m_shortest_dist = beacon_process_event(time_now, &addr_1, measured_rssi,
+					       &adv_data_1);
+	zassert_equal(m_shortest_dist, 23,
+		      "Shortest distance calculation is wrong");
 	k_sleep(K_SECONDS(1));
 
 	measured_rssi = -77; // corresponds to 14 meter
 	time_now = k_uptime_get_32();
-	m_shortest_dist =
-		beacon_process_event(time_now, &addr_1, measured_rssi, &adv_data_1);
-	zassert_equal(m_shortest_dist, 14, "Shortest distance calculation is wrong");
+	m_shortest_dist = beacon_process_event(time_now, &addr_1, measured_rssi,
+					       &adv_data_1);
+	zassert_equal(m_shortest_dist, 14,
+		      "Shortest distance calculation is wrong");
 	k_sleep(K_SECONDS(1));
 
 	measured_rssi = -68; // corresponds to 4 meter
 	time_now = k_uptime_get_32();
-	m_shortest_dist =
-		beacon_process_event(time_now, &addr_1, measured_rssi, &adv_data_1);
-	zassert_equal(m_shortest_dist, 4, "Shortest distance calculation is wrong");
+	m_shortest_dist = beacon_process_event(time_now, &addr_1, measured_rssi,
+					       &adv_data_1);
+	zassert_equal(m_shortest_dist, 4,
+		      "Shortest distance calculation is wrong");
 	k_sleep(K_SECONDS(1));
 
 	measured_rssi = -64; // corresponds to 2 meter
 	time_now = k_uptime_get_32();
-	m_shortest_dist =
-		beacon_process_event(time_now, &addr_1, measured_rssi, &adv_data_1);
-	zassert_equal(m_shortest_dist, 2, "Shortest distance calculation is wrong");
+	m_shortest_dist = beacon_process_event(time_now, &addr_1, measured_rssi,
+					       &adv_data_1);
+	zassert_equal(m_shortest_dist, 2,
+		      "Shortest distance calculation is wrong");
 	k_sleep(K_SECONDS(1));
 
 	measured_rssi = -63; // corresponds to 1 meter
 	time_now = k_uptime_get_32();
-	m_shortest_dist =
-		beacon_process_event(time_now, &addr_1, measured_rssi, &adv_data_1);
-	zassert_equal(m_shortest_dist, 1, "Shortest distance calculation is wrong");
+	m_shortest_dist = beacon_process_event(time_now, &addr_1, measured_rssi,
+					       &adv_data_1);
+	zassert_equal(m_shortest_dist, 1,
+		      "Shortest distance calculation is wrong");
 
 	/* Evaluate BEACON */
 	evaluate_beacon();
@@ -250,10 +262,11 @@ void test_beacon_shortest_dist(void)
 	memcpy(addr_1.a.val, address_1.val, sizeof(bt_addr_t));
 	int measured_rssi_1 = -68; // corresponds to 4 meter
 	uint32_t time_now_1 = k_uptime_get_32();
-	m_shortest_dist =
-		beacon_process_event(time_now_1, &addr_1, measured_rssi_1, &adv_data_1);
+	m_shortest_dist = beacon_process_event(time_now_1, &addr_1,
+					       measured_rssi_1, &adv_data_1);
 	printk("Shortest range: %d\n", m_shortest_dist);
-	zassert_equal(m_shortest_dist, 4, "Shortest distance calculation is wrong");
+	zassert_equal(m_shortest_dist, 4,
+		      "Shortest distance calculation is wrong");
 	k_sleep(K_SECONDS(1));
 	adv_data_t adv_data_2;
 	/* Beacon RSSI advertised. The value is fixed and fetched from adv payload.
@@ -272,11 +285,12 @@ void test_beacon_shortest_dist(void)
 	memcpy(addr_2.a.val, address_2.val, sizeof(bt_addr_t));
 	int measured_rssi_2 = -83; // corresponds to 30 meter
 	uint32_t time_now_2 = k_uptime_get_32();
-	m_shortest_dist =
-		beacon_process_event(time_now_2, &addr_2, measured_rssi_2, &adv_data_2);
+	m_shortest_dist = beacon_process_event(time_now_2, &addr_2,
+					       measured_rssi_2, &adv_data_2);
 	printk("Shortest range: %d\n", m_shortest_dist);
 	/* We expect the distance to be 4, since this is the shortest registred in the list */
-	zassert_equal(m_shortest_dist, 4, "Shortest distance calculation is wrong");
+	zassert_equal(m_shortest_dist, 4,
+		      "Shortest distance calculation is wrong");
 
 	/* Evaluate BEACON */
 	evaluate_beacon();
@@ -310,10 +324,11 @@ void test_beacon_timeout_dist(void)
 	memcpy(addr_1.a.val, address_1.val, sizeof(bt_addr_t));
 	int measured_rssi_1 = -68; // corresponds to 4 meter
 	uint32_t time_now_1 = k_uptime_get_32();
-	m_shortest_dist =
-		beacon_process_event(time_now_1, &addr_1, measured_rssi_1, &adv_data_1);
+	m_shortest_dist = beacon_process_event(time_now_1, &addr_1,
+					       measured_rssi_1, &adv_data_1);
 	printk("Shortest range: %d\n", m_shortest_dist);
-	zassert_equal(m_shortest_dist, 4, "Shortest distance calculation is wrong");
+	zassert_equal(m_shortest_dist, 4,
+		      "Shortest distance calculation is wrong");
 
 	/* Wait for a while */
 	k_sleep(K_SECONDS(CONFIG_BEACON_MAX_MEASUREMENT_AGE));
@@ -334,11 +349,12 @@ void test_beacon_timeout_dist(void)
 	memcpy(addr_2.a.val, address_2.val, sizeof(bt_addr_t));
 	int measured_rssi_2 = -83; // corresponds to 30 meter
 	uint32_t time_now_2 = k_uptime_get_32();
-	m_shortest_dist =
-		beacon_process_event(time_now_2, &addr_2, measured_rssi_2, &adv_data_2);
+	m_shortest_dist = beacon_process_event(time_now_2, &addr_2,
+					       measured_rssi_2, &adv_data_2);
 	printk("Shortest range: %d\n", m_shortest_dist);
 	/* We expect the distance to be 30, since the beacon with shorter measurement is ignored */
-	zassert_equal(m_shortest_dist, 30, "Shortest distance calculation is wrong");
+	zassert_equal(m_shortest_dist, 30,
+		      "Shortest distance calculation is wrong");
 
 	/* Evaluate BEACON */
 	evaluate_beacon();
@@ -373,10 +389,11 @@ void test_beacon_full_list_dist(void)
 	memcpy(addr_1.a.val, address_1.val, sizeof(bt_addr_t));
 	int measured_rssi_1 = -68; // corresponds to 4 meter
 	uint32_t time_now_1 = k_uptime_get_32();
-	m_shortest_dist =
-		beacon_process_event(time_now_1, &addr_1, measured_rssi_1, &adv_data_1);
+	m_shortest_dist = beacon_process_event(time_now_1, &addr_1,
+					       measured_rssi_1, &adv_data_1);
 	printk("Shortest range: %d\n", m_shortest_dist);
-	zassert_equal(m_shortest_dist, 4, "Shortest distance calculation is wrong");
+	zassert_equal(m_shortest_dist, 4,
+		      "Shortest distance calculation is wrong");
 
 	/* Evaluate BEACON */
 	evaluate_beacon();
@@ -402,11 +419,12 @@ void test_beacon_full_list_dist(void)
 	memcpy(addr_2.a.val, address_2.val, sizeof(bt_addr_t));
 	int measured_rssi_2 = -81; // corresponds to 23 meter
 	uint32_t time_now_2 = k_uptime_get_32();
-	m_shortest_dist =
-		beacon_process_event(time_now_2, &addr_2, measured_rssi_2, &adv_data_2);
+	m_shortest_dist = beacon_process_event(time_now_2, &addr_2,
+					       measured_rssi_2, &adv_data_2);
 	printk("Shortest range: %d\n", m_shortest_dist);
 	/* We expect the distance to be 23, since the beacon with shorter measurement is ignored */
-	zassert_equal(m_shortest_dist, 23, "Shortest distance calculation is wrong");
+	zassert_equal(m_shortest_dist, 23,
+		      "Shortest distance calculation is wrong");
 
 	/* Evaluate BEACON */
 	evaluate_beacon();
@@ -429,10 +447,11 @@ void test_beacon_full_list_dist(void)
 	memcpy(addr_3.a.val, address_3.val, sizeof(bt_addr_t));
 	int measured_rssi_3 = -77; // corresponds to 14 meter
 	uint32_t time_now_3 = k_uptime_get_32();
-	m_shortest_dist =
-		beacon_process_event(time_now_3, &addr_3, measured_rssi_3, &adv_data_3);
+	m_shortest_dist = beacon_process_event(time_now_3, &addr_3,
+					       measured_rssi_3, &adv_data_3);
 	printk("Shortest range: %d\n", m_shortest_dist);
-	zassert_equal(m_shortest_dist, 14, "Shortest distance calculation is wrong");
+	zassert_equal(m_shortest_dist, 14,
+		      "Shortest distance calculation is wrong");
 
 	k_sleep(K_SECONDS(1));
 	adv_data_t adv_data_4;
@@ -452,11 +471,12 @@ void test_beacon_full_list_dist(void)
 	memcpy(addr_4.a.val, address_4.val, sizeof(bt_addr_t));
 	int measured_rssi_4 = -83; // corresponds to 30 meter
 	uint32_t time_now_4 = k_uptime_get_32();
-	m_shortest_dist =
-		beacon_process_event(time_now_4, &addr_4, measured_rssi_4, &adv_data_4);
+	m_shortest_dist = beacon_process_event(time_now_4, &addr_4,
+					       measured_rssi_4, &adv_data_4);
 	printk("Shortest range: %d\n", m_shortest_dist);
 	/* We expect the distance to be 14, since the beacon with shorter measurement is ignored */
-	zassert_equal(m_shortest_dist, 14, "Shortest distance calculation is wrong");
+	zassert_equal(m_shortest_dist, 14,
+		      "Shortest distance calculation is wrong");
 
 	adv_data_t adv_data_5;
 	/* Beacon RSSI advertised. The value is fixed and fetched from adv payload.
@@ -475,11 +495,12 @@ void test_beacon_full_list_dist(void)
 	memcpy(addr_5.a.val, address_5.val, sizeof(bt_addr_t));
 	int measured_rssi_5 = -60; // corresponds to 1 meter
 	uint32_t time_now_5 = k_uptime_get_32();
-	m_shortest_dist =
-		beacon_process_event(time_now_5, &addr_5, measured_rssi_5, &adv_data_5);
+	m_shortest_dist = beacon_process_event(time_now_5, &addr_5,
+					       measured_rssi_5, &adv_data_5);
 
 	printk("Shortest range: %d\n", m_shortest_dist);
-	zassert_equal(m_shortest_dist, 1, "Shortest distance calculation is wrong");
+	zassert_equal(m_shortest_dist, 1,
+		      "Shortest distance calculation is wrong");
 
 	k_sem_reset(&beacon_near_sem);
 	/* Evaluate BEACON */
@@ -514,9 +535,11 @@ void test_ble_beacon_out_of_range(void)
 	memcpy(addr.a.val, address.val, sizeof(bt_addr_t));
 	int measured_rssi = -88; // corresponds to 54 meter
 	uint32_t time_now = k_uptime_get_32();
-	m_shortest_dist = beacon_process_event(time_now, &addr, measured_rssi, &adv_data);
+	m_shortest_dist =
+		beacon_process_event(time_now, &addr, measured_rssi, &adv_data);
 	/* Since the distance is greater than 50 m we return UINT8_MAX */
-	zassert_equal(m_shortest_dist, UINT8_MAX, "We received a wrong return code");
+	zassert_equal(m_shortest_dist, UINT8_MAX,
+		      "We received a wrong return code");
 
 	k_sem_reset(&beacon_not_found);
 	/* Evaluate BEACON */
@@ -608,7 +631,8 @@ void test_ble_ctrl_event_error_flag(void)
 	zassert_equal(err, 0, "Test status event execution hanged.");
 
 	/* Semaphore given */
-	zassert_true(bt_mock_is_error_flag_adv_data_correct(event->param.error_flags),
+	zassert_true(bt_mock_is_error_flag_adv_data_correct(
+			     event->param.error_flags),
 		     "Adv data not correct");
 }
 
@@ -654,8 +678,9 @@ void test_ble_ctrl_event_collar_status(void)
 		      "Test status event execution hanged.");
 
 	/* Verify advertisement data */
-	zassert_true(bt_mock_is_collar_status_adv_data_correct(CollarStatus_Stuck),
-		     "Adv collar status not correct");
+	zassert_true(
+		bt_mock_is_collar_status_adv_data_correct(CollarStatus_Stuck),
+		"Adv collar status not correct");
 }
 
 /**
@@ -677,7 +702,8 @@ void test_ble_ctrl_event_fence_status(void)
 		      "Test status event execution hanged.");
 
 	/* Verify advertisement data */
-	zassert_true(bt_mock_is_fence_status_adv_data_correct(FenceStatus_NotStarted),
+	zassert_true(bt_mock_is_fence_status_adv_data_correct(
+			     FenceStatus_NotStarted),
 		     "Adv fence status not correct");
 }
 
@@ -735,8 +761,9 @@ void test_ble_ctrl_event_fence_def_status_invalid(void)
 		     "Adv fence def version not correct");
 
 	/* Verify advertisement data (valid pasture) */
-	zassert_true(bt_mock_is_pasture_status_adv_data_correct(0 /* invalid */),
-		     "Adv valid pasture not correct");
+	zassert_true(
+		bt_mock_is_pasture_status_adv_data_correct(0 /* invalid */),
+		"Adv valid pasture not correct");
 }
 
 void test_ble_ctrl_event_fence_def_status_no_pasture(void)
@@ -761,8 +788,9 @@ void test_ble_ctrl_event_fence_def_status_no_pasture(void)
 		     "Adv fence def version not correct");
 
 	/* Verify advertisement data (valid pasture) */
-	zassert_true(bt_mock_is_pasture_status_adv_data_correct(0 /* invalid */),
-		     "Adv valid pasture not correct");
+	zassert_true(
+		bt_mock_is_pasture_status_adv_data_correct(0 /* invalid */),
+		"Adv valid pasture not correct");
 }
 
 /* Test case main entry */
@@ -787,7 +815,8 @@ void test_main(void)
 		ztest_unit_test(test_ble_ctrl_event_fence_status),
 		ztest_unit_test(test_ble_ctrl_event_fence_def_status),
 		ztest_unit_test(test_ble_ctrl_event_fence_def_status_invalid),
-		ztest_unit_test(test_ble_ctrl_event_fence_def_status_no_pasture));
+		ztest_unit_test(
+			test_ble_ctrl_event_fence_def_status_no_pasture));
 	ztest_run_test_suite(test_bluetooth);
 }
 
@@ -848,7 +877,8 @@ static bool event_handler(const struct event_header *eh)
 		printk("BLE data event received!\n");
 		const struct ble_data_event *event = cast_ble_data_event(eh);
 		uint8_t expected_data[2] = { 0x01, 0x02 };
-		zassert_mem_equal(event->buf, expected_data, 2, "Error buffer not equal");
+		zassert_mem_equal(event->buf, expected_data, 2,
+				  "Error buffer not equal");
 		k_sem_give(&ble_data_sem);
 		return false;
 	}
@@ -913,7 +943,8 @@ static bool event_handler(const struct event_header *eh)
 	}
 
 	if (is_ble_beacon_event(eh)) {
-		const struct ble_beacon_event *event = cast_ble_beacon_event(eh);
+		const struct ble_beacon_event *event =
+			cast_ble_beacon_event(eh);
 		switch (event->status) {
 		case BEACON_STATUS_REGION_NEAR:
 			printk("Beacon status region near detected\n");

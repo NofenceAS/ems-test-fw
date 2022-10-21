@@ -33,7 +33,8 @@ void assert_post_action(const char *file, unsigned int line)
 
 void test_init_and_update_pasture(void)
 {
-	zassert_false(event_manager_init(), "Error when initializing event manager");
+	zassert_false(event_manager_init(),
+		      "Error when initializing event manager");
 
 	/* ..init_states_and_variables, cached variables. 1. tot zap count, 
 	 * 2. warn count, 3. zap count day */
@@ -64,20 +65,24 @@ void test_set_get_pasture(void)
 	};
 
 	/* Fences. */
-	pasture.fences[0].m.e_fence_type = FenceDefinitionMessage_FenceType_Normal;
+	pasture.fences[0].m.e_fence_type =
+		FenceDefinitionMessage_FenceType_Normal;
 	pasture.fences[0].m.us_id = 0;
 	pasture.fences[0].m.fence_no = 0;
 
 	/* Coordinates. */
 	fence_coordinate_t points1[] = {
-		{ .s_x_dm = 10, .s_y_dm = -10 }, { .s_x_dm = 10, .s_y_dm = 10 },
-		{ .s_x_dm = -10, .s_y_dm = 10 }, { .s_x_dm = -10, .s_y_dm = -10 },
+		{ .s_x_dm = 10, .s_y_dm = -10 },
+		{ .s_x_dm = 10, .s_y_dm = 10 },
+		{ .s_x_dm = -10, .s_y_dm = 10 },
+		{ .s_x_dm = -10, .s_y_dm = -10 },
 		{ .s_x_dm = 10, .s_y_dm = -10 },
 	};
 	pasture.fences[0].m.n_points = sizeof(points1) / sizeof(points1[0]);
 	memcpy(&pasture.fences[0].coordinates[0], points1, sizeof(points1));
 
-	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)), "");
+	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)),
+		      "");
 
 	pasture_t wrong_pasture;
 	memset(&wrong_pasture, 0, sizeof(pasture_t));
@@ -94,7 +99,8 @@ void test_fnc_valid_fence_exists(void)
 	};
 
 	/* Fences. */
-	pasture.fences[0].m.e_fence_type = FenceDefinitionMessage_FenceType_Normal;
+	pasture.fences[0].m.e_fence_type =
+		FenceDefinitionMessage_FenceType_Normal;
 	pasture.fences[0].m.us_id = 0;
 	pasture.fences[0].m.fence_no = 0;
 
@@ -107,7 +113,8 @@ void test_fnc_valid_fence_exists(void)
 	};
 	pasture.fences[0].m.n_points = sizeof(points1) / sizeof(points1[0]);
 	memcpy(pasture.fences[0].coordinates, points1, sizeof(points1));
-	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)), "");
+	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)),
+		      "");
 	zassert_true(fnc_valid_fence(), "");
 }
 
@@ -116,7 +123,8 @@ void test_empty_fence(void)
 	pasture_t pasture = {
 		.m.ul_total_fences = 0,
 	};
-	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)), "");
+	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)),
+		      "");
 	zassert_false(fnc_valid_fence(), "");
 }
 
@@ -129,7 +137,8 @@ void test_update_pasture(void)
 
 	/* Set fence status to "UNKNOWN" before starting the update process */
 	ztest_returns_value(eep_uint8_write, 0);
-	zassert_equal(force_fence_status(FenceStatus_FenceStatus_UNKNOWN), 0, "");
+	zassert_equal(force_fence_status(FenceStatus_FenceStatus_UNKNOWN), 0,
+		      "");
 	k_sem_reset(&fence_sema);
 	zassert_equal(k_sem_take(&fence_sema, K_SECONDS(10)), 0, "");
 
@@ -155,8 +164,9 @@ void test_update_pasture(void)
 
 	zassert_equal(m_current_fence_status, FenceStatus_NotStarted,
 		      "Failed to force correct fence status");
-	zassert_equal(get_fence_status(), m_current_fence_status,
-		      "Actual fence status is not equal to reported fence status");
+	zassert_equal(
+		get_fence_status(), m_current_fence_status,
+		"Actual fence status is not equal to reported fence status");
 	zassert_equal(zone_get(), NO_ZONE,
 		      "Zone not reset to NO_ZONE with "
 		      "the new pasture!");
@@ -173,7 +183,8 @@ void test_update_pasture_teach_mode(void)
 
 	/* Set fence status to "UNKNOWN" before starting the update process */
 	ztest_returns_value(eep_uint8_write, 0);
-	zassert_equal(force_fence_status(FenceStatus_FenceStatus_UNKNOWN), 0, "");
+	zassert_equal(force_fence_status(FenceStatus_FenceStatus_UNKNOWN), 0,
+		      "");
 	k_sem_reset(&fence_sema);
 	zassert_equal(k_sem_take(&fence_sema, K_SECONDS(10)), 0, "");
 
@@ -206,8 +217,9 @@ void test_update_pasture_teach_mode(void)
 
 	zassert_equal(m_current_fence_status, FenceStatus_NotStarted,
 		      "Failed to force correct fence status");
-	zassert_equal(get_fence_status(), m_current_fence_status,
-		      "Actual fence status is not equal to reported fence status");
+	zassert_equal(
+		get_fence_status(), m_current_fence_status,
+		"Actual fence status is not equal to reported fence status");
 
 	zassert_equal(get_mode(), Mode_Teach, "Failed to force teach mode");
 }
@@ -219,7 +231,8 @@ void test_update_pasture_stg_fail(void)
 	 */
 	/* Set fence status to "UNKNOWN" before starting the update process */
 	ztest_returns_value(eep_uint8_write, 0);
-	zassert_equal(force_fence_status(FenceStatus_FenceStatus_UNKNOWN), 0, "");
+	zassert_equal(force_fence_status(FenceStatus_FenceStatus_UNKNOWN), 0,
+		      "");
 	k_sem_reset(&fence_sema);
 	zassert_equal(k_sem_take(&fence_sema, K_SECONDS(10)), 0, "");
 
@@ -277,7 +290,8 @@ void test_update_pasture_integration(void)
 	};
 
 	/* Fences. */
-	pasture.fences[0].m.e_fence_type = FenceDefinitionMessage_FenceType_Normal;
+	pasture.fences[0].m.e_fence_type =
+		FenceDefinitionMessage_FenceType_Normal;
 	pasture.fences[0].m.us_id = 0;
 	pasture.fences[0].m.fence_no = 0;
 	int offset = 1000;
@@ -292,7 +306,8 @@ void test_update_pasture_integration(void)
 	};
 	pasture.fences[0].m.n_points = sizeof(points1) / sizeof(points1[0]);
 	memcpy(&pasture.fences[0].coordinates[0], points1, sizeof(points1));
-	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)), "");
+	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)),
+		      "");
 	pasture_t *new_pasture = NULL;
 	zassert_false(get_pasture_cache(&new_pasture), "");
 	zassert_mem_equal(&pasture, new_pasture, sizeof(pasture_t), "");
@@ -312,7 +327,8 @@ void test_update_pasture_integration(void)
 	struct new_fence_available *event = new_new_fence_available();
 	event->new_fence_version = pasture.m.ul_fence_def_version;
 	EVENT_SUBMIT(event);
-	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)), "");
+	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)),
+		      "");
 
 	for (int i = 0; i < 100; i++) {
 		update_position(1, 1);
@@ -323,7 +339,8 @@ void test_update_pasture_integration(void)
 static bool event_handler(const struct event_header *eh)
 {
 	if (is_update_fence_status(eh)) {
-		struct update_fence_status *event = cast_update_fence_status(eh);
+		struct update_fence_status *event =
+			cast_update_fence_status(eh);
 		m_current_fence_status = event->fence_status;
 		k_sem_give(&fence_sema);
 		return false;
@@ -340,7 +357,8 @@ static bool event_handler(const struct event_header *eh)
 
 void test_main(void)
 {
-	ztest_test_suite(amc_tests, ztest_unit_test(test_init_and_update_pasture),
+	ztest_test_suite(amc_tests,
+			 ztest_unit_test(test_init_and_update_pasture),
 			 ztest_unit_test(test_set_get_pasture),
 			 ztest_unit_test(test_fnc_valid_fence_exists),
 			 ztest_unit_test(test_empty_fence),
@@ -349,7 +367,8 @@ void test_main(void)
 			 ztest_unit_test(test_update_pasture));
 	ztest_run_test_suite(amc_tests);
 
-	ztest_test_suite(amc_dist_tests, ztest_unit_test(test_fnc_calc_dist_quadratic),
+	ztest_test_suite(amc_dist_tests,
+			 ztest_unit_test(test_fnc_calc_dist_quadratic),
 			 ztest_unit_test(test_fnc_calc_dist_quadratic_max),
 			 ztest_unit_test(test_fnc_calc_dist_rect),
 			 ztest_unit_test(test_fnc_calc_dist_2_fences_hole),

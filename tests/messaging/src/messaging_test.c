@@ -70,7 +70,6 @@ void test_init(void)
 	struct gsm_info_event *ev_gsm = new_gsm_info_event();
 	EVENT_SUBMIT(ev_gsm);
 
-
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
 
@@ -91,9 +90,9 @@ void test_init(void)
 
 /* Test expected events published by messaging*/
 //ack - fence_ready - ano_ready - msg_out - host_address
-int poll_interval =15;
+int poll_interval = 15;
 void test_second_poll_request_has_no_boot_parameters(void)
-{/*assumes 15min poll interval, 25sec delay for build_log work
+{ /*assumes 15min poll interval, 25sec delay for build_log work
  * checks: second poll request sent out without the boot parameters*/
 	ztest_returns_value(date_time_now, 0);
 	/* TODO pshustad, pending if we are going to use the connection_state_event for poll */
@@ -292,15 +291,14 @@ void test_poll_response_has_host_address(void)
 }
 
 void test_poll_request_retry_after_missing_ack_from_cellular_controller(void)
-{/*assumes 15min poll interval, 25sec delay for build_log work */
+{ /*assumes 15min poll interval, 25sec delay for build_log work */
 
 	NofenceMessage decode;
 	k_sem_reset(&error_sem);
 	/* log_work thread start*/
 	collar_histogram dummy_histogram;
 	memset(&dummy_histogram, 1, sizeof(struct collar_histogram));
-	while (k_msgq_put(&histogram_msgq, &dummy_histogram,
-			  K_NO_WAIT) != 0) {
+	while (k_msgq_put(&histogram_msgq, &dummy_histogram, K_NO_WAIT) != 0) {
 		k_msgq_purge(&histogram_msgq);
 	}
 	ztest_returns_value(stg_write_log_data, 0);
@@ -315,12 +313,13 @@ void test_poll_request_retry_after_missing_ack_from_cellular_controller(void)
 	ztest_returns_value(date_time_now, 0);
 
 	k_sem_reset(&msg_out);
-	k_sleep(K_MINUTES(1+poll_interval));
+	k_sleep(K_MINUTES(1 + poll_interval));
 
 	zassert_equal(k_sem_take(&msg_out, K_MSEC(500)), 0, "");
 
-	zassert_equal(k_sem_take(&error_sem, K_SECONDS
-				 (CONFIG_CC_ACK_TIMEOUT_SEC)), 0, "");
+	zassert_equal(k_sem_take(&error_sem,
+				 K_SECONDS(CONFIG_CC_ACK_TIMEOUT_SEC)),
+		      0, "");
 
 	zassert_not_equal(pMsg, NULL, "Proto message not published!\n");
 	int err = collar_protocol_decode(pMsg + 2, len - 2, &decode);
@@ -338,13 +337,13 @@ void test_main(void)
 {
 	ztest_test_suite(
 		messaging_tests, ztest_unit_test(test_init),
-		ztest_unit_test(test_second_poll_request_has_no_boot_parameters),
+		ztest_unit_test(
+			test_second_poll_request_has_no_boot_parameters),
 		ztest_unit_test(test_poll_request_out_when_nudged_from_server),
 		ztest_unit_test(test_poll_response_has_new_fence),
-		ztest_unit_test(test_poll_response_has_host_address)
-		,ztest_unit_test
-				(test_poll_request_retry_after_missing_ack_from_cellular_controller)
-		);
+		ztest_unit_test(test_poll_response_has_host_address),
+		ztest_unit_test(
+			test_poll_request_retry_after_missing_ack_from_cellular_controller));
 
 	ztest_run_test_suite(messaging_tests);
 }
@@ -358,8 +357,8 @@ static bool event_handler(const struct event_header *eh)
 		pMsg = ev->buf;
 		len = ev->len;
 		NofenceMessage msg;
-		int ret = collar_protocol_decode(&ev->buf[2],
-						 ev->len - 2, &msg);
+		int ret =
+			collar_protocol_decode(&ev->buf[2], ev->len - 2, &msg);
 		printk("ret = %d\n", ret);
 		zassert_equal(ret, 0, "");
 		uint16_t byteswap_val = BYTESWAP16(ev->len - 2);
@@ -384,7 +383,8 @@ static bool event_handler(const struct event_header *eh)
 		return false;
 	}
 	if (is_check_connection(eh)) {
-		struct connection_state_event *ev1 = new_connection_state_event();
+		struct connection_state_event *ev1 =
+			new_connection_state_event();
 		ev1->state = simulated_connection_state;
 		EVENT_SUBMIT(ev1);
 		return false;
