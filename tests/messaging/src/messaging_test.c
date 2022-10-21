@@ -70,6 +70,7 @@ void test_init(void)
 	struct gsm_info_event *ev_gsm = new_gsm_info_event();
 	EVENT_SUBMIT(ev_gsm);
 
+
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
 
@@ -90,9 +91,9 @@ void test_init(void)
 
 /* Test expected events published by messaging*/
 //ack - fence_ready - ano_ready - msg_out - host_address
-int poll_interval = 15;
+int poll_interval =15;
 void test_second_poll_request_has_no_boot_parameters(void)
-{ /*assumes 15min poll interval, 25sec delay for build_log work
+{/*assumes 15min poll interval, 25sec delay for build_log work
  * checks: second poll request sent out without the boot parameters*/
 	ztest_returns_value(date_time_now, 0);
 	/* TODO pshustad, pending if we are going to use the connection_state_event for poll */
@@ -298,7 +299,7 @@ void test_poll_request_retry_after_missing_ack_from_cellular_controller(void)
 	/* log_work thread start*/
 	collar_histogram dummy_histogram;
 	memset(&dummy_histogram, 1, sizeof(struct collar_histogram));
-	while (k_msgq_put(&histogram_msgq, &dummy_histogram, 
+	while (k_msgq_put(&histogram_msgq, &dummy_histogram,
 			  K_NO_WAIT) != 0) {
 		k_msgq_purge(&histogram_msgq);
 	}
@@ -319,7 +320,7 @@ void test_poll_request_retry_after_missing_ack_from_cellular_controller(void)
 	zassert_equal(k_sem_take(&msg_out, K_MSEC(500)), 0, "");
 
 	zassert_equal(k_sem_take(&error_sem, K_SECONDS
-				(CONFIG_CC_ACK_TIMEOUT_SEC)), 0, "");
+				 (CONFIG_CC_ACK_TIMEOUT_SEC)), 0, "");
 
 	zassert_not_equal(pMsg, NULL, "Proto message not published!\n");
 	int err = collar_protocol_decode(pMsg + 2, len - 2, &decode);
@@ -357,7 +358,7 @@ static bool event_handler(const struct event_header *eh)
 		pMsg = ev->buf;
 		len = ev->len;
 		NofenceMessage msg;
-		int ret = collar_protocol_decode(&ev->buf[2], 
+		int ret = collar_protocol_decode(&ev->buf[2],
 						 ev->len - 2, &msg);
 		printk("ret = %d\n", ret);
 		zassert_equal(ret, 0, "");
