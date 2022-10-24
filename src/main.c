@@ -128,9 +128,10 @@ void main(void)
 		is_soft_reset, soft_reset_reason, bat_percent);
 
 	/* If not set, we can play the sound. */
-	if ((is_soft_reset != true) || 
-		((is_soft_reset == true) && (soft_reset_reason == REBOOT_BLE_RESET))) {
-		if (bat_percent > 10) {
+	if ((is_soft_reset != true) ||
+	    ((is_soft_reset == true) &&
+	     (soft_reset_reason == REBOOT_BLE_RESET))) {
+		if (bat_percent > 20) {
 			if (bat_percent >= 75) {
 				/* Play battery sound. */
 				struct sound_event *sound_ev =
@@ -248,12 +249,23 @@ void main(void)
 	}
 #endif
 
+	/* Initialize animal monitor control module, depends on storage
+	 * controller to be initialized first since amc sends
+	 * a request for pasture data on init.
+	 */
+	err = amc_module_init();
+	if (err) {
+		char *e_msg = "Could not initialize the AMC module";
+		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
+		nf_app_error(ERR_AMC, err, e_msg, strlen(e_msg));
+	}
+
 	/* Once EVERYTHING is initialized correctly and we get connection to
 	 * server, we can mark the image as valid. If we do not mark it as valid,
 	 * it will revert to the previous version on the next reboot that occurs.
 	 */
 	mark_new_application_as_valid();
-
+	LOG_INF("----- Build time: " __DATE__ " " __TIME__ " -----");
 	LOG_INF("Booted application firmware version %i, and marked it as valid. Reset reason %i",
 		NF_X25_VERSION_NUMBER, reset_reason);
 }

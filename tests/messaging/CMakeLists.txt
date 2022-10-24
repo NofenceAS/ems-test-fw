@@ -21,11 +21,14 @@ zephyr_include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/amc/lib/include/
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/time_use/lib/include/
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/crc
+		${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler
+
 )
 
 FILE(GLOB app_sources 
         ${CMAKE_CURRENT_SOURCE_DIR}/mock/*.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c 
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c
+		${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/time_use/time_use.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/crc/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/buzzer/*.c
@@ -41,7 +44,6 @@ FILE(GLOB app_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/environment/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/collar_stats/histogram_events.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/time_use/libs/helpers.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/time_use/time_use.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/amc/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/movement_controller/*.c
 	${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/watchdog/watchdog_event.c
