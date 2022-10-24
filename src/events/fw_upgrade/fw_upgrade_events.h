@@ -44,7 +44,21 @@ struct start_fota_event {
 	uint32_t version;
 };
 
+/** @brief Cancel ongoing FOTA. */
+struct cancel_fota_event {
+	struct event_header header;
+};
+/** @brief Block future FOTA requests */
+struct block_fota_event {
+	struct event_header header;
+	/** Set to true to restrict an incomming LTE FOTA
+	 */
+	bool block_lte_fota;
+};
+
 EVENT_TYPE_DECLARE(dfu_status_event);
 EVENT_TYPE_DECLARE(start_fota_event);
+EVENT_TYPE_DECLARE(cancel_fota_event);
+EVENT_TYPE_DECLARE(block_fota_event);
 
 #endif /* _FW_UPGRADE_EVENTS_H_ */
