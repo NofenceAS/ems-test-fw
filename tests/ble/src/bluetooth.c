@@ -64,6 +64,10 @@ void assert_post_action(const char *file, unsigned int line)
 void test_init_ok(void)
 {
 	ztest_returns_value(eep_uint32_read, 0);
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_read, 0);
 	ztest_returns_value(bt_enable, 0);
 	ztest_returns_value(bt_nus_init, 0);
 	ztest_returns_value(bt_set_name, 0);
@@ -81,6 +85,10 @@ void test_init_ok(void)
 void test_init_error(void)
 {
 	ztest_returns_value(eep_uint32_read, 0);
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_read, 0);
 	ztest_returns_value(bt_enable, -2);
 	zassert_equal(event_manager_init(), 0,
 		      "Error when initializing event manager");

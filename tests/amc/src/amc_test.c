@@ -44,6 +44,9 @@ void test_init_and_update_pasture(void)
 
 	/* ..init_states_and_variables, cached mode. */
 	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_read, 0);
+	ztest_returns_value(eep_uint8_write, 0);
 
 	/* update_pasture_from_stg */
 	ztest_returns_value(stg_read_pasture_data, 0);
