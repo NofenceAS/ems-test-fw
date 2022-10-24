@@ -16,6 +16,7 @@ struct ep_status_event {
 	struct event_header header;
 
 	enum ep_status_flag ep_status;
+	bool is_first_pulse;
 };
 
 EVENT_TYPE_DECLARE(ep_status_event);
