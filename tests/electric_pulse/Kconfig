@@ -1,5 +1,9 @@
 
 menu "APPLICATION_CODE"
+    menu "MESSAGING"
+        rsource "./../../src/modules/messaging/Kconfig"
+    endmenu # MESSAGING
+
 	menu "ERROR_HANDLER"
     	rsource "./../../src/modules/error_handler/Kconfig"
 	endmenu # ERROR_HANDLER
