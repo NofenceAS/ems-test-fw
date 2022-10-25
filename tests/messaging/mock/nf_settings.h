@@ -28,6 +28,7 @@ typedef enum {
 	EEP_BOM_PCB_REV,
 	EEP_HW_VERSION,
 	EEP_KEEP_MODE,
+	EEP_RESET_REASON
 } eep_uint8_enum_t;
 
 #define EEP_HOST_PORT_BUF_SIZE 24
