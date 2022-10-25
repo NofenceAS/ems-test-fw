@@ -255,7 +255,7 @@ void test_collar_mode(void)
 
 void test_collar_status(void)
 {
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	/* We expect unknown when we boot. */
 	CollarStatus expected_status = CollarStatus_CollarStatus_UNKNOWN;
 	zassert_equal(k_sem_take(&collar_status_sem, K_SECONDS(30)), 0, "");
