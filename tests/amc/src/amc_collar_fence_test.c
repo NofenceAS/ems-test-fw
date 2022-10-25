@@ -55,7 +55,7 @@ void test_fence_status(void)
 						"Force fence status failed to set correct status");
 		} else {
 			/* Should only force "UNKNOWN", "NotStarted" and "Invalid" */
-			zassert_not_equal(force_fence_status(fence_status_idx), 0, 
+			zassert_not_equal(force_fence_status(fence_status_idx), 0,
 						"Was able to force unavailable fence status");
 		}
 	}
@@ -255,16 +255,17 @@ void test_collar_mode(void)
 
 void test_collar_status(void)
 {
-	// /* We expect unknown when we boot. */
-	// CollarStatus expected_status = CollarStatus_CollarStatus_UNKNOWN;
-	// zassert_equal(k_sem_take(&collar_status_sem, K_SECONDS(30)), 0, "");
-	// zassert_equal(current_collar_status, expected_status, "");
+	ztest_returns_value(eep_uint8_write, 0);
+	/* We expect unknown when we boot. */
+	CollarStatus expected_status = CollarStatus_CollarStatus_UNKNOWN;
+	zassert_equal(k_sem_take(&collar_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_collar_status, expected_status, "");
 
 	/* Unknown -> normal. */
 	//ztest_returns_value(stg_config_u8_write, 0);
 	update_movement_state(STATE_NORMAL);
 
-	CollarStatus expected_status = CollarStatus_CollarStatus_Normal;
+	expected_status = CollarStatus_CollarStatus_Normal;
 	zassert_equal(calc_collar_status(), expected_status, "");
 	zassert_equal(k_sem_take(&collar_status_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_collar_status, expected_status, "");
