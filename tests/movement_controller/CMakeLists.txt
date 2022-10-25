@@ -27,6 +27,7 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/mock
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/fifo
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/trigonometry
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/movement_controller/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/movement_controller/
 )
