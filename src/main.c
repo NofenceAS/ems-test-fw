@@ -79,6 +79,12 @@ void main(void)
 		nf_app_error(ERR_EEPROM, -EIO, e_msg, strlen(e_msg));
 	}
 	eep_init(eeprom_dev);
+#endif
+	/* Initialize stg config flash storage */
+	err = stg_config_init();
+	if (err != 0) {
+		LOG_ERR("STG Config failed to initialize");
+	}
 	/* Fetch and log stored serial number */
 	uint32_t serial_id = 0;
 	err = stg_config_u32_read(STG_U32_UID, &serial_id);
@@ -86,12 +92,6 @@ void main(void)
 		LOG_INF("Device Serial Number stored in ext flash: %d", serial_id);
 	} else {
 		LOG_WRN("Missing device Serial Number in ext flash");
-	}
-#endif
-	/* Initialize stg config flash storage */
-	err = stg_config_init();
-	if (err != 0) {
-		LOG_ERR("STG Config failed to initialize");
 	}
 
 	/* Initialize the power manager module. */
