@@ -193,17 +193,6 @@ void main(void)
 		nf_app_error(ERR_EP_MODULE, err, e_msg, strlen(e_msg));
 	}
 
-	/* Initialize animal monitor control module, depends on storage
-	 * controller to be initialized first since amc sends
-	 * a request for pasture data on init. 
-	 */
-	err = amc_module_init();
-	if (err) {
-		char *e_msg = "Could not initialize the AMC module";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_AMC, err, e_msg, strlen(e_msg));
-	}
-
 	/* Important to initialize external storage first, since we use the sleep 
 	 * sigma value from storage when we init.
 	 */
