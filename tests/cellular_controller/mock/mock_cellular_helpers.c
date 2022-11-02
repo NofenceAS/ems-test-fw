@@ -45,11 +45,11 @@ int8_t send_tcp(char *dummy, size_t dummy_len)
 	return ztest_get_return_value();
 }
 
-int send_tcp_q(char *dummy, size_t dummy_len)
+void send_tcp_q(char *dummy, size_t dummy_len)
 {
 	ztest_check_expected_value(*dummy);
 	ztest_check_expected_value(dummy_len);
-	return ztest_get_return_value();
+	return;
 }
 
 int8_t lte_init(void)

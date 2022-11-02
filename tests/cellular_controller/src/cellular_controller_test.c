@@ -57,33 +57,38 @@ void test_socket_send_fails(void)
 	ztest_returns_value(check_ip, 0);
 	ztest_expect_value(send_tcp_q, *dummy, dummy_test_msg[0]);
 	ztest_expect_value(send_tcp_q, dummy_len, sizeof(dummy_test_msg));
-	ztest_returns_value(send_tcp_q, -1);
 
 	struct check_connection *ev = new_check_connection();
 	EVENT_SUBMIT(ev);
-	struct messaging_proto_out_event *test_msgIn =
+	struct messaging_proto_out_event *test_msgOut =
 		new_messaging_proto_out_event();
-	test_msgIn->buf = &dummy_test_msg[0];
-	test_msgIn->len = sizeof(dummy_test_msg);
-	EVENT_SUBMIT(test_msgIn);
+	test_msgOut->buf = &dummy_test_msg[0];
+	test_msgOut->len = sizeof(dummy_test_msg);
+	EVENT_SUBMIT(test_msgOut);
 
 	int err = k_sem_take(&cellular_ack, K_MSEC(100));
 	zassert_equal(err, 0,
 		      "Expected cellular_ack event was not"
 		      "published ");
-//	err = k_sem_take(&cellular_error, K_MSEC(100));
-//	zassert_equal(err, 0,
-//		      "Expected cellular_error event was not"
-//		      " published on send error!");
+
+	/* in case of failure, the sending thread will publish a
+	 * stop_connection_event*/
+	struct messaging_stop_connection_event *stop_connection =
+		new_messaging_stop_connection_event();
+	EVENT_SUBMIT(stop_connection);
+
 	reset_test_semaphores();
 }
 
-void test_socket_send_ok(void)
+void test_socket_send_recovery(void)
 {
+	ztest_returns_value(reset_modem, 0);
+	ztest_returns_value(lte_init, 0);
+	ztest_returns_value(eep_read_host_port, 0);
 	ztest_returns_value(check_ip, 0);
+	ztest_returns_value(socket_connect, 0);
 	ztest_expect_value(send_tcp_q, *dummy, dummy_test_msg[0]);
 	ztest_expect_value(send_tcp_q, dummy_len, sizeof(dummy_test_msg));
-	ztest_returns_value(send_tcp_q, 0);
 
 	struct check_connection *ev = new_check_connection();
 	EVENT_SUBMIT(ev);
@@ -111,7 +116,6 @@ void test_send_many_messages(void)
 		ztest_returns_value(check_ip, 0);
 		ztest_expect_value(send_tcp_q, *dummy, test_msg[0]);
 		ztest_expect_value(send_tcp_q, dummy_len, sizeof(test_msg));
-		ztest_returns_value(send_tcp_q, 0);
 
 		struct free_message_mem_event *free_mem_ev =
 			new_free_message_mem_event();
@@ -238,7 +242,7 @@ void test_main(void)
 	ztest_test_suite(
 		cellular_controller_tests, ztest_unit_test(test_init),
 		ztest_unit_test(test_socket_send_fails),
-		ztest_unit_test(test_socket_send_ok),
+		ztest_unit_test(test_socket_send_recovery),
 		ztest_unit_test(test_send_many_messages),
 		ztest_unit_test(test_publish_event_with_a_received_msg),
 		ztest_unit_test(test_ack_from_messaging_module_missed),

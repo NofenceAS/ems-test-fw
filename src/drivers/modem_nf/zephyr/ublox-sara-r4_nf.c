@@ -100,6 +100,8 @@ static struct modem_pin modem_pins[] = {
 #define MDM_MAX_SOCKETS 6
 #define MDM_BASE_SOCKET_NUM 0
 
+#define MDM_MIN_ALLOWED_RSSI 5
+
 #define MDM_NETWORK_RETRY_COUNT 3
 #define MDM_WAIT_FOR_RSSI_COUNT 10
 #define MDM_WAIT_FOR_RSSI_DELAY K_SECONDS(2)
@@ -1297,7 +1299,7 @@ static void modem_rssi_query_work(struct k_work *work)
 
 	/* query modem RSSI */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, send_cmd,
-			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+			     &mdata.sem_response, K_SECONDS(1));
 	if (ret < 0) {
 		char *e_msg = "AT+C[E]SQ";
 		LOG_ERR("%s ret:%d", log_strdup(e_msg), ret);
@@ -2633,11 +2635,27 @@ int wake_up_from_upsv(void)
 			} while (!modem_rx_pin_is_high());
 
 			k_sem_give(&mdata.cmd_handler_data.sem_tx_lock);
-			return wake_up();
+			goto wake_up_ready;
 		}
 		return -EAGAIN;
 	}
-	return wake_up();
+
+	int ret;
+wake_up_ready:
+	ret = wake_up();
+	mdata.rssi = 0;
+	mdata.min_rssi = 31;
+	mdata.max_rssi = 0;
+	uint8_t counter = 0;
+	while (counter++ < MDM_WAIT_FOR_RSSI_COUNT) {
+		modem_rssi_query_work(NULL);
+		k_sleep(K_MSEC(50));
+	}
+	if (mdata.max_rssi < MDM_MIN_ALLOWED_RSSI) {
+		return -EIO;
+	}
+
+	return ret;
 }
 
 static int sleep(void)
@@ -2701,9 +2719,9 @@ static int pwr_off(void)
 	if (current_state == PM_DEVICE_STATE_SUSPENDED) {
 		return -EALREADY;
 	} else {
-		int ret = wake_up_from_upsv();
+		wake_up_from_upsv();
 		k_sleep(K_MSEC(100));
-		ret = modem_cmd_handler_setup_cmds(
+		int ret = modem_cmd_handler_setup_cmds(
 			&mctx.iface, &mctx.cmd_handler, pwr_off_gracefully,
 			ARRAY_SIZE(pwr_off_gracefully), &mdata.sem_response,
 			MDM_PWR_OFF_CMD_TIMEOUT);
@@ -2753,7 +2771,7 @@ int get_gsm_info(struct gsm_info *session_info)
 	session_info->rat = mdata.session_rat;
 	session_info->mnc = mdata.mnc;
 	session_info->rssi = mdata.rssi;
-	session_info->min_rssi = mdata.min_rssi;
+	session_info->min_rssi = MIN(mdata.min_rssi, mdata.max_rssi);
 	session_info->max_rssi = mdata.max_rssi;
 	if (ccid_ready)
 		memcpy(session_info->ccid, mdata.mdm_ccid,
