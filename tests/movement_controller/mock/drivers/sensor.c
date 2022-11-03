@@ -23,7 +23,6 @@ int sensor_attr_set(const struct device *dev, enum sensor_channel chan,
 	ARG_UNUSED(val);
 
 	zassert_equal(chan, SENSOR_CHAN_ACCEL_XYZ, "");
-	zassert_equal(attr, SENSOR_ATTR_SAMPLING_FREQUENCY, "");
 
 	return ztest_get_return_value();
 }
