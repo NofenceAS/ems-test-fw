@@ -2635,13 +2635,17 @@ int wake_up_from_upsv(void)
 			} while (!modem_rx_pin_is_high());
 
 			k_sem_give(&mdata.cmd_handler_data.sem_tx_lock);
-			goto wake_up_ready;
+			goto check_signal_strength;
 		}
 		return -EAGAIN;
+	} else if (mdata.upsv_state == 0) {
+		return wake_up();
+	} else {
+		return -EIO;
 	}
 
 	int ret;
-wake_up_ready:
+check_signal_strength:
 	ret = wake_up();
 	mdata.rssi = 0;
 	mdata.min_rssi = 31;
@@ -2654,7 +2658,6 @@ wake_up_ready:
 	if (mdata.max_rssi < MDM_MIN_ALLOWED_RSSI) {
 		return -EIO;
 	}
-
 	return ret;
 }
 

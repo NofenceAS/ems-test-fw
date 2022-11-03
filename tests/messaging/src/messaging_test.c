@@ -238,8 +238,8 @@ void test_poll_response_has_new_fence(void)
 		      "Expected fence def. request- not sent!");
 	zassert_equal(decode.m.fence_definition_req.ulFenceDefVersion,
 		      dummy_fence, "Wrong fence version requested!\n");
-
-
+	zassert_equal(decode.m.fence_definition_req.ucFrameNumber,
+		      0, "Wrong fence frame number requested!\n");
 
 	ztest_returns_value(date_time_now, 0);
 	NofenceMessage fence_response = {
@@ -287,9 +287,10 @@ void test_poll_response_has_new_fence(void)
 		      "Expected fence def. request- not sent!");
 	zassert_equal(decode.m.fence_definition_req.ulFenceDefVersion,
 		      dummy_fence, "Wrong fence version requested!\n");
+	zassert_equal(decode.m.fence_definition_req.ucFrameNumber,
+		      1, "Wrong fence frame number requested!\n");
+
 	k_sleep(K_SECONDS(0.5));
-
-
 	ztest_returns_value(date_time_now, 0);
 	dummy_fence = 5;
 	NofenceMessage poll_response2 = {
@@ -330,8 +331,8 @@ void test_poll_response_has_new_fence(void)
 		      "Expected fence def. request- not sent!");
 	zassert_equal(decode.m.fence_definition_req.ulFenceDefVersion,
 		      dummy_fence, "Wrong fence version requested!\n");
-
-
+	zassert_equal(decode.m.fence_definition_req.ucFrameNumber,
+		      0, "Wrong fence frame number requested!\n");
 }
 
 void test_poll_response_has_host_address(void)
