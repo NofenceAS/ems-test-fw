@@ -6,7 +6,18 @@
 	aliases {
 		gnss = &gnss;
 		gnssuart = &gnssuart;
+		dummy-extint = &gpio0;
 	};
+	chosen {
+          zephyr,nofence = &gpio0;
+        };
+
+
+};
+
+
+&gpio0 {
+	status = "okay";
 };
 
 gnssuart: &uart0 {
@@ -15,5 +26,7 @@ gnssuart: &uart0 {
 		compatible = "u-blox,mia-m10";
 		label = "ublox-mia-m10";
 		status = "okay";
+		extint-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
 	};
 };
+

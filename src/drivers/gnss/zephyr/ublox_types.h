@@ -121,6 +121,18 @@ struct UBLOX_STORAGE_ATTR ublox_nav_status {
 	uint32_t msss;
 };
 
+/**
+ * @brief RXM-PMREQ message
+ * @see https://content.u-blox.com/sites/default/files/u-blox-M10-SPG-5.10_InterfaceDescription_UBX-21035062.pdf
+ */
+struct UBLOX_STORAGE_ATTR ublox_rxm_pmreq {
+    uint8_t version;
+    uint8_t reserved0[3];
+    uint32_t duration;
+    uint32_t flags;
+    uint32_t wakeupSources;
+};
+
 /** @brief U-blox MGA-ACK message. */
 struct UBLOX_STORAGE_ATTR ublox_mga_ack {
 	uint8_t type;

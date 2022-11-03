@@ -178,18 +178,33 @@ typedef int (*gnss_set_data_cb_t)(const struct device *dev,
  */
 typedef int (*gnss_data_fetch_t)(const struct device *dev, gnss_t *data);
 
+
+/**
+ * @typedef gnss_set_backup_mode_t
+ * @brief Callback API for setting the receiver in backup mode
+ *
+ * See gnss_set_backup_mode() for argument description
+ */
+typedef int (*gnss_set_backup_mode_t)(const struct device *dev);
+
+/**
+ * @typedef gnss_wakeup_t
+ * @brief API for waking up the receicer from backup mode
+ *
+ * See gnss_wakeup() for argument description
+ */
+typedef int (*gnss_wakeup_t)(const struct device *dev);
+
 __subsystem struct gnss_driver_api {
 	gnss_setup_t gnss_setup;
 	gnss_reset_t gnss_reset;
-
 	gnss_upload_assist_data_t gnss_upload_assist_data;
-
 	gnss_set_rate_t gnss_set_rate;
 	gnss_get_rate_t gnss_get_rate;
-
 	gnss_set_data_cb_t gnss_set_data_cb;
-
 	gnss_data_fetch_t gnss_data_fetch;
+    gnss_set_backup_mode_t gnss_set_backup_mode;
+    gnss_wakeup_t gnss_wakeup;
 };
 
 /**
@@ -312,6 +327,30 @@ static inline int gnss_data_fetch(const struct device *dev, gnss_t *data)
 		(const struct gnss_driver_api *)dev->api;
 
 	return api->gnss_data_fetch(dev, data);
+}
+
+/**
+ * @brief Set the receiver in backup-mode (aka RXM-PMREQ)
+ * @param[in] dev Pointer to the GNSS device
+ * @return 0 if OK, negative error code otherwise
+ */
+static inline int gnss_set_backup_mode(const struct device *dev) {
+    const struct gnss_driver_api *api =
+            (const struct gnss_driver_api *)dev->api;
+
+    return api->gnss_set_backup_mode(dev);
+}
+
+/**
+* @brief Wakes up the receiver after backup
+* @param[in] dev Pointer to the GNSS device
+* @return 0 if OK, negative error code otherwise
+*/
+static inline int gnss_wakeup(const struct device *dev) {
+    const struct gnss_driver_api *api =
+            (const struct gnss_driver_api *)dev->api;
+
+    return api->gnss_wakeup( dev);
 }
 
 #endif /* GNSS_H_ */
