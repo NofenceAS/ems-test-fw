@@ -137,6 +137,7 @@ gnss_uart: &uart1 {
 		status = "okay";
 
 		pps-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+        extint-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
 	};
 	/* vin-supply = <&gnss_flash_pwr>; */
 };
