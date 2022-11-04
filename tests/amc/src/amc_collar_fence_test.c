@@ -41,12 +41,12 @@ void test_fence_status(void)
 			(fence_status_idx == FenceStatus_FenceStatus_Invalid)
 		    || (fence_status_idx == FenceStatus_TurnedOffByBLE)) {
 			if (fence_status_idx == FenceStatus_NotStarted) {
-				/* Test EEPROM write failure */
-				ztest_returns_value(eep_uint8_write, -1);
+				/* Test storage write failure */
+				ztest_returns_value(stg_config_u8_write, -1);
 				zassert_not_equal(force_fence_status(FenceStatus_NotStarted), 0, 
 							"Force fence status failed");
 			}
-			ztest_returns_value(eep_uint8_write, 0);
+			ztest_returns_value(stg_config_u8_write, 0);
 			zassert_equal(force_fence_status(fence_status_idx), 0, 
 						"Force fence status failed");
 			zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, 
@@ -55,13 +55,13 @@ void test_fence_status(void)
 						"Force fence status failed to set correct status");
 		} else {
 			/* Should only force "UNKNOWN", "NotStarted" and "Invalid" */
-			zassert_not_equal(force_fence_status(fence_status_idx), 0, 
+			zassert_not_equal(force_fence_status(fence_status_idx), 0,
 						"Was able to force unavailable fence status");
 		}
 	}
 	/* Set fence status to NotStarted for continued testing */
 	if (get_fence_status() != FenceStatus_NotStarted) {
-		ztest_returns_value(eep_uint8_write, 0);
+		ztest_returns_value(stg_config_u8_write, 0);
 		zassert_equal(force_fence_status(FenceStatus_NotStarted), 0, "");
 	}
 
@@ -69,7 +69,7 @@ void test_fence_status(void)
 	simulate_accepted_fix();
 	zassert_equal(zone_set(PSM_ZONE), 0, "");
 
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_FenceStatus_Normal;
 	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
@@ -87,8 +87,8 @@ void test_fence_status(void)
 
 	for (int i = 0; i < 3; i++) {
 		/* Mock total zaps and daily zaps. */
-		ztest_returns_value(eep_uint16_write, 0);
-		ztest_returns_value(eep_uint16_write, 0);
+		ztest_returns_value(stg_config_u16_write, 0);
+		ztest_returns_value(stg_config_u16_write, 0);
 
 		increment_zap_count();
 	}
@@ -100,7 +100,7 @@ void test_fence_status(void)
 	 */
 	zassert_equal(zone_set(NO_ZONE), 0, "");
 
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_Escaped;
 	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
@@ -113,7 +113,7 @@ void test_fence_status(void)
 	simulate_accepted_fix();
 	zassert_equal(zone_set(CAUTION_ZONE), 0, "");
 
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_FenceStatus_Normal;
 	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
@@ -125,7 +125,7 @@ void test_fence_status(void)
 	simulate_accepted_fix();
 	zassert_equal(zone_set(CAUTION_ZONE), 0, "");
 
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_BeaconContactNormal;
 	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_NEAR),
@@ -134,7 +134,7 @@ void test_fence_status(void)
 	zassert_equal(current_fence_status, expected_status, "");
 
 	/* Beacon contact normal ->  Normal*/
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_FenceStatus_Normal;
 	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
@@ -143,7 +143,7 @@ void test_fence_status(void)
 	zassert_equal(current_fence_status, expected_status, "");
 
 	/* Normal -> Maybe out of fence */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	/* We get to maybe out of fence if the delta is 900 or more.
 	 * Set timestamp here, then wait 905 seconds. */
@@ -159,7 +159,7 @@ void test_fence_status(void)
 	zassert_equal(current_fence_status, expected_status, "");
 
 	/* Maybe out of fence -> Beacon Contact */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_BeaconContact;
 
@@ -171,7 +171,7 @@ void test_fence_status(void)
 	zassert_equal(current_fence_status, expected_status, "");
 
 	/* Beacon Contact -> NotStarted */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_NotStarted;
 	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_FAR),
@@ -180,7 +180,7 @@ void test_fence_status(void)
 	zassert_equal(current_fence_status, expected_status, "");
 
 	/* NotStarted -> Beacon Contact */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_BeaconContact;
 	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_NEAR),
@@ -196,7 +196,7 @@ void test_fence_status(void)
 					sizeof(empty_pasture)),
 		      0, "");
 
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_FenceStatus_UNKNOWN;
 	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_FAR),
@@ -208,7 +208,7 @@ void test_fence_status(void)
 	/* We'll never reach NotStarted from unknown due to our
 	 * pasture being invalid.
 	 */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_BeaconContact;
 	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_NEAR),
@@ -225,7 +225,7 @@ void test_collar_mode(void)
 	zassert_equal(current_collar_mode, expected_mode, "");
 
 	/* Unknown -> Teach. */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	expected_mode = Mode_Teach;
 
 	zassert_equal(calc_mode(), expected_mode, "");
@@ -233,7 +233,7 @@ void test_collar_mode(void)
 	zassert_equal(current_collar_mode, expected_mode, "");
 
 	/* Teach -> Fence. */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	/* To reach this, we need to reach the zap and warn count tresholds. 
 	 * I.e ((teach_warn_cnt - teach_zap_cnt) >=
 			    _TEACHMODE_WARN_CNT_LOWLIM)
@@ -241,11 +241,11 @@ void test_collar_mode(void)
 	 * managed to get warned 20 times without getting a zap.
 	 */
 	for (int i = 0; i < _TEACHMODE_WARN_CNT_LOWLIM + 1; i++) {
-		/* Mock the eeprom calls. */
-		ztest_returns_value(eep_uint32_write, 0);
+		/* Mock the storage calls. */
+		ztest_returns_value(stg_config_u32_write, 0);
 		increment_warn_count();
 	}
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	expected_mode = Mode_Fence;
 
 	zassert_equal(calc_mode(), expected_mode, "");
@@ -255,22 +255,23 @@ void test_collar_mode(void)
 
 void test_collar_status(void)
 {
-	// /* We expect unknown when we boot. */
-	// CollarStatus expected_status = CollarStatus_CollarStatus_UNKNOWN;
-	// zassert_equal(k_sem_take(&collar_status_sem, K_SECONDS(30)), 0, "");
-	// zassert_equal(current_collar_status, expected_status, "");
+	ztest_returns_value(stg_config_u8_write, 0);
+	/* We expect unknown when we boot. */
+	CollarStatus expected_status = CollarStatus_CollarStatus_UNKNOWN;
+	zassert_equal(k_sem_take(&collar_status_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_collar_status, expected_status, "");
 
 	/* Unknown -> normal. */
-	//ztest_returns_value(eep_uint8_write, 0);
+	//ztest_returns_value(stg_config_u8_write, 0);
 	update_movement_state(STATE_NORMAL);
 
-	CollarStatus expected_status = CollarStatus_CollarStatus_Normal;
+	expected_status = CollarStatus_CollarStatus_Normal;
 	zassert_equal(calc_collar_status(), expected_status, "");
 	zassert_equal(k_sem_take(&collar_status_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_collar_status, expected_status, "");
 
 	/* Normal -> sleep. */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	update_movement_state(STATE_SLEEP);
 
 	expected_status = CollarStatus_Sleep;
@@ -279,7 +280,7 @@ void test_collar_status(void)
 	zassert_equal(current_collar_status, expected_status, "");
 
 	/* Sleep -> OffAnimal. */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	update_movement_state(STATE_INACTIVE);
 
 	expected_status = CollarStatus_OffAnimal;
@@ -288,7 +289,7 @@ void test_collar_status(void)
 	zassert_equal(current_collar_status, expected_status, "");
 
 	/* OffAnimal -> normal. */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	update_movement_state(STATE_NORMAL);
 
 	expected_status = CollarStatus_CollarStatus_Normal;
@@ -304,7 +305,7 @@ void test_collar_status(void)
 	/* No event is triggered, since we're in the same state. */
 
 	/* Normal -> Power OFF. */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	update_movement_state(STATE_NORMAL);
 	update_power_state(PWR_CRITICAL);
 
@@ -314,7 +315,7 @@ void test_collar_status(void)
 	zassert_equal(current_collar_status, expected_status, "");
 
 	/* Power OFF -> Sleep. */
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 	update_movement_state(STATE_SLEEP);
 	update_power_state(PWR_LOW);
 

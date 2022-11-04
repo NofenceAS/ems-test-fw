@@ -44,7 +44,8 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/watchdog
   ${CMAKE_CURRENT_SOURCE_DIR}/../../include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/nf_settings/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/
+  #${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/nf_settings/include
 )
 
 add_dependencies(app collar_protocol_headers)

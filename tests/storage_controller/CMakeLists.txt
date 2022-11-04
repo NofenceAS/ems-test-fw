@@ -18,7 +18,7 @@ FILE(GLOB app_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c 
         ${CMAKE_CURRENT_SOURCE_DIR}/mock/*.c 
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/storage/*.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/storage.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/fcb_ext/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/*.c
@@ -38,6 +38,6 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/messaging
   ${CMAKE_CURRENT_SOURCE_DIR}/../../include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/nf_settings/include
+  #${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/nf_settings/include
 )
 add_dependencies(app collar_protocol_headers)

@@ -4,14 +4,14 @@
 #include <logging/log.h>
 #include <sys/printk.h>
 #include <zephyr.h>
+#include <nrf.h>
 
 #include "error_event.h"
-
 #include "diagnostics.h"
 #include "selftest.h"
 #include "fw_upgrade.h"
 #include "fw_upgrade_events.h"
-#include "nf_settings.h"
+#include "stg_config.h"
 #include "ble_controller.h"
 #include "cellular_controller.h"
 #include "ep_module.h"
@@ -20,16 +20,12 @@
 #include "buzzer.h"
 #include "pwr_module.h"
 #include "pwr_event.h"
-/* For reboot reason. */
-#include <nrf.h>
 
 #if defined(CONFIG_WATCHDOG_ENABLE)
 #include "watchdog_app.h"
 #endif
 
 #include "messaging.h"
-#include "cellular_controller.h"
-#include "error_event.h"
 
 #if CONFIG_GNSS_CONTROLLER
 #include "gnss_controller.h"
@@ -37,19 +33,15 @@
 
 #include "storage.h"
 #include "nf_version.h"
-
 #include "env_sensor_event.h"
-
-#define MODULE main
 #include "module_state_event.h"
-
 #include "movement_controller.h"
 #include "movement_events.h"
 #include "time_use.h"
 
 /* Fetched from 52840 datasheet RESETREAS register. */
 #define SOFT_RESET_REASON_FLAG (1 << 2)
-
+#define MODULE main
 LOG_MODULE_REGISTER(MODULE, CONFIG_LOG_DEFAULT_LEVEL);
 
 /**
@@ -77,6 +69,11 @@ void main(void)
 	}
 #endif
 
+	err = stg_config_init();
+	if (err != 0) {
+		LOG_ERR("STG Config failed to initialize");
+	}
+
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
 	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
@@ -89,11 +86,11 @@ void main(void)
 	eep_init(eeprom_dev);
 	/* Fetch and log stored serial number */
 	uint32_t serial_id = 0;
-	err = eep_uint32_read(EEP_UID, &serial_id);
+	err = stg_config_u32_read(STG_U32_UID, &serial_id);
 	if (serial_id) {
-		LOG_INF("Device Serial Number stored in EEPROM: %d", serial_id);
+		LOG_INF("Device Serial Number stored in ext flash: %d", serial_id);
 	} else {
-		LOG_WRN("Missing device Serial Number in EEPROM");
+		LOG_WRN("Missing device Serial Number in ext flash");
 	}
 #endif
 
@@ -131,8 +128,9 @@ void main(void)
 		is_soft_reset, soft_reset_reason, bat_percent);
 
 	/* If not set, we can play the sound. */
-	if ((is_soft_reset != true) || 
-		((is_soft_reset == true) && (soft_reset_reason == REBOOT_BLE_RESET))) {
+	if ((is_soft_reset != true) ||
+	    ((is_soft_reset == true) &&
+	     (soft_reset_reason == REBOOT_BLE_RESET))) {
 		if (bat_percent > 20) {
 			if (bat_percent >= 75) {
 				/* Play battery sound. */
@@ -163,6 +161,7 @@ void main(void)
 		nf_app_error(ERR_WATCHDOG, err, e_msg, strlen(e_msg));
 	}
 #endif
+
 	err = stg_init_storage_controller();
 	selftest_mark_state(SELFTEST_FLASH_POS, err == 0);
 	if (err) {
@@ -194,8 +193,8 @@ void main(void)
 		nf_app_error(ERR_EP_MODULE, err, e_msg, strlen(e_msg));
 	}
 
-	/* Important to initialize the eeprom first, since we use the 
-	 * sleep sigma value from eeprom when we init.
+	/* Important to initialize external storage first, since we use the sleep 
+	 * sigma value from storage when we init.
 	 */
 	err = init_movement_controller();
 	selftest_mark_state(SELFTEST_ACCELEROMETER_POS, err == 0);
@@ -255,7 +254,7 @@ void main(void)
 	 * it will revert to the previous version on the next reboot that occurs.
 	 */
 	mark_new_application_as_valid();
-
+	LOG_INF("----- Build time: " __DATE__ " " __TIME__ " -----");
 	LOG_INF("Booted application firmware version %i, and marked it as valid. Reset reason %i",
 		NF_X25_VERSION_NUMBER, reset_reason);
 }

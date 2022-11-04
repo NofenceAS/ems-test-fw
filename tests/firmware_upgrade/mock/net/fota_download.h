@@ -59,4 +59,6 @@ int fota_download_start(const char *host, const char *file, int sec_tag,
 
 void simulate_callback_event();
 
+int fota_download_cancel(void);
+
 #endif /* _FOTA_DOWNLOAD_H_ */

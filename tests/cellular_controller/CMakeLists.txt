@@ -38,7 +38,8 @@ zephyr_library_include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager
         ${CMAKE_CURRENT_SOURCE_DIR}/../../include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/nf_settings/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/
+        #${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/nf_settings/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/drivers/modem_nf/zephyr
 )

@@ -8,12 +8,15 @@
 #include "ep_module.h"
 #include "ep_event.h"
 #include "error_event.h"
-#include "sound_event.h"
+#include "messaging_module_events.h"
 
 #define PRODUCT_TYPE_SHEEP 1
 #define PRODUCT_TYPE_CATTLE 2
 
 static K_SEM_DEFINE(ep_event_sem, 0, 1);
+
+K_SEM_DEFINE(ep_trigger_ready, 0, 1);
+extern struct k_sem ep_trigger_ready;
 
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
@@ -39,8 +42,8 @@ void test_electric_pulse_init(void)
 
 	/* EP module initialization of sheep collar */
 	product_type = PRODUCT_TYPE_SHEEP;
-	ztest_returns_value(eep_uint16_read, 0);
-	ztest_return_data(eep_uint16_read, value, &product_type);
+	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_return_data(stg_config_u16_read, value, &product_type);
 	zassert_equal(ep_module_init(), 0, 
 					"EP module initialization returned incorrect value");
 
@@ -51,21 +54,21 @@ void test_electric_pulse_init(void)
 	zassert_equal(product_type, PRODUCT_TYPE_SHEEP, 
 					"EP module initialization provided incorrect product type");
 
-	/* EP module initialization with EEPROM read failure */
-	ztest_returns_value(eep_uint16_read, -1);
-	ztest_return_data(eep_uint16_read, value, &product_type);
+	/* EP module initialization with storage read failure */
+	ztest_returns_value(stg_config_u16_read, -1);
+	ztest_return_data(stg_config_u16_read, value, &product_type);
 	zassert_not_equal(ep_module_init(), 0, 
 						"EP module initialization returned incorrect value");
 
-	ztest_returns_value(eep_uint16_read, 1);
-	ztest_return_data(eep_uint16_read, value, &product_type);
+	ztest_returns_value(stg_config_u16_read, 1);
+	ztest_return_data(stg_config_u16_read, value, &product_type);
 	zassert_not_equal(ep_module_init(), 0, 
 						"EP module initialization returned incorrect value");
 
 	/* EP module initialization of cattle collar */
 	product_type = PRODUCT_TYPE_CATTLE;
-	ztest_returns_value(eep_uint16_read, 0);
-	ztest_return_data(eep_uint16_read, value, &product_type);
+	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_return_data(stg_config_u16_read, value, &product_type);
 	zassert_equal(ep_module_init(), 0, "Test failed to initializing EP module");
 
 	if ((product_type != PRODUCT_TYPE_SHEEP) && 
@@ -77,8 +80,8 @@ void test_electric_pulse_init(void)
 
 	/* EP module initialization of unknown collar */
 	product_type = UINT16_MAX;
-	ztest_returns_value(eep_uint16_read, 0);
-	ztest_return_data(eep_uint16_read, value, &product_type);
+	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_return_data(stg_config_u16_read, value, &product_type);
 	zassert_equal(ep_module_init(), 0, "Test failed to initializing EP module");
 
 	if ((product_type != PRODUCT_TYPE_SHEEP) && 
@@ -113,9 +116,12 @@ void test_electric_pulse_release_early(void)
 	 * This test should be able to take the error semaphore */
 
 	/* Submit a max warning tone event */
-	struct sound_status_event *ev_max = new_sound_status_event();
-	ev_max->status = SND_STATUS_PLAYING_MAX;
-	EVENT_SUBMIT(ev_max);
+	struct warn_correction_pause_event *ev_q_zap =
+		new_warn_correction_pause_event();
+	ev_q_zap->reason = Reason_WARNPAUSEREASON_ZAP;
+	ev_q_zap->fence_dist = 1;
+	ev_q_zap->warn_duration = 1;
+	EVENT_SUBMIT(ev_q_zap);
 
 	/* Submit an electric pulse event before safety timer expires */
 	struct ep_status_event *ep_event = new_ep_status_event();
@@ -134,9 +140,12 @@ void test_electric_pulse_release_ready(void)
 	 * timeout */
 
 	/* Submit a max warning tone event */
-	struct sound_status_event *ev_max = new_sound_status_event();
-	ev_max->status = SND_STATUS_PLAYING_MAX;
-	EVENT_SUBMIT(ev_max);
+	struct warn_correction_pause_event *ev_q_zap =
+		new_warn_correction_pause_event();
+	ev_q_zap->reason = Reason_WARNPAUSEREASON_ZAP;
+	ev_q_zap->fence_dist = 1;
+	ev_q_zap->warn_duration = 1;
+	EVENT_SUBMIT(ev_q_zap);
 
 	/* Wait for safety timer to expired */
 	k_sleep(K_SECONDS(6));
@@ -161,10 +170,13 @@ void test_electric_pulse_release_snd_wrn(void)
 	 * warnings. This test submits a "normal" warning, thus, is test should be 
 	 * able to take the error semaphore */
 
-	/* Submit a warning tone event, not a max warning */
-	struct sound_status_event *ev_warn = new_sound_status_event();
-	ev_warn->status = SND_STATUS_PLAYING_WARN;
-	EVENT_SUBMIT(ev_warn);
+	/* Submit a max warning tone event */
+	struct warn_correction_pause_event *ev_q_zap =
+		new_warn_correction_pause_event();
+	ev_q_zap->reason = Reason_WARNSTOPREASON_MODE;
+	ev_q_zap->fence_dist = 1;
+	ev_q_zap->warn_duration = 1;
+	EVENT_SUBMIT(ev_q_zap);
 
 	/* Submit an electric pulse event */
 	struct ep_status_event *ready_ep_event = new_ep_status_event();

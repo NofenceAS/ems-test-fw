@@ -21,6 +21,7 @@ FILE(GLOB app_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/ble/beacon_processor.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/watchdog/watchdog_event.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/*.c
 )
 
 target_sources(app PRIVATE ${app_sources})
@@ -31,11 +32,13 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../include/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/ble
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/ble
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/nf_settings/include
+  #${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/nf_settings/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/messaging
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/messaging
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/watchdog
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade
 )
 
 add_dependencies(app collar_protocol_headers)

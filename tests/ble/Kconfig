@@ -11,6 +11,11 @@ menu "Zephyr Kernel"
 source "Kconfig.zephyr"
 endmenu
 
+menu "FW_UPGRADE"
+rsource "./../../src/modules/fw_upgrade/Kconfig"
+rsource "./../../src/events/fw_upgrade/Kconfig"
+endmenu # FW_UPGRADE
+
 config BT_DEVICE_NAME
     string "Bluetooth device name"
     default "Zephyr"

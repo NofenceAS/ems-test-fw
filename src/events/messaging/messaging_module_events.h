@@ -1,6 +1,6 @@
 #include <event_manager.h>
-#include "nf_settings.h"
 #include "collar_protocol.h"
+#include "stg_config.h"
 
 /** @brief Empty event published by the messaging module to acknowledge
  *         reception of proto_in messages from the cellular controller. 
@@ -37,7 +37,7 @@ EVENT_TYPE_DECLARE(messaging_proto_out_event);
  */
 struct messaging_host_address_event {
 	struct event_header header;
-	char address[EEP_HOST_PORT_BUF_SIZE];
+	char address[STG_CONFIG_HOST_PORT_BUF_LEN];
 };
 
 EVENT_TYPE_DECLARE(messaging_host_address_event);
@@ -191,6 +191,7 @@ struct warn_correction_pause_event {
 	struct event_header header;
 	int16_t fence_dist;
 	uint32_t warn_duration;
+	Reason reason;
 };
 
 EVENT_TYPE_DECLARE(warn_correction_pause_event);
@@ -207,7 +208,7 @@ EVENT_TYPE_DECLARE(amc_zapped_now_event);
 /** @brief Published by messaging to notify AMC modules to invalidate the
 		current pasture.
 */
-	struct turn_off_fence_event {
+struct turn_off_fence_event {
 	struct event_header header;
 };
 

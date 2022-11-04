@@ -34,3 +34,8 @@ int fota_download_start(const char *host, const char *file, int sec_tag,
 	/* add zasserts for correct host/path inputs. */
 	return ztest_get_return_value();
 }
+
+int fota_download_cancel(void)
+{
+	return ztest_get_return_value();
+}

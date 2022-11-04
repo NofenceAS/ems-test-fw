@@ -33,7 +33,7 @@ Process: JLinkExe
 # Note that pressing enter will only send \n in interactive mode, which might cause issues 
 # when used with the U-blox Sara R422S modem. Activate the Kconfig DIAGNOSTICS_PASSTHROUGH_IMPLICIT_NEWLINE workaround.
 # On Windows, it is best to not use interact mode. 
-USE_INTERACT_MODE = False
+USE_INTERACT_MODE = True
 
 if USE_INTERACT_MODE:
     tn.interact()

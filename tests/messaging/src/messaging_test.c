@@ -38,14 +38,17 @@ void assert_post_action(const char *file, unsigned int line)
 
 void test_init(void)
 {
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_read_ble_sec_key, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint16_read, 0);
-	ztest_returns_value(eep_uint32_read, 0);
+	struct connection_state_event *ev = new_connection_state_event();
+	ev->state = true;
+	EVENT_SUBMIT(ev);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_blob_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_returns_value(stg_config_u32_read, 0);
 	ztest_returns_value(date_time_now, 0);
 	ztest_returns_value(eep_uint8_read, 0);
 	ztest_returns_value(eep_uint8_write, 0);
