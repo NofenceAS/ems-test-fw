@@ -50,8 +50,8 @@ void test_init(void)
 	ztest_returns_value(stg_config_u16_read, 0);
 	ztest_returns_value(stg_config_u32_read, 0);
 	ztest_returns_value(date_time_now, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_write, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	/* Cache variables for messaging module. */
 	struct gnss_data *ev_gnss = new_gnss_data();
