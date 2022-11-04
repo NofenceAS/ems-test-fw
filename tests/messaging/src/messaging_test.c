@@ -50,6 +50,8 @@ void test_init(void)
 	ztest_returns_value(stg_config_u16_read, 0);
 	ztest_returns_value(stg_config_u32_read, 0);
 	ztest_returns_value(date_time_now, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	/* Cache variables for messaging module. */
 	struct gnss_data *ev_gnss = new_gnss_data();
@@ -96,8 +98,9 @@ void test_init(void)
 //ack - fence_ready - ano_ready - msg_out - host_address
 int poll_interval =15;
 void test_second_poll_request_has_no_boot_parameters(void)
-{/*assumes 15min poll interval, 25sec delay for build_log work
- * checks: second poll request sent out without the boot parameters*/
+{
+	/*assumes 15min poll interval, 25sec delay for build_log work
+	* checks: second poll request sent out without the boot parameters*/
 	ztest_returns_value(date_time_now, 0);
 	/* TODO pshustad, pending if we are going to use the connection_state_event for poll */
 
@@ -295,7 +298,8 @@ void test_poll_response_has_host_address(void)
 }
 
 void test_poll_request_retry_after_missing_ack_from_cellular_controller(void)
-{/*assumes 15min poll interval, 25sec delay for build_log work */
+{
+	/*assumes 15min poll interval, 25sec delay for build_log work */
 
 	NofenceMessage decode;
 	k_sem_reset(&error_sem);
