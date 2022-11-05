@@ -69,11 +69,6 @@ void main(void)
 	}
 #endif
 
-	err = stg_config_init();
-	if (err != 0) {
-		LOG_ERR("STG Config failed to initialize");
-	}
-
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
 	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
@@ -84,6 +79,12 @@ void main(void)
 		nf_app_error(ERR_EEPROM, -EIO, e_msg, strlen(e_msg));
 	}
 	eep_init(eeprom_dev);
+#endif
+	/* Initialize stg config flash storage */
+	err = stg_config_init();
+	if (err != 0) {
+		LOG_ERR("STG Config failed to initialize");
+	}
 	/* Fetch and log stored serial number */
 	uint32_t serial_id = 0;
 	err = stg_config_u32_read(STG_U32_UID, &serial_id);
@@ -92,7 +93,6 @@ void main(void)
 	} else {
 		LOG_WRN("Missing device Serial Number in ext flash");
 	}
-#endif
 
 	/* Initialize the power manager module. */
 	err = pwr_module_init();
