@@ -127,10 +127,10 @@ void main(void)
 	LOG_ERR("Was soft reset ?:%i, Soft reset reason:%d, Battery percent:%i",
 		is_soft_reset, soft_reset_reason, bat_percent);
 
-	/* If not set, we can play the sound. */
-	if ((is_soft_reset != true) ||
-	    ((is_soft_reset == true) &&
-	     (soft_reset_reason == REBOOT_BLE_RESET))) {
+	/* Play welcome- and battery sound as long as the device was not reset
+	 * due to a FOTA update or from a BLE reset */
+	if ((soft_reset_reason != REBOOT_BLE_RESET) && 
+	    (soft_reset_reason != REBOOT_FOTA_RESET)) {
 		if (bat_percent > 20) {
 			if (bat_percent >= 75) {
 				/* Play battery sound. */
