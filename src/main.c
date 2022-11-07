@@ -128,7 +128,7 @@ void main(void)
 		is_soft_reset, soft_reset_reason, bat_percent);
 
 	/* Play welcome- and battery sound as long as the device was not reset
-	 * due to a FOTA update or from a BLE reset */
+	 * due to a FOTA update */
 	if (soft_reset_reason != REBOOT_FOTA_RESET) {
 		if (bat_percent > 20) {
 			if (bat_percent >= 75) {
