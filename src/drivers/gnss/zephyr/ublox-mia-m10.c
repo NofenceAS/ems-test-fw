@@ -20,6 +20,9 @@ LOG_MODULE_REGISTER(MIA_M10, CONFIG_GNSS_LOG_LEVEL);
 #define GNSS_UART_NODE DT_INST_BUS(0)
 #define GNSS_UART_DEV DEVICE_DT_GET(GNSS_UART_NODE)
 
+#define EXTINT_GPIOS_PIN DT_INST_GPIO_PIN(0, extint_gpios)
+
+
 static const struct device *mia_m10_uart_dev = GNSS_UART_DEV;
 
 #define MIA_M10_DEFAULT_BAUDRATE 38400
@@ -69,6 +72,9 @@ static struct k_mutex gnss_data_mutex;
 static struct k_mutex gnss_cb_mutex;
 
 static gnss_data_cb_t data_cb = NULL;
+
+const struct device *gpio_dev;
+
 
 /**
  * @brief Synchronizes on time of week (TOW). If a new TOW is encountered, 
@@ -537,19 +543,6 @@ static int mia_m10_data_fetch(const struct device *dev, gnss_t *data)
 	return 0;
 }
 
-static const struct gnss_driver_api mia_m10_api_funcs = {
-	.gnss_setup = mia_m10_setup,
-	.gnss_reset = mia_m10_reset,
-
-	.gnss_upload_assist_data = mia_m10_upload_assist_data,
-
-	.gnss_set_rate = mia_m10_set_rate,
-	.gnss_get_rate = mia_m10_get_rate,
-
-	.gnss_set_data_cb = mia_m10_set_data_cb,
-
-	.gnss_data_fetch = mia_m10_data_fetch,
-};
 
 /**
  * @brief Parse data from GNSS. 
@@ -639,7 +632,9 @@ static void mia_m10_handle_received_data(void *dev)
  */
 static int mia_m10_init(const struct device *dev)
 {
+    int ret = 0;
 	mia_m10_uart_dev = GNSS_UART_DEV;
+    gpio_dev = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
 
 	/* Initialize Ublox protocol parser */
 	ublox_protocol_init();
@@ -658,6 +653,13 @@ static int mia_m10_init(const struct device *dev)
 	if (!device_is_ready(mia_m10_uart_dev)) {
 		return -EIO;
 	}
+
+    /** Set up EXTINT interrupt GPIO */
+
+    ret = gpio_pin_configure(gpio_dev,EXTINT_GPIOS_PIN,GPIO_OUTPUT);
+    if (ret != 0) {
+        return ret;
+    }
 
 	k_sem_init(&gnss_rx_sem, 0, 1);
 	gnss_hub_init(mia_m10_uart_dev, &gnss_rx_sem, MIA_M10_DEFAULT_BAUDRATE);
@@ -751,6 +753,7 @@ static int mia_m10_send_ubx_cmd(uint8_t *buffer, uint32_t size,
 			       K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) !=
 		    0) {
 			k_mutex_unlock(&cmd_mutex);
+            LOG_WRN("ACK timeout");
 			return -ETIME;
 		}
 	}
@@ -983,6 +986,68 @@ int mia_m10_send_assist_data(uint8_t *data, uint32_t size)
 
 	return ret;
 }
+
+
+static int mia_m10_set_backup_mode(const struct device * dev) {
+    ARG_UNUSED(dev);
+    LOG_INF("TODO: mia_m10_set_backup_mode");
+
+
+    int ret = 0;
+
+    if (k_mutex_lock(&cmd_mutex,
+                     K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) == 0) {
+        ret = ublox_build_rxm_pmreq(cmd_buf, &cmd_size,
+                                    CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE);
+        if (ret != 0) {
+            k_mutex_unlock(&cmd_mutex);
+            return ret;
+        }
+
+        /* @todo verify that the UBX-RXM-PMREQ does not actually ACK */
+        ret = mia_m10_send_ubx_cmd(cmd_buf, cmd_size, false, false);
+        if (ret != 0) {
+            k_mutex_unlock(&cmd_mutex);
+            return ret;
+        }
+        /* Do not wait for ACK when entering backup mode */
+
+        k_mutex_unlock(&cmd_mutex);
+    } else {
+        return -EBUSY;
+    }
+
+    return ret;
+}
+
+
+static int mia_m10_wakeup(const struct device * dev) {
+    LOG_DBG("mia_m10_wakeup");
+    int ret = 0;
+    ret = gpio_pin_set(gpio_dev,EXTINT_GPIOS_PIN,0);
+    if (ret != 0) {
+        return ret;
+    }
+    k_sleep(K_MSEC(10));
+    ret = gpio_pin_set(gpio_dev,EXTINT_GPIOS_PIN,1);
+    if (ret != 0) {
+        return ret;
+    }
+    return 0;
+}
+
+static const struct gnss_driver_api mia_m10_api_funcs = {
+        .gnss_setup = mia_m10_setup,
+        .gnss_reset = mia_m10_reset,
+        .gnss_upload_assist_data = mia_m10_upload_assist_data,
+        .gnss_set_rate = mia_m10_set_rate,
+        .gnss_get_rate = mia_m10_get_rate,
+        .gnss_set_data_cb = mia_m10_set_data_cb,
+        .gnss_data_fetch = mia_m10_data_fetch,
+        .gnss_set_backup_mode = mia_m10_set_backup_mode,
+        .gnss_wakeup = mia_m10_wakeup
+};
+
 
 /* Create device object. 
  * Using NULL for data and config pointers since this is allocated statically 

@@ -65,18 +65,29 @@ static int mock_gnss_data_fetch(const struct device *dev, gnss_t *data)
 	return ztest_get_return_value();
 }
 
+static int mock_gnss_set_backup_mode(const struct device *dev)
+{
+    ARG_UNUSED(dev);
+    return ztest_get_return_value();
+}
+
+static int mock_gnss_wakeup(const struct device *dev)
+{
+    ARG_UNUSED(dev);
+    return ztest_get_return_value();
+}
+
+
 static const struct gnss_driver_api mock_gnss_driver_funcs = {
 	.gnss_setup = mock_gnss_setup,
 	.gnss_reset = mock_gnss_reset,
-
 	.gnss_upload_assist_data = mock_gnss_upload_assist_data,
-
 	.gnss_set_rate = mock_gnss_set_rate,
 	.gnss_get_rate = mock_gnss_get_rate,
-
 	.gnss_set_data_cb = mock_gnss_set_data_cb,
-
-	.gnss_data_fetch = mock_gnss_data_fetch
+	.gnss_data_fetch = mock_gnss_data_fetch,
+    .gnss_set_backup_mode = mock_gnss_set_backup_mode,
+    .gnss_wakeup = mock_gnss_wakeup
 };
 
 static int mock_gnss_init(const struct device *dev)
