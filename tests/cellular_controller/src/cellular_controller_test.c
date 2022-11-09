@@ -66,16 +66,15 @@ void test_socket_send_fails(void)
 	test_msgOut->len = sizeof(dummy_test_msg);
 	EVENT_SUBMIT(test_msgOut);
 
-	int err = k_sem_take(&cellular_ack, K_MSEC(100));
-	zassert_equal(err, 0,
-		      "Expected cellular_ack event was not"
-		      "published ");
+	k_sleep(K_MSEC(100));
 
 	/* in case of failure, the sending thread will publish a
 	 * stop_connection_event*/
 	struct messaging_stop_connection_event *stop_connection =
 		new_messaging_stop_connection_event();
 	EVENT_SUBMIT(stop_connection);
+
+	k_sleep(K_MSEC(100));
 
 	reset_test_semaphores();
 }
@@ -99,6 +98,10 @@ void test_socket_send_recovery(void)
 	test_msgOut->len = sizeof(dummy_test_msg);
 	EVENT_SUBMIT(test_msgOut);
 
+	struct free_message_mem_event *free_mem_ev =
+		new_free_message_mem_event();
+	EVENT_SUBMIT(free_mem_ev);
+
 	int err = k_sem_take(&cellular_ack, K_MSEC(100));
 	zassert_equal(err, 0,
 		      "Expected cellular_ack event was not"
@@ -117,10 +120,6 @@ void test_send_many_messages(void)
 		ztest_expect_value(send_tcp_q, *dummy, test_msg[0]);
 		ztest_expect_value(send_tcp_q, dummy_len, sizeof(test_msg));
 
-		struct free_message_mem_event *free_mem_ev =
-			new_free_message_mem_event();
-		EVENT_SUBMIT(free_mem_ev);
-
 		struct check_connection *ev = new_check_connection();
 		EVENT_SUBMIT(ev);
 
@@ -129,6 +128,10 @@ void test_send_many_messages(void)
 		test_msgOut->buf = &test_msg[0];
 		test_msgOut->len = sizeof(test_msg);
 		EVENT_SUBMIT(test_msgOut);
+
+		struct free_message_mem_event *free_mem_ev =
+			new_free_message_mem_event();
+		EVENT_SUBMIT(free_mem_ev);
 
 		int err = k_sem_take(&cellular_ack, K_MSEC(50));
 		zassert_equal(err, 0,
@@ -268,7 +271,14 @@ static bool event_handler(const struct event_header *eh)
 		return false;
 	} else if (is_cellular_ack_event(eh)) {
 		k_sem_give(&cellular_ack);
-		printk("released semaphore for cellular_ack!\n");
+		printk("released semaphore for cellular_ack, ");
+		struct cellular_ack_event *ev =
+			cast_cellular_ack_event(eh);
+		if (ev->message_sent) {
+			printk("sent successfully!\n");
+		} else {
+			printk("sending failed!\n");
+		}
 		return false;
 	} else if (is_error_event(eh)) {
 		k_sem_give(&cellular_error);
