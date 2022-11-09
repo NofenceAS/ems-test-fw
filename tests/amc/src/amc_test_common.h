@@ -27,5 +27,14 @@ void simulate_no_fix(void);
 void simulate_fix(void);
 void simulate_easy_fix(void);
 void simulate_accepted_fix(void);
+void simulate_warn_fix(void);
+
+void test_correction_gnss(void);
+void test_correction_mode(void);
+void test_correction_fence_status(void);
+void test_correction_zone(void);
+void test_correction_esacped(void);
+void test_correction_active_delta(void);
+void test_correction_dist_pause(void);
 
 #endif /* _AMC_TEST_COMMON_H_ */
