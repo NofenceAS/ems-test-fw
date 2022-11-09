@@ -36,5 +36,6 @@ void test_correction_zone(void);
 void test_correction_esacped(void);
 void test_correction_active_delta(void);
 void test_correction_dist_pause(void);
+void test_correction_gnss_timeout(void);
 
 #endif /* _AMC_TEST_COMMON_H_ */

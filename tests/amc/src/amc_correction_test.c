@@ -13,6 +13,7 @@
 #include "amc_const.h"
 #include "sound_event.h"
 #include "messaging_module_events.h"
+#include "gnss_controller_events.h"
 #include "ep_event.h"
 
 K_SEM_DEFINE(warning_start_sem, 0, 1);
@@ -731,6 +732,77 @@ void test_correction_dist_pause(void)
 
     /* Check that correction status is 1, e.g. started but warning OFF */
     zassert_equal(get_correction_status(), 1, "");
+
+    /* Stop correction by setting collar mode to Mode_Unknown*/
+    collar_mode = Mode_Mode_UNKNOWN;
+    gnss_data_fix.lastfix.updated_at = k_uptime_get_32();
+
+    k_sem_reset(&warning_stop_sem);
+
+    /* Update correction */
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
+        current_zone, mean_dist, dist_change);
+
+    /* Wait for correction ended event */
+    zassert_equal(k_sem_take(&warning_stop_sem, K_SECONDS(5)), 0, "");
+
+    /* Check that correction status is 0, e.g. correction not started */
+    zassert_equal(get_correction_status(), 0, "");
+}
+
+void test_correction_gnss_timeout(void)
+{
+    /* 
+     * Test that AMC correction for stale GNSS data
+     */
+	Mode collar_mode = Mode_Fence;
+	FenceStatus fence_status = FenceStatus_FenceStatus_Normal;
+	amc_zone_t current_zone = WARN_ZONE;
+    uint16_t mean_dist = 0;
+    uint16_t dist_change = 0;
+
+    k_sleep(K_SECONDS(CORRECTION_PAUSE_MIN_TIME + 1));
+
+    amc_gnss_init();
+
+    /* Simulate an accepted GNSS fix */
+    simulate_warn_fix();
+    gnss_data_fix.lastfix.updated_at = k_uptime_get_32();
+
+    k_sem_reset(&warning_start_sem);
+
+    /* Start correction */
+    ztest_returns_value(get_active_delta, STATE_NORMAL);
+    ztest_returns_value(stg_config_u32_write, 0);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
+        current_zone, mean_dist, dist_change);
+
+    /* Wait for warning start event */
+	zassert_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 0, "");
+
+    /* Check that correction status is 2, e.g. started and warning ON */
+    zassert_equal(get_correction_status(), 2, "");
+
+    /*
+     * Test
+     * Test that correction is stopped when AMC receive a GNSS data event with
+     * the timed_out flag set to true.
+     */
+    k_sem_reset(&warning_stop_sem);
+
+	gnss_t gnss_data_timeout;
+	memset(&gnss_data_timeout, 0, sizeof(gnss_t));
+
+	struct gnss_data *gnss_evt = new_gnss_data();
+	gnss_evt->gnss_data = gnss_data_timeout;
+	gnss_evt->timed_out = true;
+	EVENT_SUBMIT(gnss_evt);
+
+    /* Wait for warning stop event */
+	zassert_equal(k_sem_take(&warning_stop_sem, K_SECONDS(5)), 0, "");
+
+    /* Check that correction status is 0, e.g. correction not started */
+    zassert_equal(get_correction_status(), 0, "");
 }
 
 static bool event_handler(const struct event_header *evt)

@@ -374,7 +374,8 @@ void test_main(void)
 			ztest_unit_test(test_correction_zone),
 			ztest_unit_test(test_correction_esacped),
 			ztest_unit_test(test_correction_active_delta),
-			ztest_unit_test(test_correction_dist_pause));
+			ztest_unit_test(test_correction_dist_pause),
+			ztest_unit_test(test_correction_gnss_timeout));
 	ztest_run_test_suite(amc_correction_tests);
 
 	ztest_test_suite(amc_collar_fence_tests,
