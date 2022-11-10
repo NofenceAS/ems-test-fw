@@ -456,8 +456,11 @@ static bool event_handler(const struct event_header *eh)
 		k_sem_give(&msg_out);
 		if (cellular_ack_ok) {
 			struct cellular_ack_event *ack = new_cellular_ack_event();
+			ack->message_sent = true;
 			EVENT_SUBMIT(ack);
 		}
+		printk("Simulated cellular ack!\n");
+		k_sleep(K_SECONDS(1));
 
 		return true;
 	}
