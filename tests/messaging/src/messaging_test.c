@@ -87,7 +87,7 @@ void test_init(void)
 	 * response from the server.*/
 	ztest_returns_value(stg_read_log_data, 0);
 	ztest_returns_value(stg_log_pointing_to_last, false);
-	k_sleep(K_SECONDS(25));
+	k_sleep(K_SECONDS(125));
 }
 
 /* Test expected events published by messaging*/
@@ -457,6 +457,10 @@ static bool event_handler(const struct event_header *eh)
 		if (cellular_ack_ok) {
 			struct cellular_ack_event *ack = new_cellular_ack_event();
 			ack->message_sent = true;
+			EVENT_SUBMIT(ack);
+		} else {
+			struct cellular_ack_event *ack = new_cellular_ack_event();
+			ack->message_sent = false;
 			EVENT_SUBMIT(ack);
 		}
 		printk("Simulated cellular ack!\n");
