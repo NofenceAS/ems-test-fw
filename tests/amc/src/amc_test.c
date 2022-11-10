@@ -145,8 +145,12 @@ void test_update_pasture(void)
 	/* ..force_fence_status() */
 	ztest_returns_value(stg_config_u8_write, 0);
 
+	/* ..calc_mode() */
+	ztest_returns_value(stg_config_u8_write, 0);
+
 	zone_set(WARN_ZONE);
 	zassert_equal(zone_get(), WARN_ZONE, "Zone not set to WARN_ZONE!");
+
 	/* Submit fence update event */
 	struct new_fence_available *event = new_new_fence_available();
 	event->new_fence_version = 1337;
@@ -227,6 +231,9 @@ void test_update_pasture_stg_fail(void)
 
 	/* update_pasture_from_stg() */
 	ztest_returns_value(stg_read_pasture_data, -1); //Fails to read
+
+	/* handle_states_fn()/calc_mode() */
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	/* handle_states_fn()/calc_fence_status() */
 	ztest_returns_value(stg_config_u8_write, 0);
