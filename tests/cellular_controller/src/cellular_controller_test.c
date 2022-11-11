@@ -83,7 +83,7 @@ void test_socket_send_recovery(void)
 {
 	ztest_returns_value(reset_modem, 0);
 	ztest_returns_value(lte_init, 0);
-	ztest_returns_value(eep_read_host_port, 0);
+	ztest_returns_value(stg_config_str_read, 0);
 	ztest_returns_value(check_ip, 0);
 	ztest_returns_value(socket_connect, 0);
 	ztest_expect_value(send_tcp_q, *dummy, dummy_test_msg[0]);
