@@ -400,6 +400,9 @@ void test_poll_request_retry_after_missing_ack_from_cellular_controller(void)
 	ztest_returns_value(date_time_now, 0);
 
 	k_sem_reset(&msg_out);
+
+	/* poll request #2-  retry after 1 minute*/
+	ztest_returns_value(date_time_now, 0);
 	k_sleep(K_MINUTES(1+poll_interval));
 
 	zassert_equal(k_sem_take(&msg_out, K_MSEC(500)), 0, "");
@@ -415,10 +418,6 @@ void test_poll_request_retry_after_missing_ack_from_cellular_controller(void)
 	zassert_equal(decode.which_m, NofenceMessage_poll_message_req_tag,
 		      "Wrong message");
 	zassert_false(decode.m.poll_message_req.has_versionInfo, "");
-
-	/* poll request #2*/
-	ztest_returns_value(date_time_now, 0);
-	k_sleep(K_MINUTES(poll_interval));
 }
 
 void test_main(void)
