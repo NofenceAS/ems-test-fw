@@ -3,13 +3,15 @@
 
 #include <zephyr.h>
 
+#define CCID_BUF_SIZE 20
+
 typedef struct gsm_info {
 	int rat;
 	int mnc;
 	int rssi;
 	int min_rssi;
 	int max_rssi;
-	uint8_t ccid[20];
+	uint8_t ccid[CCID_BUF_SIZE];
 } gsm_info;
 
 int modem_nf_reset(void);

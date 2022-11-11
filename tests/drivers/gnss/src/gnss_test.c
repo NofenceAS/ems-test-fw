@@ -1,11 +1,16 @@
 #include <ztest.h>
 #include <zephyr.h>
 #include <device.h>
+#include <drivers/gpio.h>
+#include <drivers/gpio/gpio_emul.h>
 #include "gnss.h"
 #include "uart_mock.h"
 
 const struct device *uart_dev = DEVICE_DT_GET(DT_ALIAS(gnssuart));
 const struct device *gnss_dev = DEVICE_DT_GET(DT_ALIAS(gnss));
+const struct device *gpio0_dev = DEVICE_DT_GET(DT_NODELABEL(gpio0));
+
+#define EXTINT_PIN DT_GPIO_PIN(DT_NODELABEL(gnss), extint_gpios)
 
 //#define GNSS_VERBOSE
 
@@ -759,8 +764,54 @@ static void test_upload_assistance_data(void)
 		      "GNSS simulator did not indicate completion");
 }
 
+
+
+static int cb_cnt;
+
+/**
+ * @brief test-callback to check the state of the GPIO EXTINT pin when waking up the receiver
+ */
+static void callback(const struct device *dev,
+                     struct gpio_callback *gpio_cb, uint32_t pins)
+{
+    gpio_port_value_t port_value;
+
+    int ret;
+    ++cb_cnt;
+
+    zassert_equal(pins, BIT(EXTINT_PIN),"unexpected pins %x", pins);
+
+    ret = gpio_emul_output_get_masked(dev, BIT(EXTINT_PIN), &port_value);
+    zassert_equal(ret,0,"");
+    if (cb_cnt == 1) {
+        zassert_equal(port_value,0,"");
+
+    } else if (cb_cnt == 2) {
+        zassert_equal(port_value,BIT(EXTINT_PIN),"");
+    } else {
+        ztest_test_fail();
+    }
+}
+/**
+ * @brief Testing the wakeup of GNSS by toggling the EXTINT IO pin
+ */
+ static void test_wakeup_by_extint_pin(void) {
+    struct gpio_callback gpio_cb;
+    int rc;
+
+    gpio_init_callback(&gpio_cb, callback, BIT(EXTINT_PIN));
+    rc = gpio_add_callback(gpio0_dev, &gpio_cb);
+    zassert_equal(rc,0,"Unexpected return");
+
+    gnss_wakeup(gnss_dev);
+    zassert_equal(cb_cnt,2,"GPIO Callbacks");
+ }
+
+
+
 void test_main(void)
 {
+    zassert_not_null(gpio0_dev,"GPIO is null");
 	k_sem_init(&gnss_rx_sem, 0, 1);
 	k_sem_init(&gnss_sem, 0, 1);
 	
@@ -784,6 +835,8 @@ void test_main(void)
 				 ztest_unit_test(test_reset),
 				 ztest_unit_test(test_no_ack),
 				 ztest_unit_test(test_no_resp),
-				 ztest_unit_test(test_upload_assistance_data));
+				 ztest_unit_test(test_upload_assistance_data),
+				 ztest_unit_test(test_wakeup_by_extint_pin)
+                 );
 	ztest_run_test_suite(common);
 }

@@ -246,4 +246,12 @@ int ublox_build_mga_ano(uint8_t* buffer, uint32_t* size, uint32_t max_size,
 			uint8_t* data,
 			uint32_t data_size);
 
+/**
+ * @brief Puts the receiver into backup-mode, waken up by interrupt
+ * @param[out] buffer Buffer to build complete command in
+ * @param[out] size Size of built command
+ * @param[in] max_size of buffer
+ * @return 0 if OK, error code otherwise
+ */
+int ublox_build_rxm_pmreq(uint8_t* buffer, uint32_t* size, uint32_t max_size);
 #endif /* UBLOX_PROTOCOL_H_ */

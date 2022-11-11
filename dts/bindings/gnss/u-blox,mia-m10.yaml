@@ -12,3 +12,7 @@ properties:
     pps-gpios:
       type: phandle-array
       required: false
+
+    extint-gpios:
+      type: phandle-array
+      required: true

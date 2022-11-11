@@ -6,9 +6,7 @@
 #include "storage.h"
 #include "storage_event.h"
 #include "storage_helper.h"
-
 #include "error_event.h"
-
 #include "ano_structure.h"
 #include "log_structure.h"
 #include "pasture_structure.h"
@@ -38,8 +36,9 @@ void test_init(void)
 void test_main(void)
 {
 	/* Init FCBs and event manager setup. */
-	ztest_test_suite(storage_init, ztest_unit_test(test_event_manager_init),
-			 ztest_unit_test(test_init));
+	ztest_test_suite(storage_init, 
+		ztest_unit_test(test_event_manager_init),
+		ztest_unit_test(test_init));
 	ztest_run_test_suite(storage_init);
 
 	/* Test log partition. */

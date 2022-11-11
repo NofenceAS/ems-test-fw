@@ -623,3 +623,46 @@ int ublox_build_mga_ano(uint8_t* buffer, uint32_t* size, uint32_t max_size,
 
 	return 0;
 }
+
+int ublox_build_rxm_pmreq(uint8_t* buffer, uint32_t* size, uint32_t max_size)
+{
+
+    /* Calculate packet length */
+    uint32_t payload_length = sizeof(struct ublox_rxm_pmreq);
+    uint32_t packet_length = UBLOX_OVERHEAD_SIZE + payload_length;
+
+    if (max_size < packet_length) {
+        return -ENOBUFS;
+    }
+
+    uint8_t msg_class = UBX_RXM;
+    uint8_t msg_id = UBX_RXM_PMREQ;
+
+    /* Build data structure pointers */
+    struct ublox_header* header = (void*)buffer;
+    struct ublox_rxm_pmreq * payload = (void*)&buffer[sizeof(struct ublox_header)];
+    union ublox_checksum* checksum =
+            (void*)&buffer[sizeof(struct ublox_header) + \
+					       payload_length];
+
+    /* Fill header */
+    header->sync1 = UBLOX_SYNC_CHAR_1;
+    header->sync2 = UBLOX_SYNC_CHAR_2;
+    header->msg_class = msg_class;
+    header->msg_id = msg_id;
+    header->length = payload_length;
+
+    /* Fill payload */
+    memset(payload,0,payload_length);
+    // TODO, use FORCE in PMREQ ??
+    payload->duration = 0;
+    payload->flags |= (UBX_RXM_PMREQ_FLAGS_BACKUP_BITFIELD);
+    payload->wakeupSources |= (UBX_RXM_PMREQ_WAKEUPSOURCES_EXTINT0_BITFIELD);
+
+    /* Calculate checksum */
+    checksum->ck = ublox_calculate_checksum(buffer, header->length);
+
+    *size = packet_length;
+
+    return 0;
+}

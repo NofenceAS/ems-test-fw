@@ -71,17 +71,24 @@ const struct device *bind_modem(void)
 	return &dummy_device;
 }
 
-char mock_host_address[24] = "193.146.222.555:123456";
-int eep_read_host_port(char *host_port, size_t bufsize)
-{
-	memcpy(host_port, &mock_host_address[0], bufsize);
-	return ztest_get_return_value();
-}
+// char mock_host_address[24] = "193.146.222.555:123456";
+// int stg_config_str_read(stg_config_param_id_t id, char *str, uint8_t *len)
+// {
+// 	ARG_UNUSED(id);
+// 	ARG_UNUSED(len);
 
-int eep_write_host_port(const char *host_port)
-{
-	return ztest_get_return_value();
-}
+// 	memcpy(str, &mock_host_address[0], 24);
+// 	return ztest_get_return_value();
+// }
+
+// int stg_config_str_write(stg_config_param_id_t id, const char *str, const uint8_t len)
+// {
+// 	ARG_UNUSED(id);
+// 	ARG_UNUSED(str);
+// 	ARG_UNUSED(len);
+
+// 	return ztest_get_return_value();
+// }
 
 int check_ip(void){
 	return ztest_get_return_value();

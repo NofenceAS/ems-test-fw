@@ -40,16 +40,20 @@ void assert_post_action(const char *file, unsigned int line)
 
 void test_init(void)
 {
-	cellular_ack_ok = true;
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_read_ble_sec_key, 0);
-	ztest_returns_value(eep_uint8_read, 0);
-	ztest_returns_value(eep_uint16_read, 0);
-	ztest_returns_value(eep_uint32_read, 0);
+	struct connection_state_event *ev = new_connection_state_event();
+	ev->state = true;
+	EVENT_SUBMIT(ev);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_blob_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_returns_value(stg_config_u32_read, 0);
 	ztest_returns_value(date_time_now, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
 
 	/* Cache variables for messaging module. */
 	struct gnss_data *ev_gnss = new_gnss_data();
@@ -87,15 +91,16 @@ void test_init(void)
 	 * response from the server.*/
 	ztest_returns_value(stg_read_log_data, 0);
 	ztest_returns_value(stg_log_pointing_to_last, false);
-	k_sleep(K_SECONDS(125));
+	k_sleep(K_SECONDS(25));
 }
 
 /* Test expected events published by messaging*/
 //ack - fence_ready - ano_ready - msg_out - host_address
 int poll_interval =15;
 void test_second_poll_request_has_no_boot_parameters(void)
-{/*assumes 15min poll interval, 25sec delay for build_log work
- * checks: second poll request sent out without the boot parameters*/
+{
+	/*assumes 15min poll interval, 25sec delay for build_log work
+	* checks: second poll request sent out without the boot parameters*/
 	ztest_returns_value(date_time_now, 0);
 	/* TODO pshustad, pending if we are going to use the connection_state_event for poll */
 
@@ -378,7 +383,8 @@ void test_poll_response_has_host_address(void)
 }
 
 void test_poll_request_retry_after_missing_ack_from_cellular_controller(void)
-{/*assumes 15min poll interval, 25sec delay for build_log work */
+{
+	/*assumes 15min poll interval, 25sec delay for build_log work */
 	cellular_ack_ok = false;
 	k_sem_reset(&error_sem);
 	/* log_work thread start*/
