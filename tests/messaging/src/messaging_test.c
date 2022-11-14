@@ -44,6 +44,10 @@ void test_init(void)
 	ev->state = true;
 	EVENT_SUBMIT(ev);
 
+	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_returns_value(stg_config_u16_read, 0);
+
 	ztest_returns_value(stg_config_u8_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0);
