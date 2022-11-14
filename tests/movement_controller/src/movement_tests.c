@@ -17,6 +17,10 @@ uint8_t row = 0;
 static acc_activity_t cur_activity = ACTIVITY_NO;
 static const struct device *sensor;
 
+/** @todo, these functions are actually private */
+void process_acc_data(raw_acc_data_t *acc);
+void fetch_and_display(const struct device *sensor);
+
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
  */
@@ -25,6 +29,7 @@ void assert_post_action(const char *file, unsigned int line)
 {
 	printk("assert_post_action - file: %s (line: %u)\n", file, line);
 }
+
 
 void test_init(void)
 {
@@ -50,8 +55,8 @@ void test_activity_no(void)
 		row = i;
 		ztest_returns_value(sensor_sample_fetch, 0);
 		ztest_returns_value(sensor_channel_get, 0);
-		raw_acc_data_t raw_data;
-		fetch_and_display(sensor, &raw_data);
+		extern raw_acc_data_t raw_data;
+		fetch_and_display(sensor);
 		process_acc_data(&raw_data);
 	}
 	zassert_equal(k_sem_take(&cur_activity_sem, K_SECONDS(30)), 0, "");
@@ -66,8 +71,8 @@ void test_activity_low(void)
 		row = i;
 		ztest_returns_value(sensor_sample_fetch, 0);
 		ztest_returns_value(sensor_channel_get, 0);
-		raw_acc_data_t raw_data;
-		fetch_and_display(sensor, &raw_data);
+		extern raw_acc_data_t raw_data;
+		fetch_and_display(sensor);
 		process_acc_data(&raw_data);
 	}
 	zassert_equal(k_sem_take(&cur_activity_sem, K_SECONDS(30)), 0, "");
@@ -82,8 +87,8 @@ void test_activity_med(void)
 		row = i;
 		ztest_returns_value(sensor_sample_fetch, 0);
 		ztest_returns_value(sensor_channel_get, 0);
-		raw_acc_data_t raw_data;
-		fetch_and_display(sensor, &raw_data);
+		extern raw_acc_data_t raw_data;
+		fetch_and_display(sensor);
 		process_acc_data(&raw_data);
 	}
 	zassert_equal(k_sem_take(&cur_activity_sem, K_SECONDS(30)), 0, "");
@@ -98,13 +103,40 @@ void test_activity_high(void)
 		row = i;
 		ztest_returns_value(sensor_sample_fetch, 0);
 		ztest_returns_value(sensor_channel_get, 0);
-		raw_acc_data_t raw_data;
-		fetch_and_display(sensor, &raw_data);
+		extern raw_acc_data_t raw_data;
+		fetch_and_display(sensor);
 		process_acc_data(&raw_data);
 	}
 	zassert_equal(k_sem_take(&cur_activity_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(cur_activity, ACTIVITY_HIGH, "");
+}
 
+void test_process_acc_data_bug1(void)
+{
+        extern uint32_t ztest_acc_std_final;
+	raw_acc_data_t raw;
+	raw.x = 1;
+	raw.y = 1;
+	raw.z = 1;
+	for (int i=0; i < 32; i ++) {
+		process_acc_data(&raw);
+		raw.x ++;
+		raw.y ++;
+		raw.z ++;
+	}
+	zassert_true(ztest_acc_std_final > 0,"Running average standard deviation is wrong");
+	uint32_t acc_std_final_1 = ztest_acc_std_final;
+	/* Feed the same values again, variance should increase even more */
+	raw.x = 1;
+	raw.y = 1;
+	raw.z = 1;
+	for (int i=0; i < 32; i ++) {
+		process_acc_data(&raw);
+		raw.x +=100;
+		raw.y +=100;
+		raw.z +=100;
+	}
+	zassert_true(ztest_acc_std_final > acc_std_final_1,"");
 }
 
 void test_main(void)
@@ -114,7 +146,10 @@ void test_main(void)
 			ztest_unit_test(test_activity_no),
 			ztest_unit_test(test_activity_low),
 			ztest_unit_test(test_activity_med),
-			ztest_unit_test(test_activity_high));
+			ztest_unit_test(test_activity_high),
+			ztest_unit_test(test_process_acc_data_bug1)
+			);
+
 	ztest_run_test_suite(movement_tests);
 }
 
