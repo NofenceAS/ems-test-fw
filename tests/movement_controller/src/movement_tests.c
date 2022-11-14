@@ -33,9 +33,45 @@ void test_init(void)
 		      "Error when initializing movement controller");
 }
 
+/** @todo, this function is actually private */
+void process_acc_data(raw_acc_data_t *acc);
+
+static void test_process_acc_data_bug1(void)
+{
+        extern uint32_t ztest_acc_std_final;
+	raw_acc_data_t raw;
+	raw.x = 1;
+	raw.y = 1;
+	raw.z = 1;
+	for (int i=0; i < 32; i ++) {
+		process_acc_data(&raw);
+		raw.x ++;
+		raw.y ++;
+		raw.z ++;
+	}
+	zassert_true(ztest_acc_std_final > 0,"Running average standard deviation is wrong");
+	uint32_t acc_std_final_1 = ztest_acc_std_final;
+	/* Feed the same values again, variance should increase even more */
+	raw.x = 1;
+	raw.y = 1;
+	raw.z = 1;
+	for (int i=0; i < 32; i ++) {
+		process_acc_data(&raw);
+		raw.x ++;
+		raw.y ++;
+		raw.z ++;
+	}
+	zassert_true(ztest_acc_std_final > acc_std_final_1,"");
+
+
+}
+
 void test_main(void)
 {
-	ztest_test_suite(movement_tests, ztest_unit_test(test_init));
+	ztest_test_suite(movement_tests,
+			 ztest_unit_test(test_init),
+			 ztest_unit_test(test_process_acc_data_bug1)
+			 );
 	ztest_run_test_suite(movement_tests);
 }
 
