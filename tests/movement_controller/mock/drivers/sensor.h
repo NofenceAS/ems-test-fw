@@ -59,4 +59,16 @@ static inline void sensor_g_to_ms2(int32_t g, struct sensor_value *ms2)
 
 #define movement_sensor spi0
 
+typedef enum {
+	TEST_ACTIVITY_NO,
+	TEST_ACTIVITY_LOW,
+	TEST_ACTIVITY_MED,
+	TEST_ACTIVITY_HIGH
+} test_id_t;
+
+/* Global variable to keep track of current test */
+extern test_id_t curr_test;
+/* Global variable to keep track of row in acclelerometer dataset */
+extern uint8_t row;
+
 #endif /* _SENSOR_H_ */
