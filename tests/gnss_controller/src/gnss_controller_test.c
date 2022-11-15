@@ -274,14 +274,14 @@ void test_semisteady_gnss_data_stream(void)
 	}
 }
 
-static void test_gnss_set_backup_mode_on_inactive_event(void) {
-    ztest_returns_value(mock_gnss_wakeup, 0);
-    ztest_returns_value(mock_gnss_set_backup_mode, 0);
-    struct gnss_set_mode_event *ev = new_gnss_set_mode_event();
-    ev->mode = GNSSMODE_INACTIVE;
-    EVENT_SUBMIT(ev);
-    k_sleep(K_SECONDS(0.25));
-}
+//static void test_gnss_set_backup_mode_on_inactive_event(void) {
+//    ztest_returns_value(mock_gnss_wakeup, 0);
+//    ztest_returns_value(mock_gnss_set_backup_mode, 0);
+//    struct gnss_set_mode_event *ev = new_gnss_set_mode_event();
+//    ev->mode = GNSSMODE_INACTIVE;
+//    EVENT_SUBMIT(ev);
+//    k_sleep(K_SECONDS(0.25));
+//}
 
 void test_main(void)
 {
@@ -292,8 +292,9 @@ void test_main(void)
 		ztest_unit_test(test_init_fails2),
 		ztest_unit_test(test_init_fails3),
 		ztest_unit_test(test_old_gnss_last_fix_callback1),
-		ztest_unit_test(test_semisteady_gnss_data_stream),
-        ztest_unit_test(test_gnss_set_backup_mode_on_inactive_event));
+		ztest_unit_test(test_semisteady_gnss_data_stream)
+//        ,ztest_unit_test(test_gnss_set_backup_mode_on_inactive_event)
+		);
 
 	ztest_run_test_suite(gnss_controller_tests);
 }
