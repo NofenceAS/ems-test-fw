@@ -178,13 +178,14 @@ gnss_uart: &uart1 {
 	           <&gpio0 15 GPIO_ACTIVE_LOW>, /* CS BAROMETER */
 	           <&gpio0 12 GPIO_ACTIVE_LOW>; /* CS EEPROM */
 
-	movement_sensor: lis2dh@0 {
+	movement_sensor: lis2dw@0 {
 		status = "okay";
 		compatible = "st,lis2dw12";
 		reg = <0>; /* First defined chip select number*/
 		irq-gpios = <&gpio1 11 0>, <&gpio1 12 0>; /* INT1 and INT2 */
 		spi-max-frequency = <8000000>;
-		label = "LIS2DH-ACCEL";
+		range = <2>; /* +∕- 2g */
+		label = "LIS2DW12-ACCEL";
 	};
 
 	environment_sensor: bme280@1 {

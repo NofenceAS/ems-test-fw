@@ -25,6 +25,7 @@ target_include_directories(app PRIVATE ${APP_SOURCE})
 
 zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/mock
+  ${CMAKE_CURRENT_SOURCE_DIR}/mock/drivers
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/fifo
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/trigonometry
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/storage_controller/
