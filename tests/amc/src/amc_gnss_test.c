@@ -64,6 +64,33 @@ void simulate_accepted_fix(void)
 	zassert_equal(gnss_update(&gnss_data), 0, "Failed updating GNSS fix");
 }
 
+void simulate_warn_fix(void)
+{
+	simulate_fix();
+
+	gnss_data.latest.pvt_flags = 1;
+	gnss_data.latest.num_sv = 7;
+	gnss_data.latest.h_dop = 80;
+	gnss_data.latest.h_acc_dm = 25;
+	gnss_data.latest.height = 100;
+	gnss_data.latest.head_acc = 34000;
+	zassert_equal(gnss_update(&gnss_data), 0, "Failed updating GNSS fix");
+
+	int16_t dist_avg_change = 60;
+	int16_t dist_change = 0;
+	int16_t dist_incr_slope_lim = 0;
+	uint8_t dist_inc_count = 0;
+	uint8_t dist_incr_count = 0;
+	int16_t height_delta = 10;
+	int16_t acc_delta = -1;
+	int16_t mean_dist = 1;
+	uint16_t h_acc_dm = 25;
+	zassert_equal(gnss_update_dist_flags(dist_avg_change, dist_change, 
+		      dist_incr_slope_lim, dist_inc_count, dist_incr_count, 
+		      height_delta, acc_delta, mean_dist, h_acc_dm), 0, 
+		      "Failed to update GNSS fist flags");
+}
+
 void amc_gnss_init(void)
 {
 	k_sem_init(&gnss_fix_timeout, 0, 1);

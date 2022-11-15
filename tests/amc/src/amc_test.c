@@ -356,18 +356,23 @@ void test_main(void)
 			ztest_unit_test(test_gnss_mode));
 	ztest_run_test_suite(amc_gnss_tests);
 
+	ztest_test_suite(amc_correction_tests, 
+			ztest_unit_test(test_correction_gnss),
+			ztest_unit_test(test_correction_mode),
+			ztest_unit_test(test_correction_fence_status),
+			ztest_unit_test(test_correction_zone),
+			ztest_unit_test(test_correction_esacped),
+			ztest_unit_test(test_correction_active_delta),
+			ztest_unit_test(test_correction_dist_pause),
+			ztest_unit_test(test_correction_gnss_timeout));
+	ztest_run_test_suite(amc_correction_tests);
+
 	ztest_test_suite(amc_collar_fence_tests,
 			ztest_unit_test(test_init_and_update_pasture),
 			ztest_unit_test(test_collar_status),
 			ztest_unit_test(test_collar_mode),
 			ztest_unit_test(test_fence_status));
 	ztest_run_test_suite(amc_collar_fence_tests);
-
-//	ztest_test_suite(amc_integration_tests,
-//			 ztest_unit_test(test_update_pasture_integration));
-	/*TODO: We need to find a way to simulate new pastures, to be able to
-	 * run full simulation tests.*/
-//	ztest_run_test_suite(amc_integration_tests);
 }
 
 EVENT_LISTENER(test_main, event_handler);
