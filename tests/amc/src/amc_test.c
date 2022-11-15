@@ -46,7 +46,6 @@ void test_init_and_update_pasture(void)
 	ztest_returns_value(stg_config_u8_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0);
-	ztest_returns_value(stg_config_u8_write, 0);
 
 	/* update_pasture_from_stg */
 	ztest_returns_value(stg_read_pasture_data, 0);
@@ -130,12 +129,6 @@ void test_update_pasture(void)
 	 * new fence definition and fence status (NotStarted) to server.
 	 */
 
-	/* Set fence status to "UNKNOWN" before starting the update process */
-	ztest_returns_value(stg_config_u8_write, 0);
-	zassert_equal(force_fence_status(FenceStatus_FenceStatus_UNKNOWN), 0, "");
-	k_sem_reset(&fence_sema);
-	zassert_equal(k_sem_take(&fence_sema, K_SECONDS(10)), 0, "");
-
 	/* update_pasture_from_stg() */
 	ztest_returns_value(stg_read_pasture_data, 0);
 
@@ -147,6 +140,7 @@ void test_update_pasture(void)
 
 	zone_set(WARN_ZONE);
 	zassert_equal(zone_get(), WARN_ZONE, "Zone not set to WARN_ZONE!");
+
 	/* Submit fence update event */
 	struct new_fence_available *event = new_new_fence_available();
 	event->new_fence_version = 1337;
@@ -172,12 +166,6 @@ void test_update_pasture_teach_mode(void)
 	 * future use, sends new fence definition and fence status (NotStarted) to 
 	 * server. 
 	 */
-
-	/* Set fence status to "UNKNOWN" before starting the update process */
-	ztest_returns_value(stg_config_u8_write, 0);
-	zassert_equal(force_fence_status(FenceStatus_FenceStatus_UNKNOWN), 0, "");
-	k_sem_reset(&fence_sema);
-	zassert_equal(k_sem_take(&fence_sema, K_SECONDS(10)), 0, "");
 
 	/* update_pasture_from_stg() */
 	ztest_returns_value(stg_read_pasture_data, 0);
@@ -219,11 +207,6 @@ void test_update_pasture_stg_fail(void)
 	/* Test: Updating AMC pasture with read from storage error.
 	 * If read from storage fails, send error event and return immediately.
 	 */
-	/* Set fence status to "UNKNOWN" before starting the update process */
-	ztest_returns_value(stg_config_u8_write, 0);
-	zassert_equal(force_fence_status(FenceStatus_FenceStatus_UNKNOWN), 0, "");
-	k_sem_reset(&fence_sema);
-	zassert_equal(k_sem_take(&fence_sema, K_SECONDS(10)), 0, "");
 
 	/* update_pasture_from_stg() */
 	ztest_returns_value(stg_read_pasture_data, -1); //Fails to read
