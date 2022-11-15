@@ -27,6 +27,8 @@ size_t len;
 uint8_t msg_count = 0;
 char host[24] = "########################";
 static bool simulated_connection_state = true;
+static bool cellular_ack_ok = true;
+
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
  */
@@ -41,6 +43,11 @@ void test_init(void)
 	struct connection_state_event *ev = new_connection_state_event();
 	ev->state = true;
 	EVENT_SUBMIT(ev);
+
+	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_returns_value(stg_config_u16_read, 0);
+
 	ztest_returns_value(stg_config_u8_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0);
@@ -78,12 +85,10 @@ void test_init(void)
 
 	zassert_false(event_manager_init(),
 		      "Error when initializing event manager");
-
 	messaging_module_init();
 
 	k_sleep(K_SECONDS(0.1));
-	struct cellular_ack_event *ack = new_cellular_ack_event();
-	EVENT_SUBMIT(ack);
+
 
 	/* the build_log function is scheduled after 25 seconds,
 	 * will only send out messages from the flash -if any since
@@ -170,8 +175,6 @@ void test_second_poll_request_has_no_boot_parameters(void)
 		      "Wrong message");
 	zassert_false(decode.m.poll_message_req.has_versionInfo, "");
 
-	struct cellular_ack_event *ack2 = new_cellular_ack_event();
-	EVENT_SUBMIT(ack2);
 }
 
 void test_poll_request_out_when_nudged_from_server(void)
@@ -197,9 +200,6 @@ void test_poll_request_out_when_nudged_from_server(void)
 	zassert_equal(decode.which_m, NofenceMessage_poll_message_req_tag,
 		      "Wrong message type, poll request expected!");
 	zassert_false(decode.m.poll_message_req.has_versionInfo, "");
-
-	struct cellular_ack_event *ack = new_cellular_ack_event();
-	EVENT_SUBMIT(ack);
 }
 
 void test_poll_response_has_new_fence(void)
@@ -239,20 +239,110 @@ void test_poll_response_has_new_fence(void)
 	msgIn->buf = &encoded_msg[0];
 	msgIn->len = encoded_size + 2;
 	EVENT_SUBMIT(msgIn);
+
 	zassert_equal(k_sem_take(&msg_out, K_SECONDS(15)), 0, "");
 	int err = collar_protocol_decode(pMsg + 2, len - 2, &decode);
 	zassert_equal(err, 0, "Decode error!\n");
 	printk("%d\n", decode.which_m);
 	zassert_equal(decode.which_m, NofenceMessage_fence_definition_req_tag,
-		      "Expected "
-		      "fence def. "
-		      "request- not "
-		      "sent!\n");
+		      "Expected fence def. request- not sent!");
 	zassert_equal(decode.m.fence_definition_req.ulFenceDefVersion,
 		      dummy_fence, "Wrong fence version requested!\n");
+	zassert_equal(decode.m.fence_definition_req.ucFrameNumber,
+		      0, "Wrong fence frame number requested!\n");
 
-	struct cellular_ack_event *ack = new_cellular_ack_event();
-	EVENT_SUBMIT(ack);
+	ztest_returns_value(date_time_now, 0);
+	NofenceMessage fence_response = {
+		.which_m = NofenceMessage_fence_definition_resp_tag,
+		.header = {
+			.ulId = 0,
+			.ulUnixTimestamp = 2,
+			.ulVersion = 1,
+			.has_ulVersion = true
+		},
+		.m.fence_definition_resp =
+			{
+				.ulFenceDefVersion = dummy_fence,
+				.ucFrameNumber = 0,
+				.ucTotalFrames = 7,
+				.m.xHeader = {
+					.lOriginLat = 1,
+					.lOriginLon = 2,
+					.lOriginLon = 3,
+					.usK_LAT = 4,
+					.usK_LON = 5,
+					.has_bKeepMode = false
+				},
+			},
+	};
+
+	memset(encoded_msg, 0, sizeof(encoded_msg));
+	encoded_size = 0;
+	ret = collar_protocol_encode(&fence_response, &encoded_msg[0],
+				     sizeof(encoded_msg), &encoded_size);
+	zassert_equal(ret, 0, "Could not encode server response!\n");
+	printk("encoded size = %d \n", encoded_size);
+	memcpy(&encoded_msg[2], &encoded_msg[0], encoded_size);
+	struct cellular_proto_in_event *fence_msgIn =
+		new_cellular_proto_in_event();
+	fence_msgIn->buf = &encoded_msg[0];
+	fence_msgIn->len = encoded_size + 2;
+	EVENT_SUBMIT(fence_msgIn);
+
+	zassert_equal(k_sem_take(&msg_out, K_SECONDS(15)), 0, "");
+	err = collar_protocol_decode(pMsg + 2, len - 2, &decode);
+	zassert_equal(err, 0, "Decode error!\n");
+	printk("%d\n", decode.which_m);
+	zassert_equal(decode.which_m, NofenceMessage_fence_definition_req_tag,
+		      "Expected fence def. request- not sent!");
+	zassert_equal(decode.m.fence_definition_req.ulFenceDefVersion,
+		      dummy_fence, "Wrong fence version requested!\n");
+	zassert_equal(decode.m.fence_definition_req.ucFrameNumber,
+		      1, "Wrong fence frame number requested!\n");
+
+	k_sleep(K_SECONDS(0.5));
+	ztest_returns_value(date_time_now, 0);
+	dummy_fence = 5;
+	NofenceMessage poll_response2 = {
+		.which_m = NofenceMessage_poll_message_resp_tag,
+		.header = {
+			.ulId = 0,
+			.ulUnixTimestamp = 1,
+			.ulVersion = 0,
+			.has_ulVersion = false,
+		},
+		.m.poll_message_resp = {
+			.eActivationMode = ActivationMode_Active,
+			.ulFenceDefVersion = dummy_fence,
+			.has_bUseUbloxAno = true,
+			.bUseUbloxAno = true,
+			.has_usPollConnectIntervalSec = false,
+			.usPollConnectIntervalSec = 60
+		}
+	};
+
+	memset(encoded_msg, 0, sizeof(encoded_msg));
+	encoded_size = 0;
+	ret = collar_protocol_encode(&poll_response2, &encoded_msg[0],
+					 sizeof(encoded_msg), &encoded_size);
+	zassert_equal(ret, 0, "Could not encode server response!\n");
+
+	memcpy(&encoded_msg[2], &encoded_msg[0], encoded_size);
+	struct cellular_proto_in_event *msgIn2 = new_cellular_proto_in_event();
+	msgIn2->buf = &encoded_msg[0];
+	msgIn2->len = encoded_size + 2;
+	EVENT_SUBMIT(msgIn2);
+
+	zassert_equal(k_sem_take(&msg_out, K_SECONDS(15)), 0, "");
+	err = collar_protocol_decode(pMsg + 2, len - 2, &decode);
+	zassert_equal(err, 0, "Decode error!\n");
+	printk("%d\n", decode.which_m);
+	zassert_equal(decode.which_m, NofenceMessage_fence_definition_req_tag,
+		      "Expected fence def. request- not sent!");
+	zassert_equal(decode.m.fence_definition_req.ulFenceDefVersion,
+		      dummy_fence, "Wrong fence version requested!\n");
+	zassert_equal(decode.m.fence_definition_req.ucFrameNumber,
+		      0, "Wrong fence frame number requested!\n");
 }
 
 void test_poll_response_has_host_address(void)
@@ -300,8 +390,7 @@ void test_poll_response_has_host_address(void)
 void test_poll_request_retry_after_missing_ack_from_cellular_controller(void)
 {
 	/*assumes 15min poll interval, 25sec delay for build_log work */
-
-	NofenceMessage decode;
+	cellular_ack_ok = false;
 	k_sem_reset(&error_sem);
 	/* log_work thread start*/
 	collar_histogram dummy_histogram;
@@ -322,6 +411,9 @@ void test_poll_request_retry_after_missing_ack_from_cellular_controller(void)
 	ztest_returns_value(date_time_now, 0);
 
 	k_sem_reset(&msg_out);
+
+	/* poll request #2-  retry after 1 minute*/
+	ztest_returns_value(date_time_now, 0);
 	k_sleep(K_MINUTES(1+poll_interval));
 
 	zassert_equal(k_sem_take(&msg_out, K_MSEC(500)), 0, "");
@@ -329,16 +421,14 @@ void test_poll_request_retry_after_missing_ack_from_cellular_controller(void)
 	zassert_equal(k_sem_take(&error_sem, K_SECONDS
 				 (CONFIG_CC_ACK_TIMEOUT_SEC)), 0, "");
 
+	NofenceMessage decode;
+	cellular_ack_ok = true;
 	zassert_not_equal(pMsg, NULL, "Proto message not published!\n");
 	int err = collar_protocol_decode(pMsg + 2, len - 2, &decode);
 	zassert_equal(err, 0, "Corrupt proto message!\n");
 	zassert_equal(decode.which_m, NofenceMessage_poll_message_req_tag,
 		      "Wrong message");
 	zassert_false(decode.m.poll_message_req.has_versionInfo, "");
-
-	/* poll request #2*/
-	ztest_returns_value(date_time_now, 0);
-	k_sleep(K_MINUTES(poll_interval));
 }
 
 void test_main(void)
@@ -374,6 +464,18 @@ static bool event_handler(const struct event_header *eh)
 		memcpy(&expected_val, &ev->buf[0], 2);
 		zassert_equal(byteswap_val, expected_val, "");
 		k_sem_give(&msg_out);
+		if (cellular_ack_ok) {
+			struct cellular_ack_event *ack = new_cellular_ack_event();
+			ack->message_sent = true;
+			EVENT_SUBMIT(ack);
+		} else {
+			struct cellular_ack_event *ack = new_cellular_ack_event();
+			ack->message_sent = false;
+			EVENT_SUBMIT(ack);
+		}
+		printk("Simulated cellular ack!\n");
+		k_sleep(K_SECONDS(1));
+
 		return true;
 	}
 	if (is_messaging_host_address_event(eh)) {

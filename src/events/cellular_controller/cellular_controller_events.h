@@ -12,6 +12,7 @@ typedef enum {
 
 struct cellular_ack_event {
 	struct event_header header;
+	bool message_sent;
 };
 
 EVENT_TYPE_DECLARE(cellular_ack_event);
