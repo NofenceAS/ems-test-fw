@@ -34,7 +34,7 @@ void assert_post_action(const char *file, unsigned int line)
 void test_init_and_update_pasture(void)
 {
 	zassert_false(event_manager_init(), 
-				"Error when initializing event manager");
+		      "Error when initializing event manager");
 
 	/* ..init_states_and_variables, cached variables. 1. tot zap count, 
 	 * 2. warn count, 3. zap count day */
@@ -54,6 +54,12 @@ void test_init_and_update_pasture(void)
 	ztest_returns_value(stg_config_u8_read, 0);
 
 	zassert_false(amc_module_init(), "Error when initializing AMC module");
+
+	/* Check that fence status did not change to NotStarted for AMC init.
+	 * Fence status should only change for a pasture update request */
+	zassert_not_equal(get_fence_status(), 
+			  FenceStatus_NotStarted, 
+			  "Fence status was not loaded correctly during init");
 }
 
 void test_set_get_pasture(void)
