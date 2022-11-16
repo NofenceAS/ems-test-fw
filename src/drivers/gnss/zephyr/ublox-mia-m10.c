@@ -119,7 +119,7 @@ static int mia_m10_sync_complete(uint32_t flag)
 {
 	gnss_data_flags |= flag;
 	if (gnss_data_flags == (GNSS_DATA_FLAG_NAV_DOP | GNSS_DATA_FLAG_NAV_PVT |
-				GNSS_DATA_FLAG_NAV_STATUS | GNSS_DATA_FLAG_NAV_PL)) {
+				GNSS_DATA_FLAG_NAV_STATUS | GNSS_DATA_FLAG_NAV_PL | GNSS_DATA_FLAG_NAV_SAT)) {
 		/* Copy data from "in progress" to "working", and call callbacks */
 		if (k_mutex_lock(&gnss_data_mutex, K_MSEC(10)) == 0) {
 			memcpy(&gnss_data.latest, &gnss_data_in_progress, sizeof(gnss_struct_t));
@@ -152,7 +152,9 @@ static int mia_m10_sync_complete(uint32_t flag)
 			k_mutex_unlock(&gnss_data_mutex);
 		}
 
+		printk("mia_m10_sync_complete callback...");
 		if (k_mutex_lock(&gnss_cb_mutex, K_MSEC(10)) == 0) {
+			printk("mia_m10_sync_complete callback OK");
 			if (data_cb != NULL) {
 				data_cb(&gnss_data);
 			}
@@ -346,8 +348,8 @@ static int mia_m10_nav_sat_handler(void *context, void *payload, uint32_t size)
 	gnss_data_in_progress.cno[2] = 0;
 	gnss_data_in_progress.cno[3] = 0;
 
-	LOG_WRN("NAV-SAT - ,%08X, %02X, %02X, %02X, %04X",nav_sat->iTOW, nav_sat->version, nav_sat->numSv, nav_sat->reserved0);
-	LOG_WRN("NAV_SAT numSv=%d",nav_sat->numSv);
+	//LOG_WRN("NAV-SAT - ,%08X, %02X, %02X, %02X, %04X",nav_sat->iTOW, nav_sat->version, nav_sat->numSv, nav_sat->reserved0);
+	//LOG_WRN("NAV_SAT numSv=%d",nav_sat->numSv);
 
 	for(x=0; x<nav_sat->numSv; x++)
 	{
@@ -377,7 +379,7 @@ static int mia_m10_nav_sat_handler(void *context, void *payload, uint32_t size)
 
 	mia_m10_sync_complete(GNSS_DATA_FLAG_NAV_SAT);
 
-	LOG_WRN("NAV_SAT complete");
+	//LOG_WRN("NAV_SAT complete");
 
 	return 0;
 }
