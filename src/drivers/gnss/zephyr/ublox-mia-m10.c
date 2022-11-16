@@ -335,7 +335,6 @@ static int mia_m10_nav_sat_handler(void *context, void *payload, uint32_t size)
 	struct ublox_nav_sat *nav_sat = payload;
 	uint8_t x = 0;	
 	uint8_t cnt = 0;
-	uint8_t max = 0;
 	uint16_t cno_ = 0;		
 
 	mia_m10_sync_tow(nav_sat->iTOW);
