@@ -192,9 +192,9 @@ static _Noreturn void publish_gnss_data(void *ctx)
 			struct gnss_data *new_data = new_gnss_data();
 			new_data->gnss_data = gnss_data_buffer;
 			new_data->timed_out = false;
-			LOG_DBG("  GNSS data: %d, %d, %d, %d, %d", gnss_data_buffer.latest.lon,
-				gnss_data_buffer.latest.lat, gnss_data_buffer.latest.pvt_flags,
-				gnss_data_buffer.latest.h_acc_dm, gnss_data_buffer.latest.num_sv);
+			//LOG_INF("  GNSS data: %d, %d, %d, %d, %d", gnss_data_buffer.latest.lon,
+			//	gnss_data_buffer.latest.lat, gnss_data_buffer.latest.pvt_flags, gnss_data_buffer.latest.h_acc_dm,
+			//	gnss_data_buffer.latest.num_sv);
 			EVENT_SUBMIT(new_data);
 			initialized = true;
 		} else {

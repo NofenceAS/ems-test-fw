@@ -19,7 +19,6 @@ int onboard_data_init(void)
 
 int onboard_set_gnss_data(gnss_struct_t gnss_data_in)
 {
-    LOG_INF("\n\n\t\t!!!!!             DIAGNOSTICS SETTING GNSS DATA             !!!!!\n\n");
     memcpy(&ob_gnss_data, &gnss_data_in, sizeof(gnss_data_in));
     ob_data.num_sv = ob_gnss_data.num_sv;
     ob_data.avg_cno = ob_gnss_data.cno[3];
