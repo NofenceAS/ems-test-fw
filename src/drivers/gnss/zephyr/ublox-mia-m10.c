@@ -333,9 +333,11 @@ static int mia_m10_mga_ack_handler(void *context, void *payload, uint32_t size)
 static int mia_m10_nav_sat_handler(void *context, void *payload, uint32_t size)
 {
 	struct ublox_nav_sat *nav_sat = payload;
-	uint8_t x = 0;	
+	uint8_t x = 0;
 	uint8_t cnt = 0;
-	uint16_t cno_ = 0;		
+	uint8_t max = 0;
+	uint8_t min = 0xff;
+	uint16_t cno_ = 0;
 
 	mia_m10_sync_tow(nav_sat->iTOW);
 
@@ -344,30 +346,38 @@ static int mia_m10_nav_sat_handler(void *context, void *payload, uint32_t size)
 	gnss_data_in_progress.cno[2] = 0;
 	gnss_data_in_progress.cno[3] = 0;
 
-	for (x=0; x < nav_sat->numSv; x++)	
-	{		
-		if (x > MAX_SVID)
-			break;
-		
-		if (nav_sat->satinfo[x].svid == 10)			//If sat_id 10 then store it
-			gnss_data_in_progress.cno[0] = nav_sat->satinfo[x].cno;
-		else if (nav_sat->satinfo[x].svid== 32)		//If sat_id 32 then store it
-			gnss_data_in_progress.cno[1] = nav_sat->satinfo[x].cno;
+	LOG_WRN("NAV-SAT - ,%08X, %02X, %02X, %02X, %04X",nav_sat->iTOW, nav_sat->version, nav_sat->numSv, nav_sat->reserved0);
+	LOG_WRN("NAV_SAT numSv=%d",nav_sat->numSv);
 
-		if (nav_sat->satinfo[x].cno > gnss_data_in_progress.cno[2]) {			//Find max CNO
+	for(x=0; x<nav_sat->numSv; x++)
+	{
+		if(x > MAX_SVID)
+			break;
+		//LOG_WRN("NAV_SAT svid = %d CNO %d",nav_sat->satinfo[x].svid,nav_sat->satinfo[x].cno);
+		//LOG_WRN("NAV-SAT - %02X, %02X, %02X, %02X, %04X, %04X, %08X",nav_sat->satinfo[x].gnssid,nav_sat->satinfo[x].svid,nav_sat->satinfo[x].cno,nav_sat->satinfo[x].elev,nav_sat->satinfo[x].azim,nav_sat->satinfo[x].prRes, nav_sat->satinfo[x].flags);
+
+		if(nav_sat->satinfo[x].svid == 27) {			//If sat_id 27 then store it
+			gnss_data_in_progress.cno[0] = nav_sat->satinfo[x].cno;
+		}
+		if((nav_sat->satinfo[x].cno < min) && (nav_sat->satinfo[x].cno > 0)) {			//Find min CNO above 0
+			gnss_data_in_progress.cno[1] = nav_sat->satinfo[x].cno;
+		}
+		if(nav_sat->satinfo[x].cno > max) {			//Find max CNO
 			gnss_data_in_progress.cno[2] = nav_sat->satinfo[x].cno;
 		}
-		if (nav_sat->satinfo[x].cno > 0) {			
+		if(nav_sat->satinfo[x].cno > 0) {
 			cnt++;
-			cno_ += nav_sat->satinfo[x].cno;	
-		}		
+			cno_ += nav_sat->satinfo[x].cno;
+		}
 	}
 
-	if (cnt > 0) {		
-		gnss_data_in_progress.cno[3] = cno_/cnt;		//Calculate avg cno for all seen satelites above 0 dBHz
+	if(cnt>0) {
+		gnss_data_in_progress.cno[3]= cno_ / cnt;		//Calculate avg cno for all seen satelites above 0 dBHz
 	}
 
 	mia_m10_sync_complete(GNSS_DATA_FLAG_NAV_SAT);
+
+	LOG_WRN("NAV_SAT complete");
 
 	return 0;
 }
