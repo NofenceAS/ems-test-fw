@@ -472,8 +472,8 @@ static bool event_handler(const struct event_header *eh)
 	if (is_pwr_status_event(eh)) {
 		struct pwr_status_event *event = cast_pwr_status_event(eh);
 		
-		onboard_set_battery_data((uint32_t)event->battery_mv);
-		onboard_set_charging_data((uint32_t)event->charging_ma);		
+		onboard_set_battery_data(event->battery_mv);
+		onboard_set_charging_data(event->charging_ma);		
 
 		return false;
 	}		

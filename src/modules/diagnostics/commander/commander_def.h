@@ -79,6 +79,7 @@ typedef enum {
 	GNSS_HUB = 0x10,
 	GNSS_SEND = 0x11,
 	GNSS_RECEIVE = 0x12,
+	GET_GNSS_DATA = 0x14,
 
 	MODEM_HUB = 0x20,
 	MODEM_SEND = 0x21,

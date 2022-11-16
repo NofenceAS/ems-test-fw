@@ -57,13 +57,47 @@ def try_stimuli_cmd(cmd, timeout=5):
     return None
 
 
-resp = try_stimuli_cmd(0xA0)
 
-print('resp code:', hex(resp['code']), 'data len:', len(resp['data']))
 
-print(resp)
+#print('resp code:', hex(resp['code']), 'data len:', len(resp['data']))
 
-value = struct.unpack('BBHHddd', resp['data'][0:32])
-print(value)
+def read_onboard_data(resp):
+	# onboard data: BBHHddd
+	fields = [
+		'num_sv',
+		'cno_avg',
+		'battery_mv',
+		'charging_ma',
+		'temp',	
+		'humidity',	
+		'pressure'	
+	]
+	values = struct.unpack('BBHHddd', resp['data'][0:32])
+	onboard_data = {}
+	for n,v in enumerate(values):
+		onboard_data[fields[n]] = v
 
+	return onboard_data
+	
+
+def read_gnss_data(resp):
+	#gnss_data: iihhBhHhHHHHBBBBIII
+	fields = [
+		'lat', 'lon',
+		'corr_x', 'corr_y',
+		'overflow', 'height', 'speed_cms', 'head_veh',
+		'h_dop', 'h_acc_dm', 'v_acc_dm', 'head_acc',
+		'num_sv', 'cno_sat27', 'cno_min', 'cno_max', 'cno_avg',
+		'pvt_flags', 'pvt_valid', 'updated_at', 'msss', 'ttff'
+	]
+	values = struct.unpack('iihhBhHhHHHHBBBBBBBIII', resp['data'][0:48])
+	gnss_data = {}
+	for n,v in enumerate(values):
+		gnss_data[fields[n]] = v
+
+	return gnss_data
+
+print(read_gnss_data(try_stimuli_cmd(0xA2)))
+
+print(read_onboard_data(try_stimuli_cmd(0xA0)))
 
