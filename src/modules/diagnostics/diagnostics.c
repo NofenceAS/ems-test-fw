@@ -454,8 +454,8 @@ static bool event_handler(const struct event_header *eh)
 	}
 
 	if (is_gnss_data(eh)) {
-		struct gnss_data *event = cast_gnss_data(eh);
 		LOG_INF("DIAG GNSS DATA SET");
+		struct gnss_data *event = cast_gnss_data(eh);
 		onboard_set_gnss_data(event->gnss_data.latest);
 
 		return false;

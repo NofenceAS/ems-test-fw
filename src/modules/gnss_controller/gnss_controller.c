@@ -177,8 +177,7 @@ int gnss_controller_init(void)
 
 static _Noreturn void publish_gnss_data(void *ctx)
 {
-	int ret;
-	int timeout_ms;
+	static uint64_t last_time_stamp = 0;
 	while (true) {
 		if (current_rate_ms == UINT16_MAX || current_rate_ms < CONFIG_GNSS_MINIMUM_ALLOWED_GNSS_RATE) {
 			timeout_ms = CONFIG_GNSS_DEFAULT_TIMEOUT_RATE_MS;
@@ -198,6 +197,7 @@ static _Noreturn void publish_gnss_data(void *ctx)
 			EVENT_SUBMIT(new_data);
 			initialized = true;
 		} else {
+			last_time_stamp = 0;
 			if (initialized && current_mode != GNSSMODE_INACTIVE) {
 				gnss_timed_out();
 			}
@@ -217,15 +217,13 @@ static int gnss_data_update_cb(const gnss_t *data)
 
 static int gnss_set_mode(gnss_mode_t mode, bool wakeup)
 {
-	int ret;
-	if (wakeup) {
-		ret = gnss_wakeup(gnss_dev);
-		if (ret != 0) {
-			LOG_ERR("gnss_wakeup failed %d", ret);
-			return ret;
-		}
-	}
-
+    int ret;
+    ret = gnss_wakeup(gnss_dev);
+    if (ret != 0) {
+        LOG_ERR("gnss_wakeup failed %d",ret);
+        return ret;
+    }
+	/** @todo Add mode changes here. Should be in the gnss driver???? */
 	if (mode == GNSSMODE_INACTIVE) {
 		ret = gnss_set_backup_mode(gnss_dev);
 		if (ret != 0) {
