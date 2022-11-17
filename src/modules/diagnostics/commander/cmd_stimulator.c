@@ -89,15 +89,14 @@ int commander_stimulator_handler(enum diagnostics_interface interface, uint8_t c
 		gnss_struct_t *gnss_data;
 		onboard_get_gnss_data(&gnss_data);
 
-		resp = DATA;
-		commander_send_resp(interface, STIMULATOR, cmd, resp, 
-				(void*)gnss_data, sizeof(gnss_struct_t));
-		break;
-	}
-	case GET_GSM_DATA:
-	{
-		gsm_info *ob_gsm_data;
-		onboard_get_gsm_data(&ob_gsm_data);
+			resp = DATA;
+			commander_send_resp(interface, STIMULATOR, cmd, resp, (void*)gnss_data, sizeof(gnss_struct_t));
+			break;
+		}
+		case GET_ONBOARD_DATA:
+		{
+			onboard_data_struct_t *ob_data;
+			onboard_get_data(&ob_data);
 
 		resp = DATA;
 		commander_send_resp(interface, STIMULATOR, cmd, resp, 
@@ -111,22 +110,8 @@ int commander_stimulator_handler(enum diagnostics_interface interface, uint8_t c
 			err = -EINVAL;
 		} else {
 			resp = DATA;
-			uint8_t val = 0;
-			if (data[0]) {
-				val = 1;
-				if (charging_start() < 0) {
-					resp = ERROR;
-				}
-			} else {
-				val = 0;
-				if (charging_stop() < 0) {
-					resp = ERROR;
-				}
-			}
-			if (resp == DATA) {
-				commander_send_resp(interface, STIMULATOR, cmd, resp, 
-						(void*)&val, sizeof(uint8_t));
-			}
+			commander_send_resp(interface, STIMULATOR, cmd, resp, (void*)ob_data, sizeof(onboard_data_struct_t));
+			break;
 		}
 		break;
 	}
