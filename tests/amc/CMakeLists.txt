@@ -9,7 +9,7 @@ list(APPEND ZEPHYR_EXTRA_MODULES
         )
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(protocol_testing)
+project(amc_testing)
 
 zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})

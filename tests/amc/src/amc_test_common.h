@@ -16,6 +16,7 @@ void test_zone_calc(void);
 
 void test_gnss_fix(void);
 void test_gnss_mode(void);
+void test_propagate_movement_out_event(void);
 
 void test_collar_status(void);
 void test_collar_mode(void);
