@@ -62,7 +62,7 @@ def try_stimuli_cmd(cmd, data=None, timeout=5):
 #print('resp code:', hex(resp['code']), 'data len:', len(resp['data']))
 
 def read_onboard_data(resp):
-	# onboard data: BBHHddd
+	# onboard data: BBiBHHddd
 	fields = [
 		'num_sv',
 		'cno_avg',
@@ -74,6 +74,7 @@ def read_onboard_data(resp):
 		'humidity',	
 		'pressure'	
 	]
+	# BBiBHHddd
 	values = struct.unpack('BBiBHHddd', resp['data'][0:40])
 	onboard_data = {}
 	for n,v in enumerate(values):
@@ -135,14 +136,15 @@ GET_GSM_DATA = 0xA6
 
 #print(read_gnss_data(try_stimuli_cmd(GET_GNSS_DATA)))
 
-#print(read_onboard_data(try_stimuli_cmd(GET_OB_DATA)))
+print(read_onboard_data(try_stimuli_cmd(GET_OB_DATA)))
 
 #print(read_all_onboard_data(try_stimuli_cmd(GET_ONBOARD_DATA)))
 
 #print(read_gsm_data(try_stimuli_cmd(GET_GSM_DATA)))
 
-payload = struct.pack('<I', 2000)
-resp = try_stimuli_cmd(0xB0, payload)
-value = struct.unpack('I', resp['data'][:4])
-print(resp)
-print(value)
+
+#payload = struct.pack('<I', 2000)
+#resp = try_stimuli_cmd(0xB0, payload)
+#value = struct.unpack('I', resp['data'][:4])
+#print(resp)
+#print(value#)

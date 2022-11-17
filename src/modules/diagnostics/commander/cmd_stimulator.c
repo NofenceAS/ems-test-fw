@@ -93,11 +93,18 @@ int commander_stimulator_handler(enum diagnostics_interface interface, uint8_t c
 				err = -EINVAL;
 			} else {
 				if (data[0]) {
-					charging_start();
+					val = 1;
+					if (charging_start() < 0) {
+						resp = ERROR;
+					}
 				} else {
-					charging_stop();
+					val = 0;
+					if (charging_stop() < 0) {
+						resp = ERROR;
+					}
 				}
-				resp = ACK;
+				commander_send_resp(interface, STIMULATOR, cmd, resp, 
+						(void*)&val, sizeof(uint8_t));
 			}
 			break;
 		}
