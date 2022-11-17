@@ -44,11 +44,11 @@ if not got_ping:
 	raise Exception("Did not get ping...")
 
 
-def try_stimuli_cmd(cmd, timeout=5):
+def try_stimuli_cmd(cmd, data=None, timeout=5):
     start_time = time.time()
     got_resp = False
     while time.time() < (start_time + timeout) and (not got_resp):
-        resp = cmndr.send_cmd(nfdiag.GROUP_STIMULATOR, cmd)	
+        resp = cmndr.send_cmd(nfdiag.GROUP_STIMULATOR, cmd, data)	
         if resp:
             got_resp = True
             print('Got response')
@@ -66,19 +66,34 @@ def read_onboard_data(resp):
 	fields = [
 		'num_sv',
 		'cno_avg',
+		'rssi',
+		'pwr_state',
 		'battery_mv',
 		'charging_ma',
 		'temp',	
 		'humidity',	
 		'pressure'	
 	]
-	values = struct.unpack('BBHHddd', resp['data'][0:32])
+	values = struct.unpack('BBiBHHddd', resp['data'][0:40])
 	onboard_data = {}
 	for n,v in enumerate(values):
 		onboard_data[fields[n]] = v
 
 	return onboard_data
-	
+
+def read_all_onboard_data(resp):
+	# 'old' onboard data: BBBBBBBBhHHiiIIIIIiiiiii
+	fields = [
+		'numSv','cno1','cno2','cno3','cno4','flags','valid','ovf','height','speed',
+		'hdop','lat','lon','msss','ttff','vbatt','isolar','vint',
+		'acc_x','acc_y','acc_z','temp','pres','hum'
+	]
+	values = struct.unpack('BBBBBBBBhHHiiIIIIIiiiiii', resp['data'][0:68])
+	all_onboard_data = {}
+	for n,v in enumerate(values):
+		all_onboard_data[fields[n]] = v
+
+	return all_onboard_data
 
 def read_gnss_data(resp):
 	#gnss_data: iihhBhHhHHHHBBBBIII
@@ -97,7 +112,37 @@ def read_gnss_data(resp):
 
 	return gnss_data
 
-print(read_gnss_data(try_stimuli_cmd(0xA2)))
 
-print(read_onboard_data(try_stimuli_cmd(0xA0)))
+def read_gsm_data(resp):
+	#gsm_data: iiiii20s
+	fields = [
+		'rat', 'mnc',
+		'rssi', 'min_rssi', 'max_rssi',
+		'ccid'
+	]
+	values = struct.unpack('iiiii20s', resp['data'][0:40])
+	gsm_data = {}
+	for n,v in enumerate(values):
+		gsm_data[fields[n]] = v
 
+	return gsm_data
+
+
+GET_GNSS_DATA = 0xA4
+GET_OB_DATA = 0xA2
+GET_ONBOARD_DATA = 0xA0
+GET_GSM_DATA = 0xA6
+
+#print(read_gnss_data(try_stimuli_cmd(GET_GNSS_DATA)))
+
+#print(read_onboard_data(try_stimuli_cmd(GET_OB_DATA)))
+
+#print(read_all_onboard_data(try_stimuli_cmd(GET_ONBOARD_DATA)))
+
+#print(read_gsm_data(try_stimuli_cmd(GET_GSM_DATA)))
+
+payload = struct.pack('<I', 2000)
+resp = try_stimuli_cmd(0xB0, payload)
+value = struct.unpack('I', resp['data'][:4])
+print(resp)
+print(value)

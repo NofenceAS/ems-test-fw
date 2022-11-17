@@ -7,7 +7,9 @@
 #include "messaging_module_events.h"
 #include "gnss_hub.h"
 #include "gnss.h"
+#include "modem_nf.h"
 #include "onboard_data.h"
+#include "charging.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(diagnostics_stimulator, 4);
@@ -57,98 +59,66 @@ int commander_stimulator_handler(enum diagnostics_interface interface, uint8_t c
 			resp = DATA;
 			size = MIN(size, 100);
 
-			commander_send_resp(interface, STIMULATOR, cmd, resp, buffer, size);
-			gnss_hub_rx_consume(GNSS_HUB_ID_DIAGNOSTICS, size);
-		} else {
-			resp = ERROR;
-		}
-		break;
-	}
-	case GET_ONBOARD_DATA:
-	{
-		onboard_all_data_struct_t *ob_all_data;
-		onboard_get_all_data(&ob_all_data);
-
-		resp = DATA;
-		commander_send_resp(interface, STIMULATOR, cmd, resp, 
-				(void*)ob_all_data, sizeof(onboard_all_data_struct_t));
-		break;
-	}
-	case GET_OB_DATA:
-	{
-		onboard_data_struct_t *ob_data;
-		onboard_get_data(&ob_data);
-
-		resp = DATA;
-		commander_send_resp(interface, STIMULATOR, cmd, resp, 
-				(void*)ob_data, sizeof(onboard_data_struct_t));
-		break;
-	}
-	case GET_GNSS_DATA:
-	{
-		gnss_struct_t *gnss_data;
-		onboard_get_gnss_data(&gnss_data);
-
-			resp = DATA;
-			commander_send_resp(interface, STIMULATOR, cmd, resp, (void*)gnss_data, sizeof(gnss_struct_t));
+				commander_send_resp(interface, STIMULATOR, cmd, resp, buffer, size);
+				gnss_hub_rx_consume(GNSS_HUB_ID_DIAGNOSTICS, size);
+			} else {
+				resp = ERROR;
+			}
 			break;
 		}
-		case GET_ONBOARD_DATA:
+		case GET_GNSS_DATA:
 		{
-			onboard_data_struct_t *ob_data;
-			onboard_get_data(&ob_data);
+			gnss_struct_t *gnss_data;
+			onboard_get_gnss_data(&gnss_data);
 
-		resp = DATA;
-		commander_send_resp(interface, STIMULATOR, cmd, resp, 
-				(void*)ob_gsm_data, sizeof(gsm_info));
-		break;
-	}
-	case SET_CHARGING_EN:
-	{
-		if (size < 1) {
-			resp = NOT_ENOUGH;
-			err = -EINVAL;
-		} else {
 			resp = DATA;
-			commander_send_resp(interface, STIMULATOR, cmd, resp, (void*)ob_data, sizeof(onboard_data_struct_t));
+			commander_send_resp(interface, STIMULATOR, cmd, resp, 
+					(void*)gnss_data, sizeof(gnss_struct_t));
 			break;
 		}
-		break;
-	}
-	case BUZZER_WARN:
-	{	
-		uint32_t freq = WARN_FREQ_MAX;
+		case GET_SENS_DATA:
+		{
+			onboard_sens_data_struct_t *sens_data;
+			onboard_get_sens_data(&sens_data);
 
-		if (size >= 4) {
-			freq = (data[0] << 0) + 
-					(data[1] << 8) + 
-					(data[2] << 16) + 
-					(data[3] << 24);
+			resp = DATA;
+			commander_send_resp(interface, STIMULATOR, cmd, resp, 
+					(void*)sens_data, sizeof(onboard_sens_data_struct_t));
+			break;
 		}
+		case SET_CHARGING_EN:
+		{
+			onboard_data_struct_t *onboard_data;
+			onboard_get_data(&onboard_data);
 
-		struct sound_event *sound_event_warn = new_sound_event();
-		sound_event_warn->type = SND_WARN;
-		EVENT_SUBMIT(sound_event_warn);
+			resp = DATA;
+			commander_send_resp(interface, STIMULATOR, cmd, resp, 
+					(void*)onboard_data, sizeof(onboard_data_struct_t));
+			break;
+		}
+		case BUZZER_WARN:
+		{
+			/** @todo Warning frequency as argument? */
 
-		/** unable to confirm frequency
-S			 * <Timeout on getting a new warn zone freq>, Error code=-116, Sever~ */
-		struct sound_set_warn_freq_event *sound_warn_freq = new_sound_set_warn_freq_event();
-		sound_warn_freq->freq = freq;
-		EVENT_SUBMIT(sound_warn_freq); 
+			/* Simulate the highest tone event */
+			struct sound_event *sound_event_warn = new_sound_event();
+			sound_event_warn->type = SND_WARN;
+			EVENT_SUBMIT(sound_event_warn);
+			
+			struct sound_set_warn_freq_event *sound_warn_freq = new_sound_set_warn_freq_event();
+			sound_warn_freq->freq = WARN_FREQ_MAX;
+			EVENT_SUBMIT(sound_warn_freq);
 
-		resp = DATA;
-		commander_send_resp(interface, STIMULATOR, cmd, resp, (uint8_t*)&freq, sizeof(uint32_t));
-
-		break;
-	}
-	case ELECTRICAL_PULSE:
-	{
-		struct warn_correction_pause_event *ev_q_test_zap =
-			new_warn_correction_pause_event();
-		ev_q_test_zap->reason = Reason_WARNPAUSEREASON_ZAP;
-		ev_q_test_zap->fence_dist = 1;
-		ev_q_test_zap->warn_duration = 1;
-		EVENT_SUBMIT(ev_q_test_zap);
+			break;
+		}
+		case ELECTRICAL_PULSE:
+		{
+			struct warn_correction_pause_event *ev_q_test_zap =
+				new_warn_correction_pause_event();
+			ev_q_test_zap->reason = Reason_WARNPAUSEREASON_ZAP;
+			ev_q_test_zap->fence_dist = 1;
+			ev_q_test_zap->warn_duration = 1;
+			EVENT_SUBMIT(ev_q_test_zap);
 
 		/* Send electric pulse */
 		struct ep_status_event *ready_ep_event = new_ep_status_event();

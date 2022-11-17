@@ -33,6 +33,7 @@ typedef enum {
 
 	CHK_FAILED = 0xC0,
 	NOT_ENOUGH = 0xD0,
+	NOT_IMPLEMENTED = 0xD1,
 	ERROR = 0xE0,
 	UNKNOWN_CMD = 0xFC,
 	UNKNOWN_GRP = 0xFE,
@@ -86,6 +87,12 @@ typedef enum {
 	MODEM_RECEIVE = 0x22,
 
 	GET_ONBOARD_DATA = 0xA0,
+	GET_OB_DATA = 0xA2,
+	GET_GNSS_DATA = 0xA4,
+	GET_GSM_DATA = 0xA6,
+
+	SET_CHARGING_EN = 0xC0,
+
 	BUZZER_WARN = 0xB0,
 	ELECTRICAL_PULSE = 0xE0,
 } simulator_cmd_t;

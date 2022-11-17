@@ -18,6 +18,7 @@
 #include "ble_data_event.h"
 #include "ble_conn_event.h"
 #include "gnss_controller_events.h"
+#include "cellular_controller_events.h"
 #include "movement_events.h"
 #include "env_sensor_event.h"
 #include "pwr_event.h"
@@ -460,7 +461,15 @@ static bool event_handler(const struct event_header *eh)
 
 		return false;
 	}
-	
+
+	if (is_gsm_info_event(eh)) {
+		struct gsm_info_event *event = cast_gsm_info_event(eh);
+		
+		onboard_set_gsm_data(event->gsm_info);
+
+		return false;
+	}
+
 	if (is_env_sensor_event(eh)) {
 		struct env_sensor_event *event = cast_env_sensor_event(eh);
 		
@@ -472,8 +481,7 @@ static bool event_handler(const struct event_header *eh)
 	if (is_pwr_status_event(eh)) {
 		struct pwr_status_event *event = cast_pwr_status_event(eh);
 		
-		onboard_set_battery_data(event->battery_mv);
-		onboard_set_charging_data(event->charging_ma);		
+		onboard_set_power_data(event->pwr_state, event->battery_mv, event->charging_ma);		
 
 		return false;
 	}		
@@ -485,6 +493,7 @@ EVENT_LISTENER(MODULE, event_handler);
 EVENT_SUBSCRIBE(MODULE, ble_conn_event);
 EVENT_SUBSCRIBE(MODULE, ble_data_event);
 EVENT_SUBSCRIBE(MODULE, gnss_data);
+EVENT_SUBSCRIBE(MODULE, gsm_info_event);
 EVENT_SUBSCRIBE(MODULE, env_sensor_event);
 EVENT_SUBSCRIBE(MODULE, pwr_status_event);
 

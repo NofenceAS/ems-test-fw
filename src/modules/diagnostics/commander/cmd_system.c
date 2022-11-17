@@ -36,20 +36,20 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 		uint32_t test_buf[2];
 		selftest_get_result(&test_buf[0], &test_buf[1]);
 
-		commander_send_resp(interface, SYSTEM, cmd, DATA, (uint8_t *)test_buf,
-				    sizeof(test_buf));
-		break;
-	}
-	case REBOOT: {
-		resp = ACK;
-		/** @todo Schedule reboot after 1s */
-		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
-		break;
-	}
-	default:
-		resp = UNKNOWN_CMD;
-		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
-		break;
+			commander_send_resp(interface, SYSTEM, cmd, DATA, (uint8_t*)test_buf, sizeof(test_buf));
+			break;
+		}
+		case REBOOT:
+		{
+			resp = ACK;
+			/** @todo Schedule reboot after 1s */
+			commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
+			break;
+		}
+		default:
+			resp = UNKNOWN_CMD;
+			commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
+			break;
 	}
 
 	return err;
