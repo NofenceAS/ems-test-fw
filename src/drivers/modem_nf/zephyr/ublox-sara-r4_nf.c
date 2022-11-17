@@ -2713,7 +2713,8 @@ MODEM_CMD_DEFINE(on_cmd_test_tx_utest_mode)
 	}
 	modem_test_tx_status.test_mode = (modem_test_tx_status.utest == 1 && modem_test_tx_status.cfun == 5);
 
-	LOG_WRN("MODEM TEST TX: UTEST=%d (test mode = %s)", modem_test_tx_status.utest,  modem_test_tx_status.test_mode ? "true" : "false");
+	LOG_WRN("MODEM TEST TX: UTEST=%d (test mode = %s)", modem_test_tx_status.utest,  
+				modem_test_tx_status.test_mode ? "true" : "false");
 
 	return 0;
 }
@@ -2728,7 +2729,8 @@ MODEM_CMD_DEFINE(on_cmd_test_tx_cfun_mode)
 	}
 	modem_test_tx_status.test_mode = (modem_test_tx_status.utest == 1 && modem_test_tx_status.cfun == 5);
 
-	LOG_WRN("MODEM TEST TX: CFUN=%d (test mode = %s)", modem_test_tx_status.cfun,  modem_test_tx_status.test_mode ? "true" : "false");
+	LOG_WRN("MODEM TEST TX: CFUN=%d (test mode = %s)", modem_test_tx_status.cfun,  
+				modem_test_tx_status.test_mode ? "true" : "false");
 
 	return 0;
 }
@@ -2748,7 +2750,8 @@ MODEM_CMD_DEFINE(on_cmd_test_tx_utest_result)
 		modem_test_tx_result.success = 1;
 	}
 
-	LOG_WRN("MODEM TEST TX: test success = %s", modem_test_tx_result.success ? "true" : "false");
+	LOG_WRN("MODEM TEST TX: test success = %s", 
+			modem_test_tx_result.success ? "true" : "false");
 
 	return 0;
 }
@@ -2788,14 +2791,20 @@ int modem_test_tx_run_test(uint32_t tx_ch, int16_t dbm_level, uint16_t test_dur)
 		test_dur = 1000;
 	}
 
+	// need to hijack the modem somehow
+	// this should be changed
 	memset(mdata.iface_data.rx_rb_buf, 0, mdata.iface_data.rx_rb_buf_len);
 	memset(mdata.cmd_handler_data.match_buf, 0, mdata.cmd_handler_data.match_buf_len);
 	k_sem_reset(&mdata.sem_response);
 	k_sem_reset(&mdata.sem_prompt);
 
-	if (wake_up() != 0)  {
-		LOG_ERR("MODEM TEST TX: error waking up modem");
-	}
+	gpio_pin_configure(gpio0_dev, 2, GPIO_OUTPUT_HIGH);
+	k_msleep(1000);
+	gpio_pin_configure(gpio0_dev, 2, GPIO_OUTPUT_LOW);
+
+	//if (wake_up() != 0)  {
+	//	LOG_ERR("MODEM TEST TX: error waking up modem");
+	//}
 
 	static const struct setup_cmd pre_test_cmds[] = {
 		SETUP_CMD_NOHANDLE("AT+COPS=2"),
@@ -2831,7 +2840,7 @@ int modem_test_tx_run_test(uint32_t tx_ch, int16_t dbm_level, uint16_t test_dur)
 			LOG_WRN("MODEM TEST TX: running test\n\t\t\t\tcommand: %s\n\t\t\t\tchannel: %d"
 							"\n\t\t\t\tpower: %d dBm\n\t\t\t\tduration: %d ms"
 							"\n\t\t\t\tcmd res: %d\n\t\t\t\tsuccess: %s", 
-							cmd_buf, tx_ch, dbm_level, test_dur, ret, 
+							log_strdup(cmd_buf), tx_ch, dbm_level, test_dur, ret, 
 							modem_test_tx_result.success ? "true" : "false");
 			LOG_WRN("MODEM TEST TX: test result\n\t\t\t\tchannel: %d\n\t\t\t\tpwr level: %d dBm"
 							"\n\t\t\t\tsequence: %d\n\t\t\t\tmodulation: %d\n\t\t\t\tinterval: %d ms", 
@@ -2846,8 +2855,8 @@ int modem_test_tx_run_test(uint32_t tx_ch, int16_t dbm_level, uint16_t test_dur)
 						modem_test_tx_status.utest, modem_test_tx_status.cfun);
 	}
 
-	//LOG_WRN("MODEM TEST TX: resetting modem");
-	//modem_reset();
+	LOG_WRN("MODEM TEST TX: resetting modem");
+	modem_reset();
 
 	LOG_WRN("MODEM TEST TX DONE (%d)", ret);
 

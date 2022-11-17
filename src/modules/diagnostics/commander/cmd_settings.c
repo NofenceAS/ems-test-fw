@@ -72,47 +72,48 @@ static int commander_settings_read(enum diagnostics_interface interface, setting
 	buf[0] = id;
 
 	switch (id) {
-	case SERIAL: {
-		uint32_t serial = 0;
-		err = stg_config_u32_read(STG_U32_UID, &serial);
-		if (err == 0) {
-			memcpy(&buf[1], &serial, sizeof(uint32_t));
-			commander_send_resp(interface, SETTINGS, READ, DATA, buf,
-					    1 + sizeof(uint32_t));
-		} else {
-			commander_send_resp(interface, SETTINGS, READ, ERROR, NULL, 0);
+		case SERIAL:
+		{
+			uint32_t serial = 0;
+			err = stg_config_u32_read(STG_U32_UID, &serial);
+			if (err == 0) {
+				memcpy(&buf[1], &serial, sizeof(uint32_t));
+				commander_send_resp(interface, SETTINGS, READ, DATA, buf, 1+sizeof(uint32_t));
+			} else {
+				commander_send_resp(interface, SETTINGS, READ, ERROR, NULL, 0);
+			}
+			break;
 		}
-		break;
-	}
-	case HOST_PORT: {
-		//err = eep_read_host_port(&buf[1], sizeof(buf)-1);
-		char port[STG_CONFIG_HOST_PORT_BUF_LEN];
-		uint8_t port_length = 0;
-		err = stg_config_str_read(STG_STR_HOST_PORT, port, &port_length);
-		if (err == 0) {
-			memcpy(&buf[1], port, port_length);
-			commander_send_resp(interface, SETTINGS, READ, DATA, buf,
-					    1 + strnlen(&buf[1], sizeof(buf) - 1));
-		} else {
-			commander_send_resp(interface, SETTINGS, READ, ERROR, NULL, 0);
+		case HOST_PORT:
+		{
+			//err = eep_read_host_port(&buf[1], sizeof(buf)-1);
+			char port[STG_CONFIG_HOST_PORT_BUF_LEN];
+			uint8_t port_length = 0;
+			err = stg_config_str_read(STG_STR_HOST_PORT, port, &port_length);
+			if (err == 0) {
+				memcpy(&buf[1], port, port_length);
+				commander_send_resp(interface, SETTINGS, READ, DATA, buf, 1 + strnlen(&buf[1], sizeof(buf)-1));
+			} else {
+				commander_send_resp(interface, SETTINGS, READ, ERROR, NULL, 0);
+			}
+			break;
 		}
-		break;
-	}
-	case EMS_PROVIDER: {
-		uint8_t ems_provider = 0;
-		err = stg_config_u8_read(STG_U8_EMS_PROVIDER, &ems_provider);
-		if (err == 0) {
-			buf[1] = ems_provider;
-			commander_send_resp(interface, SETTINGS, READ, DATA, buf,
-					    1 + sizeof(uint8_t));
-		} else {
-			commander_send_resp(interface, SETTINGS, READ, ERROR, NULL, 0);
+		case EMS_PROVIDER:
+		{
+			uint8_t ems_provider = 0;
+			err = stg_config_u8_read(STG_U8_EMS_PROVIDER, &ems_provider);
+			if (err == 0) {
+				buf[1] = ems_provider;
+				commander_send_resp(interface, SETTINGS, READ, DATA, buf, 1+sizeof(uint8_t));
+			} else {
+				commander_send_resp(interface, SETTINGS, READ, ERROR, NULL, 0);
+			}
+			break;
 		}
-		break;
-	}
-	case PRODUCT_RECORD_REV: {
-		uint8_t product_record_rev = 0;
-		err = stg_config_u8_read(STG_U8_PRODUCT_RECORD_REV, &product_record_rev);
+		case PRODUCT_RECORD_REV:
+		{
+			uint8_t product_record_rev = 0;
+			err = stg_config_u8_read(STG_U8_PRODUCT_RECORD_REV, &product_record_rev);
 
 		if (err == 0) {
 			buf[1] = product_record_rev;

@@ -88,12 +88,17 @@ int commander_stimulator_handler(enum diagnostics_interface interface, uint8_t c
 		}
 		case SET_CHARGING_EN:
 		{
-			onboard_data_struct_t *onboard_data;
-			onboard_get_data(&onboard_data);
-
-			resp = DATA;
-			commander_send_resp(interface, STIMULATOR, cmd, resp, 
-					(void*)onboard_data, sizeof(onboard_data_struct_t));
+			if (size < 1) {
+				resp = NOT_ENOUGH;
+				err = -EINVAL;
+			} else {
+				if (data[0]) {
+					charging_start();
+				} else {
+					charging_stop();
+				}
+				resp = ACK;
+			}
 			break;
 		}
 		case BUZZER_WARN:
