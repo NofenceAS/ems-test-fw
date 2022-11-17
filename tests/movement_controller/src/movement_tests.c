@@ -50,7 +50,18 @@ void test_init(void)
 
 void test_activity_no(void)
 {
+	_movement_controller_reset_for_test();
 	curr_test = TEST_ACTIVITY_NO;
+	/* Disregard first batch read */
+	for (int i = 0; i < 32; i++ ){
+		row = i;
+		ztest_returns_value(sensor_sample_fetch, 0);
+		ztest_returns_value(sensor_channel_get, 0);
+		extern raw_acc_data_t raw_data;
+		fetch_and_display(sensor);
+		process_acc_data(&raw_data);
+	}
+
 	for (int i = 0; i < 32; i++ ){
 		row = i;
 		ztest_returns_value(sensor_sample_fetch, 0);
@@ -111,10 +122,11 @@ void test_activity_high(void)
 	zassert_equal(cur_activity, ACTIVITY_HIGH, "");
 }
 
-void test_process_acc_data_bug1(void)
+void test_process_acc_data_correct_acc_std_final(void)
 {
-        extern uint32_t ztest_acc_std_final;
+	_movement_controller_reset_for_test();
 	raw_acc_data_t raw;
+	/* The first batch of data should be disregarded */
 	raw.x = 1;
 	raw.y = 1;
 	raw.z = 1;
@@ -124,8 +136,19 @@ void test_process_acc_data_bug1(void)
 		raw.y ++;
 		raw.z ++;
 	}
-	zassert_true(ztest_acc_std_final > 0,"Running average standard deviation is wrong");
-	uint32_t acc_std_final_1 = ztest_acc_std_final;
+	zassert_equal(_movement_controler_get_acc_std_final(),0,"Running average standard deviation is wrong");
+	/* The second batch should be ok */
+	raw.x = 1;
+	raw.y = 1;
+	raw.z = 1;
+	for (int i=0; i < 32; i ++) {
+		process_acc_data(&raw);
+		raw.x ++;
+		raw.y ++;
+		raw.z ++;
+	}
+	zassert_equal(_movement_controler_get_acc_std_final(),16,"Running average standard deviation is wrong");
+
 	/* Feed the same values again, variance should increase even more */
 	raw.x = 1;
 	raw.y = 1;
@@ -136,8 +159,9 @@ void test_process_acc_data_bug1(void)
 		raw.y +=100;
 		raw.z +=100;
 	}
-	zassert_true(ztest_acc_std_final > acc_std_final_1,"");
+	zassert_equal(_movement_controler_get_acc_std_final(),68,"Running average standard deviation is wrong");
 }
+
 
 void test_main(void)
 {
@@ -147,7 +171,7 @@ void test_main(void)
 			ztest_unit_test(test_activity_low),
 			ztest_unit_test(test_activity_med),
 			ztest_unit_test(test_activity_high),
-			ztest_unit_test(test_process_acc_data_bug1)
+			 ztest_unit_test(test_process_acc_data_correct_acc_std_final)
 			);
 
 	ztest_run_test_suite(movement_tests);
