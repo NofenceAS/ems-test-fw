@@ -3,6 +3,14 @@
 #include "log_backend_diag.h"
 #include <stddef.h>
 #include <string.h>
+#include "gnss.h"
+#include "gnss_controller_events.h"
+#include "modem_nf.h"
+#include "pwr_event.h"
+#include "cellular_helpers_header.h"
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(diag_cmd_system, 4);
 
 int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, uint8_t *data,
 			     uint32_t size)
@@ -39,11 +47,18 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 			commander_send_resp(interface, SYSTEM, cmd, DATA, (uint8_t*)test_buf, sizeof(test_buf));
 			break;
 		}
+		case SLEEP:
+		{
+			resp = NOT_IMPLEMENTED;
+			commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
+			break;
+		}
 		case REBOOT:
 		{
-			resp = ACK;
+			resp = NOT_IMPLEMENTED;
 			/** @todo Schedule reboot after 1s */
 			commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
+
 			break;
 		}
 		default:
