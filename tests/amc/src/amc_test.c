@@ -19,6 +19,9 @@
 
 static K_SEM_DEFINE(fence_sema, 0, 1);
 static K_SEM_DEFINE(error_sema, 0, 1);
+static K_SEM_DEFINE(my_gnss_mode_sem, 0, 1);
+
+static gnss_mode_t current_gnss_mode = GNSSMODE_INACTIVE;
 
 static FenceStatus m_current_fence_status = FenceStatus_FenceStatus_UNKNOWN;
 
@@ -325,11 +328,43 @@ static bool event_handler(const struct event_header *eh)
 		}
 		return false;
 	}
+	if (is_gnss_set_mode_event(eh)) {
+		struct gnss_set_mode_event *ev = cast_gnss_set_mode_event(eh);
+		current_gnss_mode = ev->mode;
+		k_sem_give(&my_gnss_mode_sem);
+	}
 	return false;
+}
+
+void test_propagate_movement_out_event(void) {
+
+	current_gnss_mode = 1000;
+	struct movement_out_event * event = new_movement_out_event();
+	event->state = STATE_SLEEP;
+
+	_test_set_firs_time_since_start(false);
+	ztest_returns_value(stg_config_u8_write, 0);
+	ztest_returns_value(stg_config_u8_write, 0);
+
+
+	k_sem_reset(&my_gnss_mode_sem);
+	EVENT_SUBMIT(event);
+	zassert_equal(k_sem_take(&my_gnss_mode_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_gnss_mode,GNSSMODE_INACTIVE,"");
+
+	k_sem_reset(&my_gnss_mode_sem);
+	event = new_movement_out_event();
+	event->state = STATE_NORMAL;
+	EVENT_SUBMIT(event);
+	zassert_equal(k_sem_take(&my_gnss_mode_sem, K_SECONDS(30)), 0, "");
+	zassert_equal(current_gnss_mode,GNSSMODE_CAUTION,"");
+
+
 }
 
 void test_main(void)
 {
+
 	ztest_test_suite(amc_tests,
 			ztest_unit_test(test_init_and_update_pasture),
 			ztest_unit_test(test_set_get_pasture),
@@ -337,7 +372,8 @@ void test_main(void)
 			ztest_unit_test(test_empty_fence),
 			ztest_unit_test(test_update_pasture_teach_mode),
 			ztest_unit_test(test_update_pasture_stg_fail),
-			ztest_unit_test(test_update_pasture));
+			 ztest_unit_test(test_update_pasture),
+			 ztest_unit_test(test_propagate_movement_out_event));
 	ztest_run_test_suite(amc_tests);
 
 	ztest_test_suite(amc_dist_tests,
@@ -352,8 +388,11 @@ void test_main(void)
 	ztest_test_suite(amc_zone_tests, ztest_unit_test(test_zone_calc));
 	ztest_run_test_suite(amc_zone_tests);
 
-	ztest_test_suite(amc_gnss_tests, ztest_unit_test(test_gnss_fix),
-			ztest_unit_test(test_gnss_mode));
+	ztest_test_suite(amc_gnss_tests,
+	 		ztest_unit_test(test_gnss_fix),
+			ztest_unit_test(test_gnss_mode)
+			 );
+
 	ztest_run_test_suite(amc_gnss_tests);
 
 	ztest_test_suite(amc_correction_tests, 
@@ -373,8 +412,10 @@ void test_main(void)
 			ztest_unit_test(test_collar_mode),
 			ztest_unit_test(test_fence_status));
 	ztest_run_test_suite(amc_collar_fence_tests);
+
 }
 
 EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, update_fence_status);
 EVENT_SUBSCRIBE(test_main, error_event);
+EVENT_SUBSCRIBE(test_main, gnss_set_mode_event);
