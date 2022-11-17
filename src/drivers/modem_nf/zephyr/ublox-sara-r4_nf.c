@@ -2792,12 +2792,14 @@ int modem_test_tx_run_test(uint32_t tx_ch, int16_t dbm_level, uint16_t test_dur)
 	}
 
 	// need to hijack the modem somehow
-	// this should be changed
+	// dont know what im doing
 	memset(mdata.iface_data.rx_rb_buf, 0, mdata.iface_data.rx_rb_buf_len);
 	memset(mdata.cmd_handler_data.match_buf, 0, mdata.cmd_handler_data.match_buf_len);
 	k_sem_reset(&mdata.sem_response);
 	k_sem_reset(&mdata.sem_prompt);
 
+	static const struct device *gpio0_dev; 
+	gpio0_dev = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
 	gpio_pin_configure(gpio0_dev, 2, GPIO_OUTPUT_HIGH);
 	k_msleep(1000);
 	gpio_pin_configure(gpio0_dev, 2, GPIO_OUTPUT_LOW);
