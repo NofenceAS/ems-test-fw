@@ -124,7 +124,7 @@ int gnss_hub_send(uint8_t hub_id, uint8_t* buffer, uint32_t cnt)
 
 		ring_buf_put(&gnss_tx_ring_buf, buffer, cnt);
 
-		if (hub_mode == GNSS_HUB_MODE_DEFAULT) {
+		if (hub_mode == GNSS_HUB_MODE_DEFAULT || hub_mode == GNSS_HUB_MODE_SNIFFER) {
 			gnss_uart_start_send();
 		} else if (hub_mode == GNSS_HUB_MODE_SIMULATOR) {
 			if (diag_data_cb != NULL) {
