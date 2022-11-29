@@ -121,6 +121,30 @@ struct UBLOX_STORAGE_ATTR ublox_nav_status {
 	uint32_t msss;
 };
 
+/** @brief U-blox NAV-PL message. */
+struct UBLOX_STORAGE_ATTR ublox_nav_pl {
+	uint8_t msgVersion;
+	uint8_t tmirCoeff;
+	int8_t  tmirExp;
+	uint8_t plPosValid;
+	uint8_t plPosFrame;
+	uint8_t plVelValid;
+	uint8_t plVelFrame;
+	uint8_t plTimeValid;
+	uint8_t reserved0[4];
+	uint32_t iTow;
+	uint32_t plPos1;
+	uint32_t plPos2;
+	uint32_t plPos3;
+	uint32_t plVel1;
+	uint32_t plVel2;
+	uint32_t plVel3;
+	uint16_t plPosHorizOrient;
+	uint16_t plVelHorizOrient;
+	uint32_t plTime;
+	uint8_t reserved1[4];
+};
+
 /**
  * @brief RXM-PMREQ message
  * @see https://content.u-blox.com/sites/default/files/u-blox-M10-SPG-5.10_InterfaceDescription_UBX-21035062.pdf

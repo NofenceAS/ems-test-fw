@@ -22,7 +22,6 @@ LOG_MODULE_REGISTER(MIA_M10, CONFIG_GNSS_LOG_LEVEL);
 
 #define EXTINT_GPIOS_PIN DT_INST_GPIO_PIN(0, extint_gpios)
 
-
 static const struct device *mia_m10_uart_dev = GNSS_UART_DEV;
 
 #define MIA_M10_DEFAULT_BAUDRATE 38400
@@ -59,11 +58,14 @@ struct k_sem gnss_rx_sem;
 #define GNSS_DATA_FLAG_NAV_DOP (1 << 0)
 #define GNSS_DATA_FLAG_NAV_PVT (1 << 1)
 #define GNSS_DATA_FLAG_NAV_STATUS (1 << 2)
+#define GNSS_DATA_FLAG_NAV_PL (1 << 3)
 
 static uint32_t gnss_data_flags = 0;
 static gnss_struct_t gnss_data_in_progress;
 static uint32_t gnss_tow_in_progress = 0;
 static uint64_t gnss_unix_timestamp = 0;
+/** @brief, needed to fill the current mode in GNSS data reports */
+static gnss_mode_t gnss_current_mode = GNSSMODE_NOMODE;
 
 static gnss_t gnss_data;
 bool gnss_data_is_valid = false;
@@ -75,6 +77,10 @@ static gnss_data_cb_t data_cb = NULL;
 
 const struct device *gpio_dev;
 
+#if (CONFIG_GNSS_LOG_LEVEL >= 4)
+static uint8_t dbg_last_msg_class;
+static uint8_t dbg_last_msg_id;
+#endif
 
 /**
  * @brief Synchronizes on time of week (TOW). If a new TOW is encountered, 
@@ -111,13 +117,11 @@ static int mia_m10_sync_tow(uint32_t tow)
 static int mia_m10_sync_complete(uint32_t flag)
 {
 	gnss_data_flags |= flag;
-	if (gnss_data_flags == (GNSS_DATA_FLAG_NAV_DOP | GNSS_DATA_FLAG_NAV_PVT | 
-				GNSS_DATA_FLAG_NAV_STATUS)) {
-
+	if (gnss_data_flags ==
+	    (GNSS_DATA_FLAG_NAV_DOP | GNSS_DATA_FLAG_NAV_PVT | GNSS_DATA_FLAG_NAV_STATUS | GNSS_DATA_FLAG_NAV_PL)) {
 		/* Copy data from "in progress" to "working", and call callbacks */
 		if (k_mutex_lock(&gnss_data_mutex, K_MSEC(10)) == 0) {
-			memcpy(&gnss_data.latest, &gnss_data_in_progress, 
-						sizeof(gnss_struct_t));
+			memcpy(&gnss_data.latest, &gnss_data_in_progress, sizeof(gnss_struct_t));
 
 			gnss_data.latest.updated_at = k_uptime_get_32();
 			gnss_data_is_valid = true;
@@ -137,8 +141,10 @@ static int mia_m10_sync_complete(uint32_t flag)
 				gnss_data.lastfix.msss = gnss_data.latest.msss;
 				gnss_data.lastfix.updated_at = gnss_data.latest.updated_at;
 
-				/* GNSS is always in max mode now */
-				gnss_data.lastfix.mode = GNSSMODE_MAX;
+				/* Report the last set mode for statistics collection */
+				gnss_data.lastfix.mode = gnss_data.latest.mode;
+				/* PL fields are the same structure */
+				memcpy(&gnss_data.lastfix.pl,&gnss_data.latest.pl,sizeof(gnss_data.lastfix.pl));
 				gnss_data.has_lastfix = true;
 			}
 			k_mutex_unlock(&gnss_data_mutex);
@@ -193,7 +199,8 @@ static int mia_m10_nav_pvt_handler(void *context, void *payload, uint32_t size)
 	struct ublox_nav_pvt *nav_pvt = payload;
 
 	mia_m10_sync_tow(nav_pvt->iTOW);
-
+	/* As PVT is the main driver for the solution, set the current mode when receiving it */
+	gnss_data_in_progress.mode = gnss_current_mode;
 	gnss_data_in_progress.pvt_flags = nav_pvt->flags;
 	gnss_data_in_progress.pvt_valid = nav_pvt->valid;
 	gnss_data_in_progress.lon = nav_pvt->lon;
@@ -205,10 +212,8 @@ static int mia_m10_nav_pvt_handler(void *context, void *payload, uint32_t size)
 	/* Calculate from mm to dm, and within int16 limits */
 	gnss_data_in_progress.height =
 		(int16_t)MIN(INT16_MAX, MAX(INT16_MIN, nav_pvt->height / 100));
-	gnss_data_in_progress.h_acc_dm =
-		(uint16_t)MIN(UINT16_MAX, nav_pvt->hAcc / 100);
-	gnss_data_in_progress.v_acc_dm =
-		(uint16_t)MIN(UINT16_MAX, nav_pvt->vAcc / 100);
+	gnss_data_in_progress.h_acc_dm = (uint16_t)MIN(UINT16_MAX, nav_pvt->hAcc / 100);
+	gnss_data_in_progress.v_acc_dm = (uint16_t)MIN(UINT16_MAX, nav_pvt->vAcc / 100);
 
 	if (((nav_pvt->valid & 0x7) == 0x7) && (nav_pvt->flags & 1)) {
 		gnss_unix_timestamp = mia_m10_nav_pvt_to_unix_time(nav_pvt);
@@ -260,6 +265,34 @@ static int mia_m10_nav_status_handler(void *context, void *payload, uint32_t siz
 	gnss_data_in_progress.ttff = nav_status->ttff;
 
 	mia_m10_sync_complete(GNSS_DATA_FLAG_NAV_STATUS);
+
+	return 0;
+}
+
+/**
+ * @brief Handler for incoming NAV-PL message.
+ *
+ * @param[in] context Context is unused.
+ * @param[in] payload Payload containing NAV-PL data.
+ * @param[in] size Size of payload.
+ *
+ * @return 0 if everything was ok, error code otherwise
+ */
+static int mia_m10_nav_pl_handler(void *context, void *payload, uint32_t size)
+{
+	struct ublox_nav_pl *nav_pl = payload;
+
+	mia_m10_sync_tow(nav_pl->iTow);
+
+	gnss_data_in_progress.pl.tmirCoeff = nav_pl->tmirCoeff;
+	gnss_data_in_progress.pl.tmirExp = nav_pl->tmirExp;
+	gnss_data_in_progress.pl.plPosValid = nav_pl->plPosValid;
+	gnss_data_in_progress.pl.plPosFrame = nav_pl->plPosFrame;
+	gnss_data_in_progress.pl.plPos1 = nav_pl->plPos1;
+	gnss_data_in_progress.pl.plPos2 = nav_pl->plPos2;
+	gnss_data_in_progress.pl.plPos3 = nav_pl->plPos3;
+
+	mia_m10_sync_complete(GNSS_DATA_FLAG_NAV_PL);
 
 	return 0;
 }
@@ -322,16 +355,15 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 	ret = mia_m10_config_get_u32(UBX_CFG_UART1_BAUDRATE, &gnss_baudrate);
 	if (ret != 0) {
 		/* Communication failed, try other baudrate */
-		gnss_baudrate = (gnss_baudrate == MIA_M10_DEFAULT_BAUDRATE) ? 
-				    CONFIG_GNSS_MIA_M10_UART_BAUDRATE : 
-				    MIA_M10_DEFAULT_BAUDRATE;
+		gnss_baudrate = (gnss_baudrate == MIA_M10_DEFAULT_BAUDRATE) ?
+					CONFIG_GNSS_MIA_M10_UART_BAUDRATE :
+					MIA_M10_DEFAULT_BAUDRATE;
 		ret = gnss_hub_set_uart_baudrate(gnss_baudrate, true);
 		if (ret != 0) {
 			return ret;
 		}
 
-		ret = mia_m10_config_get_u32(UBX_CFG_UART1_BAUDRATE,
-					     &gnss_baudrate);
+		ret = mia_m10_config_get_u32(UBX_CFG_UART1_BAUDRATE, &gnss_baudrate);
 		if (ret != 0) {
 			return -EIO;
 		}
@@ -358,8 +390,7 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 	if (ret != 0) {
 		return ret;
 	}
-	ret = ublox_register_handler(UBX_NAV, UBX_NAV_PVT,
-				     mia_m10_nav_pvt_handler, NULL);
+	ret = ublox_register_handler(UBX_NAV, UBX_NAV_PVT, mia_m10_nav_pvt_handler, NULL);
 	if (ret != 0) {
 		return ret;
 	}
@@ -368,8 +399,7 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 	if (ret != 0) {
 		return ret;
 	}
-	ret = ublox_register_handler(UBX_NAV, UBX_NAV_DOP,
-				     mia_m10_nav_dop_handler, NULL);
+	ret = ublox_register_handler(UBX_NAV, UBX_NAV_DOP, mia_m10_nav_dop_handler, NULL);
 	if (ret != 0) {
 		return ret;
 	}
@@ -378,8 +408,7 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 	if (ret != 0) {
 		return ret;
 	}
-	ret = ublox_register_handler(UBX_NAV, UBX_NAV_STATUS,
-				     mia_m10_nav_status_handler, NULL);
+	ret = ublox_register_handler(UBX_NAV, UBX_NAV_STATUS, mia_m10_nav_status_handler, NULL);
 	if (ret != 0) {
 		return ret;
 	}
@@ -390,13 +419,22 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 		return ret;
 	}*/
 
+	/* Enable the hopefully promising UBX-NAV-PL message on UART*/
+	ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_PL_UART1, 1);
+	if (ret != 0) {
+		return ret;
+	}
+	ret = ublox_register_handler(UBX_NAV, UBX_NAV_PL, mia_m10_nav_pl_handler, NULL);
+	if (ret != 0) {
+		return ret;
+	}
+
 	/* Enable MGA-ACK output on UART */
 	ret = mia_m10_config_set_u8(UBX_CFG_NAVSPG_ACKAIDING, 1);
 	if (ret != 0) {
 		return ret;
 	}
-	ret = ublox_register_handler(UBX_MGA, UBX_MGA_ACK,
-				     mia_m10_mga_ack_handler, NULL);
+	ret = ublox_register_handler(UBX_MGA, UBX_MGA_ACK, mia_m10_mga_ack_handler, NULL);
 	if (ret != 0) {
 		return ret;
 	}
@@ -434,8 +472,7 @@ static int mia_m10_reset(const struct device *dev, uint16_t mask, uint8_t mode)
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static int mia_m10_upload_assist_data(const struct device *dev, uint8_t *data,
-				      uint32_t size)
+static int mia_m10_upload_assist_data(const struct device *dev, uint8_t *data, uint32_t size)
 {
 	ARG_UNUSED(dev);
 	int ret = 0;
@@ -505,8 +542,7 @@ static int mia_m10_get_rate(const struct device *dev, uint16_t *rate)
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static int mia_m10_set_data_cb(const struct device *dev,
-			       gnss_data_cb_t gnss_data_cb)
+static int mia_m10_set_data_cb(const struct device *dev, gnss_data_cb_t gnss_data_cb)
 {
 	ARG_UNUSED(dev);
 	if (k_mutex_lock(&gnss_cb_mutex, K_MSEC(1000)) == 0) {
@@ -543,7 +579,6 @@ static int mia_m10_data_fetch(const struct device *dev, gnss_t *data)
 	return 0;
 }
 
-
 /**
  * @brief Parse data from GNSS. 
  *
@@ -558,8 +593,7 @@ static uint32_t mia_m10_parse_data(uint8_t *buffer, uint32_t cnt)
 	while ((cnt - parsed) > 0) {
 		if (buffer[parsed] == NMEA_START_DELIMITER) {
 			/* NMEA */
-			uint32_t i =
-				nmea_parse(&buffer[parsed], (cnt - parsed));
+			uint32_t i = nmea_parse(&buffer[parsed], (cnt - parsed));
 			if (i == 0) {
 				/* Nothing parsed means not enough data yet */
 				break;
@@ -568,8 +602,7 @@ static uint32_t mia_m10_parse_data(uint8_t *buffer, uint32_t cnt)
 			}
 		} else if (buffer[parsed] == UBLOX_SYNC_CHAR_1) {
 			/* UBLOX */
-			uint32_t i =
-				ublox_parse(&buffer[parsed], (cnt - parsed));
+			uint32_t i = ublox_parse(&buffer[parsed], (cnt - parsed));
 			if (i == 0) {
 				/* Nothing parsed means not enough data yet */
 				break;
@@ -606,9 +639,8 @@ static void mia_m10_handle_received_data(void *dev)
 		total_parsed_cnt = 0;
 		is_parsing = true;
 		while (is_parsing) {
-			uint32_t parsed_cnt = mia_m10_parse_data(
-				&data_buffer[total_parsed_cnt],
-				data_cnt - total_parsed_cnt);
+			uint32_t parsed_cnt = mia_m10_parse_data(&data_buffer[total_parsed_cnt],
+								 data_cnt - total_parsed_cnt);
 
 			if (parsed_cnt == 0) {
 				is_parsing = false;
@@ -632,9 +664,9 @@ static void mia_m10_handle_received_data(void *dev)
  */
 static int mia_m10_init(const struct device *dev)
 {
-    int ret = 0;
+	int ret = 0;
 	mia_m10_uart_dev = GNSS_UART_DEV;
-    gpio_dev = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
+	gpio_dev = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
 
 	/* Initialize Ublox protocol parser */
 	ublox_protocol_init();
@@ -654,23 +686,21 @@ static int mia_m10_init(const struct device *dev)
 		return -EIO;
 	}
 
-    /** Set up EXTINT interrupt GPIO */
+	/** Set up EXTINT interrupt GPIO */
 
-    ret = gpio_pin_configure(gpio_dev,EXTINT_GPIOS_PIN,GPIO_OUTPUT);
-    if (ret != 0) {
-        return ret;
-    }
+	ret = gpio_pin_configure(gpio_dev, EXTINT_GPIOS_PIN, GPIO_OUTPUT);
+	if (ret != 0) {
+		return ret;
+	}
 
 	k_sem_init(&gnss_rx_sem, 0, 1);
 	gnss_hub_init(mia_m10_uart_dev, &gnss_rx_sem, MIA_M10_DEFAULT_BAUDRATE);
-	
+
 	/* Start parser thread */
 	k_thread_create(&gnss_parse_thread, gnss_parse_stack,
 			K_KERNEL_STACK_SIZEOF(gnss_parse_stack),
-			(k_thread_entry_t)mia_m10_handle_received_data,
-			(void *)mia_m10_uart_dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_GNSS_MIA_M10_THREAD_PRIORITY), 0,
-			K_NO_WAIT);
+			(k_thread_entry_t)mia_m10_handle_received_data, (void *)mia_m10_uart_dev,
+			NULL, NULL, K_PRIO_COOP(CONFIG_GNSS_MIA_M10_THREAD_PRIORITY), 0, K_NO_WAIT);
 
 	return 0;
 }
@@ -686,8 +716,8 @@ static int mia_m10_init(const struct device *dev)
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static int mia_m10_resp_data_cb(void *context, uint8_t msg_class,
-				uint8_t msg_id, void *payload, uint32_t length)
+static int mia_m10_resp_data_cb(void *context, uint8_t msg_class, uint8_t msg_id, void *payload,
+				uint32_t length)
 {
 	if (length <= sizeof(cmd_buf)) {
 		cmd_size = length;
@@ -710,9 +740,12 @@ static int mia_m10_resp_data_cb(void *context, uint8_t msg_class,
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static int mia_m10_resp_ack_cb(void *context, uint8_t msg_class, uint8_t msg_id,
-			       bool ack)
+static int mia_m10_resp_ack_cb(void *context, uint8_t msg_class, uint8_t msg_id, bool ack)
 {
+#if (CONFIG_GNSS_LOG_LEVEL >= 4)
+	dbg_last_msg_class = msg_class;
+	dbg_last_msg_id = msg_id;
+#endif
 	cmd_ack = ack;
 	k_sem_give(&cmd_ack_sem);
 
@@ -729,39 +762,42 @@ static int mia_m10_resp_ack_cb(void *context, uint8_t msg_class, uint8_t msg_id,
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static int mia_m10_send_ubx_cmd(uint8_t *buffer, uint32_t size,
-				bool wait_for_ack, bool wait_for_data)
+static int mia_m10_send_ubx_cmd(uint8_t *buffer, uint32_t size, bool wait_for_ack,
+				bool wait_for_data)
 {
 	int ret = 0;
 
 	/* Reset command response parameters */
 	k_sem_reset(&cmd_ack_sem);
 	k_sem_reset(&cmd_data_sem);
-	ublox_set_response_handlers(buffer, mia_m10_resp_data_cb,
-				    mia_m10_resp_ack_cb, NULL);
+	ublox_set_response_handlers(buffer, mia_m10_resp_data_cb, mia_m10_resp_ack_cb, NULL);
 
 	/* Send command bytes */
 	ret = gnss_hub_send(GNSS_HUB_ID_DRIVER, buffer, size);
-	if (ret != 0)
-	{
+	if (ret != 0) {
 		return ret;
 	}
 
 	/* Wait for response, data and ack */
 	if (wait_for_ack) {
-		if (k_sem_take(&cmd_ack_sem,
-			       K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) !=
-		    0) {
+		if (k_sem_take(&cmd_ack_sem, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) != 0) {
 			k_mutex_unlock(&cmd_mutex);
-            LOG_WRN("ACK timeout");
+			LOG_WRN("ACK timeout");
+#if (CONFIG_GNSS_LOG_LEVEL >= 4)
+			LOG_DBG("No ACK for 0x%02X  0x%02X", dbg_last_msg_class, dbg_last_msg_id);
+#endif
 			return -ETIME;
 		}
+#if (CONFIG_GNSS_LOG_LEVEL >= 4)
+		LOG_DBG("Got ack for 0x%02X 0x%02X", dbg_last_msg_class, dbg_last_msg_id);
+#endif
 	}
 	if (wait_for_data) {
-		if (k_sem_take(&cmd_data_sem,
-			       K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) !=
-		    0) {
+		if (k_sem_take(&cmd_data_sem, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) != 0) {
 			k_mutex_unlock(&cmd_mutex);
+#if (CONFIG_GNSS_LOG_LEVEL >= 4)
+			LOG_DBG("No DATA for 0x%02X  0x%02X", dbg_last_msg_class, dbg_last_msg_id);
+#endif
 			return -ETIME;
 		}
 	}
@@ -826,10 +862,8 @@ int mia_m10_config_get(uint32_t key, uint8_t size, uint64_t *raw_value)
 {
 	int ret = 0;
 
-	if (k_mutex_lock(&cmd_mutex,
-			 K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) == 0) {
-		ret = ublox_build_cfg_valget(cmd_buf, &cmd_size,
-					     CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE,
+	if (k_mutex_lock(&cmd_mutex, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) == 0) {
+		ret = ublox_build_cfg_valget(cmd_buf, &cmd_size, CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE,
 					     0, 0, key);
 		if (ret != 0) {
 			k_mutex_unlock(&cmd_mutex);
@@ -845,7 +879,7 @@ int mia_m10_config_get(uint32_t key, uint8_t size, uint64_t *raw_value)
 		/* Check ACK */
 		if (!cmd_ack) {
 			k_mutex_unlock(&cmd_mutex);
-			return -ECONNREFUSED;
+			return -EIO;
 		}
 
 		/* Parse result payload */
@@ -885,10 +919,8 @@ int mia_m10_config_set(uint32_t key, uint64_t raw_value)
 {
 	int ret = 0;
 
-	if (k_mutex_lock(&cmd_mutex,
-			 K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) == 0) {
-		ret = ublox_build_cfg_valset(cmd_buf, &cmd_size,
-					     CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE,
+	if (k_mutex_lock(&cmd_mutex, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) == 0) {
+		ret = ublox_build_cfg_valset(cmd_buf, &cmd_size, CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE,
 					     3, key, raw_value);
 		if (ret != 0) {
 			k_mutex_unlock(&cmd_mutex);
@@ -918,10 +950,8 @@ int mia_m10_send_reset(uint16_t mask, uint8_t mode)
 {
 	int ret = 0;
 
-	if (k_mutex_lock(&cmd_mutex,
-			 K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) == 0) {
-		ret = ublox_build_cfg_rst(cmd_buf, &cmd_size,
-					  CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE,
+	if (k_mutex_lock(&cmd_mutex, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) == 0) {
+		ret = ublox_build_cfg_rst(cmd_buf, &cmd_size, CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE,
 					  mask, mode);
 		if (ret != 0) {
 			k_mutex_unlock(&cmd_mutex);
@@ -946,10 +976,8 @@ int mia_m10_send_assist_data(uint8_t *data, uint32_t size)
 {
 	int ret = 0;
 
-	if (k_mutex_lock(&cmd_mutex,
-			 K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) == 0) {
-		ret = ublox_build_mga_ano(cmd_buf, &cmd_size,
-					  CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE,
+	if (k_mutex_lock(&cmd_mutex, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) == 0) {
+		ret = ublox_build_mga_ano(cmd_buf, &cmd_size, CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE,
 					  data, size);
 		if (ret != 0) {
 			k_mutex_unlock(&cmd_mutex);
@@ -966,9 +994,7 @@ int mia_m10_send_assist_data(uint8_t *data, uint32_t size)
 		}
 
 		/* Wait for ack */
-		if (k_sem_take(&mga_ack_sem,
-			       K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) !=
-		    0) {
+		if (k_sem_take(&mga_ack_sem, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) != 0) {
 			LOG_ERR("MGA-ACK timed out");
 			k_mutex_unlock(&cmd_mutex);
 			return -ETIME;
@@ -987,71 +1013,125 @@ int mia_m10_send_assist_data(uint8_t *data, uint32_t size)
 	return ret;
 }
 
+static int mia_m10_set_backup_mode(const struct device *dev)
+{
+	ARG_UNUSED(dev);
 
-static int mia_m10_set_backup_mode(const struct device * dev) {
-    ARG_UNUSED(dev);
-    LOG_INF("TODO: mia_m10_set_backup_mode");
+	int ret = 0;
 
+	if (k_mutex_lock(&cmd_mutex, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) == 0) {
+		ret = ublox_build_rxm_pmreq(cmd_buf, &cmd_size, CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE);
+		if (ret != 0) {
+			k_mutex_unlock(&cmd_mutex);
+			return ret;
+		}
 
-    int ret = 0;
+		ret = mia_m10_send_ubx_cmd(cmd_buf, cmd_size, false, false);
+		if (ret != 0) {
+			k_mutex_unlock(&cmd_mutex);
+			return ret;
+		}
+		/* Do not wait for ACK when entering backup mode */
 
-    if (k_mutex_lock(&cmd_mutex,
-                     K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) == 0) {
-        ret = ublox_build_rxm_pmreq(cmd_buf, &cmd_size,
-                                    CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE);
-        if (ret != 0) {
-            k_mutex_unlock(&cmd_mutex);
-            return ret;
-        }
-
-        /* @todo verify that the UBX-RXM-PMREQ does not actually ACK */
-        ret = mia_m10_send_ubx_cmd(cmd_buf, cmd_size, false, false);
-        if (ret != 0) {
-            k_mutex_unlock(&cmd_mutex);
-            return ret;
-        }
-        /* Do not wait for ACK when entering backup mode */
-
-        k_mutex_unlock(&cmd_mutex);
-    } else {
-        return -EBUSY;
-    }
-
-    return ret;
+		k_mutex_unlock(&cmd_mutex);
+	} else {
+		return -EBUSY;
+	}
+	return ret;
 }
 
+static int mia_m10_set_power_mode(const struct device *dev, gnss_mode_t mode)
+{
+	int ret;
+	uint16_t rate_val;
+	uint8_t mode_val;
+	switch (mode) {
+	case GNSSMODE_CAUTION:
+		mode_val = UBX_CFG_PM_OPERATEMODE_VAL_FULL;
+		rate_val = 1000;
+		break;
+	case GNSSMODE_MAX:
+		mode_val = UBX_CFG_PM_OPERATEMODE_VAL_FULL;
+		rate_val = 250;
+		break;
+	case GNSSMODE_PSM:
+		mode_val = UBX_CFG_PM_OPERATEMODE_VAL_PSMCT;
+		rate_val = 5000;
+		break;
+	default:
+		ret = -EINVAL;
+		goto error_return;
+	}
 
-static int mia_m10_wakeup(const struct device * dev) {
-    LOG_DBG("mia_m10_wakeup");
-    int ret = 0;
-    ret = gpio_pin_set(gpio_dev,EXTINT_GPIOS_PIN,0);
-    if (ret != 0) {
-        return ret;
-    }
-    k_sleep(K_MSEC(10));
-    ret = gpio_pin_set(gpio_dev,EXTINT_GPIOS_PIN,1);
-    if (ret != 0) {
-        return ret;
-    }
-    return 0;
+	/*
+     * @todo: Workaround:
+     * 1) If target mode is PSM (2), a transition from MAX (4) will fail if
+     * we set OPERATEMODE first due to missing ack
+     * 2) If target mode is MAX (4) a transition from PSM (2) will fail if
+     * we set RATE first, due to missing ack
+     */
+	if (mode == GNSSMODE_PSM) {
+		ret = mia_m10_set_rate(dev, rate_val);
+		if (ret != 0) {
+			goto error_return;
+		}
+		ret = mia_m10_config_set_u8(UBX_CFG_PM_OPERATEMODE, mode_val);
+		if (ret != 0) {
+			goto error_return;
+		}
+
+	} else {
+		ret = mia_m10_config_set_u8(UBX_CFG_PM_OPERATEMODE, mode_val);
+		if (ret != 0) {
+			goto error_return;
+		}
+
+		ret = mia_m10_set_rate(dev, rate_val);
+		if (ret != 0) {
+			goto error_return;
+		}
+	}
+
+	gnss_current_mode = mode;
+	return 0;
+
+error_return:
+	gnss_current_mode = GNSSMODE_NOMODE;
+	return ret;
+}
+
+static int mia_m10_wakeup(const struct device *dev)
+{
+	LOG_DBG("mia_m10_wakeup");
+	int ret = 0;
+	ret = gpio_pin_set(gpio_dev, EXTINT_GPIOS_PIN, 0);
+	if (ret != 0) {
+		return ret;
+	}
+	k_sleep(K_MSEC(10));
+	ret = gpio_pin_set(gpio_dev, EXTINT_GPIOS_PIN, 1);
+	if (ret != 0) {
+		return ret;
+	}
+	return 0;
 }
 
 static const struct gnss_driver_api mia_m10_api_funcs = {
-        .gnss_setup = mia_m10_setup,
-        .gnss_reset = mia_m10_reset,
-        .gnss_upload_assist_data = mia_m10_upload_assist_data,
-        .gnss_set_rate = mia_m10_set_rate,
-        .gnss_get_rate = mia_m10_get_rate,
-        .gnss_set_data_cb = mia_m10_set_data_cb,
-        .gnss_data_fetch = mia_m10_data_fetch,
-        .gnss_set_backup_mode = mia_m10_set_backup_mode,
-        .gnss_wakeup = mia_m10_wakeup
+	.gnss_setup = mia_m10_setup,
+	.gnss_reset = mia_m10_reset,
+	.gnss_upload_assist_data = mia_m10_upload_assist_data,
+	.gnss_set_rate = mia_m10_set_rate,
+	.gnss_get_rate = mia_m10_get_rate,
+	.gnss_set_data_cb = mia_m10_set_data_cb,
+	.gnss_data_fetch = mia_m10_data_fetch,
+	.gnss_set_backup_mode = mia_m10_set_backup_mode,
+	.gnss_wakeup = mia_m10_wakeup,
+	.gnss_set_power_mode = mia_m10_set_power_mode
 };
 
-
-/* Create device object. 
+/* Create device object.
  * Using NULL for data and config pointers since this is allocated statically 
  * and not in use. 
  */
-DEVICE_DT_INST_DEFINE(0, mia_m10_init, NULL, NULL, NULL, POST_KERNEL,
-		      CONFIG_GNSS_INIT_PRIORITY, &mia_m10_api_funcs);
+DEVICE_DT_INST_DEFINE(0, mia_m10_init, NULL, NULL, NULL, POST_KERNEL, CONFIG_GNSS_INIT_PRIORITY,
+		      &mia_m10_api_funcs);

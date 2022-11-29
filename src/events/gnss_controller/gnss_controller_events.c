@@ -2,10 +2,5 @@
 
 EVENT_TYPE_DEFINE(gnss_data, true, NULL, NULL);
 
-EVENT_TYPE_DEFINE(gnss_rate, true, NULL, NULL);
-
-EVENT_TYPE_DEFINE(gnss_switch_on, true, NULL, NULL);
-
-EVENT_TYPE_DEFINE(gnss_switch_off, true, NULL, NULL);
 
 EVENT_TYPE_DEFINE(gnss_set_mode_event, true, NULL, NULL);

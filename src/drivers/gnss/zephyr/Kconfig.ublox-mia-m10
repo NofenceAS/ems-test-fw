@@ -9,10 +9,14 @@ if GNSS_UBLOX_MIA_M10
 	config GNSS_MIA_M10_UART_BAUDRATE
 		int "Baudrate to use for communication. Will be initiated during setup."
 		default 115200
-		
+
+# See https://content.u-blox.com/sites/default/files/u-blox-M10-SPG-5.10_InterfaceDescription_UBX-21035062.pdf?hash=undefined
+# For UBX-ACK-ACK, the comment read:
+# Output upon processing of an input message. A UBX-ACK-ACK is sent as soon as possible but at least within one second
+
 	config GNSS_MIA_M10_CMD_RESP_TIMEOUT
-		int "Duration in milliseconds to wait for response after command."
-		default 250
+		int "Duration in milliseconds to wait for response after command. One second according to u-blox manual"
+		default 1000
 
 	config GNSS_MIA_M10_CMD_MAX_SIZE
 		int "Memory to allocate for command/response buffer."

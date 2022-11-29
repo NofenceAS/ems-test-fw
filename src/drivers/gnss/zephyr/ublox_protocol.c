@@ -197,8 +197,8 @@ static int ublox_process_message(uint8_t msg_class, uint8_t msg_id,
 			{
 				if (cmd_ack_handle != NULL)
 				{
-					cmd_ack_handle(cmd_context, 
-						       msg_class, msg_id, 
+					cmd_ack_handle(cmd_context,
+                               msg_ack->clsID, msg_ack->msgID,
 						       ack);
 
 					/* Make sure to disable any further 
@@ -271,6 +271,9 @@ static bool ublox_is_checksum_correct(uint8_t* data, uint32_t length)
 {
 	uint16_t calc_checksum = ublox_calculate_checksum(data, length);
 	uint16_t msg_checksum = ublox_get_checksum(data, length);
+	if (calc_checksum != msg_checksum) {
+		LOG_DBG("CRC expected %X was %X",calc_checksum,msg_checksum);
+	}
 
 	return (calc_checksum == msg_checksum);
 }
