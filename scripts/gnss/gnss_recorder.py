@@ -16,6 +16,11 @@ parser.add_argument('--ble', help='Serial number of device in advertised name of
 parser.add_argument('--rtt', help='Serial number of Segger J-Link to use for RTT communication')
 args = parser.parse_args()
 
+import logging
+logging.basicConfig()
+logging.getLogger().setLevel(logging.DEBUG)
+
+
 # Prepare log file
 base_name = args.file
 if not base_name:
@@ -30,7 +35,7 @@ elif (not args.ble) and (not args.rtt):
 
 stream = None
 if args.ble:
-	stream = nfdiag.BLEStream("COM4", serial=args.ble)
+	stream = nfdiag.BLEStream("/dev/ttyACM0", serial=args.ble)
 else:
 	stream = nfdiag.JLinkStream(serial=args.rtt)
 

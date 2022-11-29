@@ -5,6 +5,45 @@
 #include <zephyr.h>
 #include <device.h>
 
+/**
+ * @brief GNSS domain-specific operation modes.
+ * @note The order of these enumerations are very important, that is
+ * to say that higher performance modes must have higher enumeration values
+ * than lower ones.
+ */
+typedef enum {
+    GNSSMODE_NOMODE = 0,
+    GNSSMODE_INACTIVE = 1,
+    GNSSMODE_PSM = 2,
+    GNSSMODE_CAUTION = 3,
+    GNSSMODE_MAX = 4,
+    GNSSMODE_SIZE = 5
+} gnss_mode_t;
+
+/** @brief Struct containing NAV-PL data */
+typedef struct {
+	/* Protection level tmirCoeff */
+	uint8_t tmirCoeff;
+
+	/** Protection level tmirExp */
+	uint8_t tmirExp;
+
+	/** Protection level position is valid */
+	uint8_t plPosValid;
+
+	/** Protection level frame */
+	uint8_t plPosFrame;
+
+	/** Protection level axis 1 */
+	uint32_t plPos1;
+
+	/** Protection level axis 2 */
+	uint32_t plPos2;
+
+	/** Protection level axis 3 */
+	uint32_t plPos3;
+} gnss_pl_t;
+
 /** @brief Struct containing GNSS data. */
 typedef struct {
 	int32_t lat;
@@ -56,16 +95,16 @@ typedef struct {
 
 	/** UBX-NAV-STATUS milliseconds since First Fix.*/
 	uint32_t ttff;
+
+    	/** Proprietary mode, to verify that any corrections are done when GNSS is in MAX performance */
+    	gnss_mode_t mode;
+
+	/** Protection Level sub-fields */
+	gnss_pl_t pl;
+
+
 } gnss_struct_t;
 
-typedef enum {
-	GNSSMODE_NOMODE = 0,
-	GNSSMODE_INACTIVE = 1,
-	GNSSMODE_PSM = 2,
-	GNSSMODE_CAUTION = 3,
-	GNSSMODE_MAX = 4,
-	GNSSMODE_SIZE = 5
-} gnss_mode_t;
 
 /** @brief See gnss_struct_t for descriptions. */
 typedef struct {
@@ -82,6 +121,7 @@ typedef struct {
 	uint32_t msss;
 	gnss_mode_t mode;
 	uint32_t updated_at;
+	gnss_pl_t pl;
 } gnss_last_fix_struct_t;
 
 /** @brief Struct containing both GNSS status messages and 
@@ -195,6 +235,14 @@ typedef int (*gnss_set_backup_mode_t)(const struct device *dev);
  */
 typedef int (*gnss_wakeup_t)(const struct device *dev);
 
+/**
+ * @typedef gnss_set_power_mode_t
+ * @brief API for setting the receiver Power mode (PSM, Continous
+ *
+ * See gnss_set_power_mode() for argument description
+ */
+typedef int (*gnss_set_power_mode_t)(const struct device *dev,gnss_mode_t mode);
+
 __subsystem struct gnss_driver_api {
 	gnss_setup_t gnss_setup;
 	gnss_reset_t gnss_reset;
@@ -205,6 +253,7 @@ __subsystem struct gnss_driver_api {
 	gnss_data_fetch_t gnss_data_fetch;
     gnss_set_backup_mode_t gnss_set_backup_mode;
     gnss_wakeup_t gnss_wakeup;
+    gnss_set_power_mode_t gnss_set_power_mode;
 };
 
 /**
@@ -351,6 +400,19 @@ static inline int gnss_wakeup(const struct device *dev) {
             (const struct gnss_driver_api *)dev->api;
 
     return api->gnss_wakeup( dev);
+}
+
+/**
+ * @brief sets the domain-specific power-mode of the receiver
+ * @param dev
+ * @param mode
+ * @return
+ */
+static inline int gnss_set_power_mode(const struct device *dev,gnss_mode_t mode) {
+    const struct gnss_driver_api *api =
+            (const struct gnss_driver_api *)dev->api;
+
+    return api->gnss_set_power_mode(dev,mode);
 }
 
 #endif /* GNSS_H_ */
