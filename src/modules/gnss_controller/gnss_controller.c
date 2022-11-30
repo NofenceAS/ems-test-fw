@@ -177,29 +177,23 @@ int gnss_controller_init(void)
 
 static _Noreturn void publish_gnss_data(void *ctx)
 {
-	int ret;
-	int timeout_ms;
+	LOG_INF("GNSS PUBLISHING GNSS DATA");
+	static uint64_t last_time_stamp = 0;
+	
 	while (true) {
-		if (current_rate_ms == UINT16_MAX || current_rate_ms < CONFIG_GNSS_MINIMUM_ALLOWED_GNSS_RATE) {
-			timeout_ms = CONFIG_GNSS_DEFAULT_TIMEOUT_RATE_MS;
-		} else {
-			/* Allow some slack on GNSS solution */
-			timeout_ms = current_rate_ms + CONFIG_GNSS_TIMEOUT_SLACK_MS;
-		}
-		if ((ret = k_sem_take(&new_data_sem, K_MSEC(timeout_ms))) == 0) {
-			gnss_reset_count = 0;
-			gnss_timeout_count = 0;
+		if (k_sem_take(&new_data_sem, K_SECONDS(5)) == 0
+		    && gnss_data_buffer.lastfix.unix_timestamp >=
+			       last_time_stamp) {
+			gnss_clear_reset_count();
 			struct gnss_data *new_data = new_gnss_data();
 			new_data->gnss_data = gnss_data_buffer;
 			new_data->timed_out = false;
-			//LOG_INF("  GNSS data: %d, %d, %d, %d, %d", gnss_data_buffer.latest.lon,
-			//	gnss_data_buffer.latest.lat, gnss_data_buffer.latest.pvt_flags, gnss_data_buffer.latest.h_acc_dm,
-			//	gnss_data_buffer.latest.num_sv);
+			LOG_DBG("  GNSS data: %d, %d, %d, %d, %d", gnss_data_buffer.latest.lon,
+				gnss_data_buffer.latest.lat, gnss_data_buffer.latest.pvt_flags,
+				gnss_data_buffer.latest.h_acc_dm, gnss_data_buffer.latest.num_sv);
 			EVENT_SUBMIT(new_data);
 			initialized = true;
 		} else {
-			LOG_INF("GNSS data not published, sem_take=%d, ts_ok=%s, initialized=%d, current_mode=%d", 
-					sem, (gnss_data_buffer.lastfix.unix_timestamp >= last_time_stamp ? "true" : "false"), initialized, current_mode);
 			last_time_stamp = 0;
 			if (initialized && current_mode != GNSSMODE_INACTIVE) {
 				gnss_timed_out();
@@ -220,15 +214,13 @@ static int gnss_data_update_cb(const gnss_t *data)
 
 static int gnss_set_mode(gnss_mode_t mode, bool wakeup)
 {
-	int ret;
-	if (wakeup) {
-		ret = gnss_wakeup(gnss_dev);
-		if (ret != 0) {
-			LOG_ERR("gnss_wakeup failed %d", ret);
-			return ret;
-		}
-	}
-
+    int ret;
+    ret = gnss_wakeup(gnss_dev);
+    if (ret != 0) {
+        LOG_ERR("gnss_wakeup failed %d",ret);
+        return ret;
+    }
+	/** @todo Add mode changes here. Should be in the gnss driver???? */
 	if (mode == GNSSMODE_INACTIVE) {
 		ret = gnss_set_backup_mode(gnss_dev);
 		if (ret != 0) {
