@@ -23,4 +23,4 @@ static int log_diag_status_event(const struct event_header *eh, char *buf,
 	return snprintf(buf, buf_len, "DIAG_status=%d", event->diag_error);
 }
 
-EVENT_TYPE_DEFINE(diag_status_event, true, log_diag_status_event, NULL);
+EVENT_TYPE_DEFINE(diag_status_event, IS_ENABLED(CONFIG_LOG_DIAGNOSTICS_EVENT), log_diag_status_event, NULL);

@@ -100,4 +100,4 @@ void nf_app_warning(enum error_sender_module sender, int code, char *msg,
 	submit_app_status(sender, ERR_SEVERITY_WARNING, code, msg, msg_len);
 }
 
-EVENT_TYPE_DEFINE(error_event, true, log_error_event, NULL);
+EVENT_TYPE_DEFINE(error_event, IS_ENABLED(LOG_ERROR_EVENT), log_error_event, NULL);

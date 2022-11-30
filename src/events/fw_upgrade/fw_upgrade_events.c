@@ -25,7 +25,7 @@ static int log_dfu_status_event(const struct event_header *eh, char *buf,
 	return snprintf(buf, buf_len, "DFU_status=%d", event->dfu_status);
 }
 
-EVENT_TYPE_DEFINE(dfu_status_event, IS_ENABLED(FW_LOG_DFU_STATUS_EVENT),
+EVENT_TYPE_DEFINE(dfu_status_event, IS_ENABLED(CONFIG_FW_LOG_DFU_STATUS_EVENT),
 		  log_dfu_status_event, NULL);
 
 /**
@@ -45,7 +45,7 @@ static int log_start_fota_event(const struct event_header *eh, char *buf,
 			event->version);
 }
 
-EVENT_TYPE_DEFINE(start_fota_event, true, log_start_fota_event, NULL);
+EVENT_TYPE_DEFINE(start_fota_event, IS_ENABLED(CONFIG_FW_LOG_DFU_START_EVENT), log_start_fota_event, NULL);
 
 EVENT_TYPE_DEFINE(cancel_fota_event, false, NULL, NULL);
 

@@ -24,6 +24,10 @@ list(APPEND ZEPHYR_EXTRA_MODULES
 # $ZEPHYR_BASE to this directory.
 set(BOARD_ROOT ${CMAKE_CURRENT_LIST_DIR})
 
+if (BUILD_TYPE STREQUAL "debug")
+  set(OVERLAY_CONFIG debug.conf)
+endif()
+
 # The Nofence X3 board exists out-of-tree from zephyr boards
 # Default board is a future revision that does not exist yet
 # Force users to select boards for now, uncomment line below later

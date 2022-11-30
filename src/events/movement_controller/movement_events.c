@@ -27,7 +27,7 @@ static int log_movement_out_event(const struct event_header *eh, char *buf,
 	return snprintf(buf, buf_len, "Movement out state %i", event->state);
 }
 
-EVENT_TYPE_DEFINE(movement_out_event, true, log_movement_out_event, NULL);
+EVENT_TYPE_DEFINE(movement_out_event, IS_ENABLED(CONFIG_LOG_MOVEMENT_EVENT), log_movement_out_event, NULL);
 
 static int log_movement_set_mode_event(const struct event_header *eh, char *buf,
 				       size_t buf_len)
@@ -39,12 +39,12 @@ static int log_movement_set_mode_event(const struct event_header *eh, char *buf,
 			event->acc_mode);
 }
 
-EVENT_TYPE_DEFINE(movement_set_mode_event, true, log_movement_set_mode_event,
+EVENT_TYPE_DEFINE(movement_set_mode_event, IS_ENABLED(CONFIG_LOG_MOVEMENT_EVENT), log_movement_set_mode_event,
 		  NULL);
 
-EVENT_TYPE_DEFINE(activity_level, true, NULL, NULL);
+EVENT_TYPE_DEFINE(activity_level, false, NULL, NULL);
 
-EVENT_TYPE_DEFINE(step_counter_event, true, NULL, NULL);
+EVENT_TYPE_DEFINE(step_counter_event, false, NULL, NULL);
 
 static int log_movement_timeout_event(const struct event_header *eh, char *buf,
 				      size_t buf_len)
@@ -54,7 +54,7 @@ static int log_movement_timeout_event(const struct event_header *eh, char *buf,
 	return snprintf(buf, buf_len, "Movement timeout adr %p", event);
 }
 
-EVENT_TYPE_DEFINE(movement_timeout_event, true, log_movement_timeout_event,
+EVENT_TYPE_DEFINE(movement_timeout_event, IS_ENABLED(CONFIG_LOG_MOVEMENT_EVENT), log_movement_timeout_event,
 		  NULL);
 
-EVENT_TYPE_DEFINE(acc_sigma_event, true, NULL, NULL);
+EVENT_TYPE_DEFINE(acc_sigma_event, false, NULL, NULL);

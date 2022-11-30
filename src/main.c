@@ -7,7 +7,10 @@
 #include <nrf.h>
 
 #include "error_event.h"
+
+#if CONFIG_DIAGNOSTICS
 #include "diagnostics.h"
+#endif /* CONFIG_DIAGNOSTICS */
 #include "selftest.h"
 #include "fw_upgrade.h"
 #include "fw_upgrade_events.h"
@@ -57,26 +60,26 @@ void main(void)
 	int err;
 	LOG_INF("Starting Nofence application...");
 
+#if CONFIG_DIAGNOSTICS
 	selftest_init();
 
 	/* Initialize diagnostics module. */
-#if CONFIG_DIAGNOSTICS
 	err = diagnostics_module_init();
 	if (err) {
-		char *e_msg = "Could not initialize diagnostics module";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_DIAGNOSTIC, err, e_msg, strlen(e_msg));
+		LOG_ERR("Could not initialize diagnostics module (%d)", err);
+		nf_app_error(ERR_DIAGNOSTIC, err, NULL, 0);
 	}
-#endif
+#endif /* CONFIG_DIAGNOSTICS */
 
 /* Not all boards have eeprom */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
 	const struct device *eeprom_dev = DEVICE_DT_GET(DT_ALIAS(eeprom));
+#if CONFIG_DIAGNOSTICS
 	selftest_mark_state(SELFTEST_EEPROM_POS, eeprom_dev != NULL);
+#endif /* CONFIG_DIAGNOSTICS */
 	if (eeprom_dev == NULL) {
-		char *e_msg = "No EEPROM device detected!";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), -EIO);
-		nf_app_error(ERR_EEPROM, -EIO, e_msg, strlen(e_msg));
+		LOG_ERR("No EEPROM device detected! (%d)", -EIO);
+		nf_app_error(ERR_EEPROM, -EIO, NULL, 0);
 	}
 	eep_init(eeprom_dev);
 #endif
@@ -97,17 +100,15 @@ void main(void)
 	/* Initialize the power manager module. */
 	err = pwr_module_init();
 	if (err) {
-		char *e_msg = "Could not initialize the power module";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_PWR_MODULE, err, e_msg, strlen(e_msg));
+		LOG_ERR("Could not initialize the pwr module (%d)", err);
+		nf_app_error(ERR_PWR_MODULE, err, NULL, 0);
 	}
 
 	/* Initialize the buzzer */
 	err = buzzer_module_init();
 	if (err) {
-		char *e_msg = "Could not initialize the buzzer module";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_SOUND_CONTROLLER, err, e_msg, strlen(e_msg));
+		LOG_ERR("Could not initialize the buzzer module (%d)", err);
+		nf_app_error(ERR_SOUND_CONTROLLER, err, NULL, 0);
 	}
 
 	/* Initialize the event manager. */
@@ -155,14 +156,15 @@ void main(void)
 #if defined(CONFIG_WATCHDOG_ENABLE)
 	err = watchdog_init_and_start();
 	if (err) {
-		char *e_msg = "Could not initialize and start watchdog";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_WATCHDOG, err, e_msg, strlen(e_msg));
+		LOG_ERR("Could not initialize and start watchdog (%d)", err);
+		nf_app_error(ERR_WATCHDOG, err, NULL, 0);
 	}
 #endif
 
 	err = stg_init_storage_controller();
+#if CONFIG_DIAGNOSTICS
 	selftest_mark_state(SELFTEST_FLASH_POS, err == 0);
+#endif	/* CONFIG_DIAGNOSTICS */
 	if (err) {
 		LOG_ERR("Could not initialize storage controller (%d)", err);
 		return;
@@ -171,46 +173,41 @@ void main(void)
 	/* Initialize BLE module. */
 	err = ble_module_init();
 	if (err) {
-		char *e_msg = "Could not initialize BLE module.";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_BLE_MODULE, err, e_msg, strlen(e_msg));
+		LOG_ERR("Could not initialize the BLE module (%d)", err);
+		nf_app_error(ERR_BLE_MODULE, err, NULL, 0);
 	}
 
 	/* Initialize firmware upgrade module. */
 	err = fw_upgrade_module_init();
 	if (err) {
-		char *e_msg = "Could not initialize firmware upgrade module";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_FW_UPGRADE, err, e_msg, strlen(e_msg));
+		LOG_ERR("Could not initialize the firmware module (%d)", err);
+		nf_app_error(ERR_FW_UPGRADE, err, NULL, 0);
 	}
 
 	/* Initialize the electric pulse module */
 	err = ep_module_init();
 	if (err) {
-		char *e_msg = "Could not initialize electric pulse module";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_EP_MODULE, err, e_msg, strlen(e_msg));
+		LOG_ERR("Could not initialize the electric pulse module (%d)", err);
+		nf_app_error(ERR_EP_MODULE, err, NULL, 0);
 	}
 
 	/* Important to initialize external storage first, since we use the sleep 
 	 * sigma value from storage when we init.
 	 */
 	err = init_movement_controller();
+#if CONFIG_DIAGNOSTICS
 	selftest_mark_state(SELFTEST_ACCELEROMETER_POS, err == 0);
+#endif /* CONFIG_DIAGNOSTICS */
 	if (err) {
-		char *e_msg = "Could not initialize the movement module";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_MOVEMENT_CONTROLLER, err, e_msg,
-			     strlen(e_msg));
+		LOG_ERR("Could not initialize the movement module (%d)", err);
+		nf_app_error(ERR_MOVEMENT_CONTROLLER, err, NULL, 0);
 	}
 
 	/* Initialize the cellular controller */
 	err = cellular_controller_init();
 	if (err) {
-		char *e_msg = "Could not initialize the cellular controller";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_CELLULAR_CONTROLLER, err, e_msg,
-			     strlen(e_msg));
+		LOG_ERR("Could not initialize the cellular module (%d)", err);
+		nf_app_error(ERR_CELLULAR_CONTROLLER, err, NULL, 0);
 	}
 	/* Initialize the time module used for the histogram calculation */
 	err = time_use_module_init();
@@ -221,31 +218,30 @@ void main(void)
 	/* Initialize the messaging module */
 	err = messaging_module_init();
 	if (err) {
-		char *e_msg = "Could not initialize the messaging module.";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_MESSAGING, err, e_msg, strlen(e_msg));
+		LOG_ERR("Could not initialize the messaging module (%d)", err);
+		nf_app_error(ERR_MESSAGING, err, NULL, 0);
 	}
 
 	/* Initialize the GNSS controller */
 #if CONFIG_GNSS_CONTROLLER
 	err = gnss_controller_init();
+#if CONFIG_DIAGNOSTICS
 	selftest_mark_state(SELFTEST_GNSS_POS, err == 0);
+#endif /* CONFIG_DIAGNOSTICS */
 	if (err) {
-		char *e_msg = "Could not initialize the GNSS controller.";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_GNSS_CONTROLLER, err, e_msg, strlen(e_msg));
+		LOG_ERR("Could not initialize the GNSS module (%d)", err);
+		nf_app_error(ERR_GNSS_CONTROLLER, err, NULL, 0);
 	}
-#endif
+#endif /* CONFIG_GNSS_CONTROLLER */
 
 	/* Initialize animal monitor control module, depends on storage
 	 * controller to be initialized first since amc sends
-	 * a request for pasture data on init.
+	 * a request for pasture data on init. 
 	 */
 	err = amc_module_init();
 	if (err) {
-		char *e_msg = "Could not initialize the AMC module";
-		LOG_ERR("%s (%d)", log_strdup(e_msg), err);
-		nf_app_error(ERR_AMC, err, e_msg, strlen(e_msg));
+		LOG_ERR("Could not initialize the AMC module (%d)", err);
+		nf_app_error(ERR_AMC, err, NULL, 0);
 	}
 
 	/* Once EVERYTHING is initialized correctly and we get connection to

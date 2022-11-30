@@ -3,13 +3,12 @@
 if LOG
 
 menu "Event options"
-
 comment "Initially logged events"
 
-config LOG_MODULE_STATE_EVENT
-	bool "Module state event"
+config LOG_ERROR_EVENT
+	bool "Error status event"
 	default y
-
+	
 endmenu
 
 endif
