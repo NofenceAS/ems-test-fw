@@ -12,4 +12,8 @@ config FW_UPGRADE_HOST_LEN
 config FW_LOG_DFU_STATUS_EVENT
 	bool "Log DFU FW event"
 	default n
+
+config FW_LOG_DFU_START_EVENT
+	bool "Log DFU FW event"
+	default n
 endmenu

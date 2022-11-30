@@ -1,43 +1,43 @@
 #include "cellular_controller_events.h"
 
 EVENT_TYPE_DEFINE(cellular_ack_event,      /* Unique event name. */
-                  true,              /* Event logged by default. */
+                  false,              /* Event logged by default. */
                   NULL,  /* Callback Function. */
                   NULL);             /* No event info provided. */
 
 
 
 EVENT_TYPE_DEFINE(cellular_proto_in_event,
-                  true,
+                  false,
                   NULL,
                   NULL);
 
 EVENT_TYPE_DEFINE(cellular_error_event,
-                  true,
+                  false,
                   NULL,
                   NULL);
 
 EVENT_TYPE_DEFINE(connection_state_event,
-		  true,
+		  false,
 		  NULL,
 		  NULL);
 
 EVENT_TYPE_DEFINE(modem_state,
-		  true,
+		  false,
 		  NULL,
 		  NULL);
 
 EVENT_TYPE_DEFINE(free_message_mem_event,
-		  true,
+		  false,
 		  NULL,
 		  NULL);
 
 EVENT_TYPE_DEFINE(gsm_info_event,
-		  true,
+		  false,
 		  NULL,
 		  NULL);
 
 EVENT_TYPE_DEFINE(request_gsm_info_event,
-		  true,
+		  false,
 		  NULL,
 		  NULL);

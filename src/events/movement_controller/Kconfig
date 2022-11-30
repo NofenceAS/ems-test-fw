@@ -3,11 +3,10 @@
 if LOG
 
 menu "Event options"
-
 comment "Initially logged events"
 
-config LOG_MODULE_STATE_EVENT
-	bool "Module state event"
+config LOG_MOVEMENT_EVENT
+	bool "Movement status event"
 	default y
 
 endmenu

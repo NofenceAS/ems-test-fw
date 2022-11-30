@@ -63,5 +63,5 @@ static int log_sound_set_warn_freq_event(const struct event_header *eh,
 			event->freq);
 }
 
-EVENT_TYPE_DEFINE(sound_set_warn_freq_event, true,
+EVENT_TYPE_DEFINE(sound_set_warn_freq_event, IS_ENABLED(CONFIG_LOG_SOUND_EVENT),
 		  log_sound_set_warn_freq_event, NULL);

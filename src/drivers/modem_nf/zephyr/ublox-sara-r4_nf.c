@@ -1248,8 +1248,7 @@ static void modem_rssi_query_work(struct k_work *work)
 			     ARRAY_SIZE(cmds), send_cmd, &mdata.sem_response,
 			     MDM_AT_CMD_TIMEOUT);
 	if (ret < 0) {
-		char *e_msg = "AT+C[E]SQ";
-		LOG_ERR("%s ret:%d", log_strdup(e_msg), ret);
+		LOG_ERR("AT+C[E]SQ ret:%d", ret);
 	}
 
 #if defined(CONFIG_MODEM_CELL_INFO)
@@ -1301,8 +1300,7 @@ static void modem_rssi_query_work(struct k_work *work)
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, send_cmd,
 			     &mdata.sem_response, K_SECONDS(1));
 	if (ret < 0) {
-		char *e_msg = "AT+C[E]SQ";
-		LOG_ERR("%s ret:%d", log_strdup(e_msg), ret);
+		LOG_ERR("AT+C[E]SQ ret:%d", ret);
 	}
 
 #if defined(CONFIG_MODEM_CELL_INFO)
@@ -1525,8 +1523,7 @@ restart:
 	}
 
 	if (ret < 0) {
-		char *e_msg = "AT+COPS";
-		LOG_ERR("%s ret:%d", log_strdup(e_msg), ret);
+		LOG_ERR("AT+COPS ret:%d", ret);
 		goto error;
 	}
 	k_sleep(K_MSEC(50));
