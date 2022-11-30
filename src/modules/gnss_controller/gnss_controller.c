@@ -198,7 +198,8 @@ static _Noreturn void publish_gnss_data(void *ctx)
 			EVENT_SUBMIT(new_data);
 			initialized = true;
 		} else {
-			LOG_INF("GNSS lastfix timestamp: %d >= %d", gnss_data_buffer.lastfix.unix_timestamp, last_time_stamp);
+			LOG_INF("GNSS data not published, sem_take=%d, ts_ok=%s, initialized=%d, current_mode=%d", 
+					sem, (gnss_data_buffer.lastfix.unix_timestamp >= last_time_stamp ? "true" : "false"), initialized, current_mode);
 			last_time_stamp = 0;
 			if (initialized && current_mode != GNSSMODE_INACTIVE) {
 				gnss_timed_out();
