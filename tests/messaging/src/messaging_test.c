@@ -58,18 +58,18 @@ void test_init(void)
 	EVENT_SUBMIT(ev);
 
 	/* Init UID */
-	ztest_returns_value(stg_config_u32_read, 0);
+	ztest_returns_value(stg_config_u32_read, -1);
 
 	/* Poll Req. w/ boot parameters */
 	ztest_returns_value(date_time_now, 0); //Protobuf header
 	ztest_returns_value(stg_config_u16_read, 0);
-	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_returns_value(stg_config_u16_read, -1);
 	ztest_returns_value(stg_config_u16_read, 0);
 	ztest_returns_value(stg_config_blob_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0);
 	ztest_returns_value(stg_config_u16_read, 0);
-	ztest_returns_value(stg_config_u8_read, 0);
-	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_read, -1);
+	ztest_returns_value(stg_config_u8_read, -1);
 	ztest_returns_value(stg_config_u8_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0); //Boot reason
@@ -131,21 +131,7 @@ void test_init(void)
 	zassert_false(m_latest_proto_msg.m.poll_message_req.versionInfo.has_ulNRF52SoftDeviceVersion, 
 		      "");
 
-	k_sleep(K_SECONDS(5));
-
-	/* Confirm that only the poll request was sent during initialization even with status updates
-	 * such as CollarMode, CollarStatus and FenceStatus are received by the messaging module */
-	zassert_equal(msg_count, 1, "");
-
-	/* Confirm that status messages are now sent after the initial updates are done */
-	ztest_returns_value(date_time_now, 0);
-	ztest_returns_value(stg_write_log_data, 0);
-	ztest_returns_value(stg_read_log_data, 0);
-	ztest_returns_value(stg_log_pointing_to_last, false);
-
-	struct update_collar_status *collar_evt = new_update_collar_status();
-	collar_evt->collar_status = CollarStatus_Stuck;
-	EVENT_SUBMIT(collar_evt);
+	zassert_equal(m_latest_proto_msg.header.ulId, 1, "");
 
 	/* Verify that seq message is NOT sent. Periodic seq message is scheduled after 30 minutes 
 	 * and should not send messages before receiving the initial poll response from the server- 
