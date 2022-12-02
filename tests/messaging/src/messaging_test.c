@@ -57,18 +57,18 @@ void test_init(void)
 	EVENT_SUBMIT(ev);
 
 	/* Init UID */
-	ztest_returns_value(stg_config_u32_read, 0);
+	ztest_returns_value(stg_config_u32_read, -1);
 
 	/* Poll Req. w/ boot parameters */
 	ztest_returns_value(date_time_now, 0); //Protobuf header
 	ztest_returns_value(stg_config_u16_read, 0);
-	ztest_returns_value(stg_config_u16_read, 0);
+	ztest_returns_value(stg_config_u16_read, -1);
 	ztest_returns_value(stg_config_u16_read, 0);
 	ztest_returns_value(stg_config_blob_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0);
 	ztest_returns_value(stg_config_u16_read, 0);
-	ztest_returns_value(stg_config_u8_read, 0);
-	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_read, -1);
+	ztest_returns_value(stg_config_u8_read, -1);
 	ztest_returns_value(stg_config_u8_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0); //Boot reason
@@ -121,6 +121,8 @@ void test_init(void)
 		      "");
 	zassert_false(m_latest_proto_msg.m.poll_message_req.versionInfo.has_ulNRF52SoftDeviceVersion, 
 		      "");
+
+	zassert_equal(m_latest_proto_msg.header.ulId, 1, "");
 
 	/* Verify that seq message is NOT sent. Periodic seq message is scheduled after 30 minutes 
 	 * and should not store and send messages before receiving the initial poll response from 
