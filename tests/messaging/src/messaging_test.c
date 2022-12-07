@@ -16,6 +16,7 @@
 #include "error_event.h"
 #include "fw_upgrade_events.h"
 #include "embedded.pb.h"
+#include "pwr_event.h"
 
 static K_SEM_DEFINE(msg_out, 0, 1);
 static K_SEM_DEFINE(seq_msg_out, 0, 1);
@@ -74,18 +75,29 @@ void test_init(void)
 	ztest_returns_value(stg_config_u8_read, 0); //Boot reason
 	ztest_returns_value(stg_config_u8_write, 0); //Boot reason
 
+	zassert_false(event_manager_init(), "Error when initializing event manager");
+	zassert_false(messaging_module_init(), "Error when initializing messaging module");
+
 	/* Cache variables for messaging module. */
 	struct gnss_data *ev_gnss = new_gnss_data();
 	EVENT_SUBMIT(ev_gnss);
 
 	struct update_collar_mode *ev_cmode = new_update_collar_mode();
+	ev_cmode->collar_mode = Mode_Fence;
 	EVENT_SUBMIT(ev_cmode);
 
 	struct update_collar_status *ev_cstatus = new_update_collar_status();
+	ev_cstatus->collar_status = CollarStatus_CollarStatus_Normal;
 	EVENT_SUBMIT(ev_cstatus);
 
 	struct update_fence_status *ev_fstatus = new_update_fence_status();
+	ev_fstatus->fence_status = FenceStatus_FenceStatus_Normal;
 	EVENT_SUBMIT(ev_fstatus);
+
+	struct pwr_status_event *pwr_evt = new_pwr_status_event();
+	pwr_evt->pwr_state = PWR_NORMAL;
+	pwr_evt->battery_mv = 4000;
+	EVENT_SUBMIT(pwr_evt);
 
 	struct update_fence_version *ev_fversion = new_update_fence_version();
 	EVENT_SUBMIT(ev_fversion);
@@ -95,9 +107,6 @@ void test_init(void)
 
 	struct gsm_info_event *ev_gsm = new_gsm_info_event();
 	EVENT_SUBMIT(ev_gsm);
-
-	zassert_false(event_manager_init(), "Error when initializing event manager");
-	zassert_false(messaging_module_init(), "Error when initializing messaging module");
 
 	/* Verify that poll request is sent */
 	k_sem_reset(&msg_out);
@@ -122,9 +131,25 @@ void test_init(void)
 	zassert_false(m_latest_proto_msg.m.poll_message_req.versionInfo.has_ulNRF52SoftDeviceVersion, 
 		      "");
 
+	k_sleep(K_SECONDS(5));
+
+	/* Confirm that only the poll request was sent during initialization even with status updates
+	 * such as CollarMode, CollarStatus and FenceStatus are received by the messaging module */
+	zassert_equal(msg_count, 1, "");
+
+	/* Confirm that status messages are now sent after the initial updates are done */
+	ztest_returns_value(date_time_now, 0);
+	ztest_returns_value(stg_write_log_data, 0);
+	ztest_returns_value(stg_read_log_data, 0);
+	ztest_returns_value(stg_log_pointing_to_last, false);
+
+	struct update_collar_status *collar_evt = new_update_collar_status();
+	collar_evt->collar_status = CollarStatus_Stuck;
+	EVENT_SUBMIT(collar_evt);
+
 	/* Verify that seq message is NOT sent. Periodic seq message is scheduled after 30 minutes 
-	 * and should not store and send messages before receiving the initial poll response from 
-	 * the server- which is does not get in this test case */
+	 * and should not send messages before receiving the initial poll response from the server- 
+	 * which is does not get in this test case */
 	k_sleep(K_SECONDS(30));
 }
 
