@@ -4,6 +4,8 @@
 
 void test_zone_calc(void)
 {
+	zone_set(NO_ZONE);
+	
 	gnss_t gnss_data = {
 		.latest = {
 			.pvt_flags = 1,

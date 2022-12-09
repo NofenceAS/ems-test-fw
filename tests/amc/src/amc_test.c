@@ -16,10 +16,13 @@
 #include "amc_test_common.h"
 #include "embedded.pb.h"
 #include "gnss_controller_events.h"
+#include "ble_beacon_event.h"
+#include "ble_ctrl_event.h"
 
 static K_SEM_DEFINE(fence_sema, 0, 1);
 static K_SEM_DEFINE(error_sema, 0, 1);
 static K_SEM_DEFINE(my_gnss_mode_sem, 0, 1);
+static K_SEM_DEFINE(sem_beacon, 0, 1);
 
 static gnss_mode_t current_gnss_mode = GNSSMODE_INACTIVE;
 
@@ -244,9 +247,9 @@ void test_update_pasture_stg_fail(void)
 }
 
 
-static void update_position (int delta_lat, int delta_lon) {
-	static int32_t my_lat = 1000;
-	static int32_t my_lon = 0;
+static void update_position (int32_t origin_lat, int32_t origin_lon, int delta_lat, int delta_lon) {
+	int32_t my_lat = origin_lat;
+	int32_t my_lon = origin_lon;
 
 	my_lat += delta_lat;
 	my_lon += delta_lon;
@@ -313,10 +316,63 @@ void test_update_pasture_integration(void)
 	EVENT_SUBMIT(event);
 	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)), "");
 
-	for (int i=0; i<100; i++) {
-		update_position(1, 1);
-		k_sleep(K_MSEC(250));
-	}
+	// for (int i=0; i<100; i++) {
+	// 	update_position(1, 1);
+	// 	k_sleep(K_MSEC(250));
+	// }
+}
+
+void test_warning_beacon_scan(void)
+{
+	/*
+	 * Test that beacon scanning is triggered when the AMC zone is updated from a non-warning zone
+	 * to a prewarn (PREWARN_ZONE)- or warn zone (WARN_ZONE).
+	 */
+	pasture_t pasture = {
+		.m.ul_total_fences = 1,
+		.m.ul_fence_def_version = 1337,
+		.m.l_origin_lat = 100000000,
+		.m.l_origin_lon = 100000000,
+		.m.us_k_lat = 10000,
+		.m.us_k_lon = 10000,	
+	};
+	pasture.fences[0].m.e_fence_type = FenceDefinitionMessage_FenceType_Normal;
+	pasture.fences[0].m.us_id = 0;
+	pasture.fences[0].m.fence_no = 0;
+
+	fence_coordinate_t points1[] = {
+		{ .s_x_dm = 100, .s_y_dm = -10 },
+		{ .s_x_dm = 100, .s_y_dm = 10 },
+		{ .s_x_dm = -100, .s_y_dm = 10 },
+		{ .s_x_dm = -100, .s_y_dm = -10 },
+		{ .s_x_dm = 100, .s_y_dm = -10 },
+	};
+	pasture.fences[0].m.n_points = sizeof(points1) / sizeof(points1[0]);
+	memcpy(pasture.fences[0].coordinates, points1, sizeof(points1));
+	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)), "");
+
+	/* Verify that no beacon scan event is sent for NO_ZONE */
+	zone_set(NO_ZONE);
+	k_sem_reset(&sem_beacon);
+
+	struct ble_beacon_event *evt = new_ble_beacon_event();
+	evt->status = BEACON_STATUS_REGION_FAR;
+	EVENT_SUBMIT(evt); //Sending beacon event to trigger a states update in AMC.
+
+	zassert_not_equal(k_sem_take(&sem_beacon, K_SECONDS(5)), 0, "");
+
+	/* Verify that beacon scan evnet IS sent when moving from a non-warning zone to PREWARN_ZONE */
+	k_sem_reset(&sem_beacon);
+	update_position(pasture.m.l_origin_lat, pasture.m.l_origin_lon, 0, 0);
+
+	zassert_equal(k_sem_take(&sem_beacon, K_SECONDS(5)), 0, "");
+
+	/* Verify that beacon scan evnet IS sent when moving from a non-warning zone to WARN_ZONE */
+	zone_set(CAUTION_ZONE);
+	k_sem_reset(&sem_beacon);
+	update_position(pasture.m.l_origin_lat, pasture.m.l_origin_lon, 100, 100); //warn
+	
+	zassert_equal(k_sem_take(&sem_beacon, K_SECONDS(5)), 0, "");
 }
 
 static bool event_handler(const struct event_header *eh)
@@ -338,6 +394,19 @@ static bool event_handler(const struct event_header *eh)
 		struct gnss_set_mode_event *ev = cast_gnss_set_mode_event(eh);
 		current_gnss_mode = ev->mode;
 		k_sem_give(&my_gnss_mode_sem);
+	}
+	if (is_ble_ctrl_event(eh)) {
+		const struct ble_ctrl_event *event = cast_ble_ctrl_event(eh);
+		switch (event->cmd) {
+			case BLE_CTRL_SCAN_START: {
+				k_sem_give(&sem_beacon);
+				break;
+			}
+			default: {
+				break;
+			}
+		}
+		return false;
 	}
 	return false;
 }
@@ -378,8 +447,9 @@ void test_main(void)
 			ztest_unit_test(test_empty_fence),
 			ztest_unit_test(test_update_pasture_teach_mode),
 			ztest_unit_test(test_update_pasture_stg_fail),
-			 ztest_unit_test(test_update_pasture),
-			 ztest_unit_test(test_propagate_movement_out_event));
+			ztest_unit_test(test_update_pasture),
+			ztest_unit_test(test_warning_beacon_scan),
+			ztest_unit_test(test_propagate_movement_out_event));
 	ztest_run_test_suite(amc_tests);
 
 	ztest_test_suite(amc_dist_tests,
@@ -425,3 +495,4 @@ EVENT_LISTENER(test_main, event_handler);
 EVENT_SUBSCRIBE(test_main, update_fence_status);
 EVENT_SUBSCRIBE(test_main, error_event);
 EVENT_SUBSCRIBE(test_main, gnss_set_mode_event);
+EVENT_SUBSCRIBE(test_main, ble_ctrl_event);
