@@ -56,9 +56,6 @@ void test_init_and_update_pasture(void)
 	/* update_pasture_from_stg */
 	ztest_returns_value(stg_read_pasture_data, 0);
 
-	/* Cached keep mode. */
-	ztest_returns_value(stg_config_u8_read, 0);
-
 	zassert_false(amc_module_init(), "Error when initializing AMC module");
 
 	/* Check that fence status did not change to NotStarted for AMC init.
