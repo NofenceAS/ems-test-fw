@@ -56,6 +56,20 @@ void assert_post_action(const char *file, unsigned int line)
 	printk("assert_post_action - file: %s (line: %u)\n", file, line);
 }
 
+/* Checik if ble_module_init fails sucessfully */
+void test_init_error(void)
+{
+	ztest_returns_value(stg_config_u32_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(bt_enable, -2);
+
+	zassert_equal(event_manager_init(), 0, "Error when initializing event manager");
+	zassert_equal(ble_module_init(), -2, "Error when initializing ble module");
+}
+
 /* TODO: mock away the scan callback function to be able to test more
  * realistic situations with multiple beacons with random distances to the
  * collar. */
@@ -75,27 +89,8 @@ void test_init_ok(void)
 	ztest_returns_value(bt_le_adv_start, 0);
 	ztest_returns_value(bt_le_scan_start, 0);
 
-	zassert_equal(event_manager_init(), 0,
-		      "Error when initializing event manager");
-
-	zassert_equal(ble_module_init(), 0,
-		      "Error when initializing ble module");
-}
-
-/* Checik if ble_module_init fails sucessfully */
-void test_init_error(void)
-{
-	ztest_returns_value(stg_config_u32_read, 0);
-	ztest_returns_value(stg_config_u8_read, 0);
-	ztest_returns_value(stg_config_u8_read, 0);
-	ztest_returns_value(stg_config_u8_read, 0);
-	ztest_returns_value(stg_config_u8_read, 0);
-	ztest_returns_value(bt_enable, -2);
-	zassert_equal(event_manager_init(), 0,
-		      "Error when initializing event manager");
-
-	zassert_equal(ble_module_init(), -2,
-		      "Error when initializing ble module");
+	zassert_equal(event_manager_init(), 0, "Error when initializing event manager");
+	zassert_equal(ble_module_init(), 0, "Error when initializing ble module");
 }
 
 /**
@@ -659,7 +654,7 @@ void test_ble_ctrl_event_error_flag(void)
 /**
  * @brief Submit collar mode change, and verify ble advertisement update
  */
-void test_ble_ctrl_event_collar_mode(void)
+void test_ble_adv_collar_mode(void)
 {
 	/* Safety check, is sempahore already given? */
 	k_sem_take(&ble_collar_mode_sem, K_NO_WAIT);
@@ -682,10 +677,9 @@ void test_ble_ctrl_event_collar_mode(void)
 /**
  * @brief Submit collar status change, and verify ble advertisement update
  */
-void test_ble_ctrl_event_collar_status(void)
+void test_ble_adv_collar_status(void)
 {
-	/* Safety check, is sempahore already given? */
-	k_sem_take(&ble_collar_status_sem, K_NO_WAIT);
+	k_sem_reset(&ble_collar_status_sem);
 
 	/* Update collar status */
 	ztest_returns_value(bt_le_adv_update_data, 0);
@@ -694,22 +688,110 @@ void test_ble_ctrl_event_collar_status(void)
 	EVENT_SUBMIT(evt);
 
 	/* Wait for event to be processed */
-	zassert_equal(k_sem_take(&ble_collar_status_sem, K_SECONDS(10)), 0,
+	zassert_equal(k_sem_take(&ble_collar_status_sem, K_SECONDS(10)), 0, 
 		      "Test status event execution hanged.");
 
 	/* Verify advertisement data */
-	zassert_true(
-		bt_mock_is_collar_status_adv_data_correct(CollarStatus_Stuck),
-		"Adv collar status not correct");
+	zassert_true(bt_mock_is_collar_status_adv_data_correct(CollarStatus_Stuck), 
+		     "Adv collar status not correct");
+}
+
+void test_ble_beacon_scan_collar_status(void)
+{
+	/*
+	 * Test that the BLE ..
+	 *  NB! This assumes a 1 minute beacon scan interval.
+	 */
+	static int beacon_scan_interval_sec = 60;
+	k_sem_reset(&ble_collar_status_sem);
+
+	/* 
+	 * Check that beacon scanning starts as normal at regular intervals. 
+	 */
+	ztest_returns_value(bt_le_scan_stop, 0);
+
+	/* Update collars status to "CollarStatus_CollarStatus_Normal" */
+	ztest_returns_value(bt_le_adv_update_data, 0);
+	struct update_collar_status *evt = new_update_collar_status();
+	evt->collar_status = CollarStatus_CollarStatus_Normal;
+	EVENT_SUBMIT(evt);
+
+	zassert_equal(k_sem_take(&ble_collar_status_sem, K_SECONDS(5)), 0, "");
+
+	/* Wait for the next beacon scan interval- this should do beacon scanning */
+	ztest_returns_value(bt_le_scan_start, 0);
+	ztest_returns_value(bt_le_scan_stop, 0);
+	k_sleep(K_SECONDS(beacon_scan_interval_sec + 5));
+
+	/* 
+	 * Check that beacon scanning do NOT start at regular intervals when collar status is in
+	 * "CollarStatus_OffAnimal", "CollarStatus_PowerOff" and "CollarStatus_Sleep".
+	 * NB! This test will fail on missing return values if beacon scanning starts.
+	 */
+
+	/* 1) Collar status = "CollarStatus_OffAnimal" */
+	k_sem_reset(&ble_collar_status_sem);
+
+	ztest_returns_value(bt_le_adv_update_data, 0);
+	evt = new_update_collar_status();
+	evt->collar_status = CollarStatus_OffAnimal;
+	EVENT_SUBMIT(evt);
+
+	zassert_equal(k_sem_take(&ble_collar_status_sem, K_SECONDS(5)), 0, "");
+
+	/* Wait for the next beacon scan interval */
+	k_sleep(K_SECONDS(beacon_scan_interval_sec + 5));
+
+	/* 2) Collar status = "CollarStatus_PowerOff" */
+	k_sem_reset(&ble_collar_status_sem);
+
+	ztest_returns_value(bt_le_adv_update_data, 0);
+	evt = new_update_collar_status();
+	evt->collar_status = CollarStatus_PowerOff;
+	EVENT_SUBMIT(evt);
+
+	zassert_equal(k_sem_take(&ble_collar_status_sem, K_SECONDS(5)), 0, "");
+
+	/* Wait for the next beacon scan interval */
+	k_sleep(K_SECONDS(beacon_scan_interval_sec + 5));
+
+	/* 3) Collar status = "CollarStatus_Sleep" */
+	k_sem_reset(&ble_collar_status_sem);
+
+	ztest_returns_value(bt_le_adv_update_data, 0);
+	evt = new_update_collar_status();
+	evt->collar_status = CollarStatus_Sleep;
+	EVENT_SUBMIT(evt);
+
+	zassert_equal(k_sem_take(&ble_collar_status_sem, K_SECONDS(5)), 0, "");
+
+	/* Wait for the next beacon scan interval */
+	k_sleep(K_SECONDS(beacon_scan_interval_sec + 5));
+
+	/* 
+	 * Check that beacon scanning start immediately when collar status goes from 
+	 * "CollarStatus_OffAnimal", "CollarStatus_PowerOff" or "CollarStatus_Sleep" to normal.
+	 */
+	k_sem_reset(&ble_collar_status_sem);
+
+	ztest_returns_value(bt_le_adv_update_data, 0);
+	evt = new_update_collar_status();
+	evt->collar_status = CollarStatus_CollarStatus_Normal;
+	EVENT_SUBMIT(evt);
+
+	zassert_equal(k_sem_take(&ble_collar_status_sem, K_SECONDS(5)), 0, "");
+
+	/* Wait for the next beacon scan interval- this should do beacon scanning */
+	ztest_returns_value(bt_le_scan_start, 0);
+	k_sleep(K_SECONDS(5));
 }
 
 /**
  * @brief Submit fence status change, and verify ble advertisement update
  */
-void test_ble_ctrl_event_fence_status(void)
+void test_ble_adv_fence_status(void)
 {
-	/* Safety check, is sempahore already given? */
-	k_sem_take(&ble_fence_status_sem, K_NO_WAIT);
+	k_sem_reset(&ble_fence_status_sem);
 
 	/* Update fence status */
 	ztest_returns_value(bt_le_adv_update_data, 0);
@@ -730,10 +812,9 @@ void test_ble_ctrl_event_fence_status(void)
 /**
  * @brief Submit fence version change, and verify ble advertisement update
  */
-void test_ble_ctrl_event_fence_def_status(void)
+void test_ble_adv_fence_def_status(void)
 {
-	/* Safety check, is sempahore already given? */
-	k_sem_take(&ble_fence_def_ver_sem, K_NO_WAIT);
+	k_sem_reset(&ble_fence_def_ver_sem);
 
 	/* Update fence def version */
 	ztest_returns_value(bt_le_adv_update_data, 0); //fence_def_ver_update()
@@ -759,7 +840,7 @@ void test_ble_ctrl_event_fence_def_status(void)
 /**
  * @brief Submit invalid fence defenition version, and verify ble advertisement update
  */
-void test_ble_ctrl_event_fence_def_status_invalid(void)
+void test_ble_adv_fence_def_status_invalid(void)
 {
 	/* Safety check, is sempahore already given? */
 	k_sem_take(&ble_fence_def_ver_sem, K_NO_WAIT);
@@ -786,7 +867,7 @@ void test_ble_ctrl_event_fence_def_status_invalid(void)
 		"Adv valid pasture not correct");
 }
 
-void test_ble_ctrl_event_fence_def_status_no_pasture(void)
+void test_ble_adv_fence_def_status_no_pasture(void)
 {
 	/* Safety check, is sempahore already given? */
 	k_sem_take(&ble_fence_def_ver_sem, K_NO_WAIT);
@@ -816,9 +897,9 @@ void test_ble_ctrl_event_fence_def_status_no_pasture(void)
 /* Test case main entry */
 void test_main(void)
 {
-	ztest_test_suite(
-		test_bluetooth, ztest_unit_test(test_init_ok),
+	ztest_test_suite(test_bluetooth,
 		ztest_unit_test(test_init_error),
+		ztest_unit_test(test_init_ok),
 		ztest_unit_test(test_ble_beacon_scanner),
 		ztest_unit_test(test_calculation_beacon_scanner),
 		ztest_unit_test(test_beacon_shortest_dist),
@@ -830,13 +911,14 @@ void test_main(void)
 		ztest_unit_test(test_ble_data_event),
 		ztest_unit_test(test_ble_ctrl_event_battery),
 		ztest_unit_test(test_ble_ctrl_event_error_flag),
-		ztest_unit_test(test_ble_ctrl_event_collar_mode),
-		ztest_unit_test(test_ble_ctrl_event_collar_status),
-		ztest_unit_test(test_ble_ctrl_event_fence_status),
-		ztest_unit_test(test_ble_ctrl_event_fence_def_status),
-		ztest_unit_test(test_ble_ctrl_event_fence_def_status_invalid),
-		ztest_unit_test(
-			test_ble_ctrl_event_fence_def_status_no_pasture));
+		ztest_unit_test(test_ble_adv_collar_mode),
+		ztest_unit_test(test_ble_adv_collar_status),
+		ztest_unit_test(test_ble_beacon_scan_collar_status),
+		ztest_unit_test(test_ble_adv_fence_status),
+		ztest_unit_test(test_ble_adv_fence_def_status),
+		ztest_unit_test(test_ble_adv_fence_def_status_invalid),
+		ztest_unit_test(test_ble_adv_fence_def_status_no_pasture));
+
 	ztest_run_test_suite(test_bluetooth);
 }
 
