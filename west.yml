@@ -11,6 +11,48 @@ manifest:
       remote: nofence
       revision: v1.8.0-nf1
       import: true
+    - name: zephyr
+      repo-path: sdk-zephyr
+      remote: nofence
+      revision: v2.7.0-ncs1-nf02
+      import:
+        # In addition to the zephyr repository itself, NCS also
+        # imports the contents of zephyr/west.yml at the above
+        # revision. Only the projects explicitly named in the
+        # following allowlist are imported.
+        #
+        # Note that the zephyr west extensions (like 'build', 'flash',
+        # 'debug', etc.) are automatically provided by this import, so
+        # there's no need to add a redundant west-commands: key for
+        # the zephyr project.
+        #
+        # Please keep this list sorted alphabetically.
+        name-allowlist:
+          - TraceRecorderSource
+          - canopennode
+          - civetweb
+          - cmsis
+          - edtt
+          - fatfs
+          - hal_nordic
+          - hal_st
+          - libmetal
+          - littlefs
+          - loramac-node
+          - lvgl
+          - lz4
+          - mbedtls
+          - mcumgr
+          - mipi-sys-t
+          - nanopb
+          - net-tools
+          - nrf_hw_models
+          - open-amp
+          - openthread
+          - segger
+          - tinycbor
+          - tinycrypt
+
     - name: collar-protocol
       remote: nofence
       repo-path: collar-protocol
