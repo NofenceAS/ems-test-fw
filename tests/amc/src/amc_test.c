@@ -141,7 +141,10 @@ void test_update_pasture(void)
 	/* update_pasture_from_stg() */
 	ztest_returns_value(stg_read_pasture_data, 0);
 
-	/* Read keep mode from storage */
+	/* Read keep mode from storage and set teach mode */
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u32_read, 0);
+	ztest_returns_value(stg_config_u16_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0);
 
 	/* ..force_fence_status() */
