@@ -18,15 +18,18 @@
 #include "gnss_controller_events.h"
 #include "ble_beacon_event.h"
 #include "ble_ctrl_event.h"
+#include "amc_events.h"
 
 static K_SEM_DEFINE(fence_sema, 0, 1);
 static K_SEM_DEFINE(error_sema, 0, 1);
 static K_SEM_DEFINE(my_gnss_mode_sem, 0, 1);
 static K_SEM_DEFINE(sem_beacon, 0, 1);
+static K_SEM_DEFINE(sem_zone_change, 0, 1);
 
 static gnss_mode_t current_gnss_mode = GNSSMODE_INACTIVE;
 
 static FenceStatus m_current_fence_status = FenceStatus_FenceStatus_UNKNOWN;
+static amc_zone_t m_zone = NO_ZONE;
 
 /* Provide custom assert post action handler to handle the assertion on OOM
  * error in Event Manager.
@@ -372,6 +375,61 @@ void test_warning_beacon_scan(void)
 	zassert_equal(k_sem_take(&sem_beacon, K_SECONDS(5)), 0, "");
 }
 
+void test_zone_update_evt(void)
+{
+	/*
+	 * Test that AMC zone changes sends the appropriate zone update notifications.
+	 */
+
+	/* Set zone to NO_ZONE and verify that a zone change event is sent/received with the correct 
+	 * zone */
+	k_sem_reset(&sem_zone_change);
+	zone_set(NO_ZONE);
+
+	zassert_equal(k_sem_take(&sem_zone_change, K_SECONDS(5)), 0, "");
+	zassert_equal(m_zone, NO_ZONE, "");
+	
+	/* Set zone to NO_ZONE (same as previous sub-test) to make sure an event is NOT sent/received as
+	 * only zone CHANGES are sent. */
+	k_sem_reset(&sem_zone_change);
+	zone_set(NO_ZONE);
+
+	zassert_not_equal(k_sem_take(&sem_zone_change, K_SECONDS(5)), 0, "");
+	zassert_equal(m_zone, NO_ZONE, "");
+
+	/* Set zone to PSM_ZONE and verify that a zone change event is sent/received with the correct 
+	 * zone */
+	k_sem_reset(&sem_zone_change);
+	zone_set(PSM_ZONE);
+
+	zassert_equal(k_sem_take(&sem_zone_change, K_SECONDS(5)), 0, "");
+	zassert_equal(m_zone, PSM_ZONE, "");
+
+	/* Set zone to CAUTION_ZONE and verify that a zone change event is sent/received with the 
+	 * correct zone */
+	k_sem_reset(&sem_zone_change);
+	zone_set(CAUTION_ZONE);
+
+	zassert_equal(k_sem_take(&sem_zone_change, K_SECONDS(5)), 0, "");
+	zassert_equal(m_zone, CAUTION_ZONE, "");
+
+	/* Set zone to WARN_ZONE and verify that a zone change event is sent/received with the correct 
+	 * zone */
+	k_sem_reset(&sem_zone_change);
+	zone_set(WARN_ZONE);
+
+	zassert_equal(k_sem_take(&sem_zone_change, K_SECONDS(5)), 0, "");
+	zassert_equal(m_zone, WARN_ZONE, "");
+
+	/* Set zone to WARN_ZONE + 1 (invalid zone) and verify that a zone change event is NOT 
+	 * sent/received for an invalid zone */
+	k_sem_reset(&sem_zone_change);
+	zone_set(WARN_ZONE + 1);
+
+	zassert_not_equal(k_sem_take(&sem_zone_change, K_SECONDS(5)), 0, "");
+	zassert_equal(m_zone, WARN_ZONE, "");
+}
+
 static bool event_handler(const struct event_header *eh)
 {
 	if (is_update_fence_status(eh)) {
@@ -403,6 +461,12 @@ static bool event_handler(const struct event_header *eh)
 				break;
 			}
 		}
+		return false;
+	}
+	if (is_zone_change(eh)) {
+		const struct zone_change *evt = cast_zone_change(eh);
+		m_zone = evt->zone;
+		k_sem_give(&sem_zone_change);
 		return false;
 	}
 	return false;
@@ -446,6 +510,7 @@ void test_main(void)
 			ztest_unit_test(test_update_pasture_stg_fail),
 			ztest_unit_test(test_update_pasture),
 			ztest_unit_test(test_warning_beacon_scan),
+			ztest_unit_test(test_zone_update_evt),
 			ztest_unit_test(test_propagate_movement_out_event));
 	ztest_run_test_suite(amc_tests);
 
@@ -493,3 +558,4 @@ EVENT_SUBSCRIBE(test_main, update_fence_status);
 EVENT_SUBSCRIBE(test_main, error_event);
 EVENT_SUBSCRIBE(test_main, gnss_set_mode_event);
 EVENT_SUBSCRIBE(test_main, ble_ctrl_event);
+EVENT_SUBSCRIBE(test_main, zone_change);
