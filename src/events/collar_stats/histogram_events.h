@@ -10,6 +10,7 @@ typedef struct collar_histogram{
 	_POSITION_QC_MAX_MIN_MEAN qc_baro_gps_max_mean_min;
 	_HISTOGRAM_CURRENT_PROFILE current_profile;
 	_BATTERY_QC qc_battery;
+	_HISTOGRAM_GNSS_MODES gnss_modes;
 } collar_histogram;
 
 extern struct k_msgq histogram_msgq;
