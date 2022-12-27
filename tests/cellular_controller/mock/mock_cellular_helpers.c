@@ -34,9 +34,9 @@ int reset_modem(void)
 	return ztest_get_return_value();
 }
 
-void stop_tcp(void)
+int stop_tcp(void)
 {
-	return;
+	return 0;
 };
 
 int8_t send_tcp(char *dummy, size_t dummy_len)
