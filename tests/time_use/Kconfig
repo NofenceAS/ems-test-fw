@@ -1,0 +1,23 @@
+
+menu "APPLICATION_CODE"
+    menu "TIMEUSE"
+        rsource "./../../src/modules/time_use/Kconfig"
+    endmenu
+endmenu # APPLICATION CODE
+
+menu "ERROR_HANDLER"
+rsource "./../../src/modules/error_handler/Kconfig"
+endmenu # ERROR_HANDLER
+
+menu "MVMT_CONTROLLER"
+    rsource "./../../src/modules/movement_controller/Kconfig"
+endmenu
+
+menu "ENVIRONMENT"
+rsource "./../../src/modules/environment/Kconfig"
+endmenu # ENVIRONMENT
+
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu

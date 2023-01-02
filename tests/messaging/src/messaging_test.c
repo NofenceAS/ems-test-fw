@@ -226,6 +226,12 @@ void test_send_seq_message_with_preceding_poll_req(void)
 
 	/* Seq message */
 	collar_histogram dummy_histogram;
+	/* Verify transfer of data */
+	dummy_histogram.current_profile.usCC_GNSS_SuperE_Inactive = 1;
+	dummy_histogram.current_profile.usCC_GNSS_SuperE_POT = 2;
+	dummy_histogram.current_profile.usCC_GNSS_SuperE_Tracking = 3;
+	dummy_histogram.current_profile.usCC_GNSS_SuperE_Acquition = 4;
+	dummy_histogram.current_profile.usCC_GNSS_MAX = 5;
 	memset(&dummy_histogram, 1, sizeof(struct collar_histogram));
 	while (k_msgq_put(&histogram_msgq, &dummy_histogram, K_NO_WAIT) != 0) {
 		k_msgq_purge(&histogram_msgq);
