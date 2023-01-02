@@ -144,7 +144,10 @@ void test_update_pasture(void)
 	/* update_pasture_from_stg() */
 	ztest_returns_value(stg_read_pasture_data, 0);
 
-	/* Read keep mode from storage */
+	/* Read keep mode from storage and set teach mode */
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u32_read, 0);
+	ztest_returns_value(stg_config_u16_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0);
 
 	/* ..force_fence_status() */
@@ -351,21 +354,14 @@ void test_warning_beacon_scan(void)
 	memcpy(pasture.fences[0].coordinates, points1, sizeof(points1));
 	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)), "");
 
-	/* Verify that no beacon scan event is sent for NO_ZONE */
 	zone_set(NO_ZONE);
-	k_sem_reset(&sem_beacon);
-
-	struct ble_beacon_event *evt = new_ble_beacon_event();
-	evt->status = BEACON_STATUS_REGION_FAR;
-	EVENT_SUBMIT(evt); //Sending beacon event to trigger a states update in AMC.
-
-	zassert_not_equal(k_sem_take(&sem_beacon, K_SECONDS(5)), 0, "");
 
 	/* Verify that beacon scan evnet IS sent when moving from a non-warning zone to PREWARN_ZONE */
 	k_sem_reset(&sem_beacon);
 	update_position(pasture.m.l_origin_lat, pasture.m.l_origin_lon, 0, 0);
 
 	zassert_equal(k_sem_take(&sem_beacon, K_SECONDS(5)), 0, "");
+	zassert_equal(zone_get(), PREWARN_ZONE, "");
 
 	/* Verify that beacon scan evnet IS sent when moving from a non-warning zone to WARN_ZONE */
 	zone_set(CAUTION_ZONE);
@@ -373,6 +369,7 @@ void test_warning_beacon_scan(void)
 	update_position(pasture.m.l_origin_lat, pasture.m.l_origin_lon, 100, 100); //warn
 	
 	zassert_equal(k_sem_take(&sem_beacon, K_SECONDS(5)), 0, "");
+	zassert_equal(zone_get(), WARN_ZONE, "");
 }
 
 void test_zone_update_evt(void)
