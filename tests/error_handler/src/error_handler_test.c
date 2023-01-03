@@ -25,8 +25,7 @@ void assert_post_action(const char *file, unsigned int line)
 
 void test_init(void)
 {
-	zassert_false(event_manager_init(),
-		      "Error when initializing event manager");
+	zassert_false(event_manager_init(), "Error when initializing event manager");
 }
 
 void test_normal_error_message(void)
@@ -79,51 +78,37 @@ static bool event_handler(const struct event_header *eh)
 	if (is_error_event(eh)) {
 		struct error_event *ev = cast_error_event(eh);
 		if (cur_id == TEST_EVENT_1) {
-			zassert_equal(ev->sender, ERR_FW_UPGRADE,
-				      "Mismatched sender.");
+			zassert_equal(ev->sender, ERR_FW_UPGRADE, "Mismatched sender.");
 
-			zassert_equal(ev->severity, ERR_SEVERITY_ERROR,
-				      "Mismatched severity.");
+			zassert_equal(ev->severity, ERR_SEVERITY_ERROR, "Mismatched severity.");
 
-			zassert_equal(ev->code, -ENOMEM,
-				      "Mismatched error code.");
+			zassert_equal(ev->code, -ENOMEM, "Mismatched error code.");
 
-			char *expected_message =
-				"Simulated fw normal error. Overflow.";
+			char *expected_message = "Simulated fw normal error. Overflow.";
 
-			zassert_equal(ev->dyndata.size,
-				      strlen(expected_message),
+			zassert_equal(ev->dyndata.size, strlen(expected_message),
 				      "Mismatched message length.");
 
-			zassert_mem_equal(ev->dyndata.data, expected_message,
-					  ev->dyndata.size,
+			zassert_mem_equal(ev->dyndata.data, expected_message, ev->dyndata.size,
 					  "Mismatched user message.");
 			cur_id = TEST_EVENT_2;
 		} else if (cur_id == TEST_EVENT_2) {
-			zassert_equal(ev->sender, ERR_FW_UPGRADE,
-				      "Mismatched sender.");
+			zassert_equal(ev->sender, ERR_FW_UPGRADE, "Mismatched sender.");
 
-			zassert_equal(ev->severity, ERR_SEVERITY_FATAL,
-				      "Mismatched severity.");
+			zassert_equal(ev->severity, ERR_SEVERITY_FATAL, "Mismatched severity.");
 
-			zassert_equal(ev->code, -ENODATA,
-				      "Mismatched error code.");
+			zassert_equal(ev->code, -ENODATA, "Mismatched error code.");
 
-			zassert_equal(ev->dyndata.size, 0,
-				      "Message not empty.");
+			zassert_equal(ev->dyndata.size, 0, "Message not empty.");
 			cur_id = TEST_EVENT_3;
 		} else if (cur_id == TEST_EVENT_3) {
-			zassert_equal(ev->sender, ERR_FW_UPGRADE,
-				      "Mismatched sender.");
+			zassert_equal(ev->sender, ERR_FW_UPGRADE, "Mismatched sender.");
 
-			zassert_equal(ev->severity, ERR_SEVERITY_WARNING,
-				      "Mismatched severity.");
+			zassert_equal(ev->severity, ERR_SEVERITY_WARNING, "Mismatched severity.");
 
-			zassert_equal(ev->code, -EINVAL,
-				      "Mismatched error code.");
+			zassert_equal(ev->code, -EINVAL, "Mismatched error code.");
 
-			zassert_equal(ev->dyndata.size, 0,
-				      "Message not empty.");
+			zassert_equal(ev->dyndata.size, 0, "Message not empty.");
 		}
 		k_sem_give(&error_event_sem);
 		return false;

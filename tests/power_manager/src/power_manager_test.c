@@ -11,10 +11,8 @@
 #include "error_event.h"
 
 #define ADC_DEVICE_NAME DT_LABEL(DT_INST(0, zephyr_adc_emul))
-#define ADC_REF_INTERNAL_MV                                                    \
-	DT_PROP(DT_INST(0, zephyr_adc_emul), ref_internal_mv)
-#define ADC_REF_EXTERNAL1_MV                                                   \
-	DT_PROP(DT_INST(0, zephyr_adc_emul), ref_external1_mv)
+#define ADC_REF_INTERNAL_MV DT_PROP(DT_INST(0, zephyr_adc_emul), ref_internal_mv)
+#define ADC_REF_EXTERNAL1_MV DT_PROP(DT_INST(0, zephyr_adc_emul), ref_external1_mv)
 #define ADC_RESOLUTION 14
 #define ADC_ACQUISITION_TIME ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID 0
@@ -47,8 +45,7 @@ void assert_post_action(const char *file, unsigned int line)
 
 void test_event_manager_init(void)
 {
-	zassert_false(event_manager_init(),
-		      "Error when initializing event manager");
+	zassert_false(event_manager_init(), "Error when initializing event manager");
 }
 
 void test_pwr_module_init(void)
@@ -59,12 +56,10 @@ void test_pwr_module_init(void)
 	const struct device *adc_dev = get_adc_device();
 
 	/* ADC emulator-specific setup */
-	int ret =
-		adc_emul_const_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_mv);
+	int ret = adc_emul_const_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_mv);
 	zassert_ok(ret, "adc_emul_const_value_set() failed with code %d", ret);
 
-	zassert_equal(pwr_module_init(), 0,
-		      "Error when initializing pwr module");
+	zassert_equal(pwr_module_init(), 0, "Error when initializing pwr module");
 
 	/* Normal mode is initialized as default */
 	int err = k_sem_take(&normal_pwr_event_sem, K_SECONDS(3));
@@ -79,8 +74,7 @@ void test_pwr_module_normal(void)
 	const struct device *adc_dev = get_adc_device();
 
 	/* ADC emulator-specific setup */
-	int ret =
-		adc_emul_const_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_mv);
+	int ret = adc_emul_const_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_mv);
 	zassert_ok(ret, "adc_emul_const_value_set() failed with code %d", ret);
 
 	int err = k_sem_take(&normal_pwr_event_sem, K_SECONDS(3));
@@ -94,8 +88,7 @@ void test_pwr_module_low(void)
 	const struct device *adc_dev = get_adc_device();
 
 	/* ADC emulator-specific setup */
-	int ret =
-		adc_emul_const_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_mv);
+	int ret = adc_emul_const_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_mv);
 	zassert_ok(ret, "adc_emul_const_value_set() failed with code %d", ret);
 	int err = k_sem_take(&low_pwr_event_sem, K_SECONDS(3));
 	zassert_equal(err, 0, "low_pwr_event_sem hanged.");
@@ -110,8 +103,7 @@ void test_pwr_module_critical(void)
 	const struct device *adc_dev = get_adc_device();
 
 	/* ADC emulator-specific setup */
-	int ret =
-		adc_emul_const_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_mv);
+	int ret = adc_emul_const_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_mv);
 	zassert_ok(ret, "adc_emul_const_value_set() failed with code %d", ret);
 
 	int err = k_sem_take(&critical_pwr_event_sem, K_SECONDS(3));
@@ -127,13 +119,11 @@ void test_pwr_module_normal_to_critical(void)
 	const struct device *adc_dev = get_adc_device();
 
 	/* ADC emulator-specific setup */
-	int ret =
-		adc_emul_const_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_mv);
+	int ret = adc_emul_const_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_mv);
 	zassert_ok(ret, "adc_emul_const_value_set() failed with code %d", ret);
 
 	int err = k_sem_take(&critical_pwr_event_sem, K_SECONDS(2));
-	zassert_equal(err, -EAGAIN,
-		      "Error: jump directly to critical not allowed");
+	zassert_equal(err, -EAGAIN, "Error: jump directly to critical not allowed");
 
 	err = k_sem_take(&critical_pwr_event_sem, K_SECONDS(3));
 	zassert_equal(err, 0, "critical_pwr_event_sem hanged.");
@@ -147,8 +137,7 @@ void test_main(void)
 			 ztest_unit_test(test_pwr_module_critical),
 			 ztest_unit_test(test_pwr_module_low),
 			 ztest_unit_test(test_pwr_module_normal),
-			 ztest_unit_test(test_pwr_module_normal_to_critical)
-			 );
+			 ztest_unit_test(test_pwr_module_normal_to_critical));
 	ztest_run_test_suite(pwr_tests);
 }
 
@@ -185,8 +174,7 @@ static bool event_handler(const struct event_header *eh)
 		struct error_event *ev = cast_error_event(eh);
 		switch (ev->sender) {
 		case ERR_PWR_MODULE:
-			zassert_equal(ev->code, -EACCES,
-				      "Mismatched error code.");
+			zassert_equal(ev->code, -EACCES, "Mismatched error code.");
 			break;
 
 		default:

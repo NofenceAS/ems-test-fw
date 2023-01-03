@@ -40,31 +40,28 @@ void test_fence_status(void)
 			if (fence_status_idx == FenceStatus_NotStarted) {
 				/* Test storage write failure */
 				ztest_returns_value(stg_config_u8_write, -1);
-				zassert_not_equal(force_fence_status(
-						  FenceStatus_NotStarted), 0, 
+				zassert_not_equal(force_fence_status(FenceStatus_NotStarted), 0,
 						  "");
 			}
 			ztest_returns_value(stg_config_u8_write, 0);
-			zassert_equal(force_fence_status(fence_status_idx), 0, 
+			zassert_equal(force_fence_status(fence_status_idx), 0,
 				      "Force fence status failed");
 
 			k_sem_reset(&fence_status_sem);
-			zassert_equal(k_sem_take(&fence_status_sem, 
-				      K_SECONDS(30)), 0, 
+			zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0,
 				      "Didn't receive status change");
-			zassert_equal(current_fence_status, fence_status_idx, 
+			zassert_equal(current_fence_status, fence_status_idx,
 				      "Force failed to set correct status");
 		} else {
 			/* Only force "UNKNOWN", "NotStarted" and "Invalid" */
-			zassert_not_equal(force_fence_status(fence_status_idx), 
-					  0, "Forced invalid fence status");
+			zassert_not_equal(force_fence_status(fence_status_idx), 0,
+					  "Forced invalid fence status");
 		}
 	}
 	/* Set fence status to NotStarted for continued testing */
 	if (get_fence_status() != FenceStatus_NotStarted) {
 		ztest_returns_value(stg_config_u8_write, 0);
-		zassert_equal(force_fence_status(FenceStatus_NotStarted), 0, 
-			      "");
+		zassert_equal(force_fence_status(FenceStatus_NotStarted), 0, "");
 	}
 
 	/* NotStarted -> Normal */
@@ -74,8 +71,7 @@ void test_fence_status(void)
 	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_FenceStatus_Normal;
-	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
-		      expected_status, "");
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND), expected_status, "");
 
 	k_sem_reset(&fence_status_sem);
 	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
@@ -105,8 +101,7 @@ void test_fence_status(void)
 	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_Escaped;
-	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
-		      expected_status, "");
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND), expected_status, "");
 	k_sem_reset(&fence_status_sem);
 	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_fence_status, expected_status, "");
@@ -118,8 +113,7 @@ void test_fence_status(void)
 	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_FenceStatus_Normal;
-	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
-		      expected_status, "");
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND), expected_status, "");
 	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_fence_status, expected_status, "");
 
@@ -130,8 +124,7 @@ void test_fence_status(void)
 	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_BeaconContactNormal;
-	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_NEAR),
-		      expected_status, "");
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_NEAR), expected_status, "");
 	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_fence_status, expected_status, "");
 
@@ -139,8 +132,7 @@ void test_fence_status(void)
 	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_FenceStatus_Normal;
-	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND),
-		      expected_status, "");
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_NOT_FOUND), expected_status, "");
 	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_fence_status, expected_status, "");
 
@@ -154,9 +146,8 @@ void test_fence_status(void)
 	k_sleep(K_SECONDS(905));
 
 	expected_status = FenceStatus_MaybeOutOfFence;
-	zassert_equal(calc_fence_status(maybe_timestamp,
-					BEACON_STATUS_NOT_FOUND),
-		      expected_status, "");
+	zassert_equal(calc_fence_status(maybe_timestamp, BEACON_STATUS_NOT_FOUND), expected_status,
+		      "");
 	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_fence_status, expected_status, "");
 
@@ -166,8 +157,7 @@ void test_fence_status(void)
 	expected_status = FenceStatus_BeaconContact;
 
 	/* Use same timestamp here, we know it's still as maybe out of fence. */
-	zassert_equal(calc_fence_status(maybe_timestamp,
-					BEACON_STATUS_REGION_NEAR),
+	zassert_equal(calc_fence_status(maybe_timestamp, BEACON_STATUS_REGION_NEAR),
 		      expected_status, "");
 	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_fence_status, expected_status, "");
@@ -176,8 +166,7 @@ void test_fence_status(void)
 	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_NotStarted;
-	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_FAR),
-		      expected_status, "");
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_FAR), expected_status, "");
 	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_fence_status, expected_status, "");
 
@@ -185,8 +174,7 @@ void test_fence_status(void)
 	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_BeaconContact;
-	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_NEAR),
-		      expected_status, "");
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_NEAR), expected_status, "");
 	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_fence_status, expected_status, "");
 
@@ -194,15 +182,12 @@ void test_fence_status(void)
 	/* We only enter this state if pasture is invalid. */
 	pasture_t empty_pasture;
 	memset(&empty_pasture, 0, sizeof(pasture_t));
-	zassert_equal(set_pasture_cache((uint8_t *)&empty_pasture,
-					sizeof(empty_pasture)),
-		      0, "");
+	zassert_equal(set_pasture_cache((uint8_t *)&empty_pasture, sizeof(empty_pasture)), 0, "");
 
 	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_FenceStatus_UNKNOWN;
-	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_FAR),
-		      expected_status, "");
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_FAR), expected_status, "");
 	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_fence_status, expected_status, "");
 
@@ -213,8 +198,7 @@ void test_fence_status(void)
 	ztest_returns_value(stg_config_u8_write, 0);
 
 	expected_status = FenceStatus_BeaconContact;
-	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_NEAR),
-		      expected_status, "");
+	zassert_equal(calc_fence_status(0, BEACON_STATUS_REGION_NEAR), expected_status, "");
 	zassert_equal(k_sem_take(&fence_status_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(current_fence_status, expected_status, "");
 }

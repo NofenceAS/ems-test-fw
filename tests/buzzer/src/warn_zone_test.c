@@ -106,8 +106,7 @@ void test_warn_zone_play_until_range(void)
 			mock_expect_pwm_hz(i);
 		}
 
-		struct sound_set_warn_freq_event *ef =
-			new_sound_set_warn_freq_event();
+		struct sound_set_warn_freq_event *ef = new_sound_set_warn_freq_event();
 		ef->freq = i;
 		EVENT_SUBMIT(ef);
 

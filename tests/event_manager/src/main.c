@@ -69,12 +69,9 @@ void test_oom_reset(void);
 void test_main(void)
 {
 	ztest_test_suite(event_manager_tests, ztest_unit_test(test_init),
-			 ztest_unit_test(test_basic),
-			 ztest_unit_test(test_data),
-			 ztest_unit_test(test_event_order),
-			 ztest_unit_test(test_subs_order),
-			 ztest_unit_test(test_oom_reset),
-			 ztest_unit_test(test_multicontext));
+			 ztest_unit_test(test_basic), ztest_unit_test(test_data),
+			 ztest_unit_test(test_event_order), ztest_unit_test(test_subs_order),
+			 ztest_unit_test(test_oom_reset), ztest_unit_test(test_multicontext));
 
 	ztest_run_test_suite(event_manager_tests);
 }
@@ -84,8 +81,7 @@ static bool event_handler(const struct event_header *eh)
 	if (is_test_end_event(eh)) {
 		struct test_end_event *ev = cast_test_end_event(eh);
 
-		zassert_equal(cur_test_id, ev->test_id,
-			      "End test ID does not equal start test ID");
+		zassert_equal(cur_test_id, ev->test_id, "End test ID does not equal start test ID");
 		cur_test_id = TEST_IDLE;
 		k_sem_give(&test_end_sem);
 

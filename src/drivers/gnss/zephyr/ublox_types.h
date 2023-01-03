@@ -6,17 +6,11 @@
 /* Structures are tightly packed, using little-endian format, 
  * to be directly translateable to U-blox format. 
  */
-#define UBLOX_STORAGE_ATTR __attribute__((packed,\
-					  scalar_storage_order("little-endian"),\
-					  aligned(1)))
+#define UBLOX_STORAGE_ATTR                                                                         \
+	__attribute__((packed, scalar_storage_order("little-endian"), aligned(1)))
 
 /** @brief Definition of layers used for storage */
-enum ublox_cfg_val_layer {
-	RAM_LAYER = 0,
-	BBR_LAYER = 1,
-	FLASH_LAYER = 2,
-	DEFAULT_LAYER = 7
-};
+enum ublox_cfg_val_layer { RAM_LAYER = 0, BBR_LAYER = 1, FLASH_LAYER = 2, DEFAULT_LAYER = 7 };
 
 /** @brief U-blox 16-bit checksum. 
  *         Calculations are done on the 2 8-bit values 
@@ -33,7 +27,7 @@ union UBLOX_STORAGE_ATTR ublox_checksum {
 struct UBLOX_STORAGE_ATTR ublox_header {
 	uint8_t sync1;
 	uint8_t sync2;
-	
+
 	uint8_t msg_class;
 	uint8_t msg_id;
 
@@ -125,7 +119,7 @@ struct UBLOX_STORAGE_ATTR ublox_nav_status {
 struct UBLOX_STORAGE_ATTR ublox_nav_pl {
 	uint8_t msgVersion;
 	uint8_t tmirCoeff;
-	int8_t  tmirExp;
+	int8_t tmirExp;
 	uint8_t plPosValid;
 	uint8_t plPosFrame;
 	uint8_t plVelValid;
@@ -150,11 +144,11 @@ struct UBLOX_STORAGE_ATTR ublox_nav_pl {
  * @see https://content.u-blox.com/sites/default/files/u-blox-M10-SPG-5.10_InterfaceDescription_UBX-21035062.pdf
  */
 struct UBLOX_STORAGE_ATTR ublox_rxm_pmreq {
-    uint8_t version;
-    uint8_t reserved0[3];
-    uint32_t duration;
-    uint32_t flags;
-    uint32_t wakeupSources;
+	uint8_t version;
+	uint8_t reserved0[3];
+	uint32_t duration;
+	uint32_t flags;
+	uint32_t wakeupSources;
 };
 
 /** @brief U-blox MGA-ACK message. */
@@ -167,20 +161,12 @@ struct UBLOX_STORAGE_ATTR ublox_mga_ack {
 };
 
 /* Helper macros for getting various data types from buffer */
-#define GET_LE8(x)	((x[0]<<0))
-#define GET_LE16(x)	((x[0]<<0)|\
-			 (x[1]<<8))
-#define GET_LE32(x)	((x[0]<<0)|\
-			 (x[1]<<8)|\
-			 (x[2]<<16)|\
-			 (x[3]<<24))
-#define GET_LE64(x)	(((uint64_t)x[0]<<0)|\
-			 ((uint64_t)x[1]<<8)|\
-			 ((uint64_t)x[2]<<16)|\
-			 ((uint64_t)x[3]<<24)|\
-			 ((uint64_t)x[4]<<32)|\
-			 ((uint64_t)x[5]<<40)|\
-			 ((uint64_t)x[6]<<48)|\
-			 ((uint64_t)x[7]<<56))
+#define GET_LE8(x) ((x[0] << 0))
+#define GET_LE16(x) ((x[0] << 0) | (x[1] << 8))
+#define GET_LE32(x) ((x[0] << 0) | (x[1] << 8) | (x[2] << 16) | (x[3] << 24))
+#define GET_LE64(x)                                                                                \
+	(((uint64_t)x[0] << 0) | ((uint64_t)x[1] << 8) | ((uint64_t)x[2] << 16) |                  \
+	 ((uint64_t)x[3] << 24) | ((uint64_t)x[4] << 32) | ((uint64_t)x[5] << 40) |                \
+	 ((uint64_t)x[6] << 48) | ((uint64_t)x[7] << 56))
 
 #endif /* UBLOX_TYPES_H_ */

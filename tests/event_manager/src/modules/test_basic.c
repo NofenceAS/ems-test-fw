@@ -21,8 +21,7 @@ static bool event_handler(const struct event_header *eh)
 		struct test_start_event *st = cast_test_start_event(eh);
 
 		switch (st->test_id) {
-		case TEST_BASIC:
-		{
+		case TEST_BASIC: {
 			struct test_end_event *et = new_test_end_event();
 
 			zassert_not_null(et, "Failed to allocate event");
@@ -31,8 +30,7 @@ static bool event_handler(const struct event_header *eh)
 			break;
 		}
 
-		case TEST_DATA:
-		{
+		case TEST_DATA: {
 			struct data_event *event = new_data_event();
 			static char descr[] = TEST_STRING;
 
@@ -50,8 +48,7 @@ static bool event_handler(const struct event_header *eh)
 			break;
 		}
 
-		case TEST_EVENT_ORDER:
-		{
+		case TEST_EVENT_ORDER: {
 			for (size_t i = 0; i < TEST_EVENT_ORDER_CNT; i++) {
 				struct order_event *event = new_order_event();
 
@@ -62,8 +59,7 @@ static bool event_handler(const struct event_header *eh)
 			break;
 		}
 
-		case TEST_SUBSCRIBER_ORDER:
-		{
+		case TEST_SUBSCRIBER_ORDER: {
 			struct order_event *event = new_order_event();
 
 			zassert_not_null(event, "Failed to allocate event");
@@ -73,8 +69,7 @@ static bool event_handler(const struct event_header *eh)
 
 		default:
 			/* Ignore other test cases, check if proper test_id. */
-			zassert_true(st->test_id < TEST_CNT,
-				     "test_id out of range");
+			zassert_true(st->test_id < TEST_CNT, "test_id out of range");
 			break;
 		}
 

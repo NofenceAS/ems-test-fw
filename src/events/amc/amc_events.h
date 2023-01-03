@@ -11,13 +11,12 @@ struct zone_change {
 
 EVENT_TYPE_DECLARE(zone_change);
 
-struct xy_location {/*TODO: this event needs to be published by amc after gnss_calc_xy()*/
+struct xy_location { /*TODO: this event needs to be published by amc after gnss_calc_xy()*/
 	struct event_header header;
 	int16_t x;
 	int16_t y;
 };
 
 EVENT_TYPE_DECLARE(xy_location);
-
 
 #endif //X3_FW_AMC_EVENTS_H

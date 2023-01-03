@@ -53,8 +53,7 @@ void simulate_humidity_values(struct sensor_value *val)
 	}
 }
 
-int sensor_channel_get(const struct device *dev, enum sensor_channel chan,
-		       struct sensor_value *val)
+int sensor_channel_get(const struct device *dev, enum sensor_channel chan, struct sensor_value *val)
 {
 	ARG_UNUSED(dev);
 	switch (chan) {

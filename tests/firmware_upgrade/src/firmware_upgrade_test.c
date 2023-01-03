@@ -39,10 +39,8 @@ void setup_init(void)
 
 void test_init(void)
 {
-	zassert_false(event_manager_init(),
-		      "Error when initializing event manager");
-	zassert_false(fw_upgrade_module_init(),
-		      "Error when initializing firmware upgrade module");
+	zassert_false(event_manager_init(), "Error when initializing event manager");
+	zassert_false(fw_upgrade_module_init(), "Error when initializing firmware upgrade module");
 	/* See if we get the 'IDLE' flag as it should be after init. */
 	int err = k_sem_take(&test_status, K_SECONDS(30));
 	zassert_equal(err, 0, "Test status event execution \
@@ -124,16 +122,12 @@ void test_main(void)
 {
 	ztest_test_suite(
 		firmware_upgrade_tests,
-		ztest_unit_test_setup_teardown(test_init, setup_init,
-					       teardown_common),
-		ztest_unit_test_setup_teardown(
-			test_start_fota, setup_start_fota, teardown_common),
-		ztest_unit_test_setup_teardown(
-			test_start_fota_error_in_download,
-			setup_start_fota_error_in_download, teardown_common),
-		ztest_unit_test_setup_teardown(
-			test_start_fota_error_start_download,
-			setup_error_start_download, teardown_common));
+		ztest_unit_test_setup_teardown(test_init, setup_init, teardown_common),
+		ztest_unit_test_setup_teardown(test_start_fota, setup_start_fota, teardown_common),
+		ztest_unit_test_setup_teardown(test_start_fota_error_in_download,
+					       setup_start_fota_error_in_download, teardown_common),
+		ztest_unit_test_setup_teardown(test_start_fota_error_start_download,
+					       setup_error_start_download, teardown_common));
 
 	ztest_run_test_suite(firmware_upgrade_tests);
 }
@@ -143,37 +137,31 @@ static bool event_handler(const struct event_header *eh)
 	if (is_dfu_status_event(eh)) {
 		struct dfu_status_event *ev = cast_dfu_status_event(eh);
 		if (cur_id == TEST_EVENT_INIT) {
-			zassert_equal(
-				ev->dfu_status, DFU_STATUS_IDLE,
-				"Status not idle as it should after init.");
+			zassert_equal(ev->dfu_status, DFU_STATUS_IDLE,
+				      "Status not idle as it should after init.");
 			k_sem_give(&test_status);
 			cur_id = TEST_EVENT_START;
 		} else if (cur_id == TEST_EVENT_START) {
-			zassert_equal(ev->dfu_status, DFU_STATUS_IN_PROGRESS,
-				      "");
+			zassert_equal(ev->dfu_status, DFU_STATUS_IN_PROGRESS, "");
 			zassert_equal(ev->dfu_error, 0, "");
 			cur_id = TEST_EVENT_PROGRESS;
 			/* Simualte all fragments have been transferred. */
 			simulate_callback_event();
 		} else if (cur_id == TEST_EVENT_PROGRESS) {
-			zassert_equal(ev->dfu_status,
-				      DFU_STATUS_SUCCESS_REBOOT_SCHEDULED, "");
+			zassert_equal(ev->dfu_status, DFU_STATUS_SUCCESS_REBOOT_SCHEDULED, "");
 			zassert_equal(ev->dfu_error, 0, "");
 			cur_id = TEST_EVENT_REBOOT;
 			k_sem_give(&test_status);
 		} else if (cur_id == TEST_EVENT_ERROR_IN_DL) {
-			zassert_equal(
-				(int)ev->dfu_status,
-				(int)FOTA_DOWNLOAD_ERROR_CAUSE_DOWNLOAD_FAILED,
-				"");
+			zassert_equal((int)ev->dfu_status,
+				      (int)FOTA_DOWNLOAD_ERROR_CAUSE_DOWNLOAD_FAILED, "");
 			k_sem_give(&test_status);
 		}
 		return false;
 	}
 	if (is_error_event(eh)) {
 		struct error_event *ev = cast_error_event(eh);
-		zassert_equal(ev->sender, ERR_FW_UPGRADE,
-			      "Wrong sender expected.");
+		zassert_equal(ev->sender, ERR_FW_UPGRADE, "Wrong sender expected.");
 
 		if (cur_id == TEST_EVENT_ERROR_START_DL) {
 			zassert_equal(ev->code, -ENOTCONN, "");
@@ -181,8 +169,7 @@ static bool event_handler(const struct event_header *eh)
 
 			char *expected = "Unable to start FOTA DL";
 			zassert_equal(ev->dyndata.size, strlen(expected), "");
-			zassert_mem_equal(ev->dyndata.data, expected,
-					  strlen(expected), "");
+			zassert_mem_equal(ev->dyndata.data, expected, strlen(expected), "");
 			k_sem_give(&test_status);
 		} else {
 			zassert_unreachable("Unexpected error triggered.");

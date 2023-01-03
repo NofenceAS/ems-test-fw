@@ -16,8 +16,7 @@ int bt_enable(bt_ready_cb_t cb)
 
 bool bt_mock_is_battery_adv_data_correct(uint8_t data)
 {
-	if (data ==
-	    buffer_ad[BLE_AD_IDX_MANUFACTURER].data[BLE_MFG_IDX_BATTERY]) {
+	if (data == buffer_ad[BLE_AD_IDX_MANUFACTURER].data[BLE_MFG_IDX_BATTERY]) {
 		return 1;
 	}
 	return 0;
@@ -25,8 +24,7 @@ bool bt_mock_is_battery_adv_data_correct(uint8_t data)
 
 bool bt_mock_is_error_flag_adv_data_correct(uint8_t data)
 {
-	if (data ==
-	    buffer_ad[BLE_AD_IDX_MANUFACTURER].data[BLE_MFG_IDX_ERROR]) {
+	if (data == buffer_ad[BLE_AD_IDX_MANUFACTURER].data[BLE_MFG_IDX_ERROR]) {
 		return 1;
 	}
 	return 0;
@@ -34,8 +32,7 @@ bool bt_mock_is_error_flag_adv_data_correct(uint8_t data)
 
 bool bt_mock_is_collar_mode_adv_data_correct(uint8_t data)
 {
-	if (data ==
-	    buffer_ad[BLE_AD_IDX_MANUFACTURER].data[BLE_MFG_IDX_COLLAR_MODE]) {
+	if (data == buffer_ad[BLE_AD_IDX_MANUFACTURER].data[BLE_MFG_IDX_COLLAR_MODE]) {
 		return 1;
 	}
 	return 0;
@@ -43,8 +40,7 @@ bool bt_mock_is_collar_mode_adv_data_correct(uint8_t data)
 
 bool bt_mock_is_collar_status_adv_data_correct(uint8_t data)
 {
-	if (data ==
-	    buffer_ad[BLE_AD_IDX_MANUFACTURER].data[BLE_MFG_IDX_COLLAR_STATUS]) {
+	if (data == buffer_ad[BLE_AD_IDX_MANUFACTURER].data[BLE_MFG_IDX_COLLAR_STATUS]) {
 		return 1;
 	}
 	return 0;
@@ -52,8 +48,7 @@ bool bt_mock_is_collar_status_adv_data_correct(uint8_t data)
 
 bool bt_mock_is_fence_status_adv_data_correct(uint8_t data)
 {
-	if (data ==
-	    buffer_ad[BLE_AD_IDX_MANUFACTURER].data[BLE_MFG_IDX_FENCE_STATUS]) {
+	if (data == buffer_ad[BLE_AD_IDX_MANUFACTURER].data[BLE_MFG_IDX_FENCE_STATUS]) {
 		return 1;
 	}
 	return 0;
@@ -61,8 +56,7 @@ bool bt_mock_is_fence_status_adv_data_correct(uint8_t data)
 
 bool bt_mock_is_pasture_status_adv_data_correct(uint8_t data)
 {
-	if (data ==
-	    buffer_ad[BLE_AD_IDX_MANUFACTURER].data[BLE_MFG_IDX_VALID_PASTURE]) {
+	if (data == buffer_ad[BLE_AD_IDX_MANUFACTURER].data[BLE_MFG_IDX_VALID_PASTURE]) {
 		return 1;
 	}
 	return 0;
@@ -70,15 +64,13 @@ bool bt_mock_is_pasture_status_adv_data_correct(uint8_t data)
 
 bool bt_mock_is_fence_def_ver_adv_data_correct(uint16_t data)
 {
-	if (data ==
-	    buffer_ad[BLE_AD_IDX_MANUFACTURER].data[BLE_MFG_IDX_FENCE_DEF_VER]) {
+	if (data == buffer_ad[BLE_AD_IDX_MANUFACTURER].data[BLE_MFG_IDX_FENCE_DEF_VER]) {
 		return 1;
 	}
 	return 0;
 }
 
-int bt_le_adv_start(const struct bt_le_adv_param *param,
-		    const struct bt_data *ad, size_t ad_len,
+int bt_le_adv_start(const struct bt_le_adv_param *param, const struct bt_data *ad, size_t ad_len,
 		    const struct bt_data *sd, size_t sd_len)
 {
 	if (ad_len > BUFFER_AD_LEN) {
@@ -98,8 +90,8 @@ int bt_le_adv_stop(void)
 	return ztest_get_return_value();
 }
 
-int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
-			  const struct bt_data *sd, size_t sd_len)
+int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len, const struct bt_data *sd,
+			  size_t sd_len)
 {
 	if (ad_len > BUFFER_AD_LEN) {
 		return -ENOMEM;
@@ -137,8 +129,7 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 	return ztest_get_return_value_ptr();
 }
 
-int bt_gatt_exchange_mtu(struct bt_conn *conn,
-			 struct bt_gatt_exchange_params *params)
+int bt_gatt_exchange_mtu(struct bt_conn *conn, struct bt_gatt_exchange_params *params)
 {
 	return ztest_get_return_value();
 }
@@ -147,14 +138,12 @@ void bt_conn_cb_register(struct bt_conn_cb *cb)
 {
 }
 
-void bt_data_parse(struct net_buf_simple *ad,
-		   bool (*func)(struct bt_data *data, void *user_data),
+void bt_data_parse(struct net_buf_simple *ad, bool (*func)(struct bt_data *data, void *user_data),
 		   void *user_data)
 {
 }
 
-void net_buf_simple_init_with_data(struct net_buf_simple *buf, void *data,
-				   size_t size)
+void net_buf_simple_init_with_data(struct net_buf_simple *buf, void *data, size_t size)
 {
 }
 uint16_t net_buf_simple_pull_be16(struct net_buf_simple *buf)

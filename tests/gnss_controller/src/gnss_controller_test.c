@@ -21,12 +21,8 @@ const int DEFAULT_MIN_RATE_MS = CONFIG_GNSS_MINIMUM_ALLOWED_GNSS_RATE;
 const int DEFAULT_SLACK_TIME_TIMEOUT_MS = CONFIG_GNSS_TIMEOUT_SLACK_MS;
 const int DEFAULT_TIMEOUTS_BEFORE_RESET = CONFIG_GNSS_TIMEOUTS_BEFORE_RESET;
 
-
-
 void test_init_ok(void)
 {
-
-
 	zassert_false(event_manager_init(), "Error when initializing event manager");
 
 	if (pub_gnss_thread_id != 0) {
@@ -77,17 +73,16 @@ void test_init_fails3(void)
 }
 
 static const gnss_t default_data = { .latest = { .lat = 633743868, .lon = 103412316 },
-		    .fix_ok = true,
-		    .lastfix = { .unix_timestamp = 100 },
-		    .has_lastfix = true };
+				     .fix_ok = true,
+				     .lastfix = { .unix_timestamp = 100 },
+				     .has_lastfix = true };
 
 static gnss_t dummy_gnss_data;
-
 
 void test_publish_event_with_gnss_data_callback(void)
 {
 	test_init_ok();
-	memcpy(&dummy_gnss_data,&default_data,sizeof(default_data));
+	memcpy(&dummy_gnss_data, &default_data, sizeof(default_data));
 	simulate_new_gnss_data(dummy_gnss_data);
 	int8_t err = k_sem_take(&gnss_data_out, K_SECONDS(0.5));
 	zassert_equal(err, 0, "Expected gnss data event was not published!");
@@ -108,7 +103,7 @@ void setup_mock_reset(uint16_t *dummy_rate, uint16_t mask)
 void test_gnss_timeout_and_resets(void)
 {
 	static uint16_t dummy_rate = DEFAULT_MIN_RATE_MS;
-	memcpy(&dummy_gnss_data,&default_data,sizeof(default_data));
+	memcpy(&dummy_gnss_data, &default_data, sizeof(default_data));
 	ztest_returns_value(mock_gnss_wakeup, 0);
 	ztest_expect_value(mock_gnss_set_power_mode, mode, GNSSMODE_MAX);
 	ztest_returns_value(mock_gnss_set_power_mode, 0);
@@ -190,7 +185,7 @@ void test_gnss_timeout_and_resets(void)
 	timeout_count = 0;
 	data_count = 0;
 	setup_mock_reset(&dummy_rate, GNSS_RESET_MASK_COLD);
-	dummy_gnss_data.latest.msss = 4233600000 +1;
+	dummy_gnss_data.latest.msss = 4233600000 + 1;
 	simulate_new_gnss_data(dummy_gnss_data);
 
 	err = k_sem_take(&gnss_data_out, K_SECONDS(0.1));
@@ -202,10 +197,9 @@ void test_gnss_timeout_and_resets(void)
 
 void test_semisteady_gnss_data_stream(void)
 {
-
 	k_thread_suspend(pub_gnss_thread_id);
 	test_init_ok();
-	memcpy(&dummy_gnss_data,&default_data,sizeof(default_data));
+	memcpy(&dummy_gnss_data, &default_data, sizeof(default_data));
 	/* set controller to expect max data rate */
 	uint16_t dummy_rate = DEFAULT_MIN_RATE_MS;
 	ztest_returns_value(mock_gnss_wakeup, 0);
@@ -285,7 +279,6 @@ static bool event_handler(const struct event_header *eh)
 	return false;
 }
 
-
 void test_main(void)
 {
 	ztest_test_suite(gnss_controller_tests, ztest_unit_test(test_init_ok),
@@ -299,9 +292,6 @@ void test_main(void)
 	ztest_run_test_suite(gnss_controller_tests);
 }
 
-
 EVENT_LISTENER(test, event_handler);
 EVENT_SUBSCRIBE(test, gnss_data);
 EVENT_SUBSCRIBE(test, error_event);
-
-

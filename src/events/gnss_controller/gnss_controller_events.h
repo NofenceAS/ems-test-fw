@@ -10,7 +10,6 @@ struct gnss_data {
 
 EVENT_TYPE_DECLARE(gnss_data);
 
-
 /** @brief Set GNSS mode. */
 struct gnss_set_mode_event {
 	struct event_header header;
@@ -18,5 +17,3 @@ struct gnss_set_mode_event {
 };
 
 EVENT_TYPE_DECLARE(gnss_set_mode_event);
-
-

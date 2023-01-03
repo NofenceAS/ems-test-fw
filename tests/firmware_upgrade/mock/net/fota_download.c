@@ -28,8 +28,8 @@ int fota_download_init(fota_download_callback_t client_callback)
 	return ztest_get_return_value();
 }
 
-int fota_download_start(const char *host, const char *file, int sec_tag,
-			uint8_t pdn_id, size_t fragment_size)
+int fota_download_start(const char *host, const char *file, int sec_tag, uint8_t pdn_id,
+			size_t fragment_size)
 {
 	/* add zasserts for correct host/path inputs. */
 	return ztest_get_return_value();

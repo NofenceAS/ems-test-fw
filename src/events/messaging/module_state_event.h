@@ -16,10 +16,10 @@
 #include "event_manager.h"
 
 /** Module state list. */
-#define MODULE_STATE_LIST                                                      \
-	X(READY)                                                               \
-	X(OFF)                                                                 \
-	X(STANDBY)                                                             \
+#define MODULE_STATE_LIST                                                                          \
+	X(READY)                                                                                   \
+	X(OFF)                                                                                     \
+	X(STANDBY)                                                                                 \
 	X(ERROR)
 
 /** Module states. */
@@ -58,8 +58,8 @@ static inline void module_set_state(enum module_state state)
 
 #endif
 
-static inline bool check_state(const struct module_state_event *event,
-			       const void *module_id, enum module_state state)
+static inline bool check_state(const struct module_state_event *event, const void *module_id,
+			       enum module_state state)
 {
 	if ((event->module_id == module_id) && (event->state == state)) {
 		return true;
@@ -67,10 +67,10 @@ static inline bool check_state(const struct module_state_event *event,
 	return false;
 }
 
-#define MODULE_ID(mname)                                                       \
-	({                                                                     \
-		extern const void *const _CONCAT(__module_, mname);            \
-		_CONCAT(__module_, mname);                                     \
+#define MODULE_ID(mname)                                                                           \
+	({                                                                                         \
+		extern const void *const _CONCAT(__module_, mname);                                \
+		_CONCAT(__module_, mname);                                                         \
 	})
 
 #endif /* _MODULE_STATE_EVENT_H_ */
