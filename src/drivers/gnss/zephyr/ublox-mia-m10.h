@@ -14,7 +14,7 @@
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int mia_m10_config_get_u8(uint32_t key, uint8_t* value);
+int mia_m10_config_get_u8(uint32_t key, uint8_t *value);
 
 /**
  * @brief Get configuration data (uint16_t) for specified key. 
@@ -24,7 +24,7 @@ int mia_m10_config_get_u8(uint32_t key, uint8_t* value);
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int mia_m10_config_get_u16(uint32_t key, uint16_t* value);
+int mia_m10_config_get_u16(uint32_t key, uint16_t *value);
 
 /**
  * @brief Get configuration data (uint32_t) for specified key. 
@@ -34,7 +34,7 @@ int mia_m10_config_get_u16(uint32_t key, uint16_t* value);
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int mia_m10_config_get_u32(uint32_t key, uint32_t* value);
+int mia_m10_config_get_u32(uint32_t key, uint32_t *value);
 
 /**
  * @brief Get configuration data (double) for specified key. 
@@ -44,7 +44,7 @@ int mia_m10_config_get_u32(uint32_t key, uint32_t* value);
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int mia_m10_config_get_f64(uint32_t key, double* value);
+int mia_m10_config_get_f64(uint32_t key, double *value);
 
 /**
  * @brief Get configuration data (raw) for specified key. 
@@ -56,7 +56,7 @@ int mia_m10_config_get_f64(uint32_t key, double* value);
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int mia_m10_config_get(uint32_t key, uint8_t size, uint64_t* raw_value);
+int mia_m10_config_get(uint32_t key, uint8_t size, uint64_t *raw_value);
 
 /**
  * @brief Set configuration data (uint8_t) for specified key. 
@@ -117,6 +117,6 @@ int mia_m10_send_reset(uint16_t mask, uint8_t mode);
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int mia_m10_send_assist_data(uint8_t* data, uint32_t size);
+int mia_m10_send_assist_data(uint8_t *data, uint32_t size);
 
 #endif /* UBLOX_MIA_M10_H_ */

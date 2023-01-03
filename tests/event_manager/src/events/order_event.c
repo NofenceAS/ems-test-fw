@@ -6,8 +6,4 @@
 
 #include "order_event.h"
 
-
-EVENT_TYPE_DEFINE(order_event,
-		  false,
-		  NULL,
-		  NULL);
+EVENT_TYPE_DEFINE(order_event, false, NULL, NULL);

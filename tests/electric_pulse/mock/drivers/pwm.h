@@ -20,7 +20,7 @@ typedef uint8_t pwm_flags_t;
 /**
  * \brief Mock PWM function (See pwm_pin_set_usec in documentation).
  */
-int pwm_pin_set_usec(const struct device *dev, uint32_t pwm, uint32_t period,
-		     uint32_t pulse, pwm_flags_t flags);
+int pwm_pin_set_usec(const struct device *dev, uint32_t pwm, uint32_t period, uint32_t pulse,
+		     pwm_flags_t flags);
 
 #endif /* TEST_MOCK_PWM_H */

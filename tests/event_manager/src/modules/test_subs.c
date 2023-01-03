@@ -12,7 +12,6 @@
 
 #include "test_config.h"
 
-
 static enum test_id cur_test_id;
 
 static int early_cnt;
@@ -53,12 +52,12 @@ EVENT_LISTENER(early3, event_handler_early);
 EVENT_SUBSCRIBE_EARLY(early3, order_event);
 EVENT_SUBSCRIBE_EARLY(early3, test_start_event);
 
-
 static bool event_handler_normal(const struct event_header *eh)
 {
 	if (is_order_event(eh)) {
 		if (cur_test_id == TEST_SUBSCRIBER_ORDER) {
-			zassert_equal(early_cnt, 3, "Incorrect subscriber order"
+			zassert_equal(early_cnt, 3,
+				      "Incorrect subscriber order"
 				      " - normal before early");
 			normal_cnt++;
 		}
@@ -93,7 +92,8 @@ static bool event_handler_final(const struct event_header *eh)
 
 	if (is_order_event(eh)) {
 		if (cur_test_id == TEST_SUBSCRIBER_ORDER) {
-			zassert_equal(early_cnt, 3, "Incorrect subscriber order"
+			zassert_equal(early_cnt, 3,
+				      "Incorrect subscriber order"
 				      " - late before early");
 			zassert_equal(normal_cnt, 3,
 				      "Incorrect subscriber order"

@@ -52,10 +52,9 @@ int read_callback_multiple_log(uint8_t *data, size_t len)
 
 void test_log(void)
 {
-	zassert_equal(stg_write_log_data((uint8_t *)&dummy_log, dummy_log_len),
-		      0, "Write log error.");
-	zassert_equal(stg_read_log_data(read_callback_log, 0), 0,
-		      "Read log error.");
+	zassert_equal(stg_write_log_data((uint8_t *)&dummy_log, dummy_log_len), 0,
+		      "Write log error.");
+	zassert_equal(stg_read_log_data(read_callback_log, 0), 0, "Read log error.");
 	zassert_false(stg_clear_partition(STG_PARTITION_LOG), "");
 }
 
@@ -82,19 +81,17 @@ void test_log_padding(void)
 void test_log_extended(void)
 {
 	for (int i = 0; i < expected_log_entries; i++) {
-		zassert_equal(stg_write_log_data((uint8_t *)&dummy_log,
-						 dummy_log_len),
-			      0, "Write log error.");
+		zassert_equal(stg_write_log_data((uint8_t *)&dummy_log, dummy_log_len), 0,
+			      "Write log error.");
 	}
-	zassert_equal(stg_read_log_data(read_callback_multiple_log, 0), 0,
-		      "Read log error.");
+	zassert_equal(stg_read_log_data(read_callback_multiple_log, 0), 0, "Read log error.");
 	zassert_equal(num_multiple_log_reads, expected_log_entries, "");
 }
 
 void test_reboot_persistent_log(void)
 {
-	zassert_equal(stg_write_log_data((uint8_t *)&dummy_log, dummy_log_len),
-		      0, "Write log error.");
+	zassert_equal(stg_write_log_data((uint8_t *)&dummy_log, dummy_log_len), 0,
+		      "Write log error.");
 
 	/* Clear ANO partition so that we do not call date_time. */
 	zassert_false(stg_clear_partition(STG_PARTITION_ANO), "");
@@ -105,8 +102,7 @@ void test_reboot_persistent_log(void)
 	int err = stg_fcb_reset_and_init();
 	zassert_equal(err, 0, "Error simulating reboot and FCB resets.");
 
-	zassert_equal(stg_read_log_data(read_callback_log, 0), 0,
-		      "Read log error.");
+	zassert_equal(stg_read_log_data(read_callback_log, 0), 0, "Read log error.");
 }
 
 /** @brief Test to check that we get ENODATA if there are no data available
@@ -137,9 +133,8 @@ void test_rotate_handling(void)
 	/* Write entries greater than partition size. */
 	uint32_t num_entries = (PM_LOG_PARTITION_SIZE / sizeof(log_rec_t)) + 1;
 	for (int i = 0; i < num_entries; i++) {
-		zassert_equal(stg_write_log_data((uint8_t *)&dummy_log,
-						 dummy_log_len),
-			      0, "Write log error.");
+		zassert_equal(stg_write_log_data((uint8_t *)&dummy_log, dummy_log_len), 0,
+			      "Write log error.");
 	}
 
 	uint32_t expected_entries = get_num_entries(STG_PARTITION_LOG);
@@ -150,9 +145,8 @@ void test_rotate_handling(void)
 
 	/* Write 50 times since we know we have to rotate once. */
 	for (int i = 0; i < 50; i++) {
-		zassert_equal(stg_write_log_data((uint8_t *)&dummy_log,
-						 dummy_log_len),
-			      0, "Write log error.");
+		zassert_equal(stg_write_log_data((uint8_t *)&dummy_log, dummy_log_len), 0,
+			      "Write log error.");
 	}
 
 	expected_entries = 50;
@@ -171,9 +165,8 @@ void test_log_after_reboot(void)
 
 	/* Write 10 entries. */
 	for (int i = 0; i < 10; i++) {
-		zassert_equal(stg_write_log_data((uint8_t *)&dummy_log,
-						 dummy_log_len),
-			      0, "Write log error.");
+		zassert_equal(stg_write_log_data((uint8_t *)&dummy_log, dummy_log_len), 0,
+			      "Write log error.");
 	}
 
 	/* Read and expect 4 entries. */
@@ -200,6 +193,5 @@ void test_log_after_reboot(void)
 	/* We should now have 0 entries remaining due to clear fcb
 	 * partition. Should return -ENODATA. 
 	 */
-	zassert_equal(stg_read_log_data(read_callback_multiple_log, 0),
-		      -ENODATA, "");
+	zassert_equal(stg_read_log_data(read_callback_multiple_log, 0), -ENODATA, "");
 }

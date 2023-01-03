@@ -13,11 +13,10 @@
  */
 typedef uint8_t pwm_flags_t;
 
-int pwm_pin_set_usec(const struct device *dev, uint32_t pwm, uint32_t period,
-		     uint32_t pulse, pwm_flags_t flags);
+int pwm_pin_set_usec(const struct device *dev, uint32_t pwm, uint32_t period, uint32_t pulse,
+		     pwm_flags_t flags);
 
-int pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
-			   uint64_t *cycles);
+int pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm, uint64_t *cycles);
 
 #define PWM_BUZZER_NODE NULL
 #define PWM_BUZZER_LABEL DT_LABEL(DT_ALIAS(dummy_buzzer))

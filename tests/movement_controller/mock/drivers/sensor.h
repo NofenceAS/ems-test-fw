@@ -9,7 +9,7 @@
 #include <device.h>
 #include <errno.h>
 
-#define SENSOR_G		9806650LL
+#define SENSOR_G 9806650LL
 struct sensor_value {
 	int32_t val1;
 	int32_t val2;
@@ -36,14 +36,13 @@ int sensor_sample_fetch(const struct device *dev);
 int sensor_channel_get(const struct device *dev, enum sensor_channel chan,
 		       struct sensor_value *val);
 
-int sensor_attr_set(const struct device *dev, enum sensor_channel chan,
-		    enum sensor_attribute attr, const struct sensor_value *val);
+int sensor_attr_set(const struct device *dev, enum sensor_channel chan, enum sensor_attribute attr,
+		    const struct sensor_value *val);
 
 typedef void (*sensor_trigger_handler_t)(const struct device *dev,
 					 const struct sensor_trigger *trigger);
 
-int sensor_trigger_set(const struct device *dev,
-		       const struct sensor_trigger *trig,
+int sensor_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
 
 static inline double sensor_value_to_double(const struct sensor_value *val)

@@ -34,14 +34,11 @@ static char *stringFromEnum(enum ble_ctrl_cmd cmd)
  * @param[in] buf triggered event's log event buffer.
  * @param[in] buf_len length of the buffer received.
  */
-static int log_ble_ctrl_event(const struct event_header *eh, char *buf,
-			      size_t buf_len)
+static int log_ble_ctrl_event(const struct event_header *eh, char *buf, size_t buf_len)
 {
 	const struct ble_ctrl_event *event = cast_ble_ctrl_event(eh);
 
-	return snprintf(buf, buf_len, "BLE ctrl state: %s",
-			stringFromEnum(event->cmd));
+	return snprintf(buf, buf_len, "BLE ctrl state: %s", stringFromEnum(event->cmd));
 }
 
-EVENT_TYPE_DEFINE(ble_ctrl_event, IS_ENABLED(CONFIG_LOG_BLE_CTRL_EVENT),
-		  log_ble_ctrl_event, NULL);
+EVENT_TYPE_DEFINE(ble_ctrl_event, IS_ENABLED(CONFIG_LOG_BLE_CTRL_EVENT), log_ble_ctrl_event, NULL);

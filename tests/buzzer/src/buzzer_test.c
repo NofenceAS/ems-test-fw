@@ -42,8 +42,7 @@ void mock_expect_pwm_hz(uint32_t freq)
 
 void test_init_event_manager(void)
 {
-	zassert_false(event_manager_init(),
-		      "Error when initializing event manager");
+	zassert_false(event_manager_init(), "Error when initializing event manager");
 }
 void test_init_buzzer(void)
 {
@@ -288,34 +287,24 @@ void test_main(void)
 {
 	ztest_test_suite(
 		buzzer_tests, ztest_unit_test(test_init_event_manager),
-		ztest_unit_test_setup_teardown(test_init_buzzer, setup_common,
+		ztest_unit_test_setup_teardown(test_init_buzzer, setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_perspelmann, setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_find_me, setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_setupmode, setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_play_cattle, setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_short_100, setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_short_200, setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_solar_test, setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_off, setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_priority_second_prio, setup_common,
 					       teardown_common),
-		ztest_unit_test_setup_teardown(test_perspelmann, setup_common,
+		ztest_unit_test_setup_teardown(test_priority_first_prio, setup_common,
 					       teardown_common),
-		ztest_unit_test_setup_teardown(test_find_me, setup_common,
+		ztest_unit_test_setup_teardown(test_warn_zone_init, setup_common, teardown_common),
+		ztest_unit_test_setup_teardown(test_warn_zone_timeout, setup_common,
 					       teardown_common),
-		ztest_unit_test_setup_teardown(test_setupmode, setup_common,
-					       teardown_common),
-		ztest_unit_test_setup_teardown(test_play_cattle, setup_common,
-					       teardown_common),
-		ztest_unit_test_setup_teardown(test_short_100, setup_common,
-					       teardown_common),
-		ztest_unit_test_setup_teardown(test_short_200, setup_common,
-					       teardown_common),
-		ztest_unit_test_setup_teardown(test_solar_test, setup_common,
-					       teardown_common),
-		ztest_unit_test_setup_teardown(test_off, setup_common,
-					       teardown_common),
-		ztest_unit_test_setup_teardown(test_priority_second_prio,
-					       setup_common, teardown_common),
-		ztest_unit_test_setup_teardown(test_priority_first_prio,
-					       setup_common, teardown_common),
-		ztest_unit_test_setup_teardown(test_warn_zone_init,
-					       setup_common, teardown_common),
-		ztest_unit_test_setup_teardown(test_warn_zone_timeout,
-					       setup_common, teardown_common),
-		ztest_unit_test_setup_teardown(test_warn_zone_play_until_range,
-					       setup_common, teardown_common));
+		ztest_unit_test_setup_teardown(test_warn_zone_play_until_range, setup_common,
+					       teardown_common));
 
 	ztest_run_test_suite(buzzer_tests);
 }

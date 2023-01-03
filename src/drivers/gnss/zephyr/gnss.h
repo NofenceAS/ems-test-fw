@@ -12,12 +12,12 @@
  * than lower ones.
  */
 typedef enum {
-    GNSSMODE_NOMODE = 0,
-    GNSSMODE_INACTIVE = 1,
-    GNSSMODE_PSM = 2,
-    GNSSMODE_CAUTION = 3,
-    GNSSMODE_MAX = 4,
-    GNSSMODE_SIZE = 5
+	GNSSMODE_NOMODE = 0,
+	GNSSMODE_INACTIVE = 1,
+	GNSSMODE_PSM = 2,
+	GNSSMODE_CAUTION = 3,
+	GNSSMODE_MAX = 4,
+	GNSSMODE_SIZE = 5
 } gnss_mode_t;
 
 /** @brief Struct containing NAV-PL data */
@@ -96,15 +96,13 @@ typedef struct {
 	/** UBX-NAV-STATUS milliseconds since First Fix.*/
 	uint32_t ttff;
 
-    	/** Proprietary mode, to verify that any corrections are done when GNSS is in MAX performance */
-    	gnss_mode_t mode;
+	/** Proprietary mode, to verify that any corrections are done when GNSS is in MAX performance */
+	gnss_mode_t mode;
 
 	/** Protection Level sub-fields */
 	gnss_pl_t pl;
 
-
 } gnss_struct_t;
-
 
 /** @brief See gnss_struct_t for descriptions. */
 typedef struct {
@@ -164,8 +162,7 @@ typedef int (*gnss_data_cb_t)(const gnss_t *data);
  *
  * See gnss_setup() for argument description
  */
-typedef int (*gnss_setup_t)(const struct device *dev,
-			    bool try_default_baud_first);
+typedef int (*gnss_setup_t)(const struct device *dev, bool try_default_baud_first);
 
 /**
  * @typedef gnss_reset_t
@@ -173,8 +170,7 @@ typedef int (*gnss_setup_t)(const struct device *dev,
  *
  * See gnss_reset() for argument description
  */
-typedef int (*gnss_reset_t)(const struct device *dev, uint16_t mask,
-			    uint8_t mode);
+typedef int (*gnss_reset_t)(const struct device *dev, uint16_t mask, uint8_t mode);
 
 /**
  * @typedef gnss_upload_assist_data_t
@@ -182,8 +178,7 @@ typedef int (*gnss_reset_t)(const struct device *dev, uint16_t mask,
  *
  * See gnss_upload_assist_data() for argument description
  */
-typedef int (*gnss_upload_assist_data_t)(const struct device *dev,
-					 uint8_t *data, uint32_t size);
+typedef int (*gnss_upload_assist_data_t)(const struct device *dev, uint8_t *data, uint32_t size);
 
 /**
  * @typedef gnss_set_rate_t
@@ -207,8 +202,7 @@ typedef int (*gnss_get_rate_t)(const struct device *dev, uint16_t *rate);
  *
  * See gnss_set_data_cb() for argument description
  */
-typedef int (*gnss_set_data_cb_t)(const struct device *dev,
-				  gnss_data_cb_t gnss_data_cb);
+typedef int (*gnss_set_data_cb_t)(const struct device *dev, gnss_data_cb_t gnss_data_cb);
 
 /**
  * @typedef gnss_data_fetch_t
@@ -217,7 +211,6 @@ typedef int (*gnss_set_data_cb_t)(const struct device *dev,
  * See gnss_data_fetch() for argument description
  */
 typedef int (*gnss_data_fetch_t)(const struct device *dev, gnss_t *data);
-
 
 /**
  * @typedef gnss_set_backup_mode_t
@@ -241,7 +234,7 @@ typedef int (*gnss_wakeup_t)(const struct device *dev);
  *
  * See gnss_set_power_mode() for argument description
  */
-typedef int (*gnss_set_power_mode_t)(const struct device *dev,gnss_mode_t mode);
+typedef int (*gnss_set_power_mode_t)(const struct device *dev, gnss_mode_t mode);
 
 __subsystem struct gnss_driver_api {
 	gnss_setup_t gnss_setup;
@@ -251,9 +244,9 @@ __subsystem struct gnss_driver_api {
 	gnss_get_rate_t gnss_get_rate;
 	gnss_set_data_cb_t gnss_set_data_cb;
 	gnss_data_fetch_t gnss_data_fetch;
-    gnss_set_backup_mode_t gnss_set_backup_mode;
-    gnss_wakeup_t gnss_wakeup;
-    gnss_set_power_mode_t gnss_set_power_mode;
+	gnss_set_backup_mode_t gnss_set_backup_mode;
+	gnss_wakeup_t gnss_wakeup;
+	gnss_set_power_mode_t gnss_set_power_mode;
 };
 
 /**
@@ -266,11 +259,9 @@ __subsystem struct gnss_driver_api {
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static inline int gnss_setup(const struct device *dev,
-			     bool try_default_baud_first)
+static inline int gnss_setup(const struct device *dev, bool try_default_baud_first)
 {
-	const struct gnss_driver_api *api =
-		(const struct gnss_driver_api *)dev->api;
+	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
 
 	return api->gnss_setup(dev, try_default_baud_first);
 }
@@ -286,11 +277,9 @@ static inline int gnss_setup(const struct device *dev,
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static inline int gnss_reset(const struct device *dev, uint16_t mask,
-			     uint8_t mode)
+static inline int gnss_reset(const struct device *dev, uint16_t mask, uint8_t mode)
 {
-	const struct gnss_driver_api *api =
-		(const struct gnss_driver_api *)dev->api;
+	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
 
 	return api->gnss_reset(dev, mask, mode);
 }
@@ -304,11 +293,9 @@ static inline int gnss_reset(const struct device *dev, uint16_t mask,
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static inline int gnss_upload_assist_data(const struct device *dev,
-					  uint8_t *data, uint32_t size)
+static inline int gnss_upload_assist_data(const struct device *dev, uint8_t *data, uint32_t size)
 {
-	const struct gnss_driver_api *api =
-		(const struct gnss_driver_api *)dev->api;
+	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
 
 	return api->gnss_upload_assist_data(dev, data, size);
 }
@@ -323,8 +310,7 @@ static inline int gnss_upload_assist_data(const struct device *dev,
  */
 static inline int gnss_set_rate(const struct device *dev, uint16_t rate)
 {
-	const struct gnss_driver_api *api =
-		(const struct gnss_driver_api *)dev->api;
+	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
 
 	return api->gnss_set_rate(dev, rate);
 }
@@ -339,8 +325,7 @@ static inline int gnss_set_rate(const struct device *dev, uint16_t rate)
  */
 static inline int gnss_get_rate(const struct device *dev, uint16_t *rate)
 {
-	const struct gnss_driver_api *api =
-		(const struct gnss_driver_api *)dev->api;
+	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
 
 	return api->gnss_get_rate(dev, rate);
 }
@@ -353,11 +338,9 @@ static inline int gnss_get_rate(const struct device *dev, uint16_t *rate)
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-static inline int gnss_set_data_cb(const struct device *dev,
-				   gnss_data_cb_t gnss_data_cb)
+static inline int gnss_set_data_cb(const struct device *dev, gnss_data_cb_t gnss_data_cb)
 {
-	const struct gnss_driver_api *api =
-		(const struct gnss_driver_api *)dev->api;
+	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
 
 	return api->gnss_set_data_cb(dev, gnss_data_cb);
 }
@@ -372,8 +355,7 @@ static inline int gnss_set_data_cb(const struct device *dev,
  */
 static inline int gnss_data_fetch(const struct device *dev, gnss_t *data)
 {
-	const struct gnss_driver_api *api =
-		(const struct gnss_driver_api *)dev->api;
+	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
 
 	return api->gnss_data_fetch(dev, data);
 }
@@ -383,11 +365,11 @@ static inline int gnss_data_fetch(const struct device *dev, gnss_t *data)
  * @param[in] dev Pointer to the GNSS device
  * @return 0 if OK, negative error code otherwise
  */
-static inline int gnss_set_backup_mode(const struct device *dev) {
-    const struct gnss_driver_api *api =
-            (const struct gnss_driver_api *)dev->api;
+static inline int gnss_set_backup_mode(const struct device *dev)
+{
+	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
 
-    return api->gnss_set_backup_mode(dev);
+	return api->gnss_set_backup_mode(dev);
 }
 
 /**
@@ -395,11 +377,11 @@ static inline int gnss_set_backup_mode(const struct device *dev) {
 * @param[in] dev Pointer to the GNSS device
 * @return 0 if OK, negative error code otherwise
 */
-static inline int gnss_wakeup(const struct device *dev) {
-    const struct gnss_driver_api *api =
-            (const struct gnss_driver_api *)dev->api;
+static inline int gnss_wakeup(const struct device *dev)
+{
+	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
 
-    return api->gnss_wakeup( dev);
+	return api->gnss_wakeup(dev);
 }
 
 /**
@@ -408,11 +390,11 @@ static inline int gnss_wakeup(const struct device *dev) {
  * @param mode
  * @return
  */
-static inline int gnss_set_power_mode(const struct device *dev,gnss_mode_t mode) {
-    const struct gnss_driver_api *api =
-            (const struct gnss_driver_api *)dev->api;
+static inline int gnss_set_power_mode(const struct device *dev, gnss_mode_t mode)
+{
+	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
 
-    return api->gnss_set_power_mode(dev,mode);
+	return api->gnss_set_power_mode(dev, mode);
 }
 
 #endif /* GNSS_H_ */

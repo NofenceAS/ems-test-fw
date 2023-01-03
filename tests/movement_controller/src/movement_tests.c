@@ -30,7 +30,6 @@ void assert_post_action(const char *file, unsigned int line)
 	printk("assert_post_action - file: %s (line: %u)\n", file, line);
 }
 
-
 void test_init(void)
 {
 	ztest_returns_value(sensor_attr_set, 0);
@@ -42,10 +41,8 @@ void test_init(void)
 	ztest_returns_value(stg_config_u16_read, 0);
 	ztest_returns_value(stg_config_u16_read, 0);
 
-	zassert_false(event_manager_init(),
-		      "Error when initializing event manager");
-	zassert_false(init_movement_controller(),
-		      "Error when initializing movement controller");
+	zassert_false(event_manager_init(), "Error when initializing event manager");
+	zassert_false(init_movement_controller(), "Error when initializing movement controller");
 }
 
 void test_activity_no(void)
@@ -53,7 +50,7 @@ void test_activity_no(void)
 	_movement_controller_reset_for_test();
 	curr_test = TEST_ACTIVITY_NO;
 	/* Disregard first batch read */
-	for (int i = 0; i < 32; i++ ){
+	for (int i = 0; i < 32; i++) {
 		row = i;
 		ztest_returns_value(sensor_sample_fetch, 0);
 		ztest_returns_value(sensor_channel_get, 0);
@@ -62,7 +59,7 @@ void test_activity_no(void)
 		process_acc_data(&raw_data);
 	}
 
-	for (int i = 0; i < 32; i++ ){
+	for (int i = 0; i < 32; i++) {
 		row = i;
 		ztest_returns_value(sensor_sample_fetch, 0);
 		ztest_returns_value(sensor_channel_get, 0);
@@ -72,13 +69,12 @@ void test_activity_no(void)
 	}
 	zassert_equal(k_sem_take(&cur_activity_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(cur_activity, ACTIVITY_NO, "");
-
 }
 
 void test_activity_low(void)
 {
 	curr_test = TEST_ACTIVITY_LOW;
-	for (int i = 0; i < 32; i++ ){
+	for (int i = 0; i < 32; i++) {
 		row = i;
 		ztest_returns_value(sensor_sample_fetch, 0);
 		ztest_returns_value(sensor_channel_get, 0);
@@ -88,13 +84,12 @@ void test_activity_low(void)
 	}
 	zassert_equal(k_sem_take(&cur_activity_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(cur_activity, ACTIVITY_LOW, "");
-
 }
 
 void test_activity_med(void)
 {
 	curr_test = TEST_ACTIVITY_MED;
-	for (int i = 0; i < 32; i++ ){
+	for (int i = 0; i < 32; i++) {
 		row = i;
 		ztest_returns_value(sensor_sample_fetch, 0);
 		ztest_returns_value(sensor_channel_get, 0);
@@ -104,13 +99,12 @@ void test_activity_med(void)
 	}
 	zassert_equal(k_sem_take(&cur_activity_sem, K_SECONDS(30)), 0, "");
 	zassert_equal(cur_activity, ACTIVITY_MED, "");
-
 }
 
 void test_activity_high(void)
 {
 	curr_test = TEST_ACTIVITY_HIGH;
-	for (int i = 0; i < 32; i++ ){
+	for (int i = 0; i < 32; i++) {
 		row = i;
 		ztest_returns_value(sensor_sample_fetch, 0);
 		ztest_returns_value(sensor_channel_get, 0);
@@ -130,49 +124,47 @@ void test_process_acc_data_correct_acc_std_final(void)
 	raw.x = 1;
 	raw.y = 1;
 	raw.z = 1;
-	for (int i=0; i < 32; i ++) {
+	for (int i = 0; i < 32; i++) {
 		process_acc_data(&raw);
-		raw.x ++;
-		raw.y ++;
-		raw.z ++;
+		raw.x++;
+		raw.y++;
+		raw.z++;
 	}
-	zassert_equal(_movement_controler_get_acc_std_final(),0,"Running average standard deviation is wrong");
+	zassert_equal(_movement_controler_get_acc_std_final(), 0,
+		      "Running average standard deviation is wrong");
 	/* The second batch should be ok */
 	raw.x = 1;
 	raw.y = 1;
 	raw.z = 1;
-	for (int i=0; i < 32; i ++) {
+	for (int i = 0; i < 32; i++) {
 		process_acc_data(&raw);
-		raw.x ++;
-		raw.y ++;
-		raw.z ++;
+		raw.x++;
+		raw.y++;
+		raw.z++;
 	}
-	zassert_equal(_movement_controler_get_acc_std_final(),16,"Running average standard deviation is wrong");
+	zassert_equal(_movement_controler_get_acc_std_final(), 16,
+		      "Running average standard deviation is wrong");
 
 	/* Feed the same values again, variance should increase even more */
 	raw.x = 1;
 	raw.y = 1;
 	raw.z = 1;
-	for (int i=0; i < 32; i ++) {
+	for (int i = 0; i < 32; i++) {
 		process_acc_data(&raw);
-		raw.x +=100;
-		raw.y +=100;
-		raw.z +=100;
+		raw.x += 100;
+		raw.y += 100;
+		raw.z += 100;
 	}
-	zassert_equal(_movement_controler_get_acc_std_final(),68,"Running average standard deviation is wrong");
+	zassert_equal(_movement_controler_get_acc_std_final(), 68,
+		      "Running average standard deviation is wrong");
 }
-
 
 void test_main(void)
 {
-	ztest_test_suite(movement_tests, 
-			ztest_unit_test(test_init),
-			ztest_unit_test(test_activity_no),
-			ztest_unit_test(test_activity_low),
-			ztest_unit_test(test_activity_med),
-			ztest_unit_test(test_activity_high),
-			 ztest_unit_test(test_process_acc_data_correct_acc_std_final)
-			);
+	ztest_test_suite(movement_tests, ztest_unit_test(test_init),
+			 ztest_unit_test(test_activity_no), ztest_unit_test(test_activity_low),
+			 ztest_unit_test(test_activity_med), ztest_unit_test(test_activity_high),
+			 ztest_unit_test(test_process_acc_data_correct_acc_std_final));
 
 	ztest_run_test_suite(movement_tests);
 }

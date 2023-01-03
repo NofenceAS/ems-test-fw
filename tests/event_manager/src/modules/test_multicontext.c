@@ -15,7 +15,6 @@
 #define MODULE test_multictx
 #define THREAD_STACK_SIZE 400
 
-
 static void send_event(int a, bool sleep)
 {
 	struct multicontext_event *ev = new_multicontext_event();
@@ -59,19 +58,12 @@ static void thread2_fn(void)
 
 static void start_test(void)
 {
-	k_thread_create(&thread1, thread_stack1,
-			THREAD_STACK_SIZE,
-			(k_thread_entry_t)thread1_fn,
-			NULL, NULL, NULL,
-			THREAD1_PRIORITY, 0, K_NO_WAIT);
+	k_thread_create(&thread1, thread_stack1, THREAD_STACK_SIZE, (k_thread_entry_t)thread1_fn,
+			NULL, NULL, NULL, THREAD1_PRIORITY, 0, K_NO_WAIT);
 
-	k_thread_create(&thread2, thread_stack2,
-			THREAD_STACK_SIZE,
-			(k_thread_entry_t)thread2_fn,
-			NULL, NULL, NULL,
-			THREAD2_PRIORITY, 0, K_NO_WAIT);
+	k_thread_create(&thread2, thread_stack2, THREAD_STACK_SIZE, (k_thread_entry_t)thread2_fn,
+			NULL, NULL, NULL, THREAD2_PRIORITY, 0, K_NO_WAIT);
 }
-
 
 static bool event_handler(const struct event_header *eh)
 {
@@ -79,8 +71,7 @@ static bool event_handler(const struct event_header *eh)
 		struct test_start_event *st = cast_test_start_event(eh);
 
 		switch (st->test_id) {
-		case TEST_MULTICONTEXT:
-		{
+		case TEST_MULTICONTEXT: {
 			cur_test_id = st->test_id;
 			start_test();
 
@@ -89,8 +80,7 @@ static bool event_handler(const struct event_header *eh)
 
 		default:
 			/* Ignore other test cases, check if proper test_id. */
-			zassert_true(st->test_id < TEST_CNT,
-				     "test_id out of range");
+			zassert_true(st->test_id < TEST_CNT, "test_id out of range");
 			break;
 		}
 
