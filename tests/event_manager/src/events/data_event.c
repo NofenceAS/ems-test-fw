@@ -6,9 +6,7 @@
 
 #include "data_event.h"
 
-
-static void profile_data_event(struct log_event_buf *buf,
-			       const struct event_header *eh)
+static void profile_data_event(struct log_event_buf *buf, const struct event_header *eh)
 {
 	struct data_event *event = cast_data_event(eh);
 
@@ -23,15 +21,9 @@ static void profile_data_event(struct log_event_buf *buf,
 }
 
 EVENT_INFO_DEFINE(data_event,
-		  ENCODE(PROFILER_ARG_S8, PROFILER_ARG_S16, PROFILER_ARG_S32,
-			 PROFILER_ARG_U8, PROFILER_ARG_U16, PROFILER_ARG_U32,
-			 PROFILER_ARG_STRING),
-		  ENCODE("val1", "val2", "val3",
-			 "val1u", "val2u", "val3u",
-			 "descr"),
+		  ENCODE(PROFILER_ARG_S8, PROFILER_ARG_S16, PROFILER_ARG_S32, PROFILER_ARG_U8,
+			 PROFILER_ARG_U16, PROFILER_ARG_U32, PROFILER_ARG_STRING),
+		  ENCODE("val1", "val2", "val3", "val1u", "val2u", "val3u", "descr"),
 		  profile_data_event);
 
-EVENT_TYPE_DEFINE(data_event,
-		  false,
-		  NULL,
-		  &data_event_info);
+EVENT_TYPE_DEFINE(data_event, false, NULL, &data_event_info);

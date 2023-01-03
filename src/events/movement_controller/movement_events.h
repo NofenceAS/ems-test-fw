@@ -52,11 +52,7 @@ struct step_counter_event {
 	uint32_t steps;
 };
 
-typedef enum {
-	NO_ACTIVITY_SIGMA = 0,
-	SLEEP_SIGMA = 1,
-	OFF_ANIMAL_SIGMA = 2
-} sigma_type_t;
+typedef enum { NO_ACTIVITY_SIGMA = 0, SLEEP_SIGMA = 1, OFF_ANIMAL_SIGMA = 2 } sigma_type_t;
 
 struct acc_sigma_event {
 	struct event_header header;

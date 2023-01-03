@@ -19,7 +19,7 @@
 struct msg_data_event {
 	struct event_header header;
 
-        struct event_dyndata dyndata;
+	struct event_dyndata dyndata;
 };
 
 EVENT_TYPE_DYNDATA_DECLARE(msg_data_event);

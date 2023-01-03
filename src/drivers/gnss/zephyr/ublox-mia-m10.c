@@ -117,8 +117,8 @@ static int mia_m10_sync_tow(uint32_t tow)
 static int mia_m10_sync_complete(uint32_t flag)
 {
 	gnss_data_flags |= flag;
-	if (gnss_data_flags ==
-	    (GNSS_DATA_FLAG_NAV_DOP | GNSS_DATA_FLAG_NAV_PVT | GNSS_DATA_FLAG_NAV_STATUS | GNSS_DATA_FLAG_NAV_PL)) {
+	if (gnss_data_flags == (GNSS_DATA_FLAG_NAV_DOP | GNSS_DATA_FLAG_NAV_PVT |
+				GNSS_DATA_FLAG_NAV_STATUS | GNSS_DATA_FLAG_NAV_PL)) {
 		/* Copy data from "in progress" to "working", and call callbacks */
 		if (k_mutex_lock(&gnss_data_mutex, K_MSEC(10)) == 0) {
 			memcpy(&gnss_data.latest, &gnss_data_in_progress, sizeof(gnss_struct_t));
@@ -144,7 +144,8 @@ static int mia_m10_sync_complete(uint32_t flag)
 				/* Report the last set mode for statistics collection */
 				gnss_data.lastfix.mode = gnss_data.latest.mode;
 				/* PL fields are the same structure */
-				memcpy(&gnss_data.lastfix.pl,&gnss_data.latest.pl,sizeof(gnss_data.lastfix.pl));
+				memcpy(&gnss_data.lastfix.pl, &gnss_data.latest.pl,
+				       sizeof(gnss_data.lastfix.pl));
 				gnss_data.has_lastfix = true;
 			}
 			k_mutex_unlock(&gnss_data_mutex);

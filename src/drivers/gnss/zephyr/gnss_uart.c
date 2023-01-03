@@ -42,7 +42,7 @@ static void gnss_uart_handle_tx(const struct device *uart_dev)
 	int err;
 	uint32_t size;
 	uint32_t sent;
-	uint8_t* data;
+	uint8_t *data;
 
 	if (gnss_hub_rx_get_data(GNSS_HUB_ID_UART, &data, &size) == 0) {
 		sent = uart_fifo_fill(uart_dev, data, size);
@@ -60,13 +60,11 @@ static void gnss_uart_handle_tx(const struct device *uart_dev)
  * @param[in] uart_dev UART device to send to. 
  */
 static void gnss_uart_handle_complete(const struct device *uart_dev)
-{	
+{
 	if (gnss_hub_rx_is_empty(GNSS_HUB_ID_UART)) {
 		uart_irq_tx_disable(uart_dev);
 
-		if (atomic_test_and_clear_bit(
-				&gnss_uart_baudrate_change_req, 0)) {
-			
+		if (atomic_test_and_clear_bit(&gnss_uart_baudrate_change_req, 0)) {
 			gnss_uart_set_baudrate(gnss_uart_baudrate, true);
 		}
 	}
@@ -93,12 +91,9 @@ static void gnss_uart_handle_rx(const struct device *uart_dev)
  * 
  * @param[in] uart_dev UART device to handle interrupts for. 
  */
-static void gnss_uart_isr(const struct device *uart_dev,
-				 void *user_data)
+static void gnss_uart_isr(const struct device *uart_dev, void *user_data)
 {
-	while (uart_irq_update(uart_dev) &&
-	       uart_irq_is_pending(uart_dev)) {
-		
+	while (uart_irq_update(uart_dev) && uart_irq_is_pending(uart_dev)) {
 		if (uart_irq_tx_ready(uart_dev)) {
 			gnss_uart_handle_tx(uart_dev);
 		}
@@ -113,9 +108,7 @@ static void gnss_uart_isr(const struct device *uart_dev,
 	}
 }
 
-int gnss_uart_init(const struct device *uart_dev, 
-		   struct k_sem* rx_sem, 
-		   uint32_t baudrate)
+int gnss_uart_init(const struct device *uart_dev, struct k_sem *rx_sem, uint32_t baudrate)
 {
 	if (uart_dev == NULL) {
 		return -EINVAL;
@@ -147,7 +140,7 @@ uint32_t gnss_uart_get_baudrate(void)
 	if (ret != 0) {
 		return 0;
 	}
-	
+
 	return cfg.baudrate;
 }
 

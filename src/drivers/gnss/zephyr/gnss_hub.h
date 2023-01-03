@@ -8,14 +8,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define GNSS_HUB_ID_UART		0
-#define GNSS_HUB_ID_DRIVER		1
-#define GNSS_HUB_ID_DIAGNOSTICS		2
+#define GNSS_HUB_ID_UART 0
+#define GNSS_HUB_ID_DRIVER 1
+#define GNSS_HUB_ID_DIAGNOSTICS 2
 
-#define GNSS_HUB_MODE_DEFAULT		0
-#define GNSS_HUB_MODE_SNIFFER		1
-#define GNSS_HUB_MODE_CONTROLLER	2
-#define GNSS_HUB_MODE_SIMULATOR		3
+#define GNSS_HUB_MODE_DEFAULT 0
+#define GNSS_HUB_MODE_SNIFFER 1
+#define GNSS_HUB_MODE_CONTROLLER 2
+#define GNSS_HUB_MODE_SIMULATOR 3
 
 typedef void (*gnss_diag_data_cb_t)(void);
 
@@ -28,9 +28,7 @@ typedef void (*gnss_diag_data_cb_t)(void);
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int gnss_hub_init(const struct device *uart_dev, 
-		  struct k_sem* rx_sem, 
-		  uint32_t baudrate);
+int gnss_hub_init(const struct device *uart_dev, struct k_sem *rx_sem, uint32_t baudrate);
 
 /**
  * @brief Set callback to signal received data for diagnostics. 
@@ -77,7 +75,7 @@ uint32_t gnss_hub_get_uart_baudrate(void);
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int gnss_hub_send(uint8_t hub_id, uint8_t* buffer, uint32_t cnt);
+int gnss_hub_send(uint8_t hub_id, uint8_t *buffer, uint32_t cnt);
 
 /**
  * @brief Check if RX buffer is empty for specified receiver ID
@@ -97,7 +95,7 @@ bool gnss_hub_rx_is_empty(uint8_t hub_id);
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int gnss_hub_rx_get_data(uint8_t hub_id, uint8_t** buffer, uint32_t* cnt);
+int gnss_hub_rx_get_data(uint8_t hub_id, uint8_t **buffer, uint32_t *cnt);
 
 /**
  * @brief Remove specified number of bytes from receive buffer. 

@@ -16,6 +16,5 @@
 
 #define TEST_STRING "description123"
 
-
 /* TEST_EVENT_ORDER */
 #define TEST_EVENT_ORDER_CNT 20

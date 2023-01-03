@@ -18,8 +18,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_FW_UPGRADE_LOG_LEVEL);
  * @param[in] buf triggered event's log event buffer.
  * @param[in] buf_len length of the buffer received.
  */
-static int log_dfu_status_event(const struct event_header *eh, char *buf,
-				size_t buf_len)
+static int log_dfu_status_event(const struct event_header *eh, char *buf, size_t buf_len)
 {
 	struct dfu_status_event *event = cast_dfu_status_event(eh);
 	return snprintf(buf, buf_len, "DFU_status=%d", event->dfu_status);
@@ -37,15 +36,14 @@ EVENT_TYPE_DEFINE(dfu_status_event, IS_ENABLED(CONFIG_FW_LOG_DFU_STATUS_EVENT),
  * @param[in] buf triggered event's log event buffer.
  * @param[in] buf_len length of the buffer received.
  */
-static int log_start_fota_event(const struct event_header *eh, char *buf,
-				size_t buf_len)
+static int log_start_fota_event(const struct event_header *eh, char *buf, size_t buf_len)
 {
 	struct start_fota_event *event = cast_start_fota_event(eh);
-	return snprintf(buf, buf_len, "Start upgrade event to FW=%d",
-			event->version);
+	return snprintf(buf, buf_len, "Start upgrade event to FW=%d", event->version);
 }
 
-EVENT_TYPE_DEFINE(start_fota_event, IS_ENABLED(CONFIG_FW_LOG_DFU_START_EVENT), log_start_fota_event, NULL);
+EVENT_TYPE_DEFINE(start_fota_event, IS_ENABLED(CONFIG_FW_LOG_DFU_START_EVENT), log_start_fota_event,
+		  NULL);
 
 EVENT_TYPE_DEFINE(cancel_fota_event, false, NULL, NULL);
 

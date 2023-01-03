@@ -11,7 +11,7 @@
 #define STG_CONFIG_BLE_SEC_KEY_LEN 8
 
 typedef enum {
-    STG_U8_WARN_MAX_DURATION = 0,
+	STG_U8_WARN_MAX_DURATION = 0,
 	STG_U8_WARN_MIN_DURATION,
 	STG_U8_PAIN_CNT_DEF_ESCAPED,
 	STG_U8_COLLAR_MODE,
@@ -31,12 +31,12 @@ typedef enum {
 	STG_U16_ZAP_CNT_TOT,
 	STG_U16_ZAP_CNT_DAY,
 	STG_U16_PRODUCT_TYPE,
-    STG_U32_UID, 
-    STG_U32_WARN_CNT_TOT,
-    STG_STR_HOST_PORT,
-    STG_BLOB_BLE_KEY,
+	STG_U32_UID,
+	STG_U32_WARN_CNT_TOT,
+	STG_STR_HOST_PORT,
+	STG_BLOB_BLE_KEY,
 	STG_PARAM_ID_CNT
-}stg_config_param_id_t;
+} stg_config_param_id_t;
 
 int stg_config_u8_read(stg_config_param_id_t id, uint8_t *value);
 int stg_config_u8_write(stg_config_param_id_t id, const uint8_t value);
@@ -51,9 +51,8 @@ int stg_config_str_read(stg_config_param_id_t id, char *str, uint8_t *len);
 int stg_config_str_write(stg_config_param_id_t id, const char *str, const uint8_t len);
 
 int stg_config_blob_read(stg_config_param_id_t id, uint8_t *arr, uint8_t *len);
-int stg_config_blob_write(stg_config_param_id_t id, const uint8_t *arr, 
-		const uint8_t len);
-		
+int stg_config_blob_write(stg_config_param_id_t id, const uint8_t *arr, const uint8_t len);
+
 int stg_config_erase_all(void);
 
 #endif /* MOCK_STG_CONFIG_H */

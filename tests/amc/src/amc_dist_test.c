@@ -23,23 +23,19 @@ void test_fnc_calc_dist_quadratic(void)
 	};
 
 	/* Fences. */
-	pasture.fences[0].m.e_fence_type =
-		FenceDefinitionMessage_FenceType_Normal;
+	pasture.fences[0].m.e_fence_type = FenceDefinitionMessage_FenceType_Normal;
 	pasture.fences[0].m.us_id = 0;
 	pasture.fences[0].m.fence_no = 0;
 
 	/* Coordinates. */
 	fence_coordinate_t points1[] = {
-		{ .s_x_dm = 10, .s_y_dm = -10 },
-		{ .s_x_dm = 10, .s_y_dm = 10 },
-		{ .s_x_dm = -10, .s_y_dm = 10 },
-		{ .s_x_dm = -10, .s_y_dm = -10 },
+		{ .s_x_dm = 10, .s_y_dm = -10 }, { .s_x_dm = 10, .s_y_dm = 10 },
+		{ .s_x_dm = -10, .s_y_dm = 10 }, { .s_x_dm = -10, .s_y_dm = -10 },
 		{ .s_x_dm = 10, .s_y_dm = -10 },
 	};
 	pasture.fences[0].m.n_points = sizeof(points1) / sizeof(points1[0]);
 	memcpy(pasture.fences[0].coordinates, points1, sizeof(points1));
-	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)),
-		      "");
+	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)), "");
 
 	int16_t d;
 	uint8_t fence_index;
@@ -93,57 +89,37 @@ void test_fnc_calc_dist_quadratic_max(void)
 	};
 
 	/* Fences. */
-	pasture.fences[0].m.e_fence_type =
-		FenceDefinitionMessage_FenceType_Normal;
+	pasture.fences[0].m.e_fence_type = FenceDefinitionMessage_FenceType_Normal;
 	pasture.fences[0].m.us_id = 0;
 	pasture.fences[0].m.fence_no = 0;
 
 	/* Coordinates. */
-	fence_coordinate_t points1[] = { { .s_x_dm = 10, .s_y_dm = -10 },
-					 { .s_x_dm = 10, .s_y_dm = -9 },
-					 { .s_x_dm = 10, .s_y_dm = -8 },
-					 { .s_x_dm = 10, .s_y_dm = -7 },
-					 { .s_x_dm = 10, .s_y_dm = -6 },
-					 { .s_x_dm = 10, .s_y_dm = -5 },
-					 { .s_x_dm = 10, .s_y_dm = -4 },
-					 { .s_x_dm = 10, .s_y_dm = -3 },
-					 { .s_x_dm = 10, .s_y_dm = -2 },
-					 { .s_x_dm = 10, .s_y_dm = -1 },
-					 { .s_x_dm = 10, .s_y_dm = 1 },
-					 { .s_x_dm = 10, .s_y_dm = 2 },
-					 { .s_x_dm = 10, .s_y_dm = 3 },
-					 { .s_x_dm = 10, .s_y_dm = 4 },
-					 { .s_x_dm = 10, .s_y_dm = 5 },
-					 { .s_x_dm = 10, .s_y_dm = 6 },
-					 { .s_x_dm = 10, .s_y_dm = 7 },
-					 { .s_x_dm = 10, .s_y_dm = 8 },
-					 { .s_x_dm = 10, .s_y_dm = 9 },
-					 { .s_x_dm = 10, .s_y_dm = 10 },
-					 { .s_x_dm = 9, .s_y_dm = 10 },
-					 { .s_x_dm = 8, .s_y_dm = 10 },
-					 { .s_x_dm = 7, .s_y_dm = 10 },
-					 { .s_x_dm = 6, .s_y_dm = 10 },
-					 { .s_x_dm = 5, .s_y_dm = 10 },
-					 { .s_x_dm = 4, .s_y_dm = 10 },
-					 { .s_x_dm = 3, .s_y_dm = 10 },
-					 { .s_x_dm = 2, .s_y_dm = 10 },
-					 { .s_x_dm = 1, .s_y_dm = 10 },
-					 { .s_x_dm = 0, .s_y_dm = 10 },
-					 { .s_x_dm = -1, .s_y_dm = 10 },
-					 { .s_x_dm = -2, .s_y_dm = 10 },
-					 { .s_x_dm = -3, .s_y_dm = 10 },
-					 { .s_x_dm = -4, .s_y_dm = 10 },
-					 { .s_x_dm = -5, .s_y_dm = 10 },
-					 { .s_x_dm = -6, .s_y_dm = 10 },
-					 { .s_x_dm = -7, .s_y_dm = 10 },
-					 { .s_x_dm = -10, .s_y_dm = 10 },
-					 { .s_x_dm = -10, .s_y_dm = -10 },
-					 { .s_x_dm = 10, .s_y_dm = -10 } };
+	fence_coordinate_t points1[] = {
+		{ .s_x_dm = 10, .s_y_dm = -10 },  { .s_x_dm = 10, .s_y_dm = -9 },
+		{ .s_x_dm = 10, .s_y_dm = -8 },	  { .s_x_dm = 10, .s_y_dm = -7 },
+		{ .s_x_dm = 10, .s_y_dm = -6 },	  { .s_x_dm = 10, .s_y_dm = -5 },
+		{ .s_x_dm = 10, .s_y_dm = -4 },	  { .s_x_dm = 10, .s_y_dm = -3 },
+		{ .s_x_dm = 10, .s_y_dm = -2 },	  { .s_x_dm = 10, .s_y_dm = -1 },
+		{ .s_x_dm = 10, .s_y_dm = 1 },	  { .s_x_dm = 10, .s_y_dm = 2 },
+		{ .s_x_dm = 10, .s_y_dm = 3 },	  { .s_x_dm = 10, .s_y_dm = 4 },
+		{ .s_x_dm = 10, .s_y_dm = 5 },	  { .s_x_dm = 10, .s_y_dm = 6 },
+		{ .s_x_dm = 10, .s_y_dm = 7 },	  { .s_x_dm = 10, .s_y_dm = 8 },
+		{ .s_x_dm = 10, .s_y_dm = 9 },	  { .s_x_dm = 10, .s_y_dm = 10 },
+		{ .s_x_dm = 9, .s_y_dm = 10 },	  { .s_x_dm = 8, .s_y_dm = 10 },
+		{ .s_x_dm = 7, .s_y_dm = 10 },	  { .s_x_dm = 6, .s_y_dm = 10 },
+		{ .s_x_dm = 5, .s_y_dm = 10 },	  { .s_x_dm = 4, .s_y_dm = 10 },
+		{ .s_x_dm = 3, .s_y_dm = 10 },	  { .s_x_dm = 2, .s_y_dm = 10 },
+		{ .s_x_dm = 1, .s_y_dm = 10 },	  { .s_x_dm = 0, .s_y_dm = 10 },
+		{ .s_x_dm = -1, .s_y_dm = 10 },	  { .s_x_dm = -2, .s_y_dm = 10 },
+		{ .s_x_dm = -3, .s_y_dm = 10 },	  { .s_x_dm = -4, .s_y_dm = 10 },
+		{ .s_x_dm = -5, .s_y_dm = 10 },	  { .s_x_dm = -6, .s_y_dm = 10 },
+		{ .s_x_dm = -7, .s_y_dm = 10 },	  { .s_x_dm = -10, .s_y_dm = 10 },
+		{ .s_x_dm = -10, .s_y_dm = -10 }, { .s_x_dm = 10, .s_y_dm = -10 }
+	};
 
 	pasture.fences[0].m.n_points = sizeof(points1) / sizeof(points1[0]);
 	memcpy(pasture.fences[0].coordinates, points1, sizeof(points1));
-	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)),
-		      "");
+	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)), "");
 
 	int16_t d;
 	uint8_t fence_index;
@@ -182,24 +158,20 @@ void test_fnc_calc_dist_rect(void)
 	};
 
 	/* Fences. */
-	pasture.fences[0].m.e_fence_type =
-		FenceDefinitionMessage_FenceType_Normal;
+	pasture.fences[0].m.e_fence_type = FenceDefinitionMessage_FenceType_Normal;
 	pasture.fences[0].m.us_id = 0;
 	pasture.fences[0].m.fence_no = 0;
 
 	/* Coordinates. */
 	fence_coordinate_t points1[] = {
-		{ .s_x_dm = 100, .s_y_dm = -10 },
-		{ .s_x_dm = 100, .s_y_dm = 10 },
-		{ .s_x_dm = -100, .s_y_dm = 10 },
-		{ .s_x_dm = -100, .s_y_dm = -10 },
+		{ .s_x_dm = 100, .s_y_dm = -10 }, { .s_x_dm = 100, .s_y_dm = 10 },
+		{ .s_x_dm = -100, .s_y_dm = 10 }, { .s_x_dm = -100, .s_y_dm = -10 },
 		{ .s_x_dm = 100, .s_y_dm = -10 },
 
 	};
 	pasture.fences[0].m.n_points = sizeof(points1) / sizeof(points1[0]);
 	memcpy(pasture.fences[0].coordinates, points1, sizeof(points1));
-	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)),
-		      "");
+	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)), "");
 
 	int16_t d;
 	uint8_t fence_index;
@@ -238,39 +210,32 @@ void test_fnc_calc_dist_2_fences_hole(void)
 	};
 
 	/* Fences. */
-	pasture.fences[0].m.e_fence_type =
-		FenceDefinitionMessage_FenceType_Normal;
+	pasture.fences[0].m.e_fence_type = FenceDefinitionMessage_FenceType_Normal;
 	pasture.fences[0].m.us_id = 0;
 	pasture.fences[0].m.fence_no = 0;
 
-	pasture.fences[1].m.e_fence_type =
-		FenceDefinitionMessage_FenceType_Inverted;
+	pasture.fences[1].m.e_fence_type = FenceDefinitionMessage_FenceType_Inverted;
 	pasture.fences[1].m.us_id = 0;
 	pasture.fences[1].m.fence_no = 1;
 
 	/* Coordinates. */
 	fence_coordinate_t points1[] = {
-		{ .s_x_dm = 20, .s_y_dm = -20 },
-		{ .s_x_dm = 20, .s_y_dm = 20 },
-		{ .s_x_dm = -20, .s_y_dm = 20 },
-		{ .s_x_dm = -20, .s_y_dm = -20 },
+		{ .s_x_dm = 20, .s_y_dm = -20 }, { .s_x_dm = 20, .s_y_dm = 20 },
+		{ .s_x_dm = -20, .s_y_dm = 20 }, { .s_x_dm = -20, .s_y_dm = -20 },
 		{ .s_x_dm = 20, .s_y_dm = -20 },
 	};
 	pasture.fences[0].m.n_points = sizeof(points1) / sizeof(points1[0]);
 	memcpy(pasture.fences[0].coordinates, points1, sizeof(points1));
 
 	fence_coordinate_t points2[] = {
-		{ .s_x_dm = 10, .s_y_dm = -10 },
-		{ .s_x_dm = 10, .s_y_dm = 10 },
-		{ .s_x_dm = -10, .s_y_dm = 10 },
-		{ .s_x_dm = -10, .s_y_dm = -10 },
+		{ .s_x_dm = 10, .s_y_dm = -10 }, { .s_x_dm = 10, .s_y_dm = 10 },
+		{ .s_x_dm = -10, .s_y_dm = 10 }, { .s_x_dm = -10, .s_y_dm = -10 },
 		{ .s_x_dm = 10, .s_y_dm = -10 },
 	};
 	pasture.fences[1].m.n_points = sizeof(points2) / sizeof(points2[0]);
 	memcpy(pasture.fences[1].coordinates, points2, sizeof(points2));
 
-	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)),
-		      "");
+	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)), "");
 
 	int16_t d;
 	uint8_t fence_index;
@@ -327,8 +292,7 @@ void test_fnc_calc_dist_2_fences_max_size(void)
 	};
 
 	/* Fences. */
-	pasture.fences[0].m.e_fence_type =
-		FenceDefinitionMessage_FenceType_Normal;
+	pasture.fences[0].m.e_fence_type = FenceDefinitionMessage_FenceType_Normal;
 	pasture.fences[0].m.us_id = 0;
 	pasture.fences[0].m.fence_no = 0;
 
@@ -344,8 +308,7 @@ void test_fnc_calc_dist_2_fences_max_size(void)
 
 	pasture.fences[0].m.n_points = sizeof(points1) / sizeof(points1[0]);
 	memcpy(pasture.fences[0].coordinates, points1, sizeof(points1));
-	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)),
-		      "");
+	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)), "");
 
 	int16_t d;
 	uint8_t fence_index;
@@ -391,22 +354,18 @@ void test_fnc_calc_dist_2_fences_hole2(void)
 	};
 
 	/* Fences. */
-	pasture.fences[0].m.e_fence_type =
-		FenceDefinitionMessage_FenceType_Normal;
+	pasture.fences[0].m.e_fence_type = FenceDefinitionMessage_FenceType_Normal;
 	pasture.fences[0].m.us_id = 0;
 	pasture.fences[0].m.fence_no = 0;
 
-	pasture.fences[1].m.e_fence_type =
-		FenceDefinitionMessage_FenceType_Inverted;
+	pasture.fences[1].m.e_fence_type = FenceDefinitionMessage_FenceType_Inverted;
 	pasture.fences[1].m.us_id = 0;
 	pasture.fences[1].m.fence_no = 1;
 
 	/* Coordinates. */
 	fence_coordinate_t points1[] = {
-		{ .s_x_dm = 100, .s_y_dm = -50 },
-		{ .s_x_dm = 100, .s_y_dm = 100 },
-		{ .s_x_dm = -100, .s_y_dm = 100 },
-		{ .s_x_dm = -100, .s_y_dm = -50 },
+		{ .s_x_dm = 100, .s_y_dm = -50 },  { .s_x_dm = 100, .s_y_dm = 100 },
+		{ .s_x_dm = -100, .s_y_dm = 100 }, { .s_x_dm = -100, .s_y_dm = -50 },
 		{ .s_x_dm = 100, .s_y_dm = -50 },
 	};
 
@@ -422,8 +381,7 @@ void test_fnc_calc_dist_2_fences_hole2(void)
 	pasture.fences[1].m.n_points = sizeof(points2) / sizeof(points2[0]);
 	memcpy(pasture.fences[1].coordinates, points2, sizeof(points2));
 
-	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)),
-		      "");
+	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)), "");
 
 	uint8_t fence_index;
 	uint8_t vertex_index;

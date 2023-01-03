@@ -67,11 +67,8 @@ int16_t g_i16_Divide(int16_t iy, int16_t ix)
 		itmp = itmp >> 15;
 		if (itmp <= iy)
 			ir += idelta;
-		idelta =
-			idelta >> 1; /* divide by 2 using right shift one bit */
-	} while (
-		idelta >=
-		MINDELTADIV); /* last loop is performed for idelta=MINDELTADIV */
+		idelta = idelta >> 1; /* divide by 2 using right shift one bit */
+	} while (idelta >= MINDELTADIV); /* last loop is performed for idelta=MINDELTADIV */
 
 	return ir;
 }
@@ -123,9 +120,8 @@ int16_t g_i16_Trig(int16_t ix, int16_t iy)
 
 	/* calculate ix*ix and the hypotenuse squared */
 	ixsq = (uint32_t)ix * ix; /* ixsq=ix*ix: 0 to 32767^2 = 1073676289 */
-	ihypsq = ixsq +
-		 ((uint32_t)iy *
-		  iy); /* ihypsq=(ix*ix+iy*iy) 0 to 2*32767*32767=2147352578 */
+	ihypsq =
+		ixsq + ((uint32_t)iy * iy); /* ihypsq=(ix*ix+iy*iy) 0 to 2*32767*32767=2147352578 */
 
 	/* set result r to zero and binary search step to 16384 = 0.5 */
 	ir = 0;
@@ -141,11 +137,8 @@ int16_t g_i16_Trig(int16_t ix, int16_t iy)
 		itmp = (itmp >> 15) * (ihypsq >> 15);
 		if (itmp <= ixsq)
 			ir += idelta;
-		idelta =
-			idelta >> 1; /* divide by 2 using right shift one bit */
-	} while (
-		idelta >=
-		MINDELTATRIG); /* last loop is performed for idelta=MINDELTATRIG */
+		idelta = idelta >> 1; /* divide by 2 using right shift one bit */
+	} while (idelta >= MINDELTATRIG); /* last loop is performed for idelta=MINDELTATRIG */
 
 	/* correct the sign before returning */
 	return ir * isignx;
@@ -177,18 +170,15 @@ int16_t g_i16_HundredAtanDeg(int16_t iy, int16_t ix)
 
 	/* check for non-pathological cases */
 	if (iy <= ix)
-		iRatio = g_i16_Divide(
-			iy,
-			ix); /* return a fraction in range 0. to 32767 = 0. to 1. */
+		iRatio = g_i16_Divide(iy,
+				      ix); /* return a fraction in range 0. to 32767 = 0. to 1. */
 	else
-		iRatio = g_i16_Divide(
-			ix,
-			iy); /* return a fraction in range 0. to 32767 = 0. to 1. */
+		iRatio = g_i16_Divide(ix,
+				      iy); /* return a fraction in range 0. to 32767 = 0. to 1. */
 
 	/* first, third and fifth order polynomial approximation */
 	iAngle = (int32_t)K1 * (int32_t)iRatio;
-	iTmp = ((int32_t)iRatio >> 5) * ((int32_t)iRatio >> 5) *
-	       ((int32_t)iRatio >> 5);
+	iTmp = ((int32_t)iRatio >> 5) * ((int32_t)iRatio >> 5) * ((int32_t)iRatio >> 5);
 	iAngle += (iTmp >> 15) * (int32_t)K2;
 	iTmp = (iTmp >> 20) * ((int32_t)iRatio >> 5) * ((int32_t)iRatio >> 5);
 	iAngle += (iTmp >> 15) * (int32_t)K3;

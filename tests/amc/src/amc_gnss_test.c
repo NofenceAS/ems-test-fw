@@ -85,23 +85,23 @@ void simulate_warn_fix(void)
 	int16_t acc_delta = -1;
 	int16_t mean_dist = 1;
 	uint16_t h_acc_dm = 25;
-	zassert_equal(gnss_update_dist_flags(dist_avg_change, dist_change,
-		      dist_incr_slope_lim, dist_inc_count, dist_incr_count,
-		      height_delta, acc_delta, mean_dist, h_acc_dm), 0,
-		      "Failed to update GNSS fist flags");
+	zassert_equal(gnss_update_dist_flags(dist_avg_change, dist_change, dist_incr_slope_lim,
+					     dist_inc_count, dist_incr_count, height_delta,
+					     acc_delta, mean_dist, h_acc_dm),
+		      0, "Failed to update GNSS fist flags");
 }
 
-static void simulate_stale_fix(void) {
-    simulate_accepted_fix();
-    gnss_data.latest.pvt_flags = 0;
-    zassert_equal(gnss_update(&gnss_data), 0, "Failed updating GNSS fix");
+static void simulate_stale_fix(void)
+{
+	simulate_accepted_fix();
+	gnss_data.latest.pvt_flags = 0;
+	zassert_equal(gnss_update(&gnss_data), 0, "Failed updating GNSS fix");
 }
 
 void amc_gnss_init(void)
 {
 	k_sem_init(&gnss_fix_timeout, 0, 1);
-	zassert_equal(gnss_init(gnss_timeout), 0,
-		      "Failed initializing AMC GNSS");
+	zassert_equal(gnss_init(gnss_timeout), 0, "Failed initializing AMC GNSS");
 }
 
 void test_gnss_fix(void)
@@ -159,10 +159,10 @@ void test_gnss_fix(void)
 	zassert_true(gnss_has_accepted_fix(), "Did not have accepted fix");
 	zassert_false(gnss_has_easy_fix(), "Did not have easy fix");
 
-    /* Stale fix */
-    simulate_stale_fix();
-    zassert_false(gnss_has_fix(), "Unexpected fix");
-    zassert_false(gnss_has_accepted_fix(), "Unexpected fix");
+	/* Stale fix */
+	simulate_stale_fix();
+	zassert_false(gnss_has_fix(), "Unexpected fix");
+	zassert_false(gnss_has_accepted_fix(), "Unexpected fix");
 }
 
 K_SEM_DEFINE(gnss_mode_sem, 0, 1);

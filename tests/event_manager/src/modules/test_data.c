@@ -39,8 +39,7 @@ static bool event_handler(const struct event_header *eh)
 			zassert_equal(event->val1u, TEST_VAL1U, "Wrong value");
 			zassert_equal(event->val2u, TEST_VAL2U, "Wrong value");
 			zassert_equal(event->val3u, TEST_VAL3U, "Wrong value");
-			zassert_false(strcmp(event->descr, descr),
-				      "Wrong string");
+			zassert_false(strcmp(event->descr, descr), "Wrong string");
 
 			struct test_end_event *te = new_test_end_event();
 

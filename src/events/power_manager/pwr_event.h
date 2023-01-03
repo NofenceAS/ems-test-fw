@@ -9,12 +9,7 @@
 #include <zephyr.h>
 
 /** @brief Enum for different electric pulse status */
-enum pwr_state_flag {
-	PWR_CRITICAL = 0,
-	PWR_LOW,
-	PWR_NORMAL,
-	PWR_CHARGING
-};
+enum pwr_state_flag { PWR_CRITICAL = 0, PWR_LOW, PWR_NORMAL, PWR_CHARGING };
 
 /** @brief Type for reboot reason from soft reset */
 typedef enum {
@@ -25,7 +20,7 @@ typedef enum {
 	REBOOT_FOTA_RESET,
 	REBOOT_FATAL_ERR,
 	REBOOT_REASON_CNT
-}pwr_reboot_reason_t;
+} pwr_reboot_reason_t;
 
 /** @brief Struct containg status messages regarding electric pulse events. */
 struct pwr_status_event {

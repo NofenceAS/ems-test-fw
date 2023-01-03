@@ -30,8 +30,7 @@ void assert_post_action(const char *file, unsigned int line)
 
 void test_init(void)
 {
-	zassert_false(event_manager_init(), 
-					"Error when initializing event manager");
+	zassert_false(event_manager_init(), "Error when initializing event manager");
 }
 
 void test_electric_pulse_init(void)
@@ -44,26 +43,22 @@ void test_electric_pulse_init(void)
 	product_type = PRODUCT_TYPE_SHEEP;
 	ztest_returns_value(stg_config_u16_read, 0);
 	ztest_return_data(stg_config_u16_read, value, &product_type);
-	zassert_equal(ep_module_init(), 0, 
-					"EP module initialization returned incorrect value");
+	zassert_equal(ep_module_init(), 0, "EP module initialization returned incorrect value");
 
-	if ((product_type != PRODUCT_TYPE_SHEEP) && 
-		(product_type != PRODUCT_TYPE_CATTLE)) {
+	if ((product_type != PRODUCT_TYPE_SHEEP) && (product_type != PRODUCT_TYPE_CATTLE)) {
 		product_type = PRODUCT_TYPE_SHEEP;
 	}
-	zassert_equal(product_type, PRODUCT_TYPE_SHEEP, 
-					"EP module initialization provided incorrect product type");
+	zassert_equal(product_type, PRODUCT_TYPE_SHEEP,
+		      "EP module initialization provided incorrect product type");
 
 	/* EP module initialization with storage read failure */
 	ztest_returns_value(stg_config_u16_read, -1);
 	ztest_return_data(stg_config_u16_read, value, &product_type);
-	zassert_not_equal(ep_module_init(), 0, 
-						"EP module initialization returned incorrect value");
+	zassert_not_equal(ep_module_init(), 0, "EP module initialization returned incorrect value");
 
 	ztest_returns_value(stg_config_u16_read, 1);
 	ztest_return_data(stg_config_u16_read, value, &product_type);
-	zassert_not_equal(ep_module_init(), 0, 
-						"EP module initialization returned incorrect value");
+	zassert_not_equal(ep_module_init(), 0, "EP module initialization returned incorrect value");
 
 	/* EP module initialization of cattle collar */
 	product_type = PRODUCT_TYPE_CATTLE;
@@ -71,12 +66,11 @@ void test_electric_pulse_init(void)
 	ztest_return_data(stg_config_u16_read, value, &product_type);
 	zassert_equal(ep_module_init(), 0, "Test failed to initializing EP module");
 
-	if ((product_type != PRODUCT_TYPE_SHEEP) && 
-		(product_type != PRODUCT_TYPE_CATTLE)) {
+	if ((product_type != PRODUCT_TYPE_SHEEP) && (product_type != PRODUCT_TYPE_CATTLE)) {
 		product_type = PRODUCT_TYPE_SHEEP;
 	}
-	zassert_equal(product_type, PRODUCT_TYPE_CATTLE, 
-					"EP module initialization provided incorrect product type");
+	zassert_equal(product_type, PRODUCT_TYPE_CATTLE,
+		      "EP module initialization provided incorrect product type");
 
 	/* EP module initialization of unknown collar */
 	product_type = UINT16_MAX;
@@ -84,12 +78,11 @@ void test_electric_pulse_init(void)
 	ztest_return_data(stg_config_u16_read, value, &product_type);
 	zassert_equal(ep_module_init(), 0, "Test failed to initializing EP module");
 
-	if ((product_type != PRODUCT_TYPE_SHEEP) && 
-		(product_type != PRODUCT_TYPE_CATTLE)) {
+	if ((product_type != PRODUCT_TYPE_SHEEP) && (product_type != PRODUCT_TYPE_CATTLE)) {
 		product_type = PRODUCT_TYPE_SHEEP;
 	}
-	zassert_equal(product_type, PRODUCT_TYPE_SHEEP, 
-					"EP module initialization provided incorrect product type");
+	zassert_equal(product_type, PRODUCT_TYPE_SHEEP,
+		      "EP module initialization provided incorrect product type");
 }
 
 void test_electric_pulse_release_without_warning(void)
@@ -116,8 +109,7 @@ void test_electric_pulse_release_early(void)
 	 * This test should be able to take the error semaphore */
 
 	/* Submit a max warning tone event */
-	struct warn_correction_pause_event *ev_q_zap =
-		new_warn_correction_pause_event();
+	struct warn_correction_pause_event *ev_q_zap = new_warn_correction_pause_event();
 	ev_q_zap->reason = Reason_WARNPAUSEREASON_ZAP;
 	ev_q_zap->fence_dist = 1;
 	ev_q_zap->warn_duration = 1;
@@ -140,8 +132,7 @@ void test_electric_pulse_release_ready(void)
 	 * timeout */
 
 	/* Submit a max warning tone event */
-	struct warn_correction_pause_event *ev_q_zap =
-		new_warn_correction_pause_event();
+	struct warn_correction_pause_event *ev_q_zap = new_warn_correction_pause_event();
 	ev_q_zap->reason = Reason_WARNPAUSEREASON_ZAP;
 	ev_q_zap->fence_dist = 1;
 	ev_q_zap->warn_duration = 1;
@@ -171,8 +162,7 @@ void test_electric_pulse_release_snd_wrn(void)
 	 * able to take the error semaphore */
 
 	/* Submit a max warning tone event */
-	struct warn_correction_pause_event *ev_q_zap =
-		new_warn_correction_pause_event();
+	struct warn_correction_pause_event *ev_q_zap = new_warn_correction_pause_event();
 	ev_q_zap->reason = Reason_WARNSTOPREASON_MODE;
 	ev_q_zap->fence_dist = 1;
 	ev_q_zap->warn_duration = 1;
@@ -189,15 +179,13 @@ void test_electric_pulse_release_snd_wrn(void)
 
 void test_main(void)
 {
-	ztest_test_suite(ep_tests,
-			ztest_unit_test(test_init),
-			ztest_unit_test(test_electric_pulse_init),
-			ztest_unit_test(test_electric_pulse_release_without_warning),
-			ztest_unit_test(test_electric_pulse_release_early),
-			ztest_unit_test(test_electric_pulse_release_ready),
-			ztest_unit_test(test_electric_pulse_release_snd_wrn)
-			);
-			 
+	ztest_test_suite(ep_tests, ztest_unit_test(test_init),
+			 ztest_unit_test(test_electric_pulse_init),
+			 ztest_unit_test(test_electric_pulse_release_without_warning),
+			 ztest_unit_test(test_electric_pulse_release_early),
+			 ztest_unit_test(test_electric_pulse_release_ready),
+			 ztest_unit_test(test_electric_pulse_release_snd_wrn));
+
 	ztest_run_test_suite(ep_tests);
 }
 
@@ -206,32 +194,30 @@ static bool test_event_handler(const struct event_header *eh)
 	if (is_ep_status_event(eh)) {
 		struct ep_status_event *ev = cast_ep_status_event(eh);
 		switch (ev->ep_status) {
-			case EP_RELEASE: {
-				// Do nothing here since we wait for eror event to be returned
-				break;
-			}
-			default: {
-				zassert_unreachable("Unexpected command event.");
-			}
+		case EP_RELEASE: {
+			// Do nothing here since we wait for eror event to be returned
+			break;
+		}
+		default: {
+			zassert_unreachable("Unexpected command event.");
+		}
 		}
 	}
 	if (is_error_event(eh)) {
 		struct error_event *ev = cast_error_event(eh);
 		switch (ev->sender) {
-			case ERR_EP_MODULE: {
-				zassert_equal(ev->severity, ERR_SEVERITY_ERROR, 
-								"Mismatched severity.");
-				zassert_equal(ev->code, -EACCES, 
-								"Mismatched error code.");
+		case ERR_EP_MODULE: {
+			zassert_equal(ev->severity, ERR_SEVERITY_ERROR, "Mismatched severity.");
+			zassert_equal(ev->code, -EACCES, "Mismatched error code.");
 
-				// Give sempahore only after error event
-				k_sem_give(&ep_event_sem);
-				break;
-			}
-			default: {
-				zassert_unreachable("Unexpected command event.");
-				break;
-			}
+			// Give sempahore only after error event
+			k_sem_give(&ep_event_sem);
+			break;
+		}
+		default: {
+			zassert_unreachable("Unexpected command event.");
+			break;
+		}
 		}
 	}
 	return false;

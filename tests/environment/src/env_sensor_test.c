@@ -25,8 +25,7 @@ void assert_post_action(const char *file, unsigned int line)
 
 void test_init(void)
 {
-	zassert_false(event_manager_init(),
-		      "Error when initializing event manager");
+	zassert_false(event_manager_init(), "Error when initializing event manager");
 }
 
 void test_event_contents(void)
@@ -164,15 +163,14 @@ void test_event_contents_sanity_warn_press(void)
 
 void test_main(void)
 {
-	ztest_test_suite(
-		env_sensor_tests, ztest_unit_test(test_init),
-		ztest_unit_test(test_event_contents),
-		ztest_unit_test(test_event_contents_sanity_fail_temp),
-		ztest_unit_test(test_event_contents_sanity_fail_pressure),
-		ztest_unit_test(test_event_contents_sanity_fail_humidity),
-		ztest_unit_test(test_event_contents_sanity_warn_temp),
-		ztest_unit_test(test_event_contents_sanity_warn_press),
-		ztest_unit_test(test_event_contents_sanity_warn_humidity));
+	ztest_test_suite(env_sensor_tests, ztest_unit_test(test_init),
+			 ztest_unit_test(test_event_contents),
+			 ztest_unit_test(test_event_contents_sanity_fail_temp),
+			 ztest_unit_test(test_event_contents_sanity_fail_pressure),
+			 ztest_unit_test(test_event_contents_sanity_fail_humidity),
+			 ztest_unit_test(test_event_contents_sanity_warn_temp),
+			 ztest_unit_test(test_event_contents_sanity_warn_press),
+			 ztest_unit_test(test_event_contents_sanity_warn_humidity));
 	ztest_run_test_suite(env_sensor_tests);
 }
 
@@ -189,12 +187,9 @@ static bool event_handler(const struct event_header *eh)
 		struct env_sensor_event *ev = cast_env_sensor_event(eh);
 		if (cur_test == TEST_SANITY_PASS) {
 			/* Check if we get the expected float values. */
-			zassert_true(check_equal_float(ev->temp, 25.013532),
-				     "");
-			zassert_true(check_equal_float(ev->press, 95.000125),
-				     "");
-			zassert_true(check_equal_float(ev->humidity, 11.100532),
-				     "");
+			zassert_true(check_equal_float(ev->temp, 25.013532), "");
+			zassert_true(check_equal_float(ev->press, 95.000125), "");
+			zassert_true(check_equal_float(ev->humidity, 11.100532), "");
 		}
 		k_sem_give(&env_data_sem);
 	}
@@ -204,20 +199,15 @@ static bool event_handler(const struct event_header *eh)
 
 		zassert_equal(ev->code, -ERANGE, "Mismatched error code.");
 		char *expected_message;
-		if (cur_test == TEST_SANITY_FAIL_TEMP ||
-		    cur_test == TEST_SANITY_FAIL_PRESS ||
+		if (cur_test == TEST_SANITY_FAIL_TEMP || cur_test == TEST_SANITY_FAIL_PRESS ||
 		    cur_test == TEST_SANITY_FAIL_HUMIDITY) {
-			expected_message =
-				"Detected a sensor value error range";
-			zassert_equal(ev->severity, ERR_SEVERITY_ERROR,
-				      "Mismatched severity.");
+			expected_message = "Detected a sensor value error range";
+			zassert_equal(ev->severity, ERR_SEVERITY_ERROR, "Mismatched severity.");
 		} else if (cur_test == TEST_SANITY_FAIL_TEMP_WARN ||
 			   cur_test == TEST_SANITY_FAIL_PRESS_WARN ||
 			   cur_test == TEST_SANITY_FAIL_HUMIDITY_WARN) {
-			expected_message =
-				"Detected a sensor value warning range";
-			zassert_equal(ev->severity, ERR_SEVERITY_WARNING,
-				      "Mismatched severity.");
+			expected_message = "Detected a sensor value warning range";
+			zassert_equal(ev->severity, ERR_SEVERITY_WARNING, "Mismatched severity.");
 		} else {
 			expected_message = "Unreachable.";
 		}
@@ -225,8 +215,8 @@ static bool event_handler(const struct event_header *eh)
 		zassert_equal(ev->dyndata.size, strlen(expected_message),
 			      "Mismatched message length.");
 
-		zassert_mem_equal(ev->dyndata.data, expected_message,
-				  ev->dyndata.size, "Mismatched user message.");
+		zassert_mem_equal(ev->dyndata.data, expected_message, ev->dyndata.size,
+				  "Mismatched user message.");
 		k_sem_give(&error_sem);
 	}
 	return false;

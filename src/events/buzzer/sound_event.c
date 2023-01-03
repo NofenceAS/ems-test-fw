@@ -15,8 +15,7 @@
  * @param[in] buf triggered event's log event buffer.
  * @param[in] buf_len length of the buffer received.
  */
-static int log_sound_event(const struct event_header *eh, char *buf,
-			   size_t buf_len)
+static int log_sound_event(const struct event_header *eh, char *buf, size_t buf_len)
 {
 	struct sound_event *event = cast_sound_event(eh);
 
@@ -34,8 +33,7 @@ EVENT_TYPE_DEFINE(sound_event, true, log_sound_event, NULL);
  * @param[in] buf triggered event's log event buffer.
  * @param[in] buf_len length of the buffer received.
  */
-static int log_sound_status_event(const struct event_header *eh, char *buf,
-				  size_t buf_len)
+static int log_sound_status_event(const struct event_header *eh, char *buf, size_t buf_len)
 {
 	struct sound_status_event *event = cast_sound_status_event(eh);
 
@@ -53,14 +51,11 @@ EVENT_TYPE_DEFINE(sound_status_event, true, log_sound_status_event, NULL);
  * @param[in] buf triggered event's log event buffer.
  * @param[in] buf_len length of the buffer received.
  */
-static int log_sound_set_warn_freq_event(const struct event_header *eh,
-					 char *buf, size_t buf_len)
+static int log_sound_set_warn_freq_event(const struct event_header *eh, char *buf, size_t buf_len)
 {
-	struct sound_set_warn_freq_event *event =
-		cast_sound_set_warn_freq_event(eh);
+	struct sound_set_warn_freq_event *event = cast_sound_set_warn_freq_event(eh);
 
-	return snprintf(buf, buf_len, "Sound warnzone freq updated=%d",
-			event->freq);
+	return snprintf(buf, buf_len, "Sound warnzone freq updated=%d", event->freq);
 }
 
 EVENT_TYPE_DEFINE(sound_set_warn_freq_event, IS_ENABLED(CONFIG_LOG_SOUND_EVENT),
