@@ -136,7 +136,7 @@ GET_GSM_DATA = 0xA6
 
 #print(read_gnss_data(try_stimuli_cmd(GET_GNSS_DATA)))
 
-print(read_onboard_data(try_stimuli_cmd(GET_OB_DATA)))
+#print(read_onboard_data(try_stimuli_cmd(GET_OB_DATA)))
 
 #print(read_all_onboard_data(try_stimuli_cmd(GET_ONBOARD_DATA)))
 
@@ -148,3 +148,8 @@ print(read_onboard_data(try_stimuli_cmd(GET_OB_DATA)))
 #value = struct.unpack('I', resp['data'][:4])
 #print(resp)
 #print(value#)
+
+payload = struct.pack('<B', 12)
+resp = try_stimuli_cmd(0x40, payload)
+value = struct.unpack('I', resp['data'][:4])
+print(resp)
