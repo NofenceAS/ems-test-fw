@@ -151,5 +151,5 @@ GET_GSM_DATA = 0xA6
 
 payload = struct.pack('<B', 12)
 resp = try_stimuli_cmd(0x40, payload)
-value = struct.unpack('I', resp['data'][:4])
+#value = struct.unpack('I', resp['data'][:4])
 print(resp)
