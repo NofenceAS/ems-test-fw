@@ -33,8 +33,7 @@ static bool event_handler(const struct event_header *eh)
 		struct test_start_event *st = cast_test_start_event(eh);
 
 		switch (st->test_id) {
-		case TEST_MULTICONTEXT:
-		{
+		case TEST_MULTICONTEXT: {
 			cur_test_id = st->test_id;
 
 			break;
@@ -42,8 +41,7 @@ static bool event_handler(const struct event_header *eh)
 
 		default:
 			/* Ignore other test cases, check if proper test_id. */
-			zassert_true(st->test_id < TEST_CNT,
-				     "test_id out of range");
+			zassert_true(st->test_id < TEST_CNT, "test_id out of range");
 			break;
 		}
 
@@ -56,22 +54,17 @@ static bool event_handler(const struct event_header *eh)
 			static bool t1_received;
 			static bool t2_received;
 
-			struct multicontext_event *ev =
-				cast_multicontext_event(eh);
+			struct multicontext_event *ev = cast_multicontext_event(eh);
 
-			zassert_equal(ev->val1, ev->val2,
-				      "Invalid event data");
+			zassert_equal(ev->val1, ev->val2, "Invalid event data");
 
-			zassert_true(ev->val1 < SOURCE_CNT,
-				     "Invalid source ID");
+			zassert_true(ev->val1 < SOURCE_CNT, "Invalid source ID");
 
 			if (ev->val1 == SOURCE_T1) {
-				zassert_true(isr_received,
-					     "Incorrect event order");
+				zassert_true(isr_received, "Incorrect event order");
 				t1_received = true;
 			} else if (ev->val1 == SOURCE_T2) {
-				zassert_true(isr_received,
-					     "Incorrect event order");
+				zassert_true(isr_received, "Incorrect event order");
 				t2_received = true;
 
 			} else if (ev->val1 == SOURCE_ISR) {

@@ -19,7 +19,8 @@ static K_SEM_DEFINE(send_out_sem, 0, 1);
 bool simulate_modem_down = false;
 extern struct k_sem listen_sem;
 
-void reset_test_semaphores(void) {
+void reset_test_semaphores(void)
+{
 	k_sem_reset(&cellular_ack);
 	k_sem_reset(&cellular_proto_in);
 	k_sem_reset(&cellular_error);
@@ -39,8 +40,7 @@ void test_init(void)
 
 	struct check_connection *ev = new_check_connection();
 	EVENT_SUBMIT(ev);
-	zassert_false(event_manager_init(),
-		      "Error when initializing event manager");
+	zassert_false(event_manager_init(), "Error when initializing event manager");
 	ztest_returns_value(reset_modem, 0);
 	ztest_returns_value(lte_init, 0);
 	ztest_returns_value(stg_config_str_read, 0);
@@ -60,8 +60,7 @@ void test_socket_send_fails(void)
 
 	struct check_connection *ev = new_check_connection();
 	EVENT_SUBMIT(ev);
-	struct messaging_proto_out_event *test_msgOut =
-		new_messaging_proto_out_event();
+	struct messaging_proto_out_event *test_msgOut = new_messaging_proto_out_event();
 	test_msgOut->buf = &dummy_test_msg[0];
 	test_msgOut->len = sizeof(dummy_test_msg);
 	EVENT_SUBMIT(test_msgOut);
@@ -92,14 +91,12 @@ void test_socket_send_recovery(void)
 	struct check_connection *ev = new_check_connection();
 	EVENT_SUBMIT(ev);
 
-	struct messaging_proto_out_event *test_msgOut =
-		new_messaging_proto_out_event();
+	struct messaging_proto_out_event *test_msgOut = new_messaging_proto_out_event();
 	test_msgOut->buf = &dummy_test_msg[0];
 	test_msgOut->len = sizeof(dummy_test_msg);
 	EVENT_SUBMIT(test_msgOut);
 
-	struct free_message_mem_event *free_mem_ev =
-		new_free_message_mem_event();
+	struct free_message_mem_event *free_mem_ev = new_free_message_mem_event();
 	EVENT_SUBMIT(free_mem_ev);
 
 	int err = k_sem_take(&cellular_ack, K_MSEC(100));
@@ -112,9 +109,9 @@ void test_socket_send_recovery(void)
 void test_send_many_messages(void)
 {
 	char test_msg[100];
-	for (int i=1; i<100; i++) {
-		for (int j=0; j<i; j++) {
-			test_msg[j] = (char)(i+j);
+	for (int i = 1; i < 100; i++) {
+		for (int j = 0; j < i; j++) {
+			test_msg[j] = (char)(i + j);
 		}
 		ztest_returns_value(check_ip, 0);
 		ztest_expect_value(send_tcp_q, *dummy, test_msg[0]);
@@ -123,14 +120,12 @@ void test_send_many_messages(void)
 		struct check_connection *ev = new_check_connection();
 		EVENT_SUBMIT(ev);
 
-		struct messaging_proto_out_event *test_msgOut =
-			new_messaging_proto_out_event();
+		struct messaging_proto_out_event *test_msgOut = new_messaging_proto_out_event();
 		test_msgOut->buf = &test_msg[0];
 		test_msgOut->len = sizeof(test_msg);
 		EVENT_SUBMIT(test_msgOut);
 
-		struct free_message_mem_event *free_mem_ev =
-			new_free_message_mem_event();
+		struct free_message_mem_event *free_mem_ev = new_free_message_mem_event();
 		EVENT_SUBMIT(free_mem_ev);
 
 		int err = k_sem_take(&cellular_ack, K_MSEC(50));
@@ -141,19 +136,16 @@ void test_send_many_messages(void)
 
 	/*TODO: must refactor some source files to be able to test arguments
 	 * passed to send_tcp function and the free-up message memory event.*/
-//	err = k_sem_take(&send_out_sem, K_MSEC(500));
-//	zassert_equal(err, 0,
-//		      "Expected free message memory event was not"
-//		      " published ");
+	//	err = k_sem_take(&send_out_sem, K_MSEC(500));
+	//	zassert_equal(err, 0,
+	//		      "Expected free message memory event was not"
+	//		      " published ");
 	reset_test_semaphores();
 }
-
-
 
 void test_publish_event_with_a_received_msg(void) /* happy scenario - msg
  * received from server is pushed to messaging module! */
 {
-
 	received = 30;
 	ztest_returns_value(socket_receive, received);
 	int err = k_sem_take(&cellular_proto_in, K_MSEC(300));
@@ -169,7 +161,6 @@ void test_publish_event_with_a_received_msg(void) /* happy scenario - msg
 
 void test_ack_from_messaging_module_missed(void)
 {
-
 	received = 30;
 	ztest_returns_value(socket_receive, received);
 	int err = k_sem_take(&cellular_error, K_MSEC(850));
@@ -195,7 +186,6 @@ void test_socket_rcv_fails(void)
 		      " published on socket receive error!");
 	reset_test_semaphores();
 }
-
 
 void test_socket_connect_fails(void)
 {
@@ -242,17 +232,16 @@ void test_gsm_device_not_ready(void)
 
 void test_main(void)
 {
-	ztest_test_suite(
-		cellular_controller_tests, ztest_unit_test(test_init),
-		ztest_unit_test(test_socket_send_fails),
-		ztest_unit_test(test_socket_send_recovery),
-		ztest_unit_test(test_send_many_messages),
-		ztest_unit_test(test_publish_event_with_a_received_msg),
-		ztest_unit_test(test_ack_from_messaging_module_missed),
-		ztest_unit_test(test_socket_rcv_fails),
-		ztest_unit_test(test_socket_connect_fails),
-		ztest_unit_test(test_notify_messaging_module_when_nudged_from_server),
-		ztest_unit_test(test_gsm_device_not_ready));
+	ztest_test_suite(cellular_controller_tests, ztest_unit_test(test_init),
+			 ztest_unit_test(test_socket_send_fails),
+			 ztest_unit_test(test_socket_send_recovery),
+			 ztest_unit_test(test_send_many_messages),
+			 ztest_unit_test(test_publish_event_with_a_received_msg),
+			 ztest_unit_test(test_ack_from_messaging_module_missed),
+			 ztest_unit_test(test_socket_rcv_fails),
+			 ztest_unit_test(test_socket_connect_fails),
+			 ztest_unit_test(test_notify_messaging_module_when_nudged_from_server),
+			 ztest_unit_test(test_gsm_device_not_ready));
 
 	ztest_run_test_suite(cellular_controller_tests);
 }
@@ -262,18 +251,15 @@ static bool event_handler(const struct event_header *eh)
 	if (is_cellular_proto_in_event(eh)) {
 		k_sem_give(&cellular_proto_in);
 		printk("released semaphore for cellular_proto_in!\n");
-		struct cellular_proto_in_event *ev =
-			cast_cellular_proto_in_event(eh);
+		struct cellular_proto_in_event *ev = cast_cellular_proto_in_event(eh);
 		if (received > 0) {
-			zassert_equal(ev->len, received,
-				      "Buffer length mismatch");
+			zassert_equal(ev->len, received, "Buffer length mismatch");
 		}
 		return false;
 	} else if (is_cellular_ack_event(eh)) {
 		k_sem_give(&cellular_ack);
 		printk("released semaphore for cellular_ack, ");
-		struct cellular_ack_event *ev =
-			cast_cellular_ack_event(eh);
+		struct cellular_ack_event *ev = cast_cellular_ack_event(eh);
 		if (ev->message_sent) {
 			printk("sent successfully!\n");
 		} else {

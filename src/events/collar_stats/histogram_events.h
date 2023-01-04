@@ -4,7 +4,7 @@
 #include "collar_protocol.h"
 #include "event_manager.h"
 
-typedef struct collar_histogram{
+typedef struct collar_histogram {
 	_HISTOGRAM_ANIMAL_BEHAVE animal_behave;
 	_HISTOGRAM_ZONE in_zone;
 	_POSITION_QC_MAX_MIN_MEAN qc_baro_gps_max_mean_min;

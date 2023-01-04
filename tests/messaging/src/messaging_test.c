@@ -113,26 +113,21 @@ void test_init(void)
 	zassert_equal(k_sem_take(&msg_out, K_SECONDS(15)), 0, "");
 
 	/* Verify initial poll req. content and boot parameters */
-	zassert_equal(m_latest_proto_msg.which_m, NofenceMessage_poll_message_req_tag, 
-		      "");
-	zassert_equal(m_latest_proto_msg.m.poll_message_req.versionInfo.ulApplicationVersion, 
-		      NF_X25_VERSION_NUMBER, 
-		      "");
-	zassert_true(m_latest_proto_msg.m.poll_message_req.has_versionInfo, 
+	zassert_equal(m_latest_proto_msg.which_m, NofenceMessage_poll_message_req_tag, "");
+	zassert_equal(m_latest_proto_msg.m.poll_message_req.versionInfo.ulApplicationVersion,
+		      NF_X25_VERSION_NUMBER, "");
+	zassert_true(m_latest_proto_msg.m.poll_message_req.has_versionInfo, "");
+	zassert_true(m_latest_proto_msg.m.poll_message_req.versionInfo.has_ulApplicationVersion,
 		     "");
-	zassert_true(m_latest_proto_msg.m.poll_message_req.versionInfo.has_ulApplicationVersion, 
-		     "");
-	zassert_false(m_latest_proto_msg.m.poll_message_req.versionInfo.has_ulATmegaVersion, 
-		      "");
-	zassert_false(m_latest_proto_msg.m.poll_message_req.versionInfo.has_ulNRF52AppVersion, 
-		      "");
-	zassert_false(m_latest_proto_msg.m.poll_message_req.versionInfo.has_ulNRF52BootloaderVersion, 
-		      "");
-	zassert_false(m_latest_proto_msg.m.poll_message_req.versionInfo.has_ulNRF52SoftDeviceVersion, 
-		      "");
+	zassert_false(m_latest_proto_msg.m.poll_message_req.versionInfo.has_ulATmegaVersion, "");
+	zassert_false(m_latest_proto_msg.m.poll_message_req.versionInfo.has_ulNRF52AppVersion, "");
+	zassert_false(
+		m_latest_proto_msg.m.poll_message_req.versionInfo.has_ulNRF52BootloaderVersion, "");
+	zassert_false(
+		m_latest_proto_msg.m.poll_message_req.versionInfo.has_ulNRF52SoftDeviceVersion, "");
 
 	zassert_equal(m_latest_proto_msg.header.ulId, 1, "");
-	
+
 	k_sleep(K_SECONDS(5));
 
 	/* Confirm that only the poll request was sent during initialization even with status updates
@@ -181,7 +176,7 @@ void test_second_poll_request_has_no_boot_parameters(void)
 	memset(encoded_msg, 0, sizeof(encoded_msg));
 	size_t encoded_size;
 
-	int ret = collar_protocol_encode(&poll_response, &encoded_msg[0], sizeof(encoded_msg), 
+	int ret = collar_protocol_encode(&poll_response, &encoded_msg[0], sizeof(encoded_msg),
 					 &encoded_size);
 	zassert_equal(ret, 0, "Could not encode server response!");
 
@@ -314,7 +309,7 @@ void test_poll_request_out_when_nudged_from_server(void)
 
 	zassert_equal(err, 0, "Corrupt proto message!\n");
 	printk("%d\n", decode.which_m);
-	zassert_equal(decode.which_m, NofenceMessage_poll_message_req_tag, 
+	zassert_equal(decode.which_m, NofenceMessage_poll_message_req_tag,
 		      "Expected poll request not sent!\n");
 	zassert_false(decode.m.poll_message_req.has_versionInfo, "");
 }
@@ -353,7 +348,7 @@ void test_poll_response_has_new_fence(void)
 	uint8_t encoded_msg[NofenceMessage_size];
 	memset(encoded_msg, 0, sizeof(encoded_msg));
 	size_t encoded_size = 0;
-	int ret = collar_protocol_encode(&poll_response, &encoded_msg[0], sizeof(encoded_msg), 
+	int ret = collar_protocol_encode(&poll_response, &encoded_msg[0], sizeof(encoded_msg),
 					 &encoded_size);
 	zassert_equal(ret, 0, "Could not encode server response!\n");
 
@@ -370,9 +365,9 @@ void test_poll_response_has_new_fence(void)
 	printk("%d\n", decode.which_m);
 	zassert_equal(decode.which_m, NofenceMessage_fence_definition_req_tag,
 		      "Expected fence def. request- not sent!");
-	zassert_equal(decode.m.fence_definition_req.ulFenceDefVersion, dummy_fence, 
+	zassert_equal(decode.m.fence_definition_req.ulFenceDefVersion, dummy_fence,
 		      "Wrong fence version requested!\n");
-	zassert_equal(decode.m.fence_definition_req.ucFrameNumber, 0, 
+	zassert_equal(decode.m.fence_definition_req.ucFrameNumber, 0,
 		      "Wrong fence frame number requested!\n");
 
 	/* Simulate a poll-reply to the fence definition request */
@@ -403,7 +398,7 @@ void test_poll_response_has_new_fence(void)
 
 	memset(encoded_msg, 0, sizeof(encoded_msg));
 	encoded_size = 0;
-	ret = collar_protocol_encode(&fence_response, &encoded_msg[0], sizeof(encoded_msg), 
+	ret = collar_protocol_encode(&fence_response, &encoded_msg[0], sizeof(encoded_msg),
 				     &encoded_size);
 	zassert_equal(ret, 0, "Could not encode server response!\n");
 	printk("encoded size = %d \n", encoded_size);
@@ -420,9 +415,9 @@ void test_poll_response_has_new_fence(void)
 	printk("%d\n", decode.which_m);
 	zassert_equal(decode.which_m, NofenceMessage_fence_definition_req_tag,
 		      "Expected fence def. request- not sent!");
-	zassert_equal(decode.m.fence_definition_req.ulFenceDefVersion, dummy_fence, 
+	zassert_equal(decode.m.fence_definition_req.ulFenceDefVersion, dummy_fence,
 		      "Wrong fence version requested!\n");
-	zassert_equal(decode.m.fence_definition_req.ucFrameNumber, 1, 
+	zassert_equal(decode.m.fence_definition_req.ucFrameNumber, 1,
 		      "Wrong fence frame number requested!\n");
 
 	k_sleep(K_SECONDS(0.5));
@@ -450,7 +445,7 @@ void test_poll_response_has_new_fence(void)
 
 	memset(encoded_msg, 0, sizeof(encoded_msg));
 	encoded_size = 0;
-	ret = collar_protocol_encode(&poll_response2, &encoded_msg[0], sizeof(encoded_msg), 
+	ret = collar_protocol_encode(&poll_response2, &encoded_msg[0], sizeof(encoded_msg),
 				     &encoded_size);
 	zassert_equal(ret, 0, "Could not encode server response!\n");
 
@@ -467,9 +462,9 @@ void test_poll_response_has_new_fence(void)
 	printk("%d\n", decode.which_m);
 	zassert_equal(decode.which_m, NofenceMessage_fence_definition_req_tag,
 		      "Expected fence def. request- not sent!");
-	zassert_equal(decode.m.fence_definition_req.ulFenceDefVersion, dummy_fence, 
+	zassert_equal(decode.m.fence_definition_req.ulFenceDefVersion, dummy_fence,
 		      "Wrong fence version requested!\n");
-	zassert_equal(decode.m.fence_definition_req.ucFrameNumber, 0, 
+	zassert_equal(decode.m.fence_definition_req.ucFrameNumber, 0,
 		      "Wrong fence frame number requested!\n");
 }
 
@@ -506,7 +501,7 @@ void test_fence_download_frame_loss(void)
 		}
 	};
 	memset(encoded_msg, 0, sizeof(encoded_msg));
-	ret = collar_protocol_encode(&poll_resp, &encoded_msg[0], sizeof(encoded_msg), 
+	ret = collar_protocol_encode(&poll_resp, &encoded_msg[0], sizeof(encoded_msg),
 				     &encoded_size);
 	zassert_equal(ret, 0, "Could not encode server response");
 
@@ -523,7 +518,7 @@ void test_fence_download_frame_loss(void)
 	zassert_equal(k_sem_take(&msg_out, K_SECONDS(5)), 0, "");
 	zassert_equal(m_latest_proto_msg.which_m, NofenceMessage_fence_definition_req_tag, "");
 	zassert_equal(m_latest_proto_msg.m.fence_definition_req.ulFenceDefVersion, 10, "");
-	zassert_equal(m_latest_proto_msg.m.fence_definition_req.ucFrameNumber, 
+	zassert_equal(m_latest_proto_msg.m.fence_definition_req.ucFrameNumber,
 		      0 /* Requesting frame 0 (header) */, "");
 
 	/* Simulate a poll response to the fence definition request for fence header */
@@ -551,7 +546,7 @@ void test_fence_download_frame_loss(void)
 			},
 		},
 	};
-	ret = collar_protocol_encode(&fence_resp, &encoded_msg[0], sizeof(encoded_msg), 
+	ret = collar_protocol_encode(&fence_resp, &encoded_msg[0], sizeof(encoded_msg),
 				     &encoded_size);
 	zassert_equal(ret, 0, "Could not encode server response");
 
@@ -566,16 +561,16 @@ void test_fence_download_frame_loss(void)
 
 	/* Verify that fence definition request message is sent for frame 1/5 of version 10. */
 	zassert_equal(k_sem_take(&msg_out, K_SECONDS(5)), 0, "");
-	zassert_equal(m_latest_proto_msg.which_m, NofenceMessage_fence_definition_req_tag,"");
+	zassert_equal(m_latest_proto_msg.which_m, NofenceMessage_fence_definition_req_tag, "");
 	zassert_equal(m_latest_proto_msg.m.fence_definition_req.ulFenceDefVersion, 10, "");
-	zassert_equal(m_latest_proto_msg.m.fence_definition_req.ucFrameNumber, 
+	zassert_equal(m_latest_proto_msg.m.fence_definition_req.ucFrameNumber,
 		      1 /* Requesting frame 1 (1st xFence frame) */, "");
 
 	/* Simulate a poll response to the fence definition request for frame 1 */
 	fence_resp.m.fence_definition_resp.which_m = FenceDefinitionResponse_xFence_tag;
 	fence_resp.m.fence_definition_resp.ucFrameNumber = 1;
 
-	ret = collar_protocol_encode(&fence_resp, &encoded_msg[0], sizeof(encoded_msg), 
+	ret = collar_protocol_encode(&fence_resp, &encoded_msg[0], sizeof(encoded_msg),
 				     &encoded_size);
 	zassert_equal(ret, 0, "Could not encode server response");
 
@@ -590,7 +585,7 @@ void test_fence_download_frame_loss(void)
 
 	/* Verify that fence definition request message is sent for frame 2/5 of version 10 */
 	zassert_equal(k_sem_take(&msg_out, K_SECONDS(5)), 0, "");
-	zassert_equal(m_latest_proto_msg.which_m, NofenceMessage_fence_definition_req_tag,"");
+	zassert_equal(m_latest_proto_msg.which_m, NofenceMessage_fence_definition_req_tag, "");
 	zassert_equal(m_latest_proto_msg.m.fence_definition_req.ulFenceDefVersion, 10, "");
 	zassert_equal(m_latest_proto_msg.m.fence_definition_req.ucFrameNumber, 2, "");
 
@@ -600,7 +595,7 @@ void test_fence_download_frame_loss(void)
 	 * version different than the current one will restart the fence download */
 	fence_resp.m.fence_definition_resp.ucFrameNumber = 3 /* Messaging expects no. 2 */;
 
-	ret = collar_protocol_encode(&fence_resp, &encoded_msg[0], sizeof(encoded_msg), 
+	ret = collar_protocol_encode(&fence_resp, &encoded_msg[0], sizeof(encoded_msg),
 				     &encoded_size);
 	zassert_equal(ret, 0, "Could not encode server response");
 
@@ -615,10 +610,9 @@ void test_fence_download_frame_loss(void)
 	/* Verify that fence definition request message is NOT sent */
 	zassert_not_equal(k_sem_take(&msg_out, K_SECONDS(5)), 0, "");
 
-
 	/* Send a simulated poll response and verify that a new fence request download of version 10
 	 * starts from frame 0 and continues untill download is completed, i.e. no packet loss */
-	ret = collar_protocol_encode(&poll_resp, &encoded_msg[0], sizeof(encoded_msg), 
+	ret = collar_protocol_encode(&poll_resp, &encoded_msg[0], sizeof(encoded_msg),
 				     &encoded_size);
 	zassert_equal(ret, 0, "Could not encode server response");
 
@@ -634,24 +628,22 @@ void test_fence_download_frame_loss(void)
 	for (int i = 0; i < fence_resp.m.fence_definition_resp.ucTotalFrames; i++) {
 		/* Verify that fence request message is sent */
 		zassert_equal(k_sem_take(&msg_out, K_SECONDS(5)), 0, "");
-		zassert_equal(m_latest_proto_msg.which_m, NofenceMessage_fence_definition_req_tag, 
+		zassert_equal(m_latest_proto_msg.which_m, NofenceMessage_fence_definition_req_tag,
 			      "");
-		zassert_equal(m_latest_proto_msg.m.fence_definition_req.ulFenceDefVersion, 10, 
-			      "");
-		zassert_equal(m_latest_proto_msg.m.fence_definition_req.ucFrameNumber, i, 
-			      "");
+		zassert_equal(m_latest_proto_msg.m.fence_definition_req.ulFenceDefVersion, 10, "");
+		zassert_equal(m_latest_proto_msg.m.fence_definition_req.ucFrameNumber, i, "");
 
 		/* Simulate a poll response to the fence definition request of frame i */
 		if (i == 0) {
-			fence_resp.m.fence_definition_resp.which_m = 
+			fence_resp.m.fence_definition_resp.which_m =
 				FenceDefinitionResponse_xHeader_tag;
 		} else {
-			fence_resp.m.fence_definition_resp.which_m = 
+			fence_resp.m.fence_definition_resp.which_m =
 				FenceDefinitionResponse_xFence_tag;
 		}
 		fence_resp.m.fence_definition_resp.ucFrameNumber = i;
 
-		ret = collar_protocol_encode(&fence_resp, &encoded_msg[0], sizeof(encoded_msg), 
+		ret = collar_protocol_encode(&fence_resp, &encoded_msg[0], sizeof(encoded_msg),
 					     &encoded_size);
 		zassert_equal(ret, 0, "Could not encode server response");
 
@@ -701,7 +693,7 @@ void test_poll_response_has_host_address(void)
 	uint8_t encoded_msg[NofenceMessage_size];
 	memset(encoded_msg, 0, sizeof(encoded_msg));
 	size_t encoded_size = 0;
-	int ret = collar_protocol_encode(&poll_response, &encoded_msg[0], sizeof(encoded_msg), 
+	int ret = collar_protocol_encode(&poll_response, &encoded_msg[0], sizeof(encoded_msg),
 					 &encoded_size);
 	zassert_equal(ret, 0, "Could not encode server response!\n");
 	memcpy(&encoded_msg[2], &encoded_msg[0], encoded_size);
@@ -755,7 +747,6 @@ void test_poll_request_retry_after_missing_ack_from_cellular_controller(void)
 	zassert_equal(k_sem_take(&msg_out, K_MSEC(500)), 0, "");
 	zassert_not_equal(k_sem_take(&error_sem, K_SECONDS(CONFIG_CC_ACK_TIMEOUT_SEC)), 0, "");
 
-
 	zassert_not_equal(pMsg, NULL, "Proto message not published!\n");
 	err = collar_protocol_decode(pMsg + 2, len - 2, &decode);
 	zassert_equal(err, 0, "Corrupt proto message!\n");
@@ -776,7 +767,7 @@ void test_messages_during_fota(void)
 	EVENT_SUBMIT(fota_start_event);
 
 	k_sleep(K_MSEC(500));
-	
+
 	/* Send poll request and verify that it is sent during FOTA */
 	k_sem_reset(&msg_out);
 	ztest_returns_value(date_time_now, 0);
@@ -808,7 +799,7 @@ void test_messages_during_fota(void)
 	EVENT_SUBMIT(zap_evt);
 
 	k_sleep(K_SECONDS(1));
-	
+
 	/* Simulate a incomming poll response to verify that it is not processed during FOTA.
 	 * Note! This fails on missing return statements if the message is sent.
 	 */
@@ -834,7 +825,7 @@ void test_messages_during_fota(void)
 	memset(encoded_msg, 0, sizeof(encoded_msg));
 	size_t encoded_size = 0;
 
-	int ret = collar_protocol_encode(&poll_response, &encoded_msg[0], sizeof(encoded_msg), 
+	int ret = collar_protocol_encode(&poll_response, &encoded_msg[0], sizeof(encoded_msg),
 					 &encoded_size);
 	zassert_equal(ret, 0, "Unable to decode protobuf message");
 
@@ -891,26 +882,26 @@ void test_messages_during_fota(void)
 
 void test_main(void)
 {
-	ztest_test_suite(messaging_tests,
-			 /* Note! Has to be 1st test due to timing */ 
-			 ztest_unit_test(test_init),
-			 /* Note! Has to be 2nd test due to timing */
-			 ztest_unit_test(test_second_poll_request_has_no_boot_parameters),
-			 /* Note! Has to be 3rd test due to timing */
-			 ztest_unit_test(test_send_seq_message_with_preceding_poll_req),
-			 ztest_unit_test(test_stop_excessive_poll_requests),
-			 ztest_unit_test(test_poll_request_out_when_nudged_from_server),
-			 ztest_unit_test(test_poll_response_has_new_fence),
-			 ztest_unit_test(test_fence_download_frame_loss),
-			 ztest_unit_test(test_poll_response_has_host_address),
-			 ztest_unit_test(test_poll_request_retry_after_missing_ack_from_cellular_controller),
-			 ztest_unit_test(test_messages_during_fota)
-			);
+	ztest_test_suite(
+		messaging_tests,
+		/* Note! Has to be 1st test due to timing */
+		ztest_unit_test(test_init),
+		/* Note! Has to be 2nd test due to timing */
+		ztest_unit_test(test_second_poll_request_has_no_boot_parameters),
+		/* Note! Has to be 3rd test due to timing */
+		ztest_unit_test(test_send_seq_message_with_preceding_poll_req),
+		ztest_unit_test(test_stop_excessive_poll_requests),
+		ztest_unit_test(test_poll_request_out_when_nudged_from_server),
+		ztest_unit_test(test_poll_response_has_new_fence),
+		ztest_unit_test(test_fence_download_frame_loss),
+		ztest_unit_test(test_poll_response_has_host_address),
+		ztest_unit_test(test_poll_request_retry_after_missing_ack_from_cellular_controller),
+		ztest_unit_test(test_messages_during_fota));
 
 	ztest_run_test_suite(messaging_tests);
 }
 
-static uint8_t buf[NofenceMessage_size +10];
+static uint8_t buf[NofenceMessage_size + 10];
 static bool event_handler(const struct event_header *eh)
 {
 	if (is_messaging_proto_out_event(eh)) {
@@ -919,7 +910,7 @@ static bool event_handler(const struct event_header *eh)
 		struct messaging_proto_out_event *ev = cast_messaging_proto_out_event(eh);
 		/* When running with profiling enabled, the ev->buf get corrupted, because it is reused by another thread */
 		/* So copy it over to our private buffer */
-		memcpy(buf,ev->buf,ev->len);
+		memcpy(buf, ev->buf, ev->len);
 		pMsg = buf;
 		len = ev->len;
 

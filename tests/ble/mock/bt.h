@@ -163,8 +163,7 @@ struct bt_nus_cb {
 	 * @param[in] data  Received data.
 	 * @param[in] len   Length of received data.
 	 */
-	void (*received)(struct bt_conn *conn, const uint8_t *const data,
-			 uint16_t len);
+	void (*received)(struct bt_conn *conn, const uint8_t *const data, uint16_t len);
 
 	/** @brief Data sent callback.
 	 *
@@ -255,8 +254,7 @@ struct bt_conn_cb {
 	 *
 	 *  @return true to accept the parameters, or false to reject them.
 	 */
-	bool (*le_param_req)(struct bt_conn *conn,
-			     struct bt_le_conn_param *param);
+	bool (*le_param_req)(struct bt_conn *conn, struct bt_le_conn_param *param);
 
 	/** @brief The parameters for an LE connection have been updated.
 	 *
@@ -268,16 +266,15 @@ struct bt_conn_cb {
 	 *  @param latency Connection latency.
 	 *  @param timeout Connection supervision timeout.
 	 */
-	void (*le_param_updated)(struct bt_conn *conn, uint16_t interval,
-				 uint16_t latency, uint16_t timeout);
+	void (*le_param_updated)(struct bt_conn *conn, uint16_t interval, uint16_t latency,
+				 uint16_t timeout);
 
 	struct bt_conn_cb *_next;
 };
 
 struct bt_gatt_exchange_params {
 	/** Response callback */
-	void (*func)(struct bt_conn *conn, uint8_t err,
-		     struct bt_gatt_exchange_params *params);
+	void (*func)(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchange_params *params);
 };
 
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
@@ -286,8 +283,7 @@ void bt_conn_unref(struct bt_conn *conn);
 
 int bt_enable(bt_ready_cb_t cb);
 
-int bt_le_adv_start(const struct bt_le_adv_param *param,
-		    const struct bt_data *ad, size_t ad_len,
+int bt_le_adv_start(const struct bt_le_adv_param *param, const struct bt_data *ad, size_t ad_len,
 		    const struct bt_data *sd, size_t sd_len);
 
 int bt_nus_init(struct bt_nus_cb *callbacks);
@@ -296,8 +292,8 @@ int bt_nus_send(struct bt_conn *conn, const uint8_t *data, uint16_t len);
 
 int bt_le_adv_stop(void);
 
-int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
-			  const struct bt_data *sd, size_t sd_len);
+int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len, const struct bt_data *sd,
+			  size_t sd_len);
 
 uint16_t bt_gatt_get_mtu(struct bt_conn *conn);
 
@@ -309,8 +305,7 @@ void bt_conn_unref(struct bt_conn *conn);
 
 struct bt_conn *bt_conn_ref(struct bt_conn *conn);
 
-int bt_gatt_exchange_mtu(struct bt_conn *conn,
-			 struct bt_gatt_exchange_params *params);
+int bt_gatt_exchange_mtu(struct bt_conn *conn, struct bt_gatt_exchange_params *params);
 
 void bt_conn_cb_register(struct bt_conn_cb *cb);
 
@@ -334,15 +329,13 @@ struct net_buf_simple {
 	uint8_t *__buf;
 };
 
-void net_buf_simple_init_with_data(struct net_buf_simple *buf, void *data,
-				   size_t size);
+void net_buf_simple_init_with_data(struct net_buf_simple *buf, void *data, size_t size);
 
 uint16_t net_buf_simple_pull_be16(struct net_buf_simple *buf);
 uint8_t net_buf_simple_pull_u8(struct net_buf_simple *buf);
 void *net_buf_simple_pull_mem(struct net_buf_simple *buf, size_t len);
 
-void bt_data_parse(struct net_buf_simple *ad,
-		   bool (*func)(struct bt_data *data, void *user_data),
+void bt_data_parse(struct net_buf_simple *ad, bool (*func)(struct bt_data *data, void *user_data),
 		   void *user_data);
 
 bool bt_mock_is_battery_adv_data_correct(uint8_t data);
@@ -353,8 +346,8 @@ bool bt_mock_is_fence_status_adv_data_correct(uint8_t data);
 bool bt_mock_is_pasture_status_adv_data_correct(uint8_t data);
 bool bt_mock_is_fence_def_ver_adv_data_correct(uint16_t data);
 
-typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
-			     uint8_t adv_type, struct net_buf_simple *buf);
+typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
+			     struct net_buf_simple *buf);
 
 int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
 int bt_le_scan_stop(void);

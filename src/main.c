@@ -125,8 +125,8 @@ void main(void)
 	}
 	int bat_percent = fetch_battery_percent();
 
-	LOG_ERR("Was soft reset ?:%i, Soft reset reason:%d, Battery percent:%i",
-		is_soft_reset, soft_reset_reason, bat_percent);
+	LOG_ERR("Was soft reset ?:%i, Soft reset reason:%d, Battery percent:%i", is_soft_reset,
+		soft_reset_reason, bat_percent);
 
 	/* Play welcome- and battery sound as long as the device was not reset
 	 * due to a FOTA update */
@@ -134,8 +134,7 @@ void main(void)
 		if (bat_percent > 20) {
 			if (bat_percent >= 75) {
 				/* Play battery sound. */
-				struct sound_event *sound_ev =
-					new_sound_event();
+				struct sound_event *sound_ev = new_sound_event();
 				sound_ev->type = SND_SHORT_100;
 				EVENT_SUBMIT(sound_ev);
 			}
@@ -164,7 +163,7 @@ void main(void)
 	err = stg_init_storage_controller();
 #if CONFIG_DIAGNOSTICS
 	selftest_mark_state(SELFTEST_FLASH_POS, err == 0);
-#endif	/* CONFIG_DIAGNOSTICS */
+#endif /* CONFIG_DIAGNOSTICS */
 	if (err) {
 		LOG_ERR("Could not initialize storage controller (%d)", err);
 		return;

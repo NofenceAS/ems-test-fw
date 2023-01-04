@@ -44,8 +44,7 @@ enum error_sender_module {
  * @param[in] msg_len length of user message, 
  *                    maximum CONFIG_ERROR_MAX_USER_MESSAGE_SIZE characters.
  */
-void nf_app_fatal(enum error_sender_module sender, int code, char *msg,
-		  size_t msg_len);
+void nf_app_fatal(enum error_sender_module sender, int code, char *msg, size_t msg_len);
 
 /**
  * @brief Registers a non-fatal error caused by some module/logic that must
@@ -58,8 +57,7 @@ void nf_app_fatal(enum error_sender_module sender, int code, char *msg,
  * @param[in] msg_len length of user message, 
  *                    maximum CONFIG_ERROR_MAX_USER_MESSAGE_SIZE characters.
  */
-void nf_app_error(enum error_sender_module sender, int code, char *msg,
-		  size_t msg_len);
+void nf_app_error(enum error_sender_module sender, int code, char *msg, size_t msg_len);
 
 /**
  * @brief Registers a warning caused by some module/logic that must
@@ -72,17 +70,12 @@ void nf_app_error(enum error_sender_module sender, int code, char *msg,
  * @param[in] msg_len length of user message, 
  *                    maximum CONFIG_ERROR_MAX_USER_MESSAGE_SIZE characters.
  */
-void nf_app_warning(enum error_sender_module sender, int code, char *msg,
-		    size_t msg_len);
+void nf_app_warning(enum error_sender_module sender, int code, char *msg, size_t msg_len);
 
 /** @brief Enum for error severity. Can be replaced with error level in the
  *         future corresponding to integer values instead.
  */
-enum error_severity {
-	ERR_SEVERITY_FATAL = 0,
-	ERR_SEVERITY_ERROR = 1,
-	ERR_SEVERITY_WARNING = 2
-};
+enum error_severity { ERR_SEVERITY_FATAL = 0, ERR_SEVERITY_ERROR = 1, ERR_SEVERITY_WARNING = 2 };
 
 /** @brief Struct containg status messages regarding the firmware upgrade. */
 struct error_event {

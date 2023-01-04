@@ -17,9 +17,7 @@
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int gnss_uart_init(const struct device *uart_dev, 
-		   struct k_sem* rx_sem, 
-		   uint32_t baudrate);
+int gnss_uart_init(const struct device *uart_dev, struct k_sem *rx_sem, uint32_t baudrate);
 
 /**
  * @brief Set baudrate for UART communication.

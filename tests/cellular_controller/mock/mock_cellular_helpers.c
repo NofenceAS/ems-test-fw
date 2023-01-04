@@ -13,14 +13,13 @@ uint8_t mock_cellular_controller_init()
 //    return ztest_get_return_value();
 //}
 char dummy_msg[] = "1234243rafasdfertqw4reqwrewqwe";
-uint8_t socket_receive(struct data *socket_data, char ** msg)
+uint8_t socket_receive(struct data *socket_data, char **msg)
 {
 	*msg = &dummy_msg[0];
 	return ztest_get_return_value();
 }
 
-int8_t socket_connect(struct data *dummy_data, struct sockaddr *dummy_add,
-		      size_t dummy_len)
+int8_t socket_connect(struct data *dummy_data, struct sockaddr *dummy_add, size_t dummy_len)
 {
 	return ztest_get_return_value();
 }
@@ -90,11 +89,13 @@ const struct device *bind_modem(void)
 // 	return ztest_get_return_value();
 // }
 
-int check_ip(void){
+int check_ip(void)
+{
 	return ztest_get_return_value();
 }
 
-int get_ip(char** ip){
+int get_ip(char **ip)
+{
 	ARG_UNUSED(ip);
 	return ztest_get_return_value();
 }
@@ -104,7 +105,8 @@ bool query_listen_sock(void)
 	return ztest_get_return_value();
 }
 
-void send_tcp_fn(void){
+void send_tcp_fn(void)
+{
 	return;
 }
 //int8_t cache_server_address(void)

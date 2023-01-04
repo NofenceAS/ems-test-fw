@@ -2,8 +2,7 @@
 #include <nf_settings.h>
 #include <drivers/eeprom.h>
 
-static int mock_eeprom_read(const struct device *dev, off_t offset, void *data,
-			    size_t len)
+static int mock_eeprom_read(const struct device *dev, off_t offset, void *data, size_t len)
 {
 	ztest_check_expected_value(offset);
 	ztest_check_expected_value(len);
@@ -12,8 +11,7 @@ static int mock_eeprom_read(const struct device *dev, off_t offset, void *data,
 	return ztest_get_return_value();
 }
 
-static int mock_eeprom_write(const struct device *dev, off_t offset,
-			     const void *data, size_t len)
+static int mock_eeprom_write(const struct device *dev, off_t offset, const void *data, size_t len)
 {
 	ztest_check_expected_value(offset);
 	ztest_check_expected_value(len);
@@ -80,8 +78,7 @@ static void test_host_port(void)
 
 	/* Write: Too large string */
 	ret = eep_write_host_port(host_port_too_large);
-	zassert_equal(ret, -EOVERFLOW,
-		      "eep_write_host_port should return error");
+	zassert_equal(ret, -EOVERFLOW, "eep_write_host_port should return error");
 
 	/* Read: Happy scenario */
 	ztest_expect_value(mock_eeprom_read, offset, 4);
@@ -91,8 +88,7 @@ static void test_host_port(void)
 	ztest_returns_value(mock_eeprom_read, 0);
 	ret = eep_read_host_port(host_port, EEP_HOST_PORT_BUF_SIZE);
 	zassert_equal(ret, 0, "should return 0");
-	zassert_mem_equal(host_port, "193.333.555.777:123456", 23,
-			  "Expected host port");
+	zassert_mem_equal(host_port, "193.333.555.777:123456", 23, "Expected host port");
 	/* Read, too small buffer */
 	ret = eep_read_host_port(host_port, EEP_HOST_PORT_BUF_SIZE - 1);
 	zassert_equal(ret, -EOVERFLOW, "unexpected return");

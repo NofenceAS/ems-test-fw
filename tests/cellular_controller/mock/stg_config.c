@@ -20,7 +20,6 @@ int stg_config_u8_write(stg_config_param_id_t id, const uint8_t value)
 	return ztest_get_return_value();
 }
 
-
 int stg_config_u16_read(stg_config_param_id_t id, uint16_t *value)
 {
 	ARG_UNUSED(id);
@@ -53,36 +52,35 @@ int stg_config_str_read(stg_config_param_id_t id, char *str, uint8_t *len)
 {
 	ARG_UNUSED(id);
 	ARG_UNUSED(str);
-    ARG_UNUSED(len);
+	ARG_UNUSED(len);
 	return ztest_get_return_value();
 }
 
 int stg_config_str_write(stg_config_param_id_t id, const char *str, const uint8_t len)
 {
- 	ARG_UNUSED(id);
+	ARG_UNUSED(id);
 	ARG_UNUSED(str);
-    ARG_UNUSED(len);
+	ARG_UNUSED(len);
 	return ztest_get_return_value();
 }
 
 int stg_config_blob_read(stg_config_param_id_t id, uint8_t *arr, uint8_t *len)
 {
- 	ARG_UNUSED(id);
+	ARG_UNUSED(id);
 	ARG_UNUSED(arr);
-    ARG_UNUSED(len);
+	ARG_UNUSED(len);
 	return ztest_get_return_value();
 }
 
-int stg_config_blob_write(stg_config_param_id_t id, const uint8_t *arr, 
-		const uint8_t len)
+int stg_config_blob_write(stg_config_param_id_t id, const uint8_t *arr, const uint8_t len)
 {
- 	ARG_UNUSED(id);
+	ARG_UNUSED(id);
 	ARG_UNUSED(arr);
-    ARG_UNUSED(len);
+	ARG_UNUSED(len);
 	return ztest_get_return_value();
 }
 
 int stg_config_erase_all()
 {
-    return ztest_get_return_value();
+	return ztest_get_return_value();
 }
