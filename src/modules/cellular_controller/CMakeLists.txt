@@ -6,6 +6,7 @@ zephyr_include_directories(
         ./../../events/fw_upgrade/
         ./../../events/error_handler/
         ./../../events/power_manager/
+        ./../../events/diagnostics/
         ../../include
         ./../../modules/nf_settings/include)
 
