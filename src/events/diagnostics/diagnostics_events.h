@@ -18,8 +18,6 @@ struct diag_status_event {
 
 EVENT_TYPE_DECLARE(diag_status_event);
 
-
-
 /** @brief Struct containg messages regarding diagnostic turning on and off threads. */
 struct diag_thread_cntl_event {
 	struct event_header header;
@@ -28,6 +26,5 @@ struct diag_thread_cntl_event {
 };
 
 EVENT_TYPE_DECLARE(diag_thread_cntl_event);
-
 
 #endif /* _DIAGNOSTICS_EVENTS_H_ */

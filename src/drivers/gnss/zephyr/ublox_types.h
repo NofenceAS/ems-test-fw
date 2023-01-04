@@ -160,8 +160,7 @@ struct UBLOX_STORAGE_ATTR ublox_mga_ack {
 	uint8_t msgPayloadStart[4];
 };
 
-
-#define MAX_SVID	40
+#define MAX_SVID 40
 
 /** @brief Struct containing satelite data. */
 typedef struct {
@@ -171,7 +170,7 @@ typedef struct {
 	int8_t elev;
 	int16_t azim;
 	int16_t prRes;
-	uint32_t flags;	
+	uint32_t flags;
 } satpar_struct_t;
 
 /** @brief U-blox NAV-SAT message. */
@@ -182,7 +181,6 @@ struct UBLOX_STORAGE_ATTR ublox_nav_sat {
 	uint8_t reserved0[2];
 	satpar_struct_t satinfo[MAX_SVID];
 };
-
 
 /* Helper macros for getting various data types from buffer */
 #define GET_LE8(x) ((x[0] << 0))

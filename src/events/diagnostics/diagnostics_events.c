@@ -25,8 +25,6 @@ static int log_diag_status_event(const struct event_header *eh, char *buf, size_
 EVENT_TYPE_DEFINE(diag_status_event, IS_ENABLED(CONFIG_LOG_DIAGNOSTICS_EVENT),
 		  log_diag_status_event, NULL);
 
-
-
 /** @brief Struct containg messages regarding diagnostic turning on and off threads. */
 
 EVENT_TYPE_DEFINE(diag_thread_cntl_event, false, NULL, NULL);

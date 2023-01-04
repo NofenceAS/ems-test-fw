@@ -23,7 +23,6 @@ int get_gsm_info(struct gsm_info *);
 void stop_rssi(void);
 int modem_nf_pwr_off(void);
 
-
 typedef struct {
 	uint8_t success;
 	uint32_t ch;

@@ -45,44 +45,40 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 		uint32_t test_buf[2];
 		selftest_get_result(&test_buf[0], &test_buf[1]);
 
-			commander_send_resp(interface, SYSTEM, cmd, DATA, (uint8_t*)test_buf, sizeof(test_buf));
-			break;
-		}
-		case SLEEP:
-		{
-			resp = NOT_IMPLEMENTED;
-			commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
-			break;
-		}
-		case REBOOT:
-		{
-			resp = NOT_IMPLEMENTED;
-			/** @todo Schedule reboot after 1s */
-			commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
+		commander_send_resp(interface, SYSTEM, cmd, DATA, (uint8_t *)test_buf,
+				    sizeof(test_buf));
+		break;
+	}
+	case SLEEP: {
+		resp = NOT_IMPLEMENTED;
+		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
+		break;
+	}
+	case REBOOT: {
+		resp = NOT_IMPLEMENTED;
+		/** @todo Schedule reboot after 1s */
+		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
 
-			break;
+		break;
+	}
+	case THREAD_CONTROL: {
+		struct diag_thread_cntl_event *diag = new_diag_thread_cntl_event();
+		uint8_t tc = data[0];
+		LOG_WRN("THREAD CONTROL = %d", tc);
+		if (tc & (1 << 0)) {
+			diag->run_cellular_thread = true; //Cellular thread ON
+			LOG_WRN("TC Cellular ON");
+		} else {
+			diag->run_cellular_thread = false; //Cellular thread OFF
+			LOG_WRN("TC Cellular OFF");
 		}
-		case THREAD_CONTROL:
-		{
-			struct diag_thread_cntl_event *diag = new_diag_thread_cntl_event();
-			uint8_t tc = data[0];
-			LOG_WRN("THREAD CONTROL = %d",tc);
-			if(tc & (1 << 0)) {
-				diag->run_cellular_thread = true;	//Cellular thread ON
-				LOG_WRN("TC Cellular ON");	
-			}					
-			else	{
-				diag->run_cellular_thread = false;	//Cellular thread OFF			
-				LOG_WRN("TC Cellular OFF");
-			}				
-			EVENT_SUBMIT(diag);
-		}
+		EVENT_SUBMIT(diag);
+	}
 
-
-		default:
-			resp = UNKNOWN_CMD;
-			commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
-			break;
+	default:
+		resp = UNKNOWN_CMD;
+		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
+		break;
 	}
 
 	return err;

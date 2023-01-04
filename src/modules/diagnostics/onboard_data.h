@@ -25,11 +25,11 @@ typedef struct {
 	/** charging ma */
 	uint16_t charging_ma;
 	/** BME280 temperature */
-	double temp;	
+	double temp;
 	/** BME280 humidity */
-	double humidity;			
+	double humidity;
 	/** BME280 pressure */
-	double pressure;	
+	double pressure;
 } onboard_data_struct_t;
 
 /** @brief onboard data for 902 backwards compatibility
@@ -44,7 +44,7 @@ typedef struct {
 	/** UBX-NAV-PVT valid flags as copies.*/
 	uint8_t pvt_valid;
 	/** Set if overflow because of too far away from origin position.*/
-	uint8_t overflow;	
+	uint8_t overflow;
 	/** Height above ellipsoid [dm].*/
 	int16_t height;
 	/** 2-D speed [cm/s]*/
@@ -60,23 +60,23 @@ typedef struct {
 	/** UBX-NAV-STATUS milliseconds since First Fix.*/
 	uint32_t ttff;
 	/** contain vbatt value*/
-	uint32_t vbatt;			//4byte
+	uint32_t vbatt; //4byte
 	/** Contain solar charging value*/
-	uint32_t isolar;		//4byte
+	uint32_t isolar; //4byte
 	/** Contain solar charging value*/
-	uint32_t vint_stat;		//1byte	
+	uint32_t vint_stat; //1byte
 	/** Contain Accelerometerdata X value*/
-	int32_t acc_x;			//4byte
+	int32_t acc_x; //4byte
 	/** Contain Accelerometerdata Y value*/
-	int32_t acc_y;			//4byte
+	int32_t acc_y; //4byte
 	/** Contain Accelerometerdata Z value*/
-	int32_t acc_z;			//4byte
+	int32_t acc_z; //4byte
 	/** Contain BME280 Temp value*/
-	int32_t bme280_temp;	//4byte	
+	int32_t bme280_temp; //4byte
 	/** Contain BME280 Press value*/
-	int32_t bme280_pres;	//4byte	
+	int32_t bme280_pres; //4byte
 	/** Contain BME280 hum value*/
-	int32_t bme280_hum;		//4byte		
+	int32_t bme280_hum; //4byte
 } onboard_all_data_struct_t;
 
 int onboard_data_init(void);

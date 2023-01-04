@@ -70,11 +70,7 @@ typedef enum {
 	THREAD_CONTROL = 0x40
 } system_cmd_t;
 
-typedef enum {
-	READ = 0x00,
-	WRITE = 0x01,
-	ERASE_ALL = 0xEA
-} settings_cmd_t;
+typedef enum { READ = 0x00, WRITE = 0x01, ERASE_ALL = 0xEA } settings_cmd_t;
 
 typedef enum {
 	GNSS_HUB = 0x10,
@@ -101,7 +97,6 @@ typedef enum {
 	GET_VINT_STATUS = 0x01,
 	TEST_MODEM_TX = 0x7E,
 } modem_cmd_t;
-
 
 int commander_send_resp(enum diagnostics_interface interface, commander_group_t group, uint8_t cmd,
 			commander_resp_t resp, uint8_t *data, uint8_t data_size);
