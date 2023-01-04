@@ -19,7 +19,7 @@ int get_pdp_addr(char **);
 int modem_nf_wakeup(void);
 int modem_nf_sleep(void);
 int get_ccid(char **);
-int get_gsm_info(struct gsm_info*);
+int get_gsm_info(struct gsm_info *);
 void stop_rssi(void);
 int modem_nf_pwr_off(void);
 #endif /* MODEM_NF_H_ */

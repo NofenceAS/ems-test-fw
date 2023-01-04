@@ -12,7 +12,7 @@
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int mock_uart_register_sem(const struct device *dev, struct k_sem* rx_sem);
+int mock_uart_register_sem(const struct device *dev, struct k_sem *rx_sem);
 
 /**
  * @brief Send data to MCU
@@ -23,7 +23,7 @@ int mock_uart_register_sem(const struct device *dev, struct k_sem* rx_sem);
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int mock_uart_send(const struct device *dev, uint8_t* data, uint32_t size);
+int mock_uart_send(const struct device *dev, uint8_t *data, uint32_t size);
 
 /**
  * @brief Receive data from MCU
@@ -36,10 +36,7 @@ int mock_uart_send(const struct device *dev, uint8_t* data, uint32_t size);
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int mock_uart_receive(const struct device *dev, 
-		      uint8_t* data, 
-		      uint32_t* size, 
-		      uint32_t max_size,
+int mock_uart_receive(const struct device *dev, uint8_t *data, uint32_t *size, uint32_t max_size,
 		      bool consume);
 /**
  * @brief Delete data from buffer

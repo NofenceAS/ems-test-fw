@@ -47,29 +47,24 @@ int read_callback_pasture(uint8_t *data, size_t len)
 
 void test_pasture(void)
 {
-	zassert_equal(stg_write_pasture_data((uint8_t *)&pasture,
-					     sizeof(pasture)),
-		      0, "Write pasture error.");
-	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0,
-		      "Read pasture error.");
+	zassert_equal(stg_write_pasture_data((uint8_t *)&pasture, sizeof(pasture)), 0,
+		      "Write pasture error.");
+	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0, "Read pasture error.");
 }
 
 void test_pasture_extended_write_read(void)
 {
 	for (int i = 0; i < 5; i++) {
-		zassert_equal(stg_write_pasture_data((uint8_t *)&pasture,
-						     sizeof(pasture)),
-			      0, "Write pasture error.");
+		zassert_equal(stg_write_pasture_data((uint8_t *)&pasture, sizeof(pasture)), 0,
+			      "Write pasture error.");
 	}
-	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0,
-		      "Read pasture error.");
+	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0, "Read pasture error.");
 }
 
 void test_reboot_persistent_pasture(void)
 {
-	zassert_equal(stg_write_pasture_data((uint8_t *)&pasture,
-					     sizeof(pasture)),
-		      0, "Write pasture error.");
+	zassert_equal(stg_write_pasture_data((uint8_t *)&pasture, sizeof(pasture)), 0,
+		      "Write pasture error.");
 
 	/* Clear ANO partition so that we do not call date_time. */
 	zassert_false(stg_clear_partition(STG_PARTITION_ANO), "");
@@ -80,8 +75,7 @@ void test_reboot_persistent_pasture(void)
 	int err = stg_fcb_reset_and_init();
 	zassert_equal(err, 0, "Error simulating reboot and FCB resets.");
 
-	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0,
-		      "Read pasture error.");
+	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0, "Read pasture error.");
 }
 
 /** @brief Test to check that the fcb_offset_last_n function works
@@ -89,18 +83,13 @@ void test_reboot_persistent_pasture(void)
  */
 void test_request_pasture_multiple(void)
 {
-	zassert_equal(stg_write_pasture_data((uint8_t *)&pasture,
-					     sizeof(pasture)),
-		      0, "Write pasture error.");
+	zassert_equal(stg_write_pasture_data((uint8_t *)&pasture, sizeof(pasture)), 0,
+		      "Write pasture error.");
 
-	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0,
-		      "Read pasture error.");
-	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0,
-		      "Read pasture error.");
-	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0,
-		      "Read pasture error.");
-	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0,
-		      "Read pasture error.");
+	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0, "Read pasture error.");
+	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0, "Read pasture error.");
+	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0, "Read pasture error.");
+	zassert_equal(stg_read_pasture_data(read_callback_pasture), 0, "Read pasture error.");
 }
 
 /** @brief Test to check that the fcb_offset_last_n function works

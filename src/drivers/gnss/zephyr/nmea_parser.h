@@ -6,10 +6,10 @@
 
 #include <string.h>
 
-#define NMEA_MAX_SIZE		82
-#define NMEA_START_DELIMITER	'$'
-#define NMEA_END_DELIMITER	"\r\n"
-#define NMEA_END_DELIMITER_LEN	2
+#define NMEA_MAX_SIZE 82
+#define NMEA_START_DELIMITER '$'
+#define NMEA_END_DELIMITER "\r\n"
+#define NMEA_END_DELIMITER_LEN 2
 
 #if CONFIG_GNSS_NMEA_PARSER
 
@@ -21,14 +21,14 @@
  *
  * @return Number of bytes parsed/consumed. 
  */
-uint32_t nmea_parse(uint8_t* data, uint32_t size);
+uint32_t nmea_parse(uint8_t *data, uint32_t size);
 
 #else
 /* Use dummy parser for NMEA data when not enabled. 
  * This will look for start and end to gracefully ignore data, 
  * but not parse it. */
 
-static inline uint32_t nmea_parse(uint8_t* data, uint32_t size)
+static inline uint32_t nmea_parse(uint8_t *data, uint32_t size)
 {
 	uint32_t parsed = 0;
 	for (uint32_t i = 0; i < size; i++) {
@@ -38,9 +38,8 @@ static inline uint32_t nmea_parse(uint8_t* data, uint32_t size)
 			break;
 		}
 
-		if ((size-i) >= NMEA_END_DELIMITER_LEN) {
-			if (strncmp(&data[i], NMEA_END_DELIMITER, 
-					     NMEA_END_DELIMITER_LEN) == 0) {
+		if ((size - i) >= NMEA_END_DELIMITER_LEN) {
+			if (strncmp(&data[i], NMEA_END_DELIMITER, NMEA_END_DELIMITER_LEN) == 0) {
 				/* Found end delimiter, ignore data (including 
 				 * end) and stop parsing. */
 				parsed = i + NMEA_END_DELIMITER_LEN;

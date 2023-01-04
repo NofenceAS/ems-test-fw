@@ -15,9 +15,7 @@
 
 #include "UBX.h"
 
-UBX_MGA_ANO_RAW_t dummy_ano = { .mga_ano.year = 22,
-				.mga_ano.month = 4,
-				.mga_ano.day = 5 };
+UBX_MGA_ANO_RAW_t dummy_ano = { .mga_ano.year = 22, .mga_ano.month = 4, .mga_ano.day = 5 };
 size_t dummy_ano_len = sizeof(UBX_MGA_ANO_RAW_t);
 
 uint16_t expected_valid_day = 5;
@@ -47,16 +45,14 @@ void test_ano_write_20_days(void)
 
 	dummy_ano.mga_ano.day = 5;
 	for (int i = 0; i < 20; i++) {
-		zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano,
-						 dummy_ano_len),
-			      0, "Write ano error.");
+		zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano, dummy_ano_len), 0,
+			      "Write ano error.");
 		dummy_ano.mga_ano.day++;
 	}
 
 	dummy_ano.mga_ano.day = 5;
 
-	zassert_equal(stg_read_ano_data(read_callback_inc_days, false, 0), 0,
-		      "Read ano error.");
+	zassert_equal(stg_read_ano_data(read_callback_inc_days, false, 0), 0, "Read ano error.");
 }
 
 /** @brief Writes ano data, reads, write and then read again to see if it continues
@@ -69,30 +65,26 @@ void test_ano_write_sent(void)
 
 	dummy_ano.mga_ano.day = 5;
 	for (int i = 0; i < 10; i++) {
-		zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano,
-						 dummy_ano_len),
-			      0, "Write ano error.");
+		zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano, dummy_ano_len), 0,
+			      "Write ano error.");
 		dummy_ano.mga_ano.day++;
 	}
 
 	dummy_ano.mga_ano.day = 5;
 
-	zassert_equal(stg_read_ano_data(read_callback_inc_days, false, 0), 0,
-		      "Read ano error.");
+	zassert_equal(stg_read_ano_data(read_callback_inc_days, false, 0), 0, "Read ano error.");
 
 	/* Continue to write where it left off. */
 	dummy_ano.mga_ano.day = 15;
 	for (int i = 0; i < 10; i++) {
-		zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano,
-						 dummy_ano_len),
-			      0, "Write ano error.");
+		zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano, dummy_ano_len), 0,
+			      "Write ano error.");
 		dummy_ano.mga_ano.day++;
 	}
 
 	/* We now expect us to read from 15 to 25, not 5 to 25. */
 	dummy_ano.mga_ano.day = 15;
-	zassert_equal(stg_read_ano_data(read_callback_inc_days, false, 0), 0,
-		      "Read ano error.");
+	zassert_equal(stg_read_ano_data(read_callback_inc_days, false, 0), 0, "Read ano error.");
 }
 
 /** @brief Writes ano data, updates the boot pointer 
@@ -106,9 +98,8 @@ void test_ano_write_all(void)
 
 	dummy_ano.mga_ano.day = 1;
 	for (int i = 0; i < 30; i++) {
-		zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano,
-						 dummy_ano_len),
-			      0, "Write ano error.");
+		zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano, dummy_ano_len), 0,
+			      "Write ano error.");
 		dummy_ano.mga_ano.day++;
 	}
 
@@ -126,8 +117,7 @@ void test_ano_write_all(void)
 
 	dummy_ano.mga_ano.day = 5;
 
-	zassert_equal(stg_read_ano_data(read_callback_inc_days, true, 0), 0,
-		      "Read ano error.");
+	zassert_equal(stg_read_ano_data(read_callback_inc_days, true, 0), 0, "Read ano error.");
 }
 
 void test_reboot_persistent_ano(void)
@@ -135,8 +125,8 @@ void test_reboot_persistent_ano(void)
 	ztest_returns_value(date_time_now, 0);
 	zassert_equal(stg_clear_partition(STG_PARTITION_ANO), 0, "");
 	dummy_ano.mga_ano.year = 22;
-	zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano, dummy_ano_len),
-		      0, "Write ano error.");
+	zassert_equal(stg_write_ano_data((uint8_t *)&dummy_ano, dummy_ano_len), 0,
+		      "Write ano error.");
 
 	/* Reset FCB, pretending to reboot. Checks if persistent storage
 	 * works. Should get the expected read value from the written one above.
@@ -144,8 +134,7 @@ void test_reboot_persistent_ano(void)
 	int err = stg_fcb_reset_and_init();
 	zassert_equal(err, 0, "Error simulating reboot and FCB resets.");
 
-	zassert_equal(stg_read_ano_data(read_callback_ano, true, 0), 0,
-		      "Read ano error.");
+	zassert_equal(stg_read_ano_data(read_callback_ano, true, 0), 0, "Read ano error.");
 }
 
 /** @brief Test to check that the fcb_offset_last_n function works

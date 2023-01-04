@@ -27,12 +27,10 @@ static uint8_t m_sound_type = SND_OFF;
 K_SEM_DEFINE(warning_freq_sem, 0, 1);
 static uint32_t m_warning_freq = 0;
 
-static gnss_t gnss_data_fix = { 
-	.latest = { .pvt_flags = 1 },
-	.fix_ok = true,
-	.lastfix = { .pvt_flags = 1, .mode = GNSSMODE_MAX, .updated_at = 0 },
-	.has_lastfix = true
-};
+static gnss_t gnss_data_fix = { .latest = { .pvt_flags = 1 },
+				.fix_ok = true,
+				.lastfix = { .pvt_flags = 1, .mode = GNSSMODE_MAX, .updated_at = 0 },
+				.has_lastfix = true };
 
 static uint32_t convert_to_legacy_freq(uint32_t freq);
 
@@ -50,7 +48,7 @@ void test_correction_mode(void)
 	uint16_t mean_dist = 0;
 	uint16_t dist_change = 0;
 
-	k_sleep(K_SECONDS(CORRECTION_PAUSE_MIN_TIME + 1)); 
+	k_sleep(K_SECONDS(CORRECTION_PAUSE_MIN_TIME + 1));
 
 	/* Enable GNSS and simulate a warning fix */
 	amc_gnss_init();
@@ -64,8 +62,7 @@ void test_correction_mode(void)
 		/* Mode_Trace is the last collar mode in the definition, see 
 		(collar-protocol/base.proto/Mode protobuf definition).*/
 		collar_mode = i;
-		if ((collar_mode == Mode_Teach) || 
-		    (collar_mode == Mode_Fence)) {
+		if ((collar_mode == Mode_Teach) || (collar_mode == Mode_Fence)) {
 			continue;
 		}
 
@@ -73,13 +70,11 @@ void test_correction_mode(void)
 		k_sem_reset(&warning_start_sem);
 
 		/* Attempt to start correction */
-		process_correction(collar_mode, &gnss_data_fix.lastfix, 
-				   fence_status, current_zone, mean_dist, 
-				   dist_change);
+		process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+				   mean_dist, dist_change);
 
 		/* Wait for warning start event to timeout- no event received */
-		zassert_not_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 
-				  0, "");
+		zassert_not_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 0, "");
 
 		/* Check that correction status is 0, e.g. not started */
 		zassert_equal(get_correction_status(), 0, "");
@@ -92,8 +87,7 @@ void test_correction_mode(void)
 		/* Mode_Trace is the last collar mode in the definition, see 
 		(collar-protocol/base.proto/Mode protobuf definition).*/
 		collar_mode = i;
-		if ((collar_mode != Mode_Teach) && 
-		    (collar_mode != Mode_Fence)) {
+		if ((collar_mode != Mode_Teach) && (collar_mode != Mode_Fence)) {
 			continue;
 		}
 
@@ -103,13 +97,11 @@ void test_correction_mode(void)
 		/* Attempt to start correction */
 		ztest_returns_value(get_active_delta, STATE_NORMAL);
 		ztest_returns_value(stg_config_u32_write, 0);
-		process_correction(collar_mode, &gnss_data_fix.lastfix, 
-				   fence_status, current_zone, mean_dist, 
-				   dist_change);
+		process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+				   mean_dist, dist_change);
 
 		/* Wait for warning start event */
-		zassert_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 0, 
-			      "");
+		zassert_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 0, "");
 
 		/* Check that status is 2, e.g. started and warning ON  */
 		zassert_equal(get_correction_status(), 2, "");
@@ -120,13 +112,11 @@ void test_correction_mode(void)
 		k_sem_reset(&warning_stop_sem);
 
 		/* Update correction */
-		process_correction(collar_mode, &gnss_data_fix.lastfix, 
-				   fence_status, current_zone, mean_dist, 
-				   dist_change);
+		process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+				   mean_dist, dist_change);
 
 		/* Wait for correction ended event */
-		zassert_equal(k_sem_take(&warning_stop_sem, K_SECONDS(5)), 0, 
-			      "");
+		zassert_equal(k_sem_take(&warning_stop_sem, K_SECONDS(5)), 0, "");
 
 		/* Check that correction status is 0, e.g. not started */
 		zassert_equal(get_correction_status(), 0, "");
@@ -150,7 +140,7 @@ void test_correction_fence_status(void)
 	uint16_t mean_dist = 0;
 	uint16_t dist_change = 0;
 
-	k_sleep(K_SECONDS(CORRECTION_PAUSE_MIN_TIME + 1)); 
+	k_sleep(K_SECONDS(CORRECTION_PAUSE_MIN_TIME + 1));
 
 	/* Enable GNSS and simulate a warning fix */
 	amc_gnss_init();
@@ -164,8 +154,8 @@ void test_correction_fence_status(void)
 		/* FenceStatus_TurnedOffByBLE is the last fence status in the 
 		definition, see (collar-protocol/FenceStatus protobuf def.). */
 		fence_status = i;
-		if ((fence_status == FenceStatus_FenceStatus_Normal) || 
-			(fence_status == FenceStatus_MaybeOutOfFence)) {
+		if ((fence_status == FenceStatus_FenceStatus_Normal) ||
+		    (fence_status == FenceStatus_MaybeOutOfFence)) {
 			continue;
 		}
 
@@ -173,13 +163,11 @@ void test_correction_fence_status(void)
 		k_sem_reset(&warning_start_sem);
 
 		/* Attempt to start correction */
-		process_correction(collar_mode, &gnss_data_fix.lastfix, 
-				   fence_status, current_zone, mean_dist, 
-				   dist_change);
+		process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+				   mean_dist, dist_change);
 
 		/* Wait for warning start event to timeout- no event received */
-		zassert_not_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 
-				  0, "");
+		zassert_not_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 0, "");
 
 		/* Check that correction status is 0, e.g. not started */
 		zassert_equal(get_correction_status(), 0, "");
@@ -193,8 +181,8 @@ void test_correction_fence_status(void)
 		definition, see (collar-protocol/FenceStatus protobuf def.). */
 		collar_mode = Mode_Teach;
 		fence_status = i;
-		if ((fence_status != FenceStatus_FenceStatus_Normal) && 
-			(fence_status != FenceStatus_MaybeOutOfFence)) {
+		if ((fence_status != FenceStatus_FenceStatus_Normal) &&
+		    (fence_status != FenceStatus_MaybeOutOfFence)) {
 			continue;
 		}
 
@@ -204,13 +192,11 @@ void test_correction_fence_status(void)
 		/* Attempt to start correction */
 		ztest_returns_value(get_active_delta, STATE_NORMAL);
 		ztest_returns_value(stg_config_u32_write, 0);
-		process_correction(collar_mode, &gnss_data_fix.lastfix, 
-				   fence_status, current_zone, mean_dist, 
-				   dist_change);
+		process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+				   mean_dist, dist_change);
 
 		/* Wait for warning start event */
-		zassert_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 0, 
-			      "");
+		zassert_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 0, "");
 
 		/* Check that status is 2, e.g. started and warning ON  */
 		zassert_equal(get_correction_status(), 2, "");
@@ -221,19 +207,17 @@ void test_correction_fence_status(void)
 		k_sem_reset(&warning_stop_sem);
 
 		/* Update correction */
-		process_correction(collar_mode, &gnss_data_fix.lastfix, 
-				   fence_status, current_zone, mean_dist, 
-				   dist_change);
+		process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+				   mean_dist, dist_change);
 
 		/* Wait for correction ended event */
-		zassert_equal(k_sem_take(&warning_stop_sem, K_SECONDS(5)), 0, 
-			      "");
+		zassert_equal(k_sem_take(&warning_stop_sem, K_SECONDS(5)), 0, "");
 
 		/* Check that correction status is 0, e.g. not started */
 		zassert_equal(get_correction_status(), 0, "");
 
 		/* Wait for correction pause timeout */
-		k_sleep(K_SECONDS(CORRECTION_PAUSE_MIN_TIME + 1)); 
+		k_sleep(K_SECONDS(CORRECTION_PAUSE_MIN_TIME + 1));
 	}
 }
 
@@ -267,13 +251,11 @@ void test_correction_zone(void)
 		k_sem_reset(&warning_start_sem);
 
 		/* Attempt to start correction */
-		process_correction(collar_mode, &gnss_data_fix.lastfix, 
-				   fence_status, current_zone, mean_dist, 
-				   dist_change);
+		process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+				   mean_dist, dist_change);
 
 		/* Wait for warning start event to timeout- no event received */
-		zassert_not_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 
-				  0, "");
+		zassert_not_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 0, "");
 
 		/* Check that correction status is 0, e.g. not started */
 		zassert_equal(get_correction_status(), 0, "");
@@ -286,8 +268,8 @@ void test_correction_zone(void)
 	/* Attempt to start correction */
 	ztest_returns_value(get_active_delta, STATE_NORMAL);
 	ztest_returns_value(stg_config_u32_write, 0);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, mean_dist, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+			   mean_dist, dist_change);
 
 	/* Wait for warning start event */
 	zassert_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 0, "");
@@ -301,8 +283,8 @@ void test_correction_zone(void)
 	k_sem_reset(&warning_stop_sem);
 
 	/* Update correction */
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, mean_dist, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+			   mean_dist, dist_change);
 
 	/* Wait for correction ended event */
 	zassert_equal(k_sem_take(&warning_stop_sem, K_SECONDS(5)), 0, "");
@@ -336,8 +318,8 @@ void test_correction_esacped(void)
 	/* Start correction */
 	ztest_returns_value(get_active_delta, STATE_NORMAL);
 	ztest_returns_value(stg_config_u32_write, 0);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, mean_dist, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+			   mean_dist, dist_change);
 
 	/* Wait for warning start event */
 	zassert_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 0, "");
@@ -352,8 +334,8 @@ void test_correction_esacped(void)
 	k_sem_reset(&warning_stop_sem);
 
 	/* Update correction */
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, mean_dist, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+			   mean_dist, dist_change);
 
 	/* Wait for correction ended event (aborted due to Escpaed status) */
 	zassert_equal(k_sem_take(&warning_stop_sem, K_SECONDS(5)), 0, "");
@@ -383,8 +365,8 @@ void test_correction_active_delta(void)
 
 	/* Attempt to start correction */
 	ztest_returns_value(get_active_delta, STATE_SLEEP);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, mean_dist, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+			   mean_dist, dist_change);
 
 	/* Wait for warning start event to timeout- should not start */
 	zassert_not_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 0, "");
@@ -422,15 +404,15 @@ void test_correction_gnss(void)
 
 	/* Attempt to start correction */
 	ztest_returns_value(get_active_delta, STATE_NORMAL);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, mean_dist, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+			   mean_dist, dist_change);
 
 	/* Wait for warning start event to timeout- no start event received */
 	zassert_not_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 0, "");
 
 	/* Check that correction status is 0, e.g. correction not started */
 	zassert_equal(get_correction_status(), 0, "");
-    
+
 	/* 
 	* Test 2
 	* Test that only a warning GNSS fix the GNSS mode "MAX" can start AMC 
@@ -447,13 +429,11 @@ void test_correction_gnss(void)
 		gnss_data_fix.lastfix.updated_at = k_uptime_get_32();
 		k_sem_reset(&warning_start_sem);
 
-		process_correction(collar_mode, &gnss_data_fix.lastfix, 
-				   fence_status, current_zone, mean_dist, 
-				   dist_change);
+		process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+				   mean_dist, dist_change);
 
 		/* Wait for warning start event to timeout- no event received */
-		zassert_not_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 
-				  0, "");
+		zassert_not_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 0, "");
 
 		/* Check that correction status is 0, e.g. not started */
 		zassert_equal(get_correction_status(), 0, "");
@@ -470,8 +450,8 @@ void test_correction_gnss(void)
 	/* Start correction */
 	ztest_returns_value(get_active_delta, STATE_NORMAL);
 	ztest_returns_value(stg_config_u32_write, 0);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, mean_dist, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+			   mean_dist, dist_change);
 
 	/* Wait for warning start event */
 	zassert_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 0, "");
@@ -485,8 +465,7 @@ void test_correction_gnss(void)
 
 	/* Wait for sound frequency event and check that frequency is INIT */
 	zassert_equal(k_sem_take(&warning_freq_sem, K_SECONDS(5)), 0, "");
-	zassert_equal(m_warning_freq, convert_to_legacy_freq(WARN_FREQ_INIT), 
-		      "");
+	zassert_equal(m_warning_freq, convert_to_legacy_freq(WARN_FREQ_INIT), "");
 
 	/* Check that correction status is 2, e.g. started and warning ON  */
 	zassert_equal(get_correction_status(), 2, "");
@@ -504,8 +483,8 @@ void test_correction_gnss(void)
 
 	/* Update correction */
 	ztest_returns_value(get_active_delta, STATE_NORMAL);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, mean_dist, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+			   mean_dist, dist_change);
 
 	/* Wait for sound event and check that warning sound is turned OFF */
 	zassert_equal(k_sem_take(&sound_event_sem, K_SECONDS(5)), 0, "");
@@ -533,8 +512,8 @@ void test_correction_gnss(void)
 
 	/* Update correction */
 	ztest_returns_value(get_active_delta, STATE_NORMAL);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, mean_dist, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+			   mean_dist, dist_change);
 
 	/* Wait for event to timeout indicating that correct was NOT resumed */
 	zassert_not_equal(k_sem_take(&sound_event_sem, K_SECONDS(5)), 0, "");
@@ -551,8 +530,8 @@ void test_correction_gnss(void)
 	/* Update correction */
 	ztest_returns_value(get_active_delta, STATE_NORMAL);
 	ztest_returns_value(stg_config_u32_write, 0);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, mean_dist, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+			   mean_dist, dist_change);
 
 	/* Wait for sound event and check that warning sound is turned ON */
 	zassert_equal(k_sem_take(&sound_event_sem, K_SECONDS(5)), 0, "");
@@ -563,8 +542,7 @@ void test_correction_gnss(void)
 
 	/* Wait for sound frequency event and check that frequency is INIT */
 	zassert_equal(k_sem_take(&warning_freq_sem, K_SECONDS(5)), 0, "");
-	zassert_equal(m_warning_freq, convert_to_legacy_freq(WARN_FREQ_INIT), 
-		      "");
+	zassert_equal(m_warning_freq, convert_to_legacy_freq(WARN_FREQ_INIT), "");
 
 	/* Check that correction status is 2, e.g. started and warning ON */
 	zassert_equal(get_correction_status(), 2, "");
@@ -577,8 +555,8 @@ void test_correction_gnss(void)
 
 	/* Update correction */
 	ztest_returns_value(get_active_delta, STATE_NORMAL);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, mean_dist, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+			   mean_dist, dist_change);
 
 	/* Wait for correction paused event (paused due to no GNSS fix) */
 	zassert_equal(k_sem_take(&warning_pause_sem, K_SECONDS(5)), 0, "");
@@ -593,8 +571,8 @@ void test_correction_gnss(void)
 	k_sem_reset(&warning_stop_sem);
 
 	/* Update correction */
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, mean_dist, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+			   mean_dist, dist_change);
 
 	/* Wait for correction ended event */
 	zassert_equal(k_sem_take(&warning_stop_sem, K_SECONDS(5)), 0, "");
@@ -626,8 +604,8 @@ void test_correction_dist_pause(void)
 	/* Attempt to start correction */
 	ztest_returns_value(get_active_delta, STATE_NORMAL);
 	ztest_returns_value(stg_config_u32_write, 0);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, mean_dist, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+			   mean_dist, dist_change);
 
 	/* Wait for warning start event */
 	zassert_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 0, "");
@@ -642,8 +620,8 @@ void test_correction_dist_pause(void)
 	/* Update correction with mean distance -15 (last dist = 0). This should
 	* result in no change */
 	ztest_returns_value(get_active_delta, STATE_NORMAL);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, -15, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone, -15,
+			   dist_change);
 
 	/* Check that correction status is 2, e.g. started and warning ON */
 	zassert_equal(get_correction_status(), 2, "");
@@ -654,8 +632,8 @@ void test_correction_dist_pause(void)
 	/* Update correction with mean distance -25. This should result in a 
 	* correction pause */
 	ztest_returns_value(get_active_delta, STATE_NORMAL);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, -25, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone, -25,
+			   dist_change);
 
 	/* Wait for correction paused event */
 	zassert_equal(k_sem_take(&warning_pause_sem, K_SECONDS(5)), 0, "");
@@ -674,8 +652,8 @@ void test_correction_dist_pause(void)
 	/* Resume correction */
 	ztest_returns_value(get_active_delta, STATE_NORMAL);
 	ztest_returns_value(stg_config_u32_write, 0);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, 0, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone, 0,
+			   dist_change);
 
 	/* Wait for sound event and check that warning sound is turned ON */
 	zassert_equal(k_sem_take(&sound_event_sem, K_SECONDS(5)), 0, "");
@@ -686,11 +664,10 @@ void test_correction_dist_pause(void)
 
 	/* Wait for sound frequency event and check that frequency is ... */
 	zassert_equal(k_sem_take(&warning_freq_sem, K_SECONDS(5)), 0, "");
-	zassert_equal(m_warning_freq, convert_to_legacy_freq(WARN_FREQ_INIT), 
-		      "");
+	zassert_equal(m_warning_freq, convert_to_legacy_freq(WARN_FREQ_INIT), "");
 
 	/* Check that correction status is 2, e.g. started and warning ON */
-	zassert_equal(get_correction_status(), 2, ""); 
+	zassert_equal(get_correction_status(), 2, "");
 
 	/*
 	* Check that correction is pasued for mean_dist - last_warn_dist <=
@@ -701,8 +678,8 @@ void test_correction_dist_pause(void)
 
 	/* Update correction with mean dist -5. Should not pause correction */
 	ztest_returns_value(get_active_delta, STATE_NORMAL);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-        		   current_zone, -5, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone, -5,
+			   dist_change);
 
 	/* Check that correction status is 2, e.g. started and warning ON */
 	zassert_equal(get_correction_status(), 2, "");
@@ -712,8 +689,8 @@ void test_correction_dist_pause(void)
 
 	/* Update correction with mean dist -15. This should pause correction */
 	ztest_returns_value(get_active_delta, STATE_NORMAL);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, -15, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone, -15,
+			   dist_change);
 
 	/* Wait for correction paused event */
 	zassert_equal(k_sem_take(&warning_pause_sem, K_SECONDS(5)), 0, "");
@@ -729,11 +706,11 @@ void test_correction_dist_pause(void)
 	/* Resume correction */
 	ztest_returns_value(get_active_delta, STATE_NORMAL);
 	ztest_returns_value(stg_config_u32_write, 0);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, 0, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone, 0,
+			   dist_change);
 
 	/* Check that correction status is 2, e.g. started and warning ON */
-	zassert_equal(get_correction_status(), 2, ""); 
+	zassert_equal(get_correction_status(), 2, "");
 
 	/*
 	* Check that dist_change <= TEACHMODE_DIST_DECR_SLOPE_OFF_LIM will pause
@@ -745,8 +722,7 @@ void test_correction_dist_pause(void)
 
 	/* Update correction with dist_change -7- should pause correction */
 	ztest_returns_value(get_active_delta, STATE_NORMAL);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, 0, -7);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone, 0, -7);
 
 	/* Wait for correction paused event */
 	zassert_equal(k_sem_take(&warning_pause_sem, K_SECONDS(5)), 0, "");
@@ -761,8 +737,8 @@ void test_correction_dist_pause(void)
 	k_sem_reset(&warning_stop_sem);
 
 	/* Update correction */
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, mean_dist, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+			   mean_dist, dist_change);
 
 	/* Wait for correction ended event */
 	zassert_equal(k_sem_take(&warning_stop_sem, K_SECONDS(5)), 0, "");
@@ -795,8 +771,8 @@ void test_correction_gnss_timeout(void)
 	/* Start correction */
 	ztest_returns_value(get_active_delta, STATE_NORMAL);
 	ztest_returns_value(stg_config_u32_write, 0);
-	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, 
-			   current_zone, mean_dist, dist_change);
+	process_correction(collar_mode, &gnss_data_fix.lastfix, fence_status, current_zone,
+			   mean_dist, dist_change);
 
 	/* Wait for warning start event */
 	zassert_equal(k_sem_take(&warning_start_sem, K_SECONDS(5)), 0, "");
@@ -846,13 +822,13 @@ static bool event_handler(const struct event_header *evt)
 	}
 	if (is_sound_event(evt)) {
 		struct sound_event *sound_evt = cast_sound_event(evt);
-		m_sound_type = sound_evt->type; 
+		m_sound_type = sound_evt->type;
 		k_sem_give(&sound_event_sem);
 		return false;
 	}
 	if (is_sound_set_warn_freq_event(evt)) {
-		struct sound_set_warn_freq_event *warn_freq_evt = 
-				cast_sound_set_warn_freq_event(evt);
+		struct sound_set_warn_freq_event *warn_freq_evt =
+			cast_sound_set_warn_freq_event(evt);
 		m_warning_freq = warn_freq_evt->freq;
 		k_sem_give(&warning_freq_sem);
 		return false;

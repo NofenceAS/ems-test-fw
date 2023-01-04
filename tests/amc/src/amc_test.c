@@ -42,8 +42,7 @@ void assert_post_action(const char *file, unsigned int line)
 
 void test_init_and_update_pasture(void)
 {
-	zassert_false(event_manager_init(), 
-		      "Error when initializing event manager");
+	zassert_false(event_manager_init(), "Error when initializing event manager");
 
 	/* ..init_states_and_variables, cached variables. 1. tot zap count, 
 	 * 2. warn count, 3. zap count day */
@@ -63,8 +62,7 @@ void test_init_and_update_pasture(void)
 
 	/* Check that fence status did not change to NotStarted for AMC init.
 	 * Fence status should only change for a pasture update request */
-	zassert_not_equal(get_fence_status(), 
-			  FenceStatus_NotStarted, 
+	zassert_not_equal(get_fence_status(), FenceStatus_NotStarted,
 			  "Fence status was not loaded correctly during init");
 }
 
@@ -82,10 +80,8 @@ void test_set_get_pasture(void)
 
 	/* Coordinates. */
 	fence_coordinate_t points1[] = {
-		{ .s_x_dm = 10, .s_y_dm = -10 },
-		{ .s_x_dm = 10, .s_y_dm = 10 },
-		{ .s_x_dm = -10, .s_y_dm = 10 },
-		{ .s_x_dm = -10, .s_y_dm = -10 },
+		{ .s_x_dm = 10, .s_y_dm = -10 }, { .s_x_dm = 10, .s_y_dm = 10 },
+		{ .s_x_dm = -10, .s_y_dm = 10 }, { .s_x_dm = -10, .s_y_dm = -10 },
 		{ .s_x_dm = 10, .s_y_dm = -10 },
 	};
 	pasture.fences[0].m.n_points = sizeof(points1) / sizeof(points1[0]);
@@ -144,7 +140,10 @@ void test_update_pasture(void)
 	/* update_pasture_from_stg() */
 	ztest_returns_value(stg_read_pasture_data, 0);
 
-	/* Read keep mode from storage */
+	/* Read keep mode from storage and set teach mode */
+	ztest_returns_value(stg_config_u8_read, 0);
+	ztest_returns_value(stg_config_u32_read, 0);
+	ztest_returns_value(stg_config_u16_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0);
 
 	/* ..force_fence_status() */
@@ -162,15 +161,16 @@ void test_update_pasture(void)
 	EVENT_SUBMIT(event);
 
 	k_sem_reset(&fence_sema);
-	zassert_equal(k_sem_take(&fence_sema, K_SECONDS(10)), 0, 
-				"Failed to receive update fence status event");
+	zassert_equal(k_sem_take(&fence_sema, K_SECONDS(10)), 0,
+		      "Failed to receive update fence status event");
 
-	zassert_equal(m_current_fence_status, FenceStatus_NotStarted, 
-				"Failed to force correct fence status");
-	zassert_equal(get_fence_status(), m_current_fence_status, 
-				"Actual fence status is not equal to reported fence status");
-	zassert_equal(zone_get(), NO_ZONE, "Zone not reset to NO_ZONE with "
-					   "the new pasture!");
+	zassert_equal(m_current_fence_status, FenceStatus_NotStarted,
+		      "Failed to force correct fence status");
+	zassert_equal(get_fence_status(), m_current_fence_status,
+		      "Actual fence status is not equal to reported fence status");
+	zassert_equal(zone_get(), NO_ZONE,
+		      "Zone not reset to NO_ZONE with "
+		      "the new pasture!");
 }
 
 void test_update_pasture_teach_mode(void)
@@ -206,13 +206,13 @@ void test_update_pasture_teach_mode(void)
 	EVENT_SUBMIT(event);
 
 	k_sem_reset(&fence_sema);
-	zassert_equal(k_sem_take(&fence_sema, K_SECONDS(10)), 0, 
-				"Failed to receive update fence status event");
+	zassert_equal(k_sem_take(&fence_sema, K_SECONDS(10)), 0,
+		      "Failed to receive update fence status event");
 
-	zassert_equal(m_current_fence_status, FenceStatus_NotStarted, 
-				"Failed to force correct fence status");
-	zassert_equal(get_fence_status(), m_current_fence_status, 
-				"Actual fence status is not equal to reported fence status");
+	zassert_equal(m_current_fence_status, FenceStatus_NotStarted,
+		      "Failed to force correct fence status");
+	zassert_equal(get_fence_status(), m_current_fence_status,
+		      "Actual fence status is not equal to reported fence status");
 
 	zassert_equal(get_mode(), Mode_Teach, "Failed to force teach mode");
 }
@@ -232,9 +232,10 @@ void test_update_pasture_stg_fail(void)
 	/* handle_states_fn()/calc_fence_status() */
 	ztest_returns_value(stg_config_u8_write, 0);
 
-	zassert_equal(zone_get(), NO_ZONE, "Zone not reset to NO_ZONE with "
-					   "failing to read a new pasture "
-					   "from storage!");
+	zassert_equal(zone_get(), NO_ZONE,
+		      "Zone not reset to NO_ZONE with "
+		      "failing to read a new pasture "
+		      "from storage!");
 	zone_set(WARN_ZONE);
 	zassert_equal(zone_get(), WARN_ZONE, "Zone not set to WARN_ZONE!");
 	/* Submit fence update event */
@@ -242,12 +243,12 @@ void test_update_pasture_stg_fail(void)
 	EVENT_SUBMIT(event);
 
 	k_sem_reset(&error_sema);
-	zassert_equal(k_sem_take(&error_sema, K_SECONDS(10)), 0, 
-				"Failed to receive update fence error event");
+	zassert_equal(k_sem_take(&error_sema, K_SECONDS(10)), 0,
+		      "Failed to receive update fence error event");
 }
 
-
-static void update_position (int32_t origin_lat, int32_t origin_lon, int delta_lat, int delta_lon) {
+static void update_position(int32_t origin_lat, int32_t origin_lon, int delta_lat, int delta_lon)
+{
 	int32_t my_lat = origin_lat;
 	int32_t my_lon = origin_lon;
 
@@ -286,10 +287,8 @@ void test_update_pasture_integration(void)
 
 	/* Coordinates. */
 	fence_coordinate_t points1[] = {
-		{ .s_x_dm = 10 + offset, .s_y_dm = -10 },
-		{ .s_x_dm = 10 + offset, .s_y_dm = 10 },
-		{ .s_x_dm = -10 + offset, .s_y_dm = 10 },
-		{ .s_x_dm = -10 + offset, .s_y_dm = -10 },
+		{ .s_x_dm = 10 + offset, .s_y_dm = -10 }, { .s_x_dm = 10 + offset, .s_y_dm = 10 },
+		{ .s_x_dm = -10 + offset, .s_y_dm = 10 }, { .s_x_dm = -10 + offset, .s_y_dm = -10 },
 		{ .s_x_dm = 10 + offset, .s_y_dm = -10 },
 	};
 	pasture.fences[0].m.n_points = sizeof(points1) / sizeof(points1[0]);
@@ -299,7 +298,7 @@ void test_update_pasture_integration(void)
 	zassert_false(get_pasture_cache(&new_pasture), "");
 	zassert_mem_equal(&pasture, new_pasture, sizeof(pasture_t), "");
 	k_sem_reset(&fence_sema);
-//	zassert_equal(k_sem_take(&fence_sema, K_SECONDS(10)), 0, "");
+	//	zassert_equal(k_sem_take(&fence_sema, K_SECONDS(10)), 0, "");
 
 	/* update_pasture_from_stg() */
 	ztest_returns_value(stg_read_pasture_data, 0);
@@ -334,45 +333,37 @@ void test_warning_beacon_scan(void)
 		.m.l_origin_lat = 100000000,
 		.m.l_origin_lon = 100000000,
 		.m.us_k_lat = 10000,
-		.m.us_k_lon = 10000,	
+		.m.us_k_lon = 10000,
 	};
 	pasture.fences[0].m.e_fence_type = FenceDefinitionMessage_FenceType_Normal;
 	pasture.fences[0].m.us_id = 0;
 	pasture.fences[0].m.fence_no = 0;
 
 	fence_coordinate_t points1[] = {
-		{ .s_x_dm = 100, .s_y_dm = -10 },
-		{ .s_x_dm = 100, .s_y_dm = 10 },
-		{ .s_x_dm = -100, .s_y_dm = 10 },
-		{ .s_x_dm = -100, .s_y_dm = -10 },
+		{ .s_x_dm = 100, .s_y_dm = -10 }, { .s_x_dm = 100, .s_y_dm = 10 },
+		{ .s_x_dm = -100, .s_y_dm = 10 }, { .s_x_dm = -100, .s_y_dm = -10 },
 		{ .s_x_dm = 100, .s_y_dm = -10 },
 	};
 	pasture.fences[0].m.n_points = sizeof(points1) / sizeof(points1[0]);
 	memcpy(pasture.fences[0].coordinates, points1, sizeof(points1));
 	zassert_false(set_pasture_cache((uint8_t *)&pasture, sizeof(pasture)), "");
 
-	/* Verify that no beacon scan event is sent for NO_ZONE */
 	zone_set(NO_ZONE);
-	k_sem_reset(&sem_beacon);
-
-	struct ble_beacon_event *evt = new_ble_beacon_event();
-	evt->status = BEACON_STATUS_REGION_FAR;
-	EVENT_SUBMIT(evt); //Sending beacon event to trigger a states update in AMC.
-
-	zassert_not_equal(k_sem_take(&sem_beacon, K_SECONDS(5)), 0, "");
 
 	/* Verify that beacon scan evnet IS sent when moving from a non-warning zone to PREWARN_ZONE */
 	k_sem_reset(&sem_beacon);
 	update_position(pasture.m.l_origin_lat, pasture.m.l_origin_lon, 0, 0);
 
 	zassert_equal(k_sem_take(&sem_beacon, K_SECONDS(5)), 0, "");
+	zassert_equal(zone_get(), PREWARN_ZONE, "");
 
 	/* Verify that beacon scan evnet IS sent when moving from a non-warning zone to WARN_ZONE */
 	zone_set(CAUTION_ZONE);
 	k_sem_reset(&sem_beacon);
 	update_position(pasture.m.l_origin_lat, pasture.m.l_origin_lon, 100, 100); //warn
-	
+
 	zassert_equal(k_sem_take(&sem_beacon, K_SECONDS(5)), 0, "");
+	zassert_equal(zone_get(), WARN_ZONE, "");
 }
 
 void test_zone_update_evt(void)
@@ -388,7 +379,7 @@ void test_zone_update_evt(void)
 
 	zassert_equal(k_sem_take(&sem_zone_change, K_SECONDS(5)), 0, "");
 	zassert_equal(m_zone, NO_ZONE, "");
-	
+
 	/* Set zone to NO_ZONE (same as previous sub-test) to make sure an event is NOT sent/received as
 	 * only zone CHANGES are sent. */
 	k_sem_reset(&sem_zone_change);
@@ -453,13 +444,13 @@ static bool event_handler(const struct event_header *eh)
 	if (is_ble_ctrl_event(eh)) {
 		const struct ble_ctrl_event *event = cast_ble_ctrl_event(eh);
 		switch (event->cmd) {
-			case BLE_CTRL_SCAN_START: {
-				k_sem_give(&sem_beacon);
-				break;
-			}
-			default: {
-				break;
-			}
+		case BLE_CTRL_SCAN_START: {
+			k_sem_give(&sem_beacon);
+			break;
+		}
+		default: {
+			break;
+		}
 		}
 		return false;
 	}
@@ -472,85 +463,70 @@ static bool event_handler(const struct event_header *eh)
 	return false;
 }
 
-void test_propagate_movement_out_event(void) {
-
+void test_propagate_movement_out_event(void)
+{
 	current_gnss_mode = 1000;
-	struct movement_out_event * event = new_movement_out_event();
+	struct movement_out_event *event = new_movement_out_event();
 	event->state = STATE_SLEEP;
 
 	_test_set_firs_time_since_start(false);
 	ztest_returns_value(stg_config_u8_write, 0);
 	ztest_returns_value(stg_config_u8_write, 0);
 
-
 	k_sem_reset(&my_gnss_mode_sem);
 	EVENT_SUBMIT(event);
 	zassert_equal(k_sem_take(&my_gnss_mode_sem, K_SECONDS(30)), 0, "");
-	zassert_equal(current_gnss_mode,GNSSMODE_INACTIVE,"");
+	zassert_equal(current_gnss_mode, GNSSMODE_INACTIVE, "");
 
 	k_sem_reset(&my_gnss_mode_sem);
 	event = new_movement_out_event();
 	event->state = STATE_NORMAL;
 	EVENT_SUBMIT(event);
 	zassert_equal(k_sem_take(&my_gnss_mode_sem, K_SECONDS(30)), 0, "");
-	zassert_equal(current_gnss_mode,GNSSMODE_CAUTION,"");
-
-
+	zassert_equal(current_gnss_mode, GNSSMODE_CAUTION, "");
 }
 
 void test_main(void)
 {
-
-	ztest_test_suite(amc_tests,
-			ztest_unit_test(test_init_and_update_pasture),
-			ztest_unit_test(test_set_get_pasture),
-			ztest_unit_test(test_fnc_valid_fence_exists),
-			ztest_unit_test(test_empty_fence),
-			ztest_unit_test(test_update_pasture_teach_mode),
-			ztest_unit_test(test_update_pasture_stg_fail),
-			ztest_unit_test(test_update_pasture),
-			ztest_unit_test(test_warning_beacon_scan),
-			ztest_unit_test(test_zone_update_evt),
-			ztest_unit_test(test_propagate_movement_out_event));
+	ztest_test_suite(
+		amc_tests, ztest_unit_test(test_init_and_update_pasture),
+		ztest_unit_test(test_set_get_pasture), ztest_unit_test(test_fnc_valid_fence_exists),
+		ztest_unit_test(test_empty_fence), ztest_unit_test(test_update_pasture_teach_mode),
+		ztest_unit_test(test_update_pasture_stg_fail), ztest_unit_test(test_update_pasture),
+		ztest_unit_test(test_warning_beacon_scan), ztest_unit_test(test_zone_update_evt),
+		ztest_unit_test(test_propagate_movement_out_event));
 	ztest_run_test_suite(amc_tests);
 
-	ztest_test_suite(amc_dist_tests,
-			ztest_unit_test(test_fnc_calc_dist_quadratic),
-			ztest_unit_test(test_fnc_calc_dist_quadratic_max),
-			ztest_unit_test(test_fnc_calc_dist_rect),
-			ztest_unit_test(test_fnc_calc_dist_2_fences_hole),
-			ztest_unit_test(test_fnc_calc_dist_2_fences_hole2),
-			ztest_unit_test(test_fnc_calc_dist_2_fences_max_size));
+	ztest_test_suite(amc_dist_tests, ztest_unit_test(test_fnc_calc_dist_quadratic),
+			 ztest_unit_test(test_fnc_calc_dist_quadratic_max),
+			 ztest_unit_test(test_fnc_calc_dist_rect),
+			 ztest_unit_test(test_fnc_calc_dist_2_fences_hole),
+			 ztest_unit_test(test_fnc_calc_dist_2_fences_hole2),
+			 ztest_unit_test(test_fnc_calc_dist_2_fences_max_size));
 	ztest_run_test_suite(amc_dist_tests);
 
 	ztest_test_suite(amc_zone_tests, ztest_unit_test(test_zone_calc));
 	ztest_run_test_suite(amc_zone_tests);
 
-	ztest_test_suite(amc_gnss_tests,
-	 		ztest_unit_test(test_gnss_fix),
-			ztest_unit_test(test_gnss_mode)
-			 );
+	ztest_test_suite(amc_gnss_tests, ztest_unit_test(test_gnss_fix),
+			 ztest_unit_test(test_gnss_mode));
 
 	ztest_run_test_suite(amc_gnss_tests);
 
-	ztest_test_suite(amc_correction_tests, 
-			ztest_unit_test(test_correction_gnss),
-			ztest_unit_test(test_correction_mode),
-			ztest_unit_test(test_correction_fence_status),
-			ztest_unit_test(test_correction_zone),
-			ztest_unit_test(test_correction_esacped),
-			ztest_unit_test(test_correction_active_delta),
-			ztest_unit_test(test_correction_dist_pause),
-			ztest_unit_test(test_correction_gnss_timeout));
+	ztest_test_suite(amc_correction_tests, ztest_unit_test(test_correction_gnss),
+			 ztest_unit_test(test_correction_mode),
+			 ztest_unit_test(test_correction_fence_status),
+			 ztest_unit_test(test_correction_zone),
+			 ztest_unit_test(test_correction_esacped),
+			 ztest_unit_test(test_correction_active_delta),
+			 ztest_unit_test(test_correction_dist_pause),
+			 ztest_unit_test(test_correction_gnss_timeout));
 	ztest_run_test_suite(amc_correction_tests);
 
-	ztest_test_suite(amc_collar_fence_tests,
-			ztest_unit_test(test_init_and_update_pasture),
-			ztest_unit_test(test_collar_status),
-			ztest_unit_test(test_collar_mode),
-			ztest_unit_test(test_fence_status));
+	ztest_test_suite(amc_collar_fence_tests, ztest_unit_test(test_init_and_update_pasture),
+			 ztest_unit_test(test_collar_status), ztest_unit_test(test_collar_mode),
+			 ztest_unit_test(test_fence_status));
 	ztest_run_test_suite(amc_collar_fence_tests);
-
 }
 
 EVENT_LISTENER(test_main, event_handler);

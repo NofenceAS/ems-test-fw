@@ -15,13 +15,11 @@
  * @param[in] buf triggered event's log event buffer.
  * @param[in] buf_len length of the buffer received.
  */
-static int log_gnssdata_event(const struct event_header *eh, char *buf,
-			      size_t buf_len)
+static int log_gnssdata_event(const struct event_header *eh, char *buf, size_t buf_len)
 {
 	struct gnssdata_event *event = cast_gnssdata_event(eh);
 
-	return snprintf(buf, buf_len, "GNSS data lat %d lon %d",
-			event->gnss.lat, event->gnss.lon);
+	return snprintf(buf, buf_len, "GNSS data lat %d lon %d", event->gnss.lat, event->gnss.lon);
 }
 
 EVENT_TYPE_DEFINE(gnssdata_event, true, log_gnssdata_event, NULL);

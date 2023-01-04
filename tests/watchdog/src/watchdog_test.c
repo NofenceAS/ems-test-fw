@@ -22,8 +22,7 @@ void assert_post_action(const char *file, unsigned int line)
 
 void test_init(void)
 {
-	zassert_false(event_manager_init(),
-		      "Error when initializing event manager");
+	zassert_false(event_manager_init(), "Error when initializing event manager");
 }
 
 void test_wathcdog_feed(void)
@@ -31,8 +30,7 @@ void test_wathcdog_feed(void)
 	memset(module_alive_array_seen, 0, sizeof(module_alive_array_seen));
 	watchdog_report_module_alive(WDG_PWR_MODULE);
 	watchdog_report_module_alive(WDG_BLE_SCAN);
-	int err = k_sem_take(&watchdog_feed_sem,
-			     K_SECONDS(CONFIG_WATCHDOG_TIMEOUT_SEC));
+	int err = k_sem_take(&watchdog_feed_sem, K_SECONDS(CONFIG_WATCHDOG_TIMEOUT_SEC));
 	zassert_equal(err, 0, "Watchdog feed error");
 }
 
@@ -41,8 +39,7 @@ void test_wathcdog_timeout(void)
 	memset(module_alive_array_seen, 0, sizeof(module_alive_array_seen));
 	watchdog_report_module_alive(WDG_PWR_MODULE);
 	memset(module_alive_array_seen, 0, sizeof(module_alive_array_seen));
-	int err = k_sem_take(&watchdog_feed_sem,
-			     K_SECONDS(CONFIG_WATCHDOG_TIMEOUT_SEC));
+	int err = k_sem_take(&watchdog_feed_sem, K_SECONDS(CONFIG_WATCHDOG_TIMEOUT_SEC));
 	zassert_equal(err, -EAGAIN, "Timeout test error");
 }
 
@@ -55,8 +52,7 @@ void test_main(void)
 	ztest_run_test_suite(watchdog_handler_tests);
 }
 
-uint8_t expected_array_seen[WDG_END_OF_LIST] = { [0 ... WDG_END_OF_LIST - 1] =
-							 1 };
+uint8_t expected_array_seen[WDG_END_OF_LIST] = { [0 ... WDG_END_OF_LIST - 1] = 1 };
 
 static bool event_handler(const struct event_header *eh)
 {
@@ -65,8 +61,7 @@ static bool event_handler(const struct event_header *eh)
 		if (ev->magic == WATCHDOG_ALIVE_MAGIC) {
 			if (ev->module < WDG_END_OF_LIST) {
 				module_alive_array_seen[ev->module] = 1;
-				int ret = memcmp(module_alive_array_seen,
-						 expected_array_seen,
+				int ret = memcmp(module_alive_array_seen, expected_array_seen,
 						 WDG_END_OF_LIST);
 				if (ret == 0) {
 					printk("All modules alive. Feeding watchdog.\n");

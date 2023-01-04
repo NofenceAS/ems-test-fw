@@ -15,7 +15,8 @@ int get_gsm_info(struct gsm_info *gsm_session_info)
 	return 0;
 }
 
-void stop_rssi (void){
+void stop_rssi(void)
+{
 	return;
 }
 

@@ -10,8 +10,8 @@
 #include <stdbool.h>
 
 /* Constants for U-blox message sync characters */
-#define UBLOX_SYNC_CHAR_1	0xB5
-#define UBLOX_SYNC_CHAR_2	0x62
+#define UBLOX_SYNC_CHAR_1 0xB5
+#define UBLOX_SYNC_CHAR_2 0x62
 
 /**
  * @brief Initializes protocol parser. 
@@ -29,8 +29,8 @@ void ublox_protocol_init(void);
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int ublox_register_handler(uint8_t msg_class, uint8_t msg_id, 
-			   int (*handle)(void*,void*,uint32_t), void* context);
+int ublox_register_handler(uint8_t msg_class, uint8_t msg_id,
+			   int (*handle)(void *, void *, uint32_t), void *context);
 
 /**
  * @brief Function for parsing U-blox protocol data. 
@@ -40,7 +40,7 @@ int ublox_register_handler(uint8_t msg_class, uint8_t msg_id,
  * 
  * @return Number of bytes parsed, which can be freed. 
  */
-uint32_t ublox_parse(uint8_t* data, uint32_t size);
+uint32_t ublox_parse(uint8_t *data, uint32_t size);
 
 /**
  * @brief Resets stored response handlers for previous command.
@@ -61,11 +61,9 @@ int ublox_reset_response_handlers(void);
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int ublox_set_response_handlers(
-			uint8_t* buffer,
-			int (*poll_cb)(void*,uint8_t,uint8_t,void*,uint32_t),
-			int (*ack_cb)(void*,uint8_t,uint8_t,bool),
-			void* context);
+int ublox_set_response_handlers(uint8_t *buffer,
+				int (*poll_cb)(void *, uint8_t, uint8_t, void *, uint32_t),
+				int (*ack_cb)(void *, uint8_t, uint8_t, bool), void *context);
 
 /**
  * @brief Gets data of response payload for configuration get. 
@@ -79,8 +77,7 @@ int ublox_set_response_handlers(
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int ublox_get_cfg_val(uint8_t* payload, uint32_t size, 
-		      uint8_t val_size, uint64_t* val);
+int ublox_get_cfg_val(uint8_t *payload, uint32_t size, uint8_t val_size, uint64_t *val);
 
 /**
  * @brief Gets uint8_t data of response payload for configuration get. 
@@ -90,11 +87,11 @@ int ublox_get_cfg_val(uint8_t* payload, uint32_t size,
  * 
  * @return Configuration value. 
  */
-inline uint8_t ublox_get_cfg_val_u8(uint8_t* payload, uint32_t size)
+inline uint8_t ublox_get_cfg_val_u8(uint8_t *payload, uint32_t size)
 {
 	uint64_t val;
 	ublox_get_cfg_val(payload, size, 1, &val);
-	return val&0xFF;
+	return val & 0xFF;
 }
 
 /**
@@ -105,11 +102,11 @@ inline uint8_t ublox_get_cfg_val_u8(uint8_t* payload, uint32_t size)
  * 
  * @return Configuration value. 
  */
-inline uint16_t ublox_get_cfg_val_u16(uint8_t* payload, uint32_t size)
+inline uint16_t ublox_get_cfg_val_u16(uint8_t *payload, uint32_t size)
 {
 	uint64_t val;
 	ublox_get_cfg_val(payload, size, 2, &val);
-	return val&0xFFFF;
+	return val & 0xFFFF;
 }
 
 /**
@@ -120,11 +117,11 @@ inline uint16_t ublox_get_cfg_val_u16(uint8_t* payload, uint32_t size)
  * 
  * @return Configuration value. 
  */
-inline uint32_t ublox_get_cfg_val_u32(uint8_t* payload, uint32_t size)
+inline uint32_t ublox_get_cfg_val_u32(uint8_t *payload, uint32_t size)
 {
 	uint64_t val;
 	ublox_get_cfg_val(payload, size, 4, &val);
-	return val&0xFFFFFFFF;
+	return val & 0xFFFFFFFF;
 }
 
 /**
@@ -135,7 +132,7 @@ inline uint32_t ublox_get_cfg_val_u32(uint8_t* payload, uint32_t size)
  * 
  * @return Configuration value. 
  */
-inline uint64_t ublox_get_cfg_val_u64(uint8_t* payload, uint32_t size)
+inline uint64_t ublox_get_cfg_val_u64(uint8_t *payload, uint32_t size)
 {
 	uint64_t val;
 	ublox_get_cfg_val(payload, size, 8, &val);
@@ -150,11 +147,11 @@ inline uint64_t ublox_get_cfg_val_u64(uint8_t* payload, uint32_t size)
  * 
  * @return Configuration value. 
  */
-inline float ublox_get_cfg_val_f32(uint8_t* payload, uint32_t size)
+inline float ublox_get_cfg_val_f32(uint8_t *payload, uint32_t size)
 {
 	uint64_t val;
 	ublox_get_cfg_val(payload, size, 4, &val);
-	float* result = (void*)&val;
+	float *result = (void *)&val;
 	return *result;
 }
 
@@ -166,21 +163,21 @@ inline float ublox_get_cfg_val_f32(uint8_t* payload, uint32_t size)
  * 
  * @return Configuration value. 
  */
-inline double ublox_get_cfg_val_f64(uint8_t* payload, uint32_t size)
+inline double ublox_get_cfg_val_f64(uint8_t *payload, uint32_t size)
 {
 	uint64_t val;
 	ublox_get_cfg_val(payload, size, 8, &val);
-	double* result = (void*)&val;
+	double *result = (void *)&val;
 	return *result;
 }
 
 /** 
  * Signed definitions of cfg value get
  */
-#define ublox_get_cfg_val_i8(p,s)	((int8_t)ublox_get_cfg_val_u8(p,s))
-#define ublox_get_cfg_val_i16(p,s)	((int16_t)ublox_get_cfg_val_u16(p,s))
-#define ublox_get_cfg_val_i32(p,s)	((int32_t)ublox_get_cfg_val_u32(p,s))
-#define ublox_get_cfg_val_i64(p,s)	((int64_t)ublox_get_cfg_val_u64(p,s))
+#define ublox_get_cfg_val_i8(p, s) ((int8_t)ublox_get_cfg_val_u8(p, s))
+#define ublox_get_cfg_val_i16(p, s) ((int16_t)ublox_get_cfg_val_u16(p, s))
+#define ublox_get_cfg_val_i32(p, s) ((int32_t)ublox_get_cfg_val_u32(p, s))
+#define ublox_get_cfg_val_i64(p, s) ((int64_t)ublox_get_cfg_val_u64(p, s))
 
 /**
  * @brief Builds command for cfg-valget
@@ -194,10 +191,8 @@ inline double ublox_get_cfg_val_f64(uint8_t* payload, uint32_t size)
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int ublox_build_cfg_valget(uint8_t* buffer, uint32_t* size, uint32_t max_size,
-			   enum ublox_cfg_val_layer layer, 
-			   uint16_t position, 
-			   uint32_t key);
+int ublox_build_cfg_valget(uint8_t *buffer, uint32_t *size, uint32_t max_size,
+			   enum ublox_cfg_val_layer layer, uint16_t position, uint32_t key);
 
 /**
  * @brief Builds command for cfg-valset
@@ -211,10 +206,8 @@ int ublox_build_cfg_valget(uint8_t* buffer, uint32_t* size, uint32_t max_size,
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int ublox_build_cfg_valset(uint8_t* buffer, uint32_t* size, uint32_t max_size,
-			   enum ublox_cfg_val_layer layer, 
-			   uint32_t key,
-			   uint64_t value);
+int ublox_build_cfg_valset(uint8_t *buffer, uint32_t *size, uint32_t max_size,
+			   enum ublox_cfg_val_layer layer, uint32_t key, uint64_t value);
 
 /**
  * @brief Builds command for cfg-rst
@@ -227,8 +220,7 @@ int ublox_build_cfg_valset(uint8_t* buffer, uint32_t* size, uint32_t max_size,
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int ublox_build_cfg_rst(uint8_t* buffer, uint32_t* size, uint32_t max_size,
-			uint16_t mask,
+int ublox_build_cfg_rst(uint8_t *buffer, uint32_t *size, uint32_t max_size, uint16_t mask,
 			uint8_t mode);
 
 /**
@@ -242,8 +234,7 @@ int ublox_build_cfg_rst(uint8_t* buffer, uint32_t* size, uint32_t max_size,
  * 
  * @return 0 if everything was ok, error code otherwise
  */
-int ublox_build_mga_ano(uint8_t* buffer, uint32_t* size, uint32_t max_size,
-			uint8_t* data,
+int ublox_build_mga_ano(uint8_t *buffer, uint32_t *size, uint32_t max_size, uint8_t *data,
 			uint32_t data_size);
 
 /**
@@ -253,5 +244,5 @@ int ublox_build_mga_ano(uint8_t* buffer, uint32_t* size, uint32_t max_size,
  * @param[in] max_size of buffer
  * @return 0 if OK, error code otherwise
  */
-int ublox_build_rxm_pmreq(uint8_t* buffer, uint32_t* size, uint32_t max_size);
+int ublox_build_rxm_pmreq(uint8_t *buffer, uint32_t *size, uint32_t max_size);
 #endif /* UBLOX_PROTOCOL_H_ */

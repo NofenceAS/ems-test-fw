@@ -21,13 +21,11 @@ static const char *const state_name[] = {
  * @param[in] buf triggered event's log event buffer.
  * @param[in] buf_len length of the buffer received.
  */
-static int log_module_state_event(const struct event_header *eh, char *buf,
-				  size_t buf_len)
+static int log_module_state_event(const struct event_header *eh, char *buf, size_t buf_len)
 {
 	const struct module_state_event *event = cast_module_state_event(eh);
 
-	return snprintf(buf, buf_len, "module:%s state:%s",
-			(const char *)event->module_id,
+	return snprintf(buf, buf_len, "module:%s state:%s", (const char *)event->module_id,
 			state_name[event->state]);
 }
 
