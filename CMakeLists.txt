@@ -104,7 +104,7 @@ add_subdirectory(src/events/power_manager)
 
 add_subdirectory(src/events/messaging)
 add_subdirectory(src/modules/messaging)
-add_subdirectory(src/events/diagnostics)
+#add_subdirectory(src/events/diagnostics)
 add_subdirectory(src/modules/diagnostics)
 
 add_subdirectory(src/events/electric_pulse)
