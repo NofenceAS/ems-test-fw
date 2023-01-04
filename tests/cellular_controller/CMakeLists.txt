@@ -23,6 +23,7 @@ FILE(GLOB app_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/error_event.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/fw_upgrade_events.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager/pwr_event.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/diagnostics/diagnostics_events.c
         )
 target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE ${APP_SOURCE})
