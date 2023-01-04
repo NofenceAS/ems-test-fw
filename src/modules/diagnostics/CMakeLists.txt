@@ -9,6 +9,7 @@ zephyr_include_directories(
 target_sources(app PRIVATE 
     diagnostics.c
     selftest.c
+    onboard_data.c
     parser.c
     passthrough.c
     ./../../events/diagnostics/diagnostics_events.c

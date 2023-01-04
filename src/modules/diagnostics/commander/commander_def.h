@@ -63,10 +63,17 @@ typedef enum {
 	REPORT = 0x5E,
 	LOG = 0x70,
 	TEST = 0x7E,
+	SLEEP = 0xE0,
+	WAKEUP = 0xE1,
 	REBOOT = 0xEB,
+	THREAD_CONTROL = 0x40
 } system_cmd_t;
 
-typedef enum { READ = 0x00, WRITE = 0x01, ERASE_ALL = 0xEA } settings_cmd_t;
+typedef enum {
+	READ = 0x00,
+	WRITE = 0x01,
+	ERASE_ALL = 0xEA
+} settings_cmd_t;
 
 typedef enum {
 	GNSS_HUB = 0x10,
@@ -77,13 +84,23 @@ typedef enum {
 	MODEM_SEND = 0x21,
 	MODEM_RECEIVE = 0x22,
 
+	GET_ONBOARD_DATA = 0xA0,
+	GET_OB_DATA = 0xA2,
+	GET_GNSS_DATA = 0xA4,
+	GET_GSM_DATA = 0xA6,
+
+	SET_CHARGING_EN = 0xC0,
+
 	BUZZER_WARN = 0xB0,
 	ELECTRICAL_PULSE = 0xE0,
 } simulator_cmd_t;
 
 typedef enum {
 	GET_CCID = 0x00,
+	GET_VINT_STATUS = 0x01,
+	TEST_MODEM_TX = 0x7E,
 } modem_cmd_t;
+
 
 int commander_send_resp(enum diagnostics_interface interface, commander_group_t group, uint8_t cmd,
 			commander_resp_t resp, uint8_t *data, uint8_t data_size);

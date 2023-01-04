@@ -59,6 +59,7 @@ struct k_sem gnss_rx_sem;
 #define GNSS_DATA_FLAG_NAV_PVT (1 << 1)
 #define GNSS_DATA_FLAG_NAV_STATUS (1 << 2)
 #define GNSS_DATA_FLAG_NAV_PL (1 << 3)
+#define GNSS_DATA_FLAG_NAV_SAT (1 << 4)
 
 static uint32_t gnss_data_flags = 0;
 static gnss_struct_t gnss_data_in_progress;
@@ -318,6 +319,62 @@ static int mia_m10_mga_ack_handler(void *context, void *payload, uint32_t size)
 	return 0;
 }
 
+
+
+/**
+ * @brief Handler for incoming NAV-SAT message. 
+ *
+ * @param[in] context Context is unused. 
+ * @param[in] payload Payload containing NAV-SAT data. 
+ * @param[in] size Size of payload. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
+static int mia_m10_nav_sat_handler(void *context, void *payload, uint32_t size)
+{
+	struct ublox_nav_sat *nav_sat = payload;
+	uint8_t x = 0;	
+	uint8_t cnt = 0;
+	uint8_t max = 0;
+	uint16_t cno_ = 0;		
+
+	mia_m10_sync_tow(nav_sat->iTOW);
+
+	gnss_data_in_progress.cno[0] = 0;		//Clear last values
+	gnss_data_in_progress.cno[1] = 0;
+	gnss_data_in_progress.cno[2] = 0;
+	gnss_data_in_progress.cno[3] = 0;
+
+	for (x=0; x < nav_sat->numSv; x++)	
+	{		
+		if (x > MAX_SVID)
+			break;
+		
+		if (nav_sat->satinfo[x].svid == 10)			//If sat_id 10 then store it
+			gnss_data_in_progress.cno[0] = nav_sat->satinfo[x].cno;
+		else if (nav_sat->satinfo[x].svid== 32)		//If sat_id 32 then store it
+			gnss_data_in_progress.cno[1] = nav_sat->satinfo[x].cno;
+
+		if (nav_sat->satinfo[x].cno > gnss_data_in_progress.cno[2]) {			//Find max CNO
+			gnss_data_in_progress.cno[2] = nav_sat->satinfo[x].cno;
+		}
+		if (nav_sat->satinfo[x].cno > 0) {			
+			cnt++;
+			cno_ += nav_sat->satinfo[x].cno;	
+		}		
+	}
+
+	if (cnt > 0) {		
+		gnss_data_in_progress.cno[3] = cno_/cnt;		//Calculate avg cno for all seen satelites above 0 dBHz
+	}
+
+	mia_m10_sync_complete(GNSS_DATA_FLAG_NAV_SAT);
+
+	return 0;
+}
+
+
+
 /**
  * @brief Perform setup of GNSS. 
  *
@@ -414,11 +471,16 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 		return ret;
 	}
 
-	/* Enable NAV-SAT output on UART, no handler */
-	/*ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
+	/* Enable NAV-SAT output on UART */
+	ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
 	if (ret != 0) {
 		return ret;
-	}*/
+	}
+	ret = ublox_register_handler(UBX_NAV, UBX_NAV_SAT,
+				     mia_m10_nav_sat_handler, NULL);
+	if (ret != 0) {
+		return ret;
+	}	
 
 	/* Enable the hopefully promising UBX-NAV-PL message on UART*/
 	ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_PL_UART1, 1);

@@ -12,6 +12,7 @@
 #include "diagnostics.h"
 #endif /* CONFIG_DIAGNOSTICS */
 #include "selftest.h"
+#include "onboard_data.h"
 #include "fw_upgrade.h"
 #include "fw_upgrade_events.h"
 #include "stg_config.h"
@@ -62,6 +63,7 @@ void main(void)
 
 #if CONFIG_DIAGNOSTICS
 	selftest_init();
+	onboard_data_init();
 
 	/* Initialize diagnostics module. */
 	err = diagnostics_module_init();

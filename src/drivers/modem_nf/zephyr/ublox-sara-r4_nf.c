@@ -2677,6 +2677,197 @@ void stop_rssi(void)
 	stop_rssi_work = true;
 }
 
+
+
+
+
+
+/**
+ * @brief Modem TX test non-signaling
+ * 
+ */
+
+
+struct modem_test_tx_status {
+	int8_t utest;
+	int8_t cfun;
+	bool test_mode;
+} modem_test_tx_status;
+
+static modem_test_tx_result_t modem_test_tx_result = {
+	.success = false,
+	.ch = 0,
+	.dbm = -100,
+	.seq = -1,
+	.mod = -1,
+	.dur = -1,
+};
+
+/* +UTEST: <mode> */
+MODEM_CMD_DEFINE(on_cmd_test_tx_utest_mode)
+{
+	if (argc >= 1) {
+		modem_test_tx_status.utest = atoi(argv[0]);
+	} else {
+		modem_test_tx_status.utest = -1;
+	}
+	modem_test_tx_status.test_mode = (modem_test_tx_status.utest == 1 && modem_test_tx_status.cfun == 5);
+
+	LOG_WRN("MODEM TEST TX: UTEST=%d (test mode = %s)", modem_test_tx_status.utest,  modem_test_tx_status.test_mode ? "true" : "false");
+
+	return 0;
+}
+
+/* +CFUN: <mode> */
+MODEM_CMD_DEFINE(on_cmd_test_tx_cfun_mode)
+{
+	if (argc >= 1) {
+		modem_test_tx_status.cfun = atoi(argv[0]);
+	} else {
+		modem_test_tx_status.cfun = -1;
+	}
+	modem_test_tx_status.test_mode = (modem_test_tx_status.utest == 1 && modem_test_tx_status.cfun == 5);
+
+	LOG_WRN("MODEM TEST TX: CFUN=%d (test mode = %s)", modem_test_tx_status.cfun,  modem_test_tx_status.test_mode ? "true" : "false");
+
+	return 0;
+}
+
+/* +UTEST: <TX_channel>,<power_control_level>,<training_sequence>,<modulation_mode>,<TX_time_interval> */
+MODEM_CMD_DEFINE(on_cmd_test_tx_utest_result)
+{
+	//LOG_WRN("MODEM TEST TX: UTEST RESULT, len: %d, first arg: %s", argc, argv[0]);
+	modem_test_tx_result.success = 0;
+
+	if (argc >= 5) {
+		modem_test_tx_result.ch = atoi(argv[0]);
+		modem_test_tx_result.dbm = atoi(argv[1]);
+		modem_test_tx_result.seq = atoi(argv[2]);
+		modem_test_tx_result.mod = atoi(argv[3]);
+		modem_test_tx_result.dur = atoi(argv[4]);
+		modem_test_tx_result.success = 1;
+	}
+
+	LOG_WRN("MODEM TEST TX: test success = %s", modem_test_tx_result.success ? "true" : "false");
+
+	return 0;
+}
+
+/** 
+ * @brief copy test result 
+ * 
+ */
+int modem_test_tx_get_result(modem_test_tx_result_t **test_res)
+{
+	*test_res = &modem_test_tx_result;
+
+	return 0;
+}
+
+/** 
+ * @brief run tx test 
+ * 
+ */
+int modem_test_tx_run_test(uint32_t tx_ch, int16_t dbm_level, uint16_t test_dur)
+{
+	LOG_WRN("MODEM TEST TX START");
+
+	int ret = -1;
+
+	modem_test_tx_status.utest = -1;
+	modem_test_tx_status.cfun = -1;
+	modem_test_tx_status.test_mode = false;
+	modem_test_tx_result.success = 0;
+
+	if (dbm_level < -100 || dbm_level > 100) {
+		LOG_ERR("MODEM TEST TX: dbm_level out of range: %d dBm, set to -10 dBm", dbm_level);
+		dbm_level = -10;
+	}
+	if (test_dur < 0 || test_dur > 5000) {
+		LOG_ERR("MODEM TEST TX: duration out of range: %d ms, set to 1000 ms", test_dur);
+		test_dur = 1000;
+	}
+
+	memset(mdata.iface_data.rx_rb_buf, 0, mdata.iface_data.rx_rb_buf_len);
+	memset(mdata.cmd_handler_data.match_buf, 0, mdata.cmd_handler_data.match_buf_len);
+	k_sem_reset(&mdata.sem_response);
+	k_sem_reset(&mdata.sem_prompt);
+
+	if (wake_up() != 0)  {
+		LOG_ERR("MODEM TEST TX: error waking up modem");
+	}
+
+	static const struct setup_cmd pre_test_cmds[] = {
+		SETUP_CMD_NOHANDLE("AT+COPS=2"),
+		SETUP_CMD_NOHANDLE("AT+UTEST=1"),
+		SETUP_CMD("AT+UTEST?", "+UTEST: ", on_cmd_test_tx_utest_mode, 1U, ""),
+		SETUP_CMD("AT+CFUN?", "+CFUN: ", on_cmd_test_tx_cfun_mode, 1U, ""),
+	};
+
+	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
+					pre_test_cmds, ARRAY_SIZE(pre_test_cmds),
+					&mdata.sem_response, 
+					MDM_REGISTRATION_TIMEOUT);
+
+	if (ret < 0) {
+		LOG_ERR("MODEM TEST TX: pre test cmds error: %d", ret);
+	}
+
+	if (modem_test_tx_status.test_mode) {
+
+		/* tx signaling AT+UTEST=3,<TX_channel>,<power_control_level>,,,<TX_time_interval> */
+		char cmd_buf[sizeof("AT+UTEST=3,###########,######,,,######")];
+		snprintk(cmd_buf, sizeof(cmd_buf), "AT+UTEST=3,%d,%d,,,%d", tx_ch, dbm_level, test_dur);
+		
+		const struct modem_cmd cmd_utest_tx = MODEM_CMD("+UTEST: ", on_cmd_test_tx_utest_result, 5U, ",");
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, 
+						&cmd_utest_tx, 1U, 
+						cmd_buf, &mdata.sem_response, 
+						K_SECONDS(10));
+
+		if (ret < 0) {
+			LOG_ERR("MODEM TEST TX: error running test cmd '%s': %d", cmd_buf, ret);
+		} else {
+			LOG_WRN("MODEM TEST TX: running test\n\t\t\t\tcommand: %s\n\t\t\t\tchannel: %d"
+							"\n\t\t\t\tpower: %d dBm\n\t\t\t\tduration: %d ms"
+							"\n\t\t\t\tcmd res: %d\n\t\t\t\tsuccess: %s", 
+							cmd_buf, tx_ch, dbm_level, test_dur, ret, 
+							modem_test_tx_result.success ? "true" : "false");
+			LOG_WRN("MODEM TEST TX: test result\n\t\t\t\tchannel: %d\n\t\t\t\tpwr level: %d dBm"
+							"\n\t\t\t\tsequence: %d\n\t\t\t\tmodulation: %d\n\t\t\t\tinterval: %d ms", 
+							modem_test_tx_result.ch, modem_test_tx_result.dbm,
+							modem_test_tx_result.seq, modem_test_tx_result.mod, modem_test_tx_result.dur);
+		}
+
+		k_sleep(K_MSEC(100));
+
+	} else {
+		LOG_ERR("MODEM TEST TX: error setting modem in test mode (UTEST=%d, CFUN=%d)", 
+						modem_test_tx_status.utest, modem_test_tx_status.cfun);
+	}
+
+	//LOG_WRN("MODEM TEST TX: resetting modem");
+	//modem_reset();
+
+	LOG_WRN("MODEM TEST TX DONE (%d)", ret);
+
+	return ret;
+}
+
+/** 
+ * @brief run tx test with defaul values
+ * 
+ */
+int modem_test_tx_run_test_default(void)
+{
+	uint32_t tx_ch = 119575;  // EARFCN 19575 (1747.50 MHz LTE 3)
+	int16_t dbm_level = 0;    // dBm
+	uint16_t test_dur = 1000; // ms
+
+	return modem_test_tx_run_test(tx_ch, dbm_level, test_dur);
+}
+
+
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL, &mdata, NULL,
 				  CONFIG_MODEM_UBLOX_SARA_R4_INIT_PRIORITY, &api_funcs,
 				  MDM_MAX_DATA_LENGTH);
