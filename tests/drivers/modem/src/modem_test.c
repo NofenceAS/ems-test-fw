@@ -44,7 +44,6 @@ static struct k_sem modem_rx_sem;
 /* Re-usable socket ID */
 static int socket_id;
 
-
 /**
  * @brief Adds expected command&response in buffer
  *
@@ -96,8 +95,7 @@ static int modem_process_cmd_resp(uint8_t *data, uint32_t size)
 #endif
 		if (strncmp(cmd_resp[cmd_resp_ind].cmd, data, size) == 0) {
 #ifdef MODEM_VERBOSE
-			printk("MATCH! %s returns %s\n",
-			       cmd_resp[cmd_resp_ind].cmd,
+			printk("MATCH! %s returns %s\n", cmd_resp[cmd_resp_ind].cmd,
 			       cmd_resp[cmd_resp_ind].rsp);
 #endif
 			if (cmd_resp[cmd_resp_ind].rsp) {
@@ -136,7 +134,8 @@ static int modem_process_empty_cmd_resp(void)
 {
 	if (cmd_resp_ind < cmd_resp_cnt) {
 		if (cmd_resp[cmd_resp_ind].cmd != NULL && strlen(cmd_resp[cmd_resp_ind].cmd) == 0) {
-			if (cmd_resp[cmd_resp_ind].rsp != NULL && strlen(cmd_resp[cmd_resp_ind].rsp) > 0) {
+			if (cmd_resp[cmd_resp_ind].rsp != NULL &&
+			    strlen(cmd_resp[cmd_resp_ind].rsp) > 0) {
 				mock_uart_send(uart_dev, cmd_resp[cmd_resp_ind].rsp,
 					       strlen(cmd_resp[cmd_resp_ind].rsp));
 			}
@@ -209,15 +208,14 @@ static void test_simple_socket_recv()
 {
 	int ret;
 	char buf[100];
-	memset(buf,0,sizeof(buf));
-	zassert_equal(socket_id,0, "");
+	memset(buf, 0, sizeof(buf));
+	zassert_equal(socket_id, 0, "");
 	modem_add_expected_cmd_rsp("", "+UUSORD:  2,10\r");
-	modem_add_expected_cmd_rsp("AT+USORD=2,10\r",
-				   "+USORD:  2,10,\"0123456789\"\r"
-				   "OK\r");
-	ret = recv(socket_id,buf,sizeof(buf),0);
-	zassert_equal(ret,10, "");
-	zassert_mem_equal(buf,"0123456789",10,"");
+	modem_add_expected_cmd_rsp("AT+USORD=2,10\r", "+USORD:  2,10,\"0123456789\"\r"
+						      "OK\r");
+	ret = recv(socket_id, buf, sizeof(buf), 0);
+	zassert_equal(ret, 10, "");
+	zassert_mem_equal(buf, "0123456789", 10, "");
 }
 
 void test_main(void)
@@ -236,6 +234,6 @@ void test_main(void)
 	ztest_test_suite(common, ztest_unit_test(test_simple_socket_connect),
 			 ztest_unit_test(test_simple_socket_recv)
 
-			 );
+	);
 	ztest_run_test_suite(common);
 }
