@@ -10,7 +10,7 @@
 #include "modem_nf.h"
 #include "onboard_data.h"
 #include "charging.h"
-
+#include "onboard_data.h"
 #include <logging/log.h>
 LOG_MODULE_REGISTER(diagnostics_stimulator, 4);
 
@@ -76,18 +76,19 @@ int commander_stimulator_handler(enum diagnostics_interface interface, uint8_t c
 					(void*)gnss_data, sizeof(gnss_struct_t));
 			break;
 		}
-		case GET_SENS_DATA:
+		case GET_OB_DATA:
 		{
-			onboard_sens_data_struct_t *sens_data;
-			onboard_get_sens_data(&sens_data);
+			onboard_data_struct_t *ob_data;
+			onboard_get_data(&ob_data);
 
 			resp = DATA;
 			commander_send_resp(interface, STIMULATOR, cmd, resp, 
-					(void*)sens_data, sizeof(onboard_sens_data_struct_t));
+					(void*)ob_data, sizeof(onboard_data_struct_t));
 			break;
 		}
 		case SET_CHARGING_EN:
 		{
+			int val = -1;
 			if (size < 1) {
 				resp = NOT_ENOUGH;
 				err = -EINVAL;
