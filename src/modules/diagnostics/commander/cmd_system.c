@@ -1,6 +1,7 @@
 #include "cmd_system.h"
 #include "selftest.h"
 #include "log_backend_diag.h"
+#include "diagnostics_events.h"
 #include <stddef.h>
 #include <string.h>
 #include "gnss.h"
@@ -61,6 +62,23 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 
 			break;
 		}
+		case THREAD_CONTROL:
+		{
+			struct diag_thread_cntl_event *diag = new_diag_thread_cntl_event();
+			uint8_t tc = data[0];
+			LOG_WRN("THREAD CONTROL = %d",tc);
+			if(tc & (1 << 0)) {
+				diag->run_cellular_thread = true;	//Cellular thread ON
+				LOG_WRN("TC Cellular ON");	
+			}					
+			else	{
+				diag->run_cellular_thread = false;	//Cellular thread OFF			
+				LOG_WRN("TC Cellular OFF");
+			}				
+			EVENT_SUBMIT(diag);
+		}
+
+
 		default:
 			resp = UNKNOWN_CMD;
 			commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);

@@ -9,6 +9,7 @@
 #include "selftest.h"
 #include "pwr_event.h"
 #include "stg_config.h"
+#include "diagnostics_events.h"
 
 #define RCV_THREAD_STACK CONFIG_RECV_THREAD_STACK_SIZE
 #define RCV_PRIORITY CONFIG_RECV_THREAD_PRIORITY
@@ -216,7 +217,7 @@ static bool cellular_controller_event_handler(const struct event_header *eh)
 	else if (is_diag_thread_cntl_event(eh)) {
 		struct diag_thread_cntl_event *event = cast_diag_thread_cntl_event(eh);
 		run_cellular_thread = (event->run_cellular_thread == true);
-		LOW_WRN("Cellular thread running = %d", run_cellular_thread);
+		LOG_WRN("Cellular thread running = %d", run_cellular_thread);
 		return false;
 	}
 	else if (is_messaging_host_address_event(eh)) {
