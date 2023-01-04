@@ -41,6 +41,9 @@ static int mock_uart_poll_in(const struct device *dev, unsigned char *c)
 /* UNUSED, but required by API */
 static void mock_uart_poll_out(const struct device *dev, unsigned char c)
 {
+	/* TODO, the modem driver is using this function, but it is not implemented as blocking here */
+	ring_buf_put(&uart_mock_tx_ring_buf, &c, 1);
+	k_sem_give(uart_mock_rx_sem);
 }
 
 /* UNUSED, but required by API */
@@ -245,9 +248,9 @@ int mock_uart_send(const struct device *dev, uint8_t *data, uint32_t size)
 
 #ifdef MOCK_UART_VERBOSE
 	printk("Sending: ");
-	for (int i = 0; i < cnt; i++)
+	for (int i = 0; i < size; i++)
 	{
-		printk("0x%02X ", rx_data[i]);
+		printk("0x%02X ", data[i]);
 	}
 	printk("\r\n");
 #endif
