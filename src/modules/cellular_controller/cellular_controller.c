@@ -49,6 +49,7 @@ K_SEM_DEFINE(listen_sem, 0, 1); /* this semaphore will be given by the modem
 
 K_SEM_DEFINE(close_main_socket_sem, 0, 1);
 
+static bool run_cellular_thread	= false;
 static bool modem_is_ready = false;
 static bool power_level_ok = false;
 static bool fota_in_progress = false;
@@ -211,7 +212,14 @@ static bool cellular_controller_event_handler(const struct event_header *eh)
 		ack->message_sent = false;
 		EVENT_SUBMIT(ack);
 		return false;
-	} else if (is_messaging_host_address_event(eh)) {
+	}
+	else if (is_diag_thread_cntl_event(eh)) {
+		struct diag_thread_cntl_event *event = cast_diag_thread_cntl_event(eh);
+		run_cellular_thread = (event->run_cellular_thread == true);
+		LOW_WRN("Cellular thread running = %d", run_cellular_thread);
+		return false;
+	}
+	else if (is_messaging_host_address_event(eh)) {
 		uint8_t port_length = 0;
 		int ret = stg_config_str_read(STG_STR_HOST_PORT, server_address_tmp, &port_length);
 		if (ret != 0) {
@@ -500,3 +508,4 @@ EVENT_SUBSCRIBE(MODULE, check_connection);
 EVENT_SUBSCRIBE(MODULE, free_message_mem_event);
 EVENT_SUBSCRIBE(MODULE, dfu_status_event);
 EVENT_SUBSCRIBE(MODULE, pwr_status_event);
+EVENT_SUBSCRIBE(MODULE, diag_thread_cntl_event);
