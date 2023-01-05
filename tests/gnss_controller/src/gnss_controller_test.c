@@ -38,8 +38,11 @@ void test_init_ok(void)
 
 void test_init_fails1(void)
 {
-	ztest_returns_value(mock_gnss_set_data_cb, -1);
+	for (int i = 0; i < (CONFIG_GNSS_INIT_MAX_COUNT); i++) {
+		ztest_returns_value(mock_gnss_set_data_cb, -1);
+	}
 	int8_t ret = gnss_controller_init();
+
 	int8_t err = k_sem_take(&error, K_MSEC(100));
 	zassert_equal(err, 0, "Expected error event was not published!");
 	zassert_equal(ret, -1,
@@ -49,8 +52,11 @@ void test_init_fails1(void)
 
 void test_init_fails2(void)
 {
-	ztest_returns_value(mock_gnss_set_data_cb, 0);
-	ztest_returns_value(mock_gnss_wakeup, -1);
+	for (int i = 0; i < (CONFIG_GNSS_INIT_MAX_COUNT); i++) {
+		ztest_returns_value(mock_gnss_set_data_cb, 0);
+		ztest_returns_value(mock_gnss_wakeup, -1);
+	}
+
 	int8_t ret = gnss_controller_init();
 	int8_t err = k_sem_take(&error, K_MSEC(100));
 	zassert_equal(err, 0, "Expected error event was not published!");
@@ -61,9 +67,12 @@ void test_init_fails2(void)
 
 void test_init_fails3(void)
 {
-	ztest_returns_value(mock_gnss_set_data_cb, 0);
-	ztest_returns_value(mock_gnss_wakeup, 0);
-	ztest_returns_value(mock_gnss_setup, -1);
+	for (int i = 0; i < (CONFIG_GNSS_INIT_MAX_COUNT); i++) {
+		ztest_returns_value(mock_gnss_set_data_cb, 0);
+		ztest_returns_value(mock_gnss_wakeup, 0);
+		ztest_returns_value(mock_gnss_setup, -1);
+	}
+
 	int8_t ret = gnss_controller_init();
 	int8_t err = k_sem_take(&error, K_MSEC(100));
 	zassert_equal(err, 0, "Expected error event was not published!");

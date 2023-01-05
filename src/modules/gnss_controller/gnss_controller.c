@@ -30,6 +30,7 @@ static uint16_t current_rate_ms = UINT16_MAX;
 const struct device *gnss_dev = NULL;
 static uint8_t gnss_reset_count;
 static uint8_t gnss_timeout_count;
+static uint8_t gnss_failed_init_count;
 
 K_THREAD_STACK_DEFINE(pub_gnss_stack, STACK_SIZE);
 struct k_thread pub_gnss_thread;
@@ -108,39 +109,71 @@ static int gnss_controller_reset_and_setup_gnss(uint16_t mask)
 
 int gnss_controller_init(void)
 {
+	enum States {
+		ST_GNSS_FW_DRIVER_INIT = 0,
+		ST_GNSS_FW_CB_INIT,
+		ST_GNSS_HW_INIT,
+		ST_GNSS_RUNNING
+	};
+	enum States current_state = ST_GNSS_FW_DRIVER_INIT;
+	int ret;
 	gnss_reset_count = 0;
 	gnss_timeout_count = 0;
 	current_mode = GNSSMODE_NOMODE;
-
-	gnss_dev = DEVICE_DT_GET(DT_ALIAS(gnss));
-	if (gnss_dev == NULL) {
-		char *msg = "Couldn't get instance of the GNSS device!";
-		nf_app_error(ERR_GNSS_CONTROLLER, -1, msg, sizeof(*msg));
-		return -1;
-	}
-	int ret = gnss_set_data_cb(gnss_dev, gnss_data_update_cb);
-	if (ret != 0) {
-		char *msg = "Failed to register data CB!";
-		nf_app_error(ERR_GNSS_CONTROLLER, ret, msg, sizeof(*msg));
-		return ret;
-	}
-
-	ret = gnss_controller_setup();
-	if (ret != 0) {
-		char *msg = "Failed setup of GNSS!";
-		nf_app_error(ERR_GNSS_CONTROLLER, ret, msg, sizeof(*msg));
-		return ret;
-	}
-
+	gnss_failed_init_count = 0;
+	while (gnss_failed_init_count < CONFIG_GNSS_INIT_MAX_COUNT) {
+		LOG_INF("current state: %i, N= %i, ret= %i", current_state, gnss_failed_init_count,
+			ret);
+		switch (current_state) {
+		case ST_GNSS_FW_DRIVER_INIT: {
+			gnss_dev = DEVICE_DT_GET(DT_ALIAS(gnss));
+			if (gnss_dev == NULL) {
+				char *msg = "Couldn't get instance of the GNSS device!";
+				nf_app_error(ERR_GNSS_CONTROLLER, -1, msg, sizeof(*msg));
+				gnss_failed_init_count++;
+			} else {
+				current_state = ST_GNSS_FW_CB_INIT;
+			}
+		} break;
+		case ST_GNSS_FW_CB_INIT: {
+			ret = gnss_set_data_cb(gnss_dev, gnss_data_update_cb);
+			if (ret != 0) {
+				char *msg = "Failed to register data CB!";
+				nf_app_error(ERR_GNSS_CONTROLLER, ret, msg, sizeof(*msg));
+				current_state = ST_GNSS_FW_DRIVER_INIT;
+				gnss_failed_init_count++;
+			} else {
+				current_state = ST_GNSS_HW_INIT;
+			}
+		} break;
+		case ST_GNSS_HW_INIT: {
+			ret = gnss_controller_setup();
+			if (ret != 0) {
+				char *msg = "Failed setup of GNSS!";
+				nf_app_error(ERR_GNSS_CONTROLLER, ret, msg, sizeof(*msg));
+				current_state = ST_GNSS_FW_CB_INIT;
+				gnss_failed_init_count++;
+			} else {
+				current_state = ST_GNSS_RUNNING;
+			}
+		} break;
+		case ST_GNSS_RUNNING: {
 #if defined(CONFIG_TEST)
-	pub_gnss_thread_id =
+			pub_gnss_thread_id =
 #endif
-		k_thread_create(&pub_gnss_thread, pub_gnss_stack,
-				K_KERNEL_STACK_SIZEOF(pub_gnss_stack),
-				(k_thread_entry_t)publish_gnss_data, (void *)NULL, NULL, NULL,
-				PRIORITY, 0, K_NO_WAIT);
-
-	return 0;
+				k_thread_create(&pub_gnss_thread, pub_gnss_stack,
+						K_KERNEL_STACK_SIZEOF(pub_gnss_stack),
+						(k_thread_entry_t)publish_gnss_data, (void *)NULL,
+						NULL, NULL, PRIORITY, 0, K_NO_WAIT);
+			return 0;
+		} break;
+		default:
+			break;
+		}
+	}
+	LOG_ERR("GNSS init failed %i, after %i tries.", ret, gnss_failed_init_count);
+	//TODO: add hard reset
+	return -1;
 }
 
 static _Noreturn void publish_gnss_data(void *ctx)
