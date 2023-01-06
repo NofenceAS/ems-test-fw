@@ -488,11 +488,11 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 	}
 
 	/* Enable NAV-SAT output on UART */
-	ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
+	/*ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
 	if (ret != 0) {
 		return ret;
 	}
-	/*ret = ublox_register_handler(UBX_NAV, UBX_NAV_SAT, mia_m10_nav_sat_handler, NULL);
+	ret = ublox_register_handler(UBX_NAV, UBX_NAV_SAT, mia_m10_nav_sat_handler, NULL);
 	if (ret != 0) {
 		return ret;
 	}*/
