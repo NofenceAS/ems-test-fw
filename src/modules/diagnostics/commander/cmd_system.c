@@ -50,13 +50,67 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 		break;
 	}
 	case SLEEP: {
-		resp = NOT_IMPLEMENTED;
+		resp = ACK;
+		int ret = 0;
+
+		LOG_DBG("Setting device in sleep...");
+
+		const struct device *gnss_dev = NULL;
+		gnss_dev = DEVICE_DT_GET(DT_ALIAS(gnss));
+		ret = gnss_set_backup_mode(gnss_dev);
+		if (ret < 0) {
+			LOG_ERR("Could not set GNSS in backup: %d", ret);
+			resp = ERROR;
+		}
+		//struct gnss_set_mode_event *ev = new_gnss_set_mode_event();
+		//ev->mode = GNSSMODE_INACTIVE;
+		//EVENT_SUBMIT(ev);
+
+		ret = stop_tcp(false);
+		if (ret < 0) {
+			LOG_ERR("Could not set modem in sleep: %d", ret);
+			resp = ERROR;
+		}
+
+		LOG_DBG("Device is sleeping");
+
+		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
+		break;
+	}
+	case WAKEUP: {
+		resp = ACK;
+		int ret = 0;
+
+		LOG_DBG("Waking up device...");
+
+		const struct device *gnss_dev = NULL;
+		gnss_dev = DEVICE_DT_GET(DT_ALIAS(gnss));
+		ret = gnss_wakeup(gnss_dev);
+		if (ret < 0) {
+			LOG_ERR("Could wake up GNSS: %d", ret);
+			resp = ERROR;
+		}
+		//struct gnss_set_mode_event *ev = new_gnss_set_mode_event();
+		//ev->mode = GNSSMODE_MAX;
+		//EVENT_SUBMIT(ev);
+
+		ret = reset_modem();
+		if (ret < 0) {
+			LOG_ERR("Could not wake up modem: %d", ret);
+			resp = ERROR;
+		}
+		LOG_DBG("Device woke up");
+
 		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
 		break;
 	}
 	case REBOOT: {
-		resp = NOT_IMPLEMENTED;
-		/** @todo Schedule reboot after 1s */
+		resp = ACK;
+
+		struct pwr_reboot_event *r_ev = new_pwr_reboot_event();
+		r_ev->reason = REBOOT_NO_REASON;
+		EVENT_SUBMIT(r_ev);
+
 		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
 
 		break;
