@@ -17,6 +17,11 @@
 #include "msg_data_event.h"
 #include "ble_data_event.h"
 #include "ble_conn_event.h"
+#include "gnss_controller_events.h"
+#include "cellular_controller_events.h"
+#include "movement_events.h"
+#include "env_sensor_event.h"
+#include "pwr_event.h"
 
 #include <zephyr.h>
 #include <logging/log.h>
