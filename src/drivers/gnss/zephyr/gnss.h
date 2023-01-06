@@ -96,6 +96,8 @@ typedef struct {
 	/** UBX-NAV-STATUS milliseconds since First Fix.*/
 	uint32_t ttff;
 
+	uint8_t cno[4];
+
 	/** Proprietary mode, to verify that any corrections are done when GNSS is in MAX performance */
 	gnss_mode_t mode;
 

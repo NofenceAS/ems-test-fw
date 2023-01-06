@@ -59,6 +59,7 @@ struct k_sem gnss_rx_sem;
 #define GNSS_DATA_FLAG_NAV_PVT (1 << 1)
 #define GNSS_DATA_FLAG_NAV_STATUS (1 << 2)
 #define GNSS_DATA_FLAG_NAV_PL (1 << 3)
+#define GNSS_DATA_FLAG_NAV_SAT (1 << 4)
 
 static uint32_t gnss_data_flags = 0;
 static gnss_struct_t gnss_data_in_progress;
