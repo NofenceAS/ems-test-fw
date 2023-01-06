@@ -445,6 +445,37 @@ static bool event_handler(const struct event_header *eh)
 
 		return false;
 	}
+	if (is_gnss_data(eh)) {
+		struct gnss_data *event = cast_gnss_data(eh);
+		
+		onboard_set_gnss_data(event->gnss_data.latest);
+
+		return false;
+	}
+
+	if (is_gsm_info_event(eh)) {
+		struct gsm_info_event *event = cast_gsm_info_event(eh);
+		
+		onboard_set_gsm_data(event->gsm_info);
+
+		return false;
+	}
+
+	if (is_env_sensor_event(eh)) {
+		struct env_sensor_event *event = cast_env_sensor_event(eh);
+		
+		onboard_set_env_sens_data(event->temp, event->humidity, event->press);
+
+		return false;
+	}
+
+	if (is_pwr_status_event(eh)) {
+		struct pwr_status_event *event = cast_pwr_status_event(eh);
+		
+		onboard_set_power_data(event->pwr_state, event->battery_mv, event->charging_ma);		
+
+		return false;
+	}		
 
 	return false;
 }
@@ -452,6 +483,10 @@ static bool event_handler(const struct event_header *eh)
 EVENT_LISTENER(MODULE, event_handler);
 EVENT_SUBSCRIBE(MODULE, ble_conn_event);
 EVENT_SUBSCRIBE(MODULE, ble_data_event);
+EVENT_SUBSCRIBE(MODULE, gnss_data);
+EVENT_SUBSCRIBE(MODULE, gsm_info_event);
+EVENT_SUBSCRIBE(MODULE, env_sensor_event);
+EVENT_SUBSCRIBE(MODULE, pwr_status_event);
 
 #if CONFIG_DIAGNOSTICS_PROFILE_EVENTS
 
