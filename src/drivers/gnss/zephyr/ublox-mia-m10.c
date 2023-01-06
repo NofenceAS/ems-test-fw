@@ -118,9 +118,8 @@ static int mia_m10_sync_tow(uint32_t tow)
 static int mia_m10_sync_complete(uint32_t flag)
 {
 	gnss_data_flags |= flag;
-	if (gnss_data_flags ==
-	    (GNSS_DATA_FLAG_NAV_DOP | GNSS_DATA_FLAG_NAV_PVT | GNSS_DATA_FLAG_NAV_STATUS |
-	     GNSS_DATA_FLAG_NAV_PL | GNSS_DATA_FLAG_NAV_SAT)) {
+	if (gnss_data_flags == (GNSS_DATA_FLAG_NAV_DOP | GNSS_DATA_FLAG_NAV_PVT |
+				GNSS_DATA_FLAG_NAV_STATUS | GNSS_DATA_FLAG_NAV_PL)) {
 		/* Copy data from "in progress" to "working", and call callbacks */
 		if (k_mutex_lock(&gnss_data_mutex, K_MSEC(10)) == 0) {
 			memcpy(&gnss_data.latest, &gnss_data_in_progress, sizeof(gnss_struct_t));
