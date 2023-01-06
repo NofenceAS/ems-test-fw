@@ -1,6 +1,6 @@
 menuconfig DIAGNOSTICS
 	bool "Diagnostics module"
-	default n
+	default y
 	select USE_SEGGER_RTT
 
 if DIAGNOSTICS
