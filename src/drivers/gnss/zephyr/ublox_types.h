@@ -151,7 +151,7 @@ struct UBLOX_STORAGE_ATTR ublox_rxm_pmreq {
 	uint32_t wakeupSources;
 };
 
-#define MAX_SVID 40
+#define MAX_SVID 10
 
 /** @brief Struct containing satelite data. */
 typedef struct {
