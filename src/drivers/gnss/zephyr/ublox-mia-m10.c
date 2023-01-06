@@ -309,13 +309,13 @@ static int mia_m10_nav_pl_handler(void *context, void *payload, uint32_t size)
  *
  * @return 0 if everything was ok, error code otherwise
  */
-static int mia_m10_nav_sat_handler(void *context, void *payload, uint32_t size)
+/*static int mia_m10_nav_sat_handler(void *context, void *payload, uint32_t size)
 {
 	struct ublox_nav_sat *nav_sat = payload;
 	uint8_t x = 0;
 	uint8_t cnt = 0;
 	uint8_t max = 0;
-	uint8_t min = 0xff;
+	uint8_t min = 0xFF;
 	uint16_t cno_ = 0;
 
 	mia_m10_sync_tow(nav_sat->iTOW);
@@ -353,7 +353,7 @@ static int mia_m10_nav_sat_handler(void *context, void *payload, uint32_t size)
 	mia_m10_sync_complete(GNSS_DATA_FLAG_NAV_SAT);
 
 	return 0;
-}
+}*/
 
 /**
  * @brief Handler for incoming MGA-ACK message. 
@@ -488,11 +488,11 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 	}
 
 	/* Enable NAV-SAT output on UART */
-	/*ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
+	ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
 	if (ret != 0) {
 		return ret;
 	}
-	ret = ublox_register_handler(UBX_NAV, UBX_NAV_SAT, mia_m10_nav_sat_handler, NULL);
+	/*ret = ublox_register_handler(UBX_NAV, UBX_NAV_SAT, mia_m10_nav_sat_handler, NULL);
 	if (ret != 0) {
 		return ret;
 	}*/
