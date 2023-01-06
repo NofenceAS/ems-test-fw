@@ -154,7 +154,7 @@ struct UBLOX_STORAGE_ATTR ublox_rxm_pmreq {
 //#define MAX_SVID 10
 
 /** @brief Struct containing satelite data. */
-/*typedef struct {
+*typedef struct {
 	uint8_t gnssid;
 	uint8_t svid;
 	uint8_t cno;
@@ -162,16 +162,16 @@ struct UBLOX_STORAGE_ATTR ublox_rxm_pmreq {
 	int16_t azim;
 	int16_t prRes;
 	uint32_t flags;
-} satpar_struct_t;*/
+} satpar_struct_t;
 
 /** @brief U-blox NAV-SAT message. */
-/*struct UBLOX_STORAGE_ATTR ublox_nav_sat {
+*struct UBLOX_STORAGE_ATTR ublox_nav_sat {
 	uint32_t iTOW;
 	uint8_t version;
 	uint8_t numSv;
 	uint8_t reserved0[2];
 	satpar_struct_t satinfo[MAX_SVID];
-};*/
+};
 
 /** @brief U-blox MGA-ACK message. */
 struct UBLOX_STORAGE_ATTR ublox_mga_ack {
