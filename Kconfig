@@ -51,28 +51,8 @@ menu "EP Module"
 rsource "src/modules/electric_pulse/Kconfig"
 endmenu
 
-menu "Movement Events"
-rsource "src/events/movement_controller/Kconfig"
-endmenu
-
 menu "EP Events"
 rsource "src/events/electric_pulse/Kconfig"
-endmenu
-
-menu "Error Events"
-rsource "src/events/error_handler/Kconfig"
-endmenu
-
-menu "Diagnostics Events"
-rsource "src/events/diagnostics/Kconfig"
-endmenu
-
-menu "Environment Events"
-rsource "src/events/environment/Kconfig"
-endmenu
-
-menu "Sound Events"
-rsource "src/events/buzzer/Kconfig"
 endmenu
 
 menu "Env Sensor"
