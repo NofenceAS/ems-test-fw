@@ -74,6 +74,15 @@ int commander_stimulator_handler(enum diagnostics_interface interface, uint8_t c
 				    sizeof(gnss_struct_t));
 		break;
 	}
+	case GET_ONBOARD_DATA: {
+		onboard_all_data_struct_t *ob_all_data;
+		onboard_get_all_data(&ob_all_data);
+
+		resp = DATA;
+		commander_send_resp(interface, STIMULATOR, cmd, resp, (void *)ob_all_data,
+				    sizeof(onboard_all_data_struct_t));
+		break;
+	}
 	case GET_OB_DATA: {
 		onboard_data_struct_t *ob_data;
 		onboard_get_data(&ob_data);
