@@ -81,9 +81,6 @@ typedef struct {
 	/** Number of SVs used in Nav Solution.*/
 	uint8_t num_sv;
 
-	/** UBX-NAV-SAT CNO for satid 10, 32 + max and avg CNO (Carrier Noise Ratio).*/
-	uint8_t cno[4];
-
 	/** UBX-NAV-PVT flags as copied.*/
 	uint8_t pvt_flags;
 

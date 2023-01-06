@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 #define LOG_MODULE_NAME diagnostics_events
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_DIAGNOSTICS_LOG_LEVEL);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, 4);
 
 /**
  * @brief Diagnostics status event.
