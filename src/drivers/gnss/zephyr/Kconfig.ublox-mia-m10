@@ -33,5 +33,11 @@ if GNSS_UBLOX_MIA_M10
 		default 7
 		help
 		This priority is used by the u-blox MIA-M10 RX thread.
+	config GNSS_MIA_M10_PACC
+		int "Output filter position accuracy mask (threshold) in meters"
+		default 0
+	config GNSS_MIA_M10_FIXMODE
+		int "GNSS fix mode (1: 2D, 2:3D, 3:AUTO)"
+		default 0
 
 endif # GNSS_UBLOX_MIA_M10
