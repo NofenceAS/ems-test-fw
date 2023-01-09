@@ -882,7 +882,7 @@ static int on_cmd_sockread_common(int socket_id, struct modem_cmd_handler_data *
 	}
 
 	/* zero length */
-	if (socket_data_length <= 0) {
+	if (socket_data_length < 0) {
 		LOG_ERR("Length problem (%d).  Aborting!", socket_data_length);
 		return -EAGAIN;
 	}
@@ -948,8 +948,18 @@ MODEM_CMD_DEFINE(on_cmd_sockreadfrom)
 /* Handler: +USORD: <socket_id>[0],<length>[1],"<data>" */
 MODEM_CMD_DEFINE(on_cmd_sockread)
 {
-	return on_cmd_sockread_common(ATOI(argv[0], 0, "socket_id"), data,
-				      ATOI(argv[1], 0, "length"), len);
+	/*
+	 * See https://content.u-blox.com/sites/default/files/SARA-R4_ATCommands_UBX-17003787.pdf
+	 * For SARA-R4, if 0 bytes are available, the length is skipped, i.e.
+	 * +USORD: <socket_id>[0],""
+	 */
+	int length;
+	if (strncmp("\"\"", argv[1], 2) == 0) {
+		length = 0;
+	} else {
+		length = ATOI(argv[1], 0, "length");
+	}
+	return on_cmd_sockread_common(ATOI(argv[0], 0, "socket_id"), data, length, len);
 }
 
 //#if defined(CONFIG_DNS_RESOLVER)
@@ -1889,46 +1899,58 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len, int flags, str
 		return -1;
 	}
 
-	next_packet_size = modem_socket_next_packet_size(&mdata.socket_config, sock);
-	if (!next_packet_size) {
-		if (flags & ZSOCK_MSG_DONTWAIT) {
-			errno = EAGAIN;
-			return -1;
-		}
-
-		if (!sock->is_connected && sock->ip_proto != IPPROTO_UDP) {
-			errno = 0;
-			return 0;
-		}
-
-		modem_socket_wait_data(&mdata.socket_config, sock);
+	while (true) {
 		next_packet_size = modem_socket_next_packet_size(&mdata.socket_config, sock);
-	}
+		if (!next_packet_size) {
+			if (flags & ZSOCK_MSG_DONTWAIT) {
+				errno = EAGAIN;
+				return -1;
+			}
 
-	/*
+			if (!sock->is_connected && sock->ip_proto != IPPROTO_UDP) {
+				errno = 0;
+				return 0;
+			}
+
+			int st_ret = modem_socket_wait_data_timeout(&mdata.socket_config, sock,
+								    K_SECONDS(10));
+			if (st_ret != 0) {
+				LOG_WRN("waiting for +UUSORD timed out, tries to read anyway");
+				next_packet_size = MDM_MAX_DATA_LENGTH;
+			} else {
+				next_packet_size =
+					modem_socket_next_packet_size(&mdata.socket_config, sock);
+			}
+		}
+
+		/*
 	 * Binary and ASCII mode allows sending MDM_MAX_DATA_LENGTH bytes to
 	 * the socket in one command
 	 */
-	if (next_packet_size > MDM_MAX_DATA_LENGTH) {
-		next_packet_size = MDM_MAX_DATA_LENGTH;
-	}
+		if (next_packet_size > MDM_MAX_DATA_LENGTH) {
+			next_packet_size = MDM_MAX_DATA_LENGTH;
+		}
 
-	snprintk(sendbuf, sizeof(sendbuf), "AT+USORD=%d,%zd", sock->id,
-		 len < next_packet_size ? len : next_packet_size);
+		snprintk(sendbuf, sizeof(sendbuf), "AT+USORD=%d,%zd", sock->id,
+			 len < next_packet_size ? len : next_packet_size);
 
-	/* socket read settings */
-	(void)memset(&sock_data, 0, sizeof(sock_data));
-	sock_data.recv_buf = buf;
-	sock_data.recv_buf_len = len;
-	sock_data.recv_addr = from;
-	sock->data = &sock_data;
+		/* socket read settings */
+		(void)memset(&sock_data, 0, sizeof(sock_data));
+		sock_data.recv_buf = buf;
+		sock_data.recv_buf_len = len;
+		sock_data.recv_addr = from;
+		sock->data = &sock_data;
 
-	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmd, ARRAY_SIZE(cmd), sendbuf,
-			     &mdata.sem_response, MDM_CMD_TIMEOUT);
-	if (ret < 0) {
-		errno = -ret;
-		ret = -1;
-		goto exit;
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmd, ARRAY_SIZE(cmd), sendbuf,
+				     &mdata.sem_response, MDM_CMD_TIMEOUT);
+		if (ret < 0) {
+			errno = -ret;
+			ret = -1;
+			goto exit;
+		}
+		if (sock_data.recv_read_len > 0) {
+			break;
+		}
 	}
 
 	/* HACK: use dst address as from */
