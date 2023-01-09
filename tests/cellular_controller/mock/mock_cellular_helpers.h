@@ -3,8 +3,10 @@
 #include <device.h>
 #include <devicetree.h>
 
-struct data {};
-struct sockaddr {};
+struct data {
+};
+struct sockaddr {
+};
 
 uint8_t mock_cellular_controller_init();
 
