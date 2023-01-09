@@ -248,8 +248,7 @@ int mock_uart_send(const struct device *dev, uint8_t *data, uint32_t size)
 
 #ifdef MOCK_UART_VERBOSE
 	printk("Sending: ");
-	for (int i = 0; i < size; i++)
-	{
+	for (int i = 0; i < size; i++) {
 		printk("0x%02X ", data[i]);
 	}
 	printk("\r\n");

@@ -254,15 +254,14 @@ static bool gnss_controller_event_handler(const struct event_header *eh)
 {
 	if (is_gnss_set_mode_event(eh)) {
 		struct gnss_set_mode_event *ev = cast_gnss_set_mode_event(eh);
-        	LOG_DBG("MODE = %d old = %d ",ev->mode,current_mode);
+		LOG_DBG("MODE = %d old = %d ", ev->mode, current_mode);
 		if (ev->mode != current_mode) {
-            		LOG_DBG("setting mode");
-			int ret = gnss_set_mode(ev->mode,true);
+			LOG_DBG("setting mode");
+			int ret = gnss_set_mode(ev->mode, true);
 			if (ret != 0) {
-                		LOG_ERR("Failed to set mode %d",ret);
+				LOG_ERR("Failed to set mode %d", ret);
 				char *msg = "Failed to set GNSS receiver mode";
-				nf_app_error(ERR_GNSS_CONTROLLER, ret, msg,
-					     sizeof(*msg));
+				nf_app_error(ERR_GNSS_CONTROLLER, ret, msg, sizeof(*msg));
 				return false;
 			}
 			current_mode = ev->mode;
@@ -274,7 +273,6 @@ static bool gnss_controller_event_handler(const struct event_header *eh)
 
 EVENT_LISTENER(MODULE, gnss_controller_event_handler);
 EVENT_SUBSCRIBE(MODULE, gnss_set_mode_event);
-
 
 /**
  * @brief Handles GNSS timeouts when no messages has been received. 
