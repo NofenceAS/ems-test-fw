@@ -440,9 +440,9 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 		return ret;
 	}
 
-#if (GNSS_MIA_M10_FIXMODE != 0)
+#if (CONFIG_GNSS_MIA_M10_FIXMODE != 0)
 	/* 3D fix only */
-	ret = mia_m10_config_set_u8(UBX_CFG_FIXMODE, UBS_CFG_FIXMODE_3D);
+	ret = mia_m10_config_set_u8(UBX_CFG_FIXMODE, UBX_CFG_FIXMODE_3D);
 	if (ret != 0) {
 		return ret;
 	}
