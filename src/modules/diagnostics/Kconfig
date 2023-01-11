@@ -59,4 +59,8 @@ if DIAGNOSTICS
 		bool "Enabling this will cause the passthrough to convert any CR or LF into CRLF."
 		default y
 	
+	config DIAGNOSTIC_EMS_FW
+		bool "Enable EMS related functionality"
+		default n
+
 endif

@@ -376,7 +376,13 @@ static void cellular_controller_keep_alive(void *dev)
 {
 	int ret;
 	while (true) {
-		if (k_sem_take(&connection_state_sem, K_FOREVER) == 0 && !pending) {
+	#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+		if (k_sem_take(&connection_state_sem, K_FOREVER) == 0
+		    && !pending && run_cellular_thread) {			
+	#else
+		if (k_sem_take(&connection_state_sem, K_FOREVER) == 0
+		    && !pending) {
+	#endif	
 			pending = true;
 			if (!power_level_ok) {
 				connected = false;
