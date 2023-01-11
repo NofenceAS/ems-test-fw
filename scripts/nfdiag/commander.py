@@ -4,6 +4,7 @@ from queue import Queue, Empty
 import crc
 import threading
 import time
+from collections import namedtuple
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -13,6 +14,15 @@ GROUP_SYSTEM = 0x00
 CMD_PING = 0x55
 CMD_LOG = 0x70
 CMD_TEST = 0x7E
+CMD_REPORT = 0x5E
+CMD_THREAD_CONTROL = 0x40
+
+#CMD_POWER_PROFILE_GNSS_MAX = 0x42
+#CMD_POWER_PROFILE_GNSS_POT = 0x43
+#CMD_POWER_PROFILE_GNSS_TRACKING = 0x44
+#CMD_POWER_PROFILE_GNSS_ACQUSITION = 0x45
+#CMD_POWER_PROFILE_GNSS_PSM = 0x46
+#CMD_POWER_PROFILE_MCU_SLEEP = 0x47
 
 GROUP_SETTINGS = 0x01
 ID_SERIAL = (0x00, "I")
@@ -28,16 +38,26 @@ CMD_WRITE = 0x01
 ERASE_ALL = 0xEA
 
 GROUP_STIMULATOR = 0x02
+
+CMD_GET_ONBOARD_DATA = 0xA0
 CMD_BUZZER_WARN = 0xB0
 CMD_ELECTRICAL_PULSE = 0xE0
+CMD_TURN_ONOFF_CHARGING = 0xE1
+#CMD_TURN_ONOFF_1V8S = 0xE2
+CMD_ELECTRICAL_PULSE_INFINITE = 0xE3
 
 GROUP_STORAGE = 0x03
 
 GROUP_MODEM = 0x04
 CMD_GET_CCID = 0x00
+CMD_GET_VINT_STAT = 0x01
 
 RESP_ACK = 0x00
 RESP_DATA = 0x01
+
+#gnss_struct_t = namedtuple('gnss_struct_t',['lat','lon','x','y','overflow','height','speed','head_veh','h_dop','h_acc_dm','v_acc_dm','head_acc','num_sv','pvt_flags','pvt_valid','updated_at','msss','ttff'])
+gnss_struct_t = namedtuple('gnss_struct_t',['num_sv','pvt_flags','pvt_valid','overflow','x','y','height','speed','head_veh','h_dop','h_acc_dm','v_acc_dm','head_acc','lat','lon','updated_at','msss','ttff'])
+
 
 class Commander(threading.Thread):
 	def __init__(self, stream):
@@ -77,6 +97,19 @@ class Commander(threading.Thread):
 				return b""
 		return None
 
+	def thread_control(self, value):
+		print(f"{value=}")
+		payload = struct.pack("<B", value)
+		if value == 1:
+			print("Start ->")
+		elif value == 0:
+			print("Stop ->")
+		else:
+			print("unknown")				
+		
+		resp = self.send_cmd(GROUP_SYSTEM, CMD_THREAD_CONTROL, payload)
+		return resp
+
 	def electric_pulse_now(self):
 		resp = self.send_cmd(GROUP_STIMULATOR, CMD_ELECTRICAL_PULSE)
 		# if resp:
@@ -87,6 +120,45 @@ class Commander(threading.Thread):
 		# 		return b""
 		logging.debug(resp)
 		return resp
+
+	def electric_pulse_infinite(self, value):
+		payload = struct.pack("<B" + value)
+		resp = self.send_cmd(GROUP_STIMULATOR, CMD_ELECTRICAL_PULSE_INFINITE, payload)
+		
+		logging.debug(resp)
+		return resp		
+
+	def start_buzzer(self):
+		resp = self.send_cmd(GROUP_STIMULATOR, CMD_BUZZER_WARN)
+		# if resp:
+		# 	if resp["code"] == RESP_DATA:
+		# 		value = struct.unpack("<" + str(len(resp["data"])) + "s", resp["data"])
+		# 		return value[0]
+		# 	else:
+		# 		return b""
+		logging.debug(resp)
+		return resp
+
+	def turn_onoff_charging(self):
+		resp = self.send_cmd(GROUP_STIMULATOR, CMD_TURN_ONOFF_CHARGING)
+		# if resp:
+		# 	if resp["code"] == RESP_DATA:
+		# 		value = struct.unpack("<" + str(len(resp["data"])) + "s", resp["data"])
+		# 		return value[0]
+		# 	else:
+		# 		return b""
+		logging.debug(resp)
+		return resp
+
+	def get_onboard_data(self):
+		resp = self.send_cmd(GROUP_STIMULATOR, CMD_GET_ONBOARD_DATA)
+		if resp:
+			if resp["code"] == RESP_DATA:								
+				return resp
+			else:
+				print("response failed")
+				return b""
+		return None
 
 	def write_setting(self, id, value):
 		if id[1] == "s":
@@ -165,7 +237,7 @@ class Commander(threading.Thread):
 		resp[4] = 0
 		calc_checksum = self.crc_calc.calculate_checksum(resp)
 		if checksum != calc_checksum:
-			logging.warning("Invalid checksum")
+			#logging.warning("Invalid checksum")
 			return
 		
 		logging.debug("Got response: ")
