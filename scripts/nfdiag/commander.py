@@ -103,13 +103,6 @@ class Commander(threading.Thread):
 	def thread_control(self, value):
 		print(f"{value=}")
 		payload = struct.pack("<B", value)
-		if value == 1:
-			print("Start ->")
-		elif value == 0:
-			print("Stop ->")
-		else:
-			print("unknown")				
-		
 		resp = self.send_cmd(GROUP_SYSTEM, CMD_THREAD_CONTROL, payload)
 		return resp
 
