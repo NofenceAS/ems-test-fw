@@ -488,7 +488,7 @@ static bool event_handler(const struct event_header *eh)
 		onboard_set_acc_data(event->x, event->y, event->z);
 
 		return false;
-	}	
+	}
 
 	return false;
 }
