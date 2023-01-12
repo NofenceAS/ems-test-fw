@@ -23,6 +23,7 @@ struct diag_thread_cntl_event {
 	struct event_header header;
 	/** Determin wheather you want to start or stop the cellular thread. */
 	bool run_cellular_thread;
+	bool allow_fota;
 };
 
 EVENT_TYPE_DECLARE(diag_thread_cntl_event);

@@ -337,12 +337,18 @@ while 1:
 		cmndr.electric_pulse_now()		
 		time.sleep(1)
 		cmndr.turn_onoff_charging()	
-	elif x == "TH1":		
+	elif x == "ACT CEL":		
 		print("Start cellular thread")
 		cmndr.thread_control(1)	
-	elif x == "TH2":		
+	elif x == "STOP CEL":		
 		print("Stop cellular thread")
-		cmndr.thread_control(0)		
+		cmndr.thread_control(0)	
+	elif x == "ACT FOTA":		
+		print("Activate FOTA")
+		cmndr.thread_control(2)	
+	elif x == "ACT CEL_FOTA":		
+		print("Activate CELLULAR AND FOTA")
+		cmndr.thread_control(3)						
 	elif x == "SLEEP":		
 		cmndr.enter_sleep()
 	elif x == "x":		
