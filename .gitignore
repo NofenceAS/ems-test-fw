@@ -7,6 +7,7 @@
 *.swp
 *.swo
 *.orig
+*.hex
 *~
 build*/
 cmake-build-*/
