@@ -64,10 +64,18 @@ struct acc_sigma_event {
 	} param;
 };
 
+struct acc_raw_event {
+	struct event_header header;
+	int16_t x;
+	int16_t y;
+	int16_t z;
+};
+
 EVENT_TYPE_DECLARE(movement_set_mode_event);
 EVENT_TYPE_DECLARE(movement_out_event);
 EVENT_TYPE_DECLARE(movement_timeout_event);
 EVENT_TYPE_DECLARE(activity_level);
 EVENT_TYPE_DECLARE(step_counter_event);
 EVENT_TYPE_DECLARE(acc_sigma_event);
+EVENT_TYPE_DECLARE(acc_raw_event);
 #endif /* _MOVEMENT_EVENT_H_ */

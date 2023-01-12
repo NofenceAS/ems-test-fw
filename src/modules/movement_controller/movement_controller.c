@@ -138,6 +138,13 @@ void process_acc_data(raw_acc_data_t *acc)
 		return;
 	}
 
+	/* update raw accelerometer data for diagnostics */
+	struct acc_raw_event *accraw = new_acc_raw_event();
+	accraw->x = acc->x;
+	accraw->y = acc->y;
+	accraw->z = acc->z;
+	EVENT_SUBMIT(accraw);
+
 	LOG_DBG("acc_std_final mov_controller: %d", acc_std_final);
 
 	acc_fifo_x[num_acc_fifo_samples] = acc->x;

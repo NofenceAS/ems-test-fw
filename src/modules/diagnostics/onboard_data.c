@@ -56,6 +56,13 @@ int onboard_set_env_sens_data(double temp, double humidity, double pressure)
 	return 0;
 }
 
+int onboard_set_acc_data(int16_t x, int16_t y, int16_t z)
+{
+	ob_data.accel[0] = x;
+	ob_data.accel[1] = y;
+	ob_data.accel[2] = z;
+}
+
 int onboard_get_gnss_data(gnss_struct_t **gnss_data_out)
 {
 	*gnss_data_out = &ob_gnss_data;
@@ -97,9 +104,9 @@ int onboard_get_all_data(onboard_all_data_struct_t **ob_all_data_out)
 	ob_all_data.vbatt = ob_data.battery_mv;
 	ob_all_data.isolar = ob_data.charging_ma;
 	ob_all_data.vint_stat = 0;
-	ob_all_data.acc_x = 0;
-	ob_all_data.acc_y = 0;
-	ob_all_data.acc_z = 0;
+	ob_all_data.acc_x = ob_data.accel[0];
+	ob_all_data.acc_y = ob_data.accel[1];
+	ob_all_data.acc_z = ob_data.accel[2];
 	ob_all_data.bme280_temp = ob_data.temp;
 	ob_all_data.bme280_pres = ob_data.pressure;
 	ob_all_data.bme280_hum = ob_data.humidity;

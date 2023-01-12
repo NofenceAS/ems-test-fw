@@ -30,6 +30,8 @@ typedef struct {
 	double humidity;
 	/** BME280 pressure */
 	double pressure;
+	/** raw accelerometer data */
+	int16_t accel[3];
 } onboard_data_struct_t;
 
 /** @brief onboard data for 902 backwards compatibility
@@ -85,6 +87,7 @@ int onboard_set_gnss_data(gnss_struct_t gnss_data_in);
 int onboard_set_gsm_data(gsm_info gsm_data_in);
 int onboard_set_power_data(uint8_t pwr_state, uint16_t battery_mv, uint16_t charging_ma);
 int onboard_set_env_sens_data(double temp, double humidity, double pressure);
+int onboard_set_acc_data(int16_t x, int16_t y, int16_t z);
 
 int onboard_get_data(onboard_data_struct_t **ob_data_out);
 int onboard_get_gnss_data(gnss_struct_t **gnss_data_out);

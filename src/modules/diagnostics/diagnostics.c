@@ -482,6 +482,14 @@ static bool event_handler(const struct event_header *eh)
 		return false;
 	}
 
+	if (is_acc_raw_event(eh)) {
+		struct acc_raw_event *event = cast_acc_raw_event(eh);
+
+		onboard_set_acc_data(event->x, event->y, event->z);
+
+		return false;
+	}	
+
 	return false;
 }
 
@@ -492,6 +500,7 @@ EVENT_SUBSCRIBE(MODULE, gnss_data);
 EVENT_SUBSCRIBE(MODULE, gsm_info_event);
 EVENT_SUBSCRIBE(MODULE, env_sensor_event);
 EVENT_SUBSCRIBE(MODULE, pwr_status_event);
+EVENT_SUBSCRIBE(MODULE, acc_raw_event);
 
 #if CONFIG_DIAGNOSTICS_PROFILE_EVENTS
 

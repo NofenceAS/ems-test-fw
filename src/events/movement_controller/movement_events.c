@@ -54,3 +54,5 @@ EVENT_TYPE_DEFINE(movement_timeout_event, IS_ENABLED(CONFIG_LOG_MOVEMENT_EVENT),
 		  log_movement_timeout_event, NULL);
 
 EVENT_TYPE_DEFINE(acc_sigma_event, false, NULL, NULL);
+
+EVENT_TYPE_DEFINE(acc_raw_event, true, NULL, NULL);
