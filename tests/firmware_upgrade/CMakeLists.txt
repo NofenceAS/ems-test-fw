@@ -10,16 +10,16 @@ project(firmware_upgrade_testing)
 zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-FILE(GLOB app_sources 
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c 
-        ${CMAKE_CURRENT_SOURCE_DIR}/mock/*.c 
-        ${CMAKE_CURRENT_SOURCE_DIR}/mock/net/*.c 
-        ${CMAKE_CURRENT_SOURCE_DIR}/mock/power/*.c 
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/*.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/*.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager/*.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/fw_upgrade/*.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/diagnostics/diagnostics_events.c
+FILE(GLOB app_sources
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/mock/*.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/mock/net/*.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/mock/power/*.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/*.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler/*.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager/*.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/fw_upgrade/*.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/diagnostics/diagnostics_events.c
 )
 target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE ${APP_SOURCE})

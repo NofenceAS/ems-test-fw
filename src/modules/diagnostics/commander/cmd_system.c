@@ -123,19 +123,19 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 		if (tc & (1 << 0)) {
 			diag->run_cellular_thread = true; //Cellular thread ON
 			LOG_WRN("CEL ON");
-		} 
-		if(tc & (0 << 0)) {
+		}
+		if (tc & (0 << 0)) {
 			diag->run_cellular_thread = false; //Cellular thread OFF
 			LOG_WRN("CEL OFF");
-		} 
-		if(tc & (1 << 1)) {
+		}
+		if (tc & (1 << 1)) {
 			diag->allow_fota = true; //Cellular thread OFF
 			LOG_WRN("FOTA ON");
 		}
-		if(tc & (0 << 1)) {
+		if (tc & (0 << 1)) {
 			diag->allow_fota = false; //Cellular thread OFF
 			LOG_WRN("FOTA OFF");
-		}				
+		}
 		EVENT_SUBMIT(diag);
 
 		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
