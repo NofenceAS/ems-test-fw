@@ -22,6 +22,7 @@
 #include "movement_events.h"
 #include "env_sensor_event.h"
 #include "pwr_event.h"
+#include "onboard_data.h"
 
 #include <zephyr.h>
 #include <logging/log.h>

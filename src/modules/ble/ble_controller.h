@@ -32,7 +32,7 @@
 
 #define ATT_MIN_PAYLOAD 20 /* Minimum L2CAP MTU minus ATT header */
 
-#define DEVICE_NAME_LEN 8 /* NF999999   */
+#define DEVICE_NAME_LEN 9 /* NF999999999 */
 /**
  * @brief Used to initilize the ble module
  * 

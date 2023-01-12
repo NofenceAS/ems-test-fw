@@ -735,21 +735,18 @@ static void init_eeprom_variables(void)
 	err = stg_config_u32_read(STG_U32_UID, &serial_id);
 	if (err != 0) {
 		LOG_ERR("Failed to read serial number from storage! (%d)", err);
+		strncpy(bt_device_name, "NF??????", DEVICE_NAME_LEN + 1);
 		nf_app_error(ERR_BLE_MODULE, err, NULL, 0);
 	} else {
-		if (serial_id > 999999) {
-			strncpy(bt_device_name, "NF??????", DEVICE_NAME_LEN + 1);
-		} else {
-			char tmp[DEVICE_NAME_LEN + 1];
-			snprintf(tmp, 7, "%i", serial_id);
-			uint32_t len = strlen(tmp);
-			memset(bt_device_name, '0', sizeof(bt_device_name));
-			bt_device_name[0] = 'N';
-			bt_device_name[1] = 'F';
-			strcpy(bt_device_name + DEVICE_NAME_LEN - len, tmp);
+		char tmp[DEVICE_NAME_LEN + 1];
+		snprintf(tmp, 7, "%i", serial_id);
+		uint32_t len = strlen(tmp);
+		memset(bt_device_name, '0', sizeof(bt_device_name));
+		bt_device_name[0] = 'N';
+		bt_device_name[1] = 'F';
+		strcpy(bt_device_name + DEVICE_NAME_LEN - len, tmp);
 
-			current_serial_number = serial_id;
-		}
+		current_serial_number = serial_id;
 	}
 
 	/* Init collar mode */

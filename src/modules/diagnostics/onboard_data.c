@@ -61,6 +61,8 @@ int onboard_set_acc_data(int16_t x, int16_t y, int16_t z)
 	ob_data.accel[0] = x;
 	ob_data.accel[1] = y;
 	ob_data.accel[2] = z;
+
+	return 0;
 }
 
 int onboard_get_gnss_data(gnss_struct_t **gnss_data_out)
