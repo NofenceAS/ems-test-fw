@@ -1443,22 +1443,22 @@ void build_poll_request(NofenceMessage *poll_req)
 		stg_config_u16_read(STG_U16_PRODUCT_TYPE, &pcb_product_type);
 		poll_req->m.poll_message_req.versionInfoHW.usPCB_Product_Type = pcb_product_type;
 
-		uint8_t bom_mec_rev = 0;
-		stg_config_u8_read(STG_U8_BOM_MEC_REV, &bom_mec_rev);
-		poll_req->m.poll_message_req.versionInfoBOM.ucBom_mec_rev = bom_mec_rev;
+		uint8_t product_model = 0;
+		stg_config_u8_read(STG_U8_PRODUCT_MODEL, &product_model);
+		poll_req->m.poll_message_req.versionInfoBOM.ucBom_mec_rev = product_model;
 		poll_req->m.poll_message_req.has_versionInfoBOM = true;
 
-		uint8_t bom_pcb_rev = 0;
-		stg_config_u8_read(STG_U8_BOM_PCB_REV, &bom_pcb_rev);
-		poll_req->m.poll_message_req.versionInfoBOM.ucBom_pcb_rev = bom_pcb_rev;
+		uint8_t product_revision = 0;
+		stg_config_u8_read(STG_U8_PRODUCT_REVISION, &product_revision);
+		poll_req->m.poll_message_req.versionInfoBOM.ucBom_pcb_rev = product_revision;
 
 		uint8_t ems_provider = 0;
 		stg_config_u8_read(STG_U8_EMS_PROVIDER, &ems_provider);
 		poll_req->m.poll_message_req.versionInfoBOM.ucEms_provider = ems_provider;
 
-		uint8_t record_rev = 0;
-		stg_config_u8_read(STG_U8_PRODUCT_RECORD_REV, &record_rev);
-		poll_req->m.poll_message_req.versionInfoBOM.ucProduct_record_rev = record_rev;
+		uint8_t product_generation = 0;
+		stg_config_u8_read(STG_U8_PRODUCT_GENERATION, &product_generation);
+		poll_req->m.poll_message_req.versionInfoBOM.ucProduct_record_rev = product_generation;
 
 		uint8_t reboot_reason;
 		pwr_module_reboot_reason(&reboot_reason);

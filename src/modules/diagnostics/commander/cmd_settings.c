@@ -110,12 +110,12 @@ static int commander_settings_read(enum diagnostics_interface interface, setting
 		}
 		break;
 	}
-	case PRODUCT_RECORD_REV: {
-		uint8_t product_record_rev = 0;
-		err = stg_config_u8_read(STG_U8_PRODUCT_RECORD_REV, &product_record_rev);
+	case PRODUCT_GENERATION: {
+		uint8_t product_generation = 0;
+		err = stg_config_u8_read(STG_U8_PRODUCT_GENERATION, &product_generation);
 
 		if (err == 0) {
-			buf[1] = product_record_rev;
+			buf[1] = product_generation;
 			commander_send_resp(interface, SETTINGS, READ, DATA, buf,
 					    1 + sizeof(uint8_t));
 		} else {
@@ -123,11 +123,11 @@ static int commander_settings_read(enum diagnostics_interface interface, setting
 		}
 		break;
 	}
-	case BOM_MEC_REV: {
-		uint8_t bom_mec_rev = 0;
-		err = stg_config_u8_read(STG_U8_BOM_MEC_REV, &bom_mec_rev);
+	case PRODUCT_MODEL: {
+		uint8_t product_model = 0;
+		err = stg_config_u8_read(STG_U8_PRODUCT_MODEL, &product_model);
 		if (err == 0) {
-			buf[1] = bom_mec_rev;
+			buf[1] = product_model;
 			commander_send_resp(interface, SETTINGS, READ, DATA, buf,
 					    1 + sizeof(uint8_t));
 		} else {
@@ -135,11 +135,11 @@ static int commander_settings_read(enum diagnostics_interface interface, setting
 		}
 		break;
 	}
-	case BOM_PCB_REV: {
-		uint8_t bom_pcb_rev = 0;
-		err = stg_config_u8_read(STG_U8_BOM_PCB_REV, &bom_pcb_rev);
+	case PRODUCT_REVISION: {
+		uint8_t product_revision = 0;
+		err = stg_config_u8_read(STG_U8_PRODUCT_REVISION, &product_revision);
 		if (err == 0) {
-			buf[1] = bom_pcb_rev;
+			buf[1] = product_revision;
 			commander_send_resp(interface, SETTINGS, READ, DATA, buf,
 					    1 + sizeof(uint8_t));
 		} else {
@@ -212,27 +212,27 @@ static int commander_settings_write(enum diagnostics_interface interface, settin
 		}
 		break;
 	}
-	case PRODUCT_RECORD_REV: {
+	case PRODUCT_GENERATION: {
 		/* Must be exactly 1 byte for uint8_t */
 		if (size == 1) {
-			uint8_t product_record_rev = (data[0] << 0);
-			err = stg_config_u8_write(STG_U8_PRODUCT_RECORD_REV, product_record_rev);
+			uint8_t product_generation = (data[0] << 0);
+			err = stg_config_u8_write(STG_U8_PRODUCT_GENERATION, product_generation);
 		}
 		break;
 	}
-	case BOM_MEC_REV: {
+	case PRODUCT_MODEL: {
 		/* Must be exactly 1 byte for uint8_t */
 		if (size == 1) {
-			uint8_t bom_mec_rev = (data[0] << 0);
-			err = stg_config_u8_write(STG_U8_BOM_MEC_REV, bom_mec_rev);
+			uint8_t product_model = (data[0] << 0);
+			err = stg_config_u8_write(STG_U8_PRODUCT_MODEL, product_model);
 		}
 		break;
 	}
-	case BOM_PCB_REV: {
+	case PRODUCT_REVISION: {
 		/* Must be exactly 1 byte for uint8_t */
 		if (size == 1) {
-			uint8_t bom_pcb_rev = (data[0] << 0);
-			err = stg_config_u8_write(STG_U8_BOM_PCB_REV, bom_pcb_rev);
+			uint8_t product_revision = (data[0] << 0);
+			err = stg_config_u8_write(STG_U8_PRODUCT_REVISION, product_revision);
 		}
 		break;
 	}

@@ -52,12 +52,13 @@ typedef enum {
 	SERIAL = 0x00,
 	HOST_PORT = 0x01,
 	EMS_PROVIDER = 0x02,
-	PRODUCT_RECORD_REV = 0x03,
-	BOM_MEC_REV = 0x04,
-	BOM_PCB_REV = 0x05,
+	PRODUCT_GENERATION = 0x03,
+	PRODUCT_MODEL = 0x04,
+	PRODUCT_REVISION = 0x05,
 	HW_VERSION = 0x06,
 	PRODUCT_TYPE = 0x07,
 } settings_id_t;
+
 
 typedef enum {
 	PING = 0x55,
