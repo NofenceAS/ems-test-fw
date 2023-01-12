@@ -59,7 +59,6 @@ typedef enum {
 	PRODUCT_TYPE = 0x07,
 } settings_id_t;
 
-
 typedef enum {
 	PING = 0x55,
 	REPORT = 0x5E,

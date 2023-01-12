@@ -1458,7 +1458,8 @@ void build_poll_request(NofenceMessage *poll_req)
 
 		uint8_t product_generation = 0;
 		stg_config_u8_read(STG_U8_PRODUCT_GENERATION, &product_generation);
-		poll_req->m.poll_message_req.versionInfoBOM.ucProduct_record_rev = product_generation;
+		poll_req->m.poll_message_req.versionInfoBOM.ucProduct_record_rev =
+			product_generation;
 
 		uint8_t reboot_reason;
 		pwr_module_reboot_reason(&reboot_reason);
