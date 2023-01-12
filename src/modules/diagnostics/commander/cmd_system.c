@@ -112,10 +112,11 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 		EVENT_SUBMIT(r_ev);
 
 		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
-
 		break;
 	}
 	case THREAD_CONTROL: {
+		resp = ACK;
+
 		struct diag_thread_cntl_event *diag = new_diag_thread_cntl_event();
 		uint8_t tc = data[0];
 		LOG_WRN("THREAD CONTROL = %d", tc);
@@ -127,6 +128,9 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 			LOG_WRN("TC Cellular OFF");
 		}
 		EVENT_SUBMIT(diag);
+
+		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
+		break;
 	}
 
 	default:
