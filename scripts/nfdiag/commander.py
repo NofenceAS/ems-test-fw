@@ -16,6 +16,9 @@ CMD_LOG = 0x70
 CMD_TEST = 0x7E
 CMD_REPORT = 0x5E
 CMD_THREAD_CONTROL = 0x40
+CMD_ENTER_SLEEP = 0xE0
+CMD_WAKEUP = 0xE0
+CMD_REBOOT = 0xEB
 
 #CMD_POWER_PROFILE_GNSS_MAX = 0x42
 #CMD_POWER_PROFILE_GNSS_POT = 0x43
@@ -159,6 +162,12 @@ class Commander(threading.Thread):
 				print("response failed")
 				return b""
 		return None
+
+	def enter_sleep(self):
+		resp = self.send_cmd(GROUP_SYSTEM, CMD_ENTER_SLEEP)
+		print("ENTER SLEEP ->")
+		logging.debug(resp)
+		return resp
 
 	def write_setting(self, id, value):
 		if id[1] == "s":

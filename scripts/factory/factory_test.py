@@ -310,9 +310,9 @@ while 1:
 	print("'c' - Toggle onoff charging")
 	print("'a' - Start EP and Toggle onoff charging")
 	print("'b' - Start buzzer continous tone")
-	print("'Thread1' - Start/Stop Cellular Thread")
 	print("'TH1' - Start Cellular Thread")
 	print("'TH2' - Stop Cellular Thread")
+	print("'SLEEP' - Enter sleep")
 	x = input("'x' jump to next test step -> ")
 	if x == "z":
 		print("Pulse in 1 seconds!!!!!!!!!!")
@@ -342,7 +342,9 @@ while 1:
 		cmndr.thread_control(1)	
 	elif x == "TH2":		
 		print("Stop cellular thread")
-		cmndr.thread_control(0)			
+		cmndr.thread_control(0)		
+	elif x == "SLEEP":		
+		cmndr.enter_sleep()
 	elif x == "x":		
 		break
 			
