@@ -7,6 +7,8 @@
 #include "error_event.h"
 #include "gnss.h"
 #include "kernel.h"
+#include "diagnostics_events.h"
+
 #define STACK_SIZE 1024
 #define PRIORITY 7
 
@@ -30,6 +32,10 @@ const struct device *gnss_dev = NULL;
 static uint8_t gnss_reset_count;
 static uint8_t gnss_timeout_count;
 static uint8_t gnss_failed_init_count;
+
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+static int diagnostic_force_gnss_mode = GNSSMODE_INACTIVE;
+#endif
 
 K_THREAD_STACK_DEFINE(pub_gnss_stack, STACK_SIZE);
 struct k_thread pub_gnss_thread;
@@ -219,6 +225,18 @@ static int gnss_data_update_cb(const gnss_t *data)
 static int gnss_set_mode(gnss_mode_t mode, bool wakeup)
 {
 	int ret;
+	
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+	if(diagnostic_force_gnss_mode != GNSSMODE_NOMODE)
+	{
+		if(diagnostic_force_gnss_mode & 0x7FFF)
+			mode = diagnostic_force_gnss_mode;	
+
+		if(diagnostic_force_gnss_mode & 0x8000)
+			wakeup = true;
+	}
+#endif
+
 	if (wakeup) {
 		ret = gnss_wakeup(gnss_dev);
 		if (ret != 0) {
@@ -268,12 +286,22 @@ static bool gnss_controller_event_handler(const struct event_header *eh)
 		}
 		return false;
 	}
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+	else if (is_diag_thread_cntl_event(eh)) {
+		struct diag_thread_cntl_event *event = cast_diag_thread_cntl_event(eh);
+		diagnostic_force_gnss_mode = event->force_gnss_mode;
+		LOG_WRN("Force gnss mode = %d", diagnostic_force_gnss_mode);
+		return false;
+	}
+#endif	
 	return false;
 }
 
 EVENT_LISTENER(MODULE, gnss_controller_event_handler);
 EVENT_SUBSCRIBE(MODULE, gnss_set_mode_event);
-
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+EVENT_SUBSCRIBE(MODULE, diag_thread_cntl_event);
+#endif
 /**
  * @brief Handles GNSS timeouts when no messages has been received. 
  *        Will reset GNSS with various modes depending on reset count. 
