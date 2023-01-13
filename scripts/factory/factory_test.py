@@ -310,9 +310,13 @@ while 1:
 	print("'c' - Toggle onoff charging")
 	print("'a' - Start EP and Toggle onoff charging")
 	print("'b' - Start buzzer continous tone")
-	print("'TH1' - Start Cellular Thread")
-	print("'TH2' - Stop Cellular Thread")
-	print("'SLEEP' - Enter sleep")
+	print("'SLEEP' - Enter sleep")	
+	print("'ACT_FOTA' - Start Cellular Thread")
+	print("'ACT_CEL_FOTA' - Start Cellular Thread and FOTA")
+	print("'GNSS_NOMODE' - Release GNSS Force mode")
+	print("'GNSS_INACTIVE' - Force GNSS to Inactive")
+	print("'GNSS_POT' - Force GNSS to POT")
+	print("'GNSS_MAX' - Force GNSS to MAX")
 	x = input("'x' jump to next test step -> ")
 	if x == "z":
 		print("Pulse in 1 seconds!!!!!!!!!!")
@@ -337,18 +341,24 @@ while 1:
 		cmndr.electric_pulse_now()		
 		time.sleep(1)
 		cmndr.turn_onoff_charging()	
-	elif x == "ACT CEL":		
+	elif x == "ACT_CEL":		
 		print("Start cellular thread")
 		cmndr.thread_control(1)	
-	elif x == "STOP CEL":		
+	elif x == "STOP_CEL":		
 		print("Stop cellular thread")
 		cmndr.thread_control(0)	
-	elif x == "ACT FOTA":		
+	elif x == "ACT_FOTA":		
 		print("Activate FOTA")
 		cmndr.thread_control(2)	
-	elif x == "ACT CEL_FOTA":		
+	elif x == "ACT_CEL_FOTA":		
 		print("Activate CELLULAR AND FOTA")
-		cmndr.thread_control(3)						
+		cmndr.thread_control(3)	
+	elif x == "GNSS_NOMODE":		
+		print("GNSS NOMODE")
+		cmndr.thread_control(3)		
+	elif x == "GNSS_INACTIVE":		
+		print("GNSS INACTIVE")
+		cmndr.thread_control(3)		
 	elif x == "SLEEP":		
 		cmndr.enter_sleep()
 	elif x == "x":		
