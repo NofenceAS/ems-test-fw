@@ -182,7 +182,11 @@ struct fence_def_update {
 	int request_frame;
 } m_fence_update_req;
 
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+atomic_t poll_period_seconds = ATOMIC_INIT(1 * 60);
+#else
 atomic_t poll_period_seconds = ATOMIC_INIT(15 * 60);
+#endif
 atomic_t log_period_minutes = ATOMIC_INIT(30);
 
 /* Messaging Rx thread */
