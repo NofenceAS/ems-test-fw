@@ -225,14 +225,13 @@ static int gnss_data_update_cb(const gnss_t *data)
 static int gnss_set_mode(gnss_mode_t mode, bool wakeup)
 {
 	int ret;
-	
-#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
-	if(diagnostic_force_gnss_mode != GNSSMODE_NOMODE)
-	{
-		if(diagnostic_force_gnss_mode & 0x7FFF)
-			mode = diagnostic_force_gnss_mode;	
 
-		if(diagnostic_force_gnss_mode & 0x8000)
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+	if (diagnostic_force_gnss_mode != GNSSMODE_NOMODE) {
+		if (diagnostic_force_gnss_mode & 0x7FFF)
+			mode = diagnostic_force_gnss_mode;
+
+		if (diagnostic_force_gnss_mode & 0x8000)
 			wakeup = true;
 	}
 #endif
@@ -293,7 +292,7 @@ static bool gnss_controller_event_handler(const struct event_header *eh)
 		LOG_WRN("Force gnss mode = %d", diagnostic_force_gnss_mode);
 		return false;
 	}
-#endif	
+#endif
 	return false;
 }
 
