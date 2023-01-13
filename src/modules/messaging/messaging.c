@@ -755,7 +755,11 @@ void messaging_tx_thread_fn(void)
 void data_request_work_fn()
 {
 	LOG_INF("Periodic request of environment data");
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+	int err = k_work_reschedule_for_queue(&message_q, &data_request_work, K_SECONDS(3));
+#else
 	int err = k_work_reschedule_for_queue(&message_q, &data_request_work, K_MINUTES(1));
+#endif
 	if (err < 0) {
 		LOG_ERR("Failed to reschedule work");
 	}
