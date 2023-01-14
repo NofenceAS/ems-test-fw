@@ -160,6 +160,6 @@ GET_GSM_DATA = 0xA6
 #print(value#)
 
 payload = struct.pack('<B', 1)
-resp = try_system_cmd(0x40, payload)
+resp = try_system_cmd(0x42)
 #value = struct.unpack('I', resp['data'][:4])
 print(resp)

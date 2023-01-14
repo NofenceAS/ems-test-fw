@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_FW_UPGRADE_LOG_LEVEL);
 #error Unsupported boardfile for performing Nofence FOTA! (SG25/C25 only)
 #endif
 
-static bool allow_fota = false;
+static bool allow_fota = true;
 
 #define FOTA_RETRIES                                                                               \
 	2 /* to ensure modem is switched back to PSV in case of

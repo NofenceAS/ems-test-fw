@@ -51,7 +51,7 @@ K_SEM_DEFINE(listen_sem, 0, 1); /* this semaphore will be given by the modem
 K_SEM_DEFINE(close_main_socket_sem, 0, 1);
 
 #if defined(CONFIG_DIAGNOSTIC_EMS_FW)
-static bool run_cellular_thread = false;
+static bool run_cellular_thread = true;
 #endif
 
 static bool modem_is_ready = false;

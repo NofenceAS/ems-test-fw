@@ -9,6 +9,7 @@
 #include "modem_nf.h"
 #include "pwr_event.h"
 #include "cellular_helpers_header.h"
+#include "messaging_module_events.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(diag_cmd_system, 4);
@@ -141,7 +142,16 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
 		break;
 	}
+	case FORCE_POLL_REQ: {
+		resp = ACK;
+		LOG_DBG("Forcing poll request");
 
+		struct send_poll_request_now *wake_up = new_send_poll_request_now();
+		EVENT_SUBMIT(wake_up);
+
+		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
+		break;
+	}
 	default:
 		resp = UNKNOWN_CMD;
 		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
