@@ -131,15 +131,18 @@ int socket_listen(struct data *data)
 	data->tcp.sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	if (data->tcp.sock < 0) {
-		LOG_ERR("Failed to create TCP listening socket (%s): %d", log_strdup(data->proto), errno);
+		LOG_ERR("Failed to create TCP listening socket (%s): %d", log_strdup(data->proto),
+			errno);
 		return -errno;
 	} else {
-		LOG_INF("Created TCP listening socket (%s): %d\n", log_strdup(data->proto), data->tcp.sock);
+		LOG_INF("Created TCP listening socket (%s): %d\n", log_strdup(data->proto),
+			data->tcp.sock);
 	}
 
 	ret = listen(data->tcp.sock, 5);
 	if (ret < 0) {
-		LOG_ERR("Cannot start TCP listening socket (%s): %d", log_strdup(data->proto), errno);
+		LOG_ERR("Cannot start TCP listening socket (%s): %d", log_strdup(data->proto),
+			errno);
 		ret = -errno;
 	} else {
 		ret = 0;
