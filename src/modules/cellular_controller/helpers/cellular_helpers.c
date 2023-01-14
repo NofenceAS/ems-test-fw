@@ -249,7 +249,7 @@ int send_tcp(char *msg, size_t len)
 	int ret;
 	ret = (int)sendall(conf.ipv4.tcp.sock, msg, len);
 	if (ret < 0) {
-		LOG_ERR("%s TCP: Failed to send data, errno %d", conf.ipv4.proto, ret);
+		LOG_ERR("%s TCP: Failed to send data, errno %d", log_strdup(conf.ipv4.proto), ret);
 	} else {
 		LOG_DBG("%s TCP: Sent %d bytes", log_strdup(conf.ipv4.proto), ret);
 	}
