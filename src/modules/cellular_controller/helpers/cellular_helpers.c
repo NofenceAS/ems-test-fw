@@ -321,6 +321,7 @@ int check_ip(void)
 			return -1;
 			/*TODO: reset modem?*/
 		} else {
+			LOG_DBG("collar IP: %s", collar_ip);
 			ret = memcmp(collar_ip, "\"0.0.0.0\"", 9);
 			if (ret > 0) {
 				k_sleep(K_MSEC(50));

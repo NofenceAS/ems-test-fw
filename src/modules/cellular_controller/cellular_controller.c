@@ -18,7 +18,7 @@
 #define MODULE cellular_controller
 #define MESSAGING_ACK_TIMEOUT CONFIG_MESSAGING_ACK_TIMEOUT_MSEC
 
-LOG_MODULE_REGISTER(cellular_controller, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(cellular_controller, 4);
 
 K_SEM_DEFINE(messaging_ack, 1, 1);
 K_SEM_DEFINE(fota_progress_update, 0, 1);
@@ -216,7 +216,7 @@ static bool cellular_controller_event_handler(const struct event_header *eh)
 		ack->message_sent = false;
 		EVENT_SUBMIT(ack);
 		return false;
-#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW_OLD)
 	} else if (is_diag_thread_cntl_event(eh)) {
 		struct diag_thread_cntl_event *event = cast_diag_thread_cntl_event(eh);
 		run_cellular_thread = (event->run_cellular_thread == true);
