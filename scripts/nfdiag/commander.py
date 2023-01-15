@@ -46,17 +46,27 @@ CMD_GET_ONBOARD_DATA = 0xA0
 CMD_BUZZER_WARN = 0xB0
 CMD_ELECTRICAL_PULSE = 0xE0
 CMD_TURN_ONOFF_CHARGING = 0xE1
+CMD_SET_CHARGING_EN = 0xC0
 #CMD_TURN_ONOFF_1V8S = 0xE2
 CMD_ELECTRICAL_PULSE_INFINITE = 0xE3
+FORCE_POLL_REQ = 0x42
 
 GROUP_STORAGE = 0x03
 
 GROUP_MODEM = 0x04
 CMD_GET_CCID = 0x00
 CMD_GET_VINT_STAT = 0x01
+CMD_GET_IP = 0x02
 
 RESP_ACK = 0x00
 RESP_DATA = 0x01
+RESP_CHK_FAILED = 0xC0
+RESP_NOT_ENOUGH = 0xD0
+RESP_NOT_IMPLEMENTED = 0xD1
+RESP_ERROR = 0xE0
+RESP_UNKNOWN_CMD = 0xFC
+RESP_UNKNOWN_GRP = 0xFE
+RESP_UNKNOWN = 0xFF
 
 #gnss_struct_t = namedtuple('gnss_struct_t',['lat','lon','x','y','overflow','height','speed','head_veh','h_dop','h_acc_dm','v_acc_dm','head_acc','num_sv','pvt_flags','pvt_valid','updated_at','msss','ttff'])
 gnss_struct_t = namedtuple('gnss_struct_t',['num_sv','pvt_flags','pvt_valid','overflow','x','y','height','speed','head_veh','h_dop','h_acc_dm','v_acc_dm','head_acc','lat','lon','updated_at','msss','ttff'])
@@ -92,6 +102,16 @@ class Commander(threading.Thread):
 
 	def modem_get_ccid(self):
 		resp = self.send_cmd(GROUP_MODEM, CMD_GET_CCID)
+		if resp:
+			if resp["code"] == RESP_DATA:
+				value = struct.unpack("<" + str(len(resp["data"])) + "s", resp["data"])
+				return value[0]
+			else:
+				return b""
+		return None
+
+	def modem_get_ip(self):
+		resp = self.send_cmd(GROUP_MODEM, CMD_GET_IP)
 		if resp:
 			if resp["code"] == RESP_DATA:
 				value = struct.unpack("<" + str(len(resp["data"])) + "s", resp["data"])

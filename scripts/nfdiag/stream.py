@@ -5,7 +5,7 @@ from queue import Queue, Empty
 from pc_ble_driver_py.observers import *
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.CRITICAL)
 
 from cobs import cobs
 
@@ -106,7 +106,7 @@ class NFDiagnostics(BLEDriverObserver, BLEAdapterObserver):
             )
         )
 
-        if (dev_name == self.dev_name) or (self.wildcard and dev_name.startswith(self.dev_name)):
+        if (dev_name == self.dev_name) or (self.wildcard and dev_name.startswith(self.dev_name)) or (dev_name.startswith('NF') and dev_name.endswith(self.dev_name)):
             self.adapter.connect(peer_addr, tag=1)
 
     def on_notification(self, ble_adapter, conn_handle, uuid, data):
@@ -152,7 +152,7 @@ class BLEStream:
         if serial is None:
             self.nfdiag = NFDiagnostics(self.adapter)
         else:
-            self.nfdiag = NFDiagnostics(self.adapter, dev_name="NF" + str(serial).zfill(6), wildcard=False)
+            self.nfdiag = NFDiagnostics(self.adapter, dev_name=str(serial), wildcard=False)
         self.nfdiag.open()
     
         self.conn = self.nfdiag.connect_and_discover()

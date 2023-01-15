@@ -88,6 +88,7 @@ typedef enum {
 	GET_GSM_DATA = 0xA6,
 
 	SET_CHARGING_EN = 0xC0,
+	TURN_ONOFF_CHARGING = 0xE1,
 
 	BUZZER_WARN = 0xB0,
 	ELECTRICAL_PULSE = 0xE0,
@@ -96,6 +97,7 @@ typedef enum {
 typedef enum {
 	GET_CCID = 0x00,
 	GET_VINT_STATUS = 0x01,
+	GET_IP = 0x02,
 	TEST_MODEM_TX = 0x7E,
 } modem_cmd_t;
 

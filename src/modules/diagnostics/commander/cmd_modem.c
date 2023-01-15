@@ -2,7 +2,7 @@
 #include "modem_nf.h"
 #include <stddef.h>
 #include <string.h>
-
+#include "cellular_helpers_header.h"
 #include <logging/log.h>
 LOG_MODULE_REGISTER(diagnostics_cmd_modem, 4);
 
@@ -21,6 +21,18 @@ int commander_modem_handler(enum diagnostics_interface interface, uint8_t cmd, u
 		if (err == 0) {
 			commander_send_resp(interface, MODEM, cmd, DATA, (uint8_t *)ccid,
 					    strlen(ccid));
+		} else {
+			commander_send_resp(interface, MODEM, cmd, ERROR, NULL, 0);
+		}
+		break;
+	}
+	case GET_IP: {
+		char *collar_ip = NULL;
+
+		err = get_ip(&collar_ip);
+		if (err == 0) {
+			commander_send_resp(interface, MODEM, cmd, DATA, (uint8_t *)collar_ip,
+					    strlen(collar_ip));
 		} else {
 			commander_send_resp(interface, MODEM, cmd, ERROR, NULL, 0);
 		}

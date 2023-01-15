@@ -92,12 +92,25 @@ int commander_stimulator_handler(enum diagnostics_interface interface, uint8_t c
 				    sizeof(onboard_data_struct_t));
 		break;
 	}
+	case TURN_ONOFF_CHARGING: {
+		LOG_DBG("toggling charging: off");
+		if (charging_stop() < 0) {
+			resp = ERROR;
+		}
+		k_sleep(K_SECONDS(2));
+		LOG_DBG("toggling charging: on");
+		if (charging_start() < 0) {
+			resp = ERROR;
+		}
+		break;
+	}
 	case SET_CHARGING_EN: {
 		int val = -1;
 		if (size < 1) {
 			resp = NOT_ENOUGH;
 			err = -EINVAL;
 		} else {
+			resp = DATA;
 			if (data[0]) {
 				val = 1;
 				if (charging_start() < 0) {
@@ -109,8 +122,11 @@ int commander_stimulator_handler(enum diagnostics_interface interface, uint8_t c
 					resp = ERROR;
 				}
 			}
-			commander_send_resp(interface, STIMULATOR, cmd, resp, (void *)&val,
-					    sizeof(uint8_t));
+			if (resp == DATA) {
+				LOG_DBG("charging %s", (val ? "enabled" : "disabled"));
+				commander_send_resp(interface, STIMULATOR, cmd, resp, (void *)&val,
+						    sizeof(uint8_t));
+			}
 		}
 		break;
 	}
@@ -138,6 +154,7 @@ S			 * <Timeout on getting a new warn zone freq>, Error code=-116, Sever~ */
 		break;
 	}
 	case ELECTRICAL_PULSE: {
+		resp = ACK;
 		struct warn_correction_pause_event *ev_q_test_zap =
 			new_warn_correction_pause_event();
 		ev_q_test_zap->reason = Reason_WARNPAUSEREASON_ZAP;

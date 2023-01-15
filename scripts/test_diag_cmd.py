@@ -68,6 +68,19 @@ def try_system_cmd(cmd, data=None, timeout=5):
     print('Did not get response...')
     return None
 
+def try_cmd(group, cmd, data=None, timeout=5):
+    start_time = time.time()
+    got_resp = False
+    while time.time() < (start_time + timeout) and (not got_resp):
+        resp = cmndr.send_cmd(group, cmd, data)	
+        if resp:
+            got_resp = True
+            print('Got response')
+            return resp
+    print('Did not get response...')
+    return None
+
+
 
 #print('resp code:', hex(resp['code']), 'data len:', len(resp['data']))
 
@@ -152,15 +165,18 @@ GET_GSM_DATA = 0xA6
 
 #print(read_gsm_data(try_stimuli_cmd(GET_GSM_DATA)))
 
-
 #payload = struct.pack('<I', 2000)
 #resp = try_stimuli_cmd(0xB0, payload)
 #value = struct.unpack('I', resp['data'][:4])
 #print(resp)
 #print(value#)
 
-payload = struct.pack('<B', 1)
-resp = try_system_cmd(0x42)
+#payload = struct.pack('<B', 1)
+#resp = try_system_cmd(0x42)
+#value = struct.unpack('I', resp['data'][:4])
+#print(resp)
+
+resp = try_cmd(nfdiag.GROUP_MODEM, nfdiag.CMD_GET_IP)
 #value = struct.unpack('I', resp['data'][:4])
 print(resp)
 
