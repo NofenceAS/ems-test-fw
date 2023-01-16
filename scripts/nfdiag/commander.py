@@ -16,6 +16,7 @@ CMD_LOG = 0x70
 CMD_TEST = 0x7E
 CMD_REPORT = 0x5E
 CMD_THREAD_CONTROL = 0x40
+CMD_FORCE_POLL_REQ = 0x42
 CMD_ENTER_SLEEP = 0xE0
 CMD_WAKEUP = 0xE0
 CMD_REBOOT = 0xEB
@@ -124,6 +125,11 @@ class Commander(threading.Thread):
 		print(f"{value=}")
 		payload = struct.pack("<B", value)
 		resp = self.send_cmd(GROUP_SYSTEM, CMD_THREAD_CONTROL, payload)
+		return resp
+
+	def force_poll_req(self):
+		resp = self.send_cmd(GROUP_SYSTEM, CMD_FORCE_POLL_REQ)
+		logging.debug(resp)
 		return resp
 
 	def electric_pulse_now(self):

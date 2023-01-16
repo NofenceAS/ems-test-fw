@@ -188,8 +188,7 @@ if resp:
 			failure = True
 			print("Failed test: " + selftest[1])
 	if failure:
-		#raise Exception("!!!!TEST FAILED!!!!!")
-		print('self-test failed')
+		raise Exception("!!!!TEST FAILED!!!!!")
 else:
 	raise Exception("No response when issuing test command")
 
@@ -301,23 +300,28 @@ output_thread = Thread(target=output_data, args=())
 output_thread.daemon = True
 output_thread.start()
 
+run_thread = False
+allow_fota = False
+force_gnss_mode = 0
+
 while 1:
 	print("Press following to run test")
-	print("'z' - Start single EP test")
-	print("'Z' - Start infinit EP test")
-	print("'I' - Start infinit EP test runtime")
-	print("'O' - Output debug data")
-	print("'s' - Toggle 1V8_S voltage")
-	print("'c' - Toggle onoff charging")
-	print("'a' - Start EP and Toggle onoff charging")
-	print("'b' - Start buzzer continous tone")
-	print("'SLEEP' - Enter sleep")	
-	print("'ACT_FOTA' - Start Cellular Thread")
-	print("'ACT_CEL_FOTA' - Start Cellular Thread and FOTA")
-	print("'GNSS_NOMODE' - Release GNSS Force mode")
-	print("'GNSS_INACTIVE' - Force GNSS to Inactive")
-	print("'GNSS_POT' - Force GNSS to POT")
-	print("'GNSS_MAX' - Force GNSS to MAX")
+	print("z - Start single EP test")
+	print("Z - Start infinit EP test")
+	print("I - Start infinit EP test runtime")
+	print("O - Output debug data")
+	print("s - Toggle 1V8_S voltage")
+	print("c - Toggle onoff charging")
+	print("a - Start EP and Toggle onoff charging")
+	print("b - Start buzzer continous tone")
+	print("SLEEP - Enter sleep")	
+	print("ACT_FOTA - Start Cellular Thread")
+	print("ACT_CEL_FOTA - Start Cellular Thread and FOTA")
+	print("FORCE_POLL_REQ - Force poll request")	
+	print("GNSS_NOMODE - Release GNSS Force mode")
+	print("GNSS_INACTIVE - Force GNSS to Inactive")
+	print("GNSS_POT - Force GNSS to POT")
+	print("GNSS_MAX - Force GNSS to MAX")
 	x = input("'x' jump to next test step -> ")
 	if x == "z":
 		print("Pulse in 1 seconds!!!!!!!!!!")
@@ -344,27 +348,52 @@ while 1:
 		cmndr.turn_onoff_charging()	
 	elif x == "ACT_CEL":		
 		print("Start cellular thread")
+		run_thread = True
 		cmndr.thread_control(1)	
 	elif x == "STOP_CEL":		
 		print("Stop cellular thread")
+		run_thread = False
 		cmndr.thread_control(0)	
 	elif x == "ACT_FOTA":		
 		print("Activate FOTA")
+		allow_fota = True
 		cmndr.thread_control(2)	
 	elif x == "ACT_CEL_FOTA":		
 		print("Activate CELLULAR AND FOTA")
+		allow_fota = True		
+		run_thread = True
 		cmndr.thread_control(3)	
+	elif x == "FORCE_POLL_REQ":		
+		print("FORCE POLL REQ")
+		cmndr.force_poll_req()			
 	elif x == "GNSS_NOMODE":		
 		print("GNSS NOMODE")
+		force_gnss_mode = 0
 		cmndr.thread_control(3)		
-	elif x == "GNSS_INACTIVE":		
+	elif x == "GNSS_INACTIVE":				
 		print("GNSS INACTIVE")
-		cmndr.thread_control(3)		
+		force_gnss_mode = 1
+		cmndr.thread_control(3)	
+	elif x == "GNSS_PSM":				
+		print("GNSS PSM")
+		force_gnss_mode = 2
+		cmndr.thread_control(force_gnss_mode | allow_fota | run_thread)	
+	elif x == "GNSS_MAX":				
+		print("GNSS MAX")
+		force_gnss_mode = 4
+		cmndr.thread_control(force_gnss_mode | allow_fota | run_thread)				
 	elif x == "SLEEP":		
 		cmndr.enter_sleep()
 	elif x == "x":		
 		break
-			
+
+#	GNSSMODE_NOMODE = 0,
+#	GNSSMODE_INACTIVE = 1,
+#	GNSSMODE_PSM = 2,
+#	GNSSMODE_CAUTION = 3,
+#	GNSSMODE_MAX = 4,
+#	GNSSMODE_SIZE = 5
+
 # Read CCID from modem
 ccid = b""
 timeout = time.time()+60
