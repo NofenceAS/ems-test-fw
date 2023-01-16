@@ -18,7 +18,7 @@
 
 #define COPY_FROM_EEPROM 1
 
-LOG_MODULE_REGISTER(stg_config, CONFIG_STG_CONFIG_LOG_LEVEL);
+LOG_MODULE_REGISTER(stg_config, 4); //CONFIG_STG_CONFIG_LOG_LEVEL);
 
 /* Config parameter types */
 enum {
@@ -84,6 +84,12 @@ int stg_config_init(void)
 		}
 		m_initialized = true;
 
+		err = nvs_clear(&m_file_system);
+		if (err != 0) {
+			LOG_ERR("STG Config, failed to clear NVS storage ");
+			return err;
+		}
+
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
 		err = copy_eeprom_parameters_to_stg_flash();
 		if (err != 0) {
@@ -92,7 +98,6 @@ int stg_config_init(void)
 		}
 #endif /* DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay) */
 
-		stg_clear_partition(STG_PARTITION_PASTURE);
 	}
 	return 0;
 }
