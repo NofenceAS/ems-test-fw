@@ -1284,6 +1284,7 @@ int messaging_module_init(void)
 		nf_app_error(ERR_MESSAGING, err, NULL, 0);
 		serial_id = 1; /* Fallback if read from storage fails */
 	}
+	current_state.fence_version = 0;
 
 	/* Startup the modem to get the gsm_info ready before the first poll request.*/
 	struct check_connection *ev = new_check_connection();
