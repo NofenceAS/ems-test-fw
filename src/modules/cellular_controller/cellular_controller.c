@@ -51,7 +51,7 @@ K_SEM_DEFINE(listen_sem, 0, 1); /* this semaphore will be given by the modem
 K_SEM_DEFINE(close_main_socket_sem, 0, 1);
 
 #if defined(CONFIG_DIAGNOSTIC_EMS_FW)
-static bool run_cellular_thread = true;
+static bool run_cellular_thread = false;
 #endif
 
 static bool modem_is_ready = false;
@@ -216,7 +216,7 @@ static bool cellular_controller_event_handler(const struct event_header *eh)
 		ack->message_sent = false;
 		EVENT_SUBMIT(ack);
 		return false;
-#if defined(CONFIG_DIAGNOSTIC_EMS_FW_OLD)
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
 	} else if (is_diag_thread_cntl_event(eh)) {
 		struct diag_thread_cntl_event *event = cast_diag_thread_cntl_event(eh);
 		run_cellular_thread = (event->run_cellular_thread == true);
@@ -382,8 +382,7 @@ static void cellular_controller_keep_alive(void *dev)
 	int ret;
 	while (true) {
 #if defined(CONFIG_DIAGNOSTIC_EMS_FW)
-		if (k_sem_take(&connection_state_sem, K_FOREVER) == 0 && !pending &&
-		    run_cellular_thread) {
+		if (run_cellular_thread && k_sem_take(&connection_state_sem, K_FOREVER) == 0) {
 #else
 		if (k_sem_take(&connection_state_sem, K_FOREVER) == 0 && !pending) {
 #endif
