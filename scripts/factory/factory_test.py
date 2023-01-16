@@ -146,9 +146,9 @@ if not cmndr.write_setting(nfdiag.ID_PRODUCT_RECORD_REV, 2):
 	raise Exception("Failed to write settings")
 if not cmndr.write_setting(nfdiag.ID_BOM_MEC_REV, 5):
 	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_BOM_PCB_REV, 4):
+if not cmndr.write_setting(nfdiag.ID_BOM_PCB_REV, 5):
 	raise Exception("Failed to write settings")
-if not cmndr.write_setting(nfdiag.ID_HW_VERSION, 20):		#20 = HW_Q Started a new range when making new HW with nRF52840
+if not cmndr.write_setting(nfdiag.ID_HW_VERSION, 21):		#20 = HW_Q Started a new range when making new HW with nRF52840
 	raise Exception("Failed to write settings")
 
 print("1: Serial No: " + str(cmndr.read_setting(nfdiag.ID_SERIAL)))

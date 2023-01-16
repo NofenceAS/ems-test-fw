@@ -20,12 +20,8 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 
-# Parse input arguments
-parser = argparse.ArgumentParser(description='Nofence final test')
-parser.add_argument('--comport', help='Serial comport connected to the BLE uart gateway', required=False)
-parser.add_argument('--sn', help='Collar serial number or device name', required=False)
-args = parser.parse_args()
 
+cmndr = None
 
 def user_input(prompt):
     try:
@@ -33,55 +29,8 @@ def user_input(prompt):
     except Exception as e:
         raise KeyboardInterrupt()
 
-
-sn = args.sn if args.sn else None
-while not sn:
-    try:
-        sn = user_input('Enter serial number: ').strip()
-        if len(sn) > 1:
-            print(f'SN: "{sn}"')
-            break
-        else:
-            print(f'Invalid SN: "{sn}"')
-    except Exception as e:
-        exit('SN missing')
-
-stream = None
-retries = 5
-while retries > 0:
-    try:
-        print(f'Searching for "{sn}"...')
-        stream = nfdiag.BLEStream(port=args.comport, serial=sn)
-        break
-    except KeyboardInterrupt:
-        exit('Connecting attemt canceled...')
-    except Exception as e:
-        retries -= 1
-
-try_until = time.time()+10
-while not stream.is_connected():
-    time.sleep(0.1)
-    if time.time() > try_until:
-        exit('Timed out waiting for connection...')
-        
-
-cmndr = None
-got_ping = True
-if stream.is_connected():
-    cmndr = nfdiag.Commander(stream)
-    print('Trying to ping...')
-    got_ping = False
-    try_until = time.time()+10
-    while time.time() < try_until and not got_ping:
-        resp = cmndr.send_cmd(nfdiag.GROUP_SYSTEM, nfdiag.CMD_PING)
-        if resp:
-            got_ping = True
-            print("Got ping")
-    if not got_ping:
-        exit('Could not ping collar...')
-
-
 def run_command(group, cmd, payload=None):
+    global cmndr
     resp = None
     resp_str = 'TIMEOUT'
     try:
@@ -166,15 +115,15 @@ def read_onboard_data():
     num_requests = 0
     max_requests = 10
     inf_request = False
-    req = user_input(f'Num requests (0 for inf) [{max_requests}]: ').strip()
-    if req:
-        try: 
+    try: 
+        req = input(f'Num requests (0 for inf) [{max_requests}]: ').strip()
+        if req:
             max_requests = int(req)
-        except:
-            raise Exception('input error')
+    except:
+        raise Exception('input error')
     if max_requests == 0:
         inf_request = True
-
+    print('\nctrl+c to stop\n')        
     obdata_cols = 'timestamp,numSv,cno1,cno2,cno3,cno4,flags,valid,ovf,height,speed,hdop,lat,lon,msss,ttff,vbatt,isolar,vint,acc_x,acc_y,acc_z,temp,pres,hum'
     cols = obdata_cols.split(',')
     cols_size = [2]*(len(cols)+10)
@@ -227,7 +176,7 @@ def change_config():
         val = input(f'\n{pname} [{current_val}]: ')
         if val:
             if 's' in pid[1]:
-                val = bytes(f'{val}\x00', 'utf-8', 'ignore')
+                val = bytes(val, 'utf-8', 'ignore') + b'\x00'
             else:
                 val = int(val)
             if not cmndr.write_setting(pid, val):
@@ -239,7 +188,7 @@ def change_config():
 def print_config():
     global cmndr
     print(f'-  Serial No:    {cmndr.read_setting(nfdiag.ID_SERIAL)}')
-    print(f'-  Host Port:    {cmndr.read_setting(nfdiag.ID_HOST_PORT)}')
+    print(f'-  Host Port:    {str(cmndr.read_setting(nfdiag.ID_HOST_PORT))}')
     print(f'-  EMS Provider: {cmndr.read_setting(nfdiag.ID_EMS_PROVIDER)}')
     print(f'-  Product Type: {cmndr.read_setting(nfdiag.ID_PRODUCT_TYPE)}')
     print(f'-  Generation:   {cmndr.read_setting(nfdiag.ID_PRODUCT_RECORD_REV)}')
@@ -314,7 +263,62 @@ def force_poll_req():
     resp_str, _ = run_command(nfdiag.GROUP_SYSTEM, nfdiag.FORCE_POLL_REQ)
     print(resp_str)
 
+
+
+
 # ------------------------
+
+
+# Parse input arguments
+parser = argparse.ArgumentParser(description='Nofence final test')
+parser.add_argument('--comport', help='Serial comport connected to the BLE uart gateway', required=False)
+parser.add_argument('--sn', help='Collar serial number or device name', required=False)
+args = parser.parse_args()
+
+sn = args.sn if args.sn else None
+while not sn:
+    try:
+        sn = user_input('Enter serial number: ').strip()
+        if len(sn) > 1:
+            print(f'SN: "{sn}"')
+            break
+        else:
+            print(f'Invalid SN: "{sn}"')
+    except Exception as e:
+        exit('SN missing')
+
+stream = None
+retries = 5
+while retries > 0:
+    try:
+        print(f'Searching for "{sn}"...')
+        stream = nfdiag.BLEStream(port=args.comport, serial=sn)
+        break
+    except KeyboardInterrupt:
+        exit('Connecting attemt canceled...')
+    except Exception as e:
+        retries -= 1
+
+try_until = time.time()+10
+while not stream.is_connected():
+    time.sleep(0.1)
+    if time.time() > try_until:
+        exit('Timed out waiting for connection...')
+        
+got_ping = True
+if stream.is_connected():
+    cmndr = nfdiag.Commander(stream)
+    print('Trying to ping...')
+    got_ping = False
+    try_until = time.time()+10
+    while time.time() < try_until and not got_ping:
+        resp = cmndr.send_cmd(nfdiag.GROUP_SYSTEM, nfdiag.CMD_PING)
+        if resp:
+            got_ping = True
+            print("Got ping")
+    if not got_ping:
+        exit('Could not ping collar...')
+
 
 print(f'\n-- {f"Connected ".ljust(40, "-")}\n')
 print_config()
