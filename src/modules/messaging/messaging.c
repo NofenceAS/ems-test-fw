@@ -183,7 +183,7 @@ struct fence_def_update {
 } m_fence_update_req;
 
 #if defined(CONFIG_DIAGNOSTIC_EMS_FW)
-atomic_t poll_period_seconds = ATOMIC_INIT(1 * 60);
+atomic_t poll_period_seconds = ATOMIC_INIT(5 * 60);
 #else
 atomic_t poll_period_seconds = ATOMIC_INIT(15 * 60);
 #endif
@@ -635,6 +635,11 @@ void fence_update_req_fn(struct k_work *item)
 static int set_tx_state_ready(messaging_tx_type_t tx_type)
 {
 	int state = atomic_get(&m_message_tx_type);
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+	atomic_set(&m_message_tx_type, POLL_REQ);
+	k_sem_give(&sem_release_tx_thread);
+	return 0;
+#endif
 	if (state != IDLE) {
 		/* Tx thread busy sending something else */
 		if ((tx_type == POLL_REQ) && (state == LOG_MSG)) {
@@ -1002,7 +1007,7 @@ static bool event_handler(const struct event_header *eh)
 		return false;
 	}
 	if (is_send_poll_request_now(eh)) {
-		LOG_DBG("Received a nudge on listening socket!");
+		LOG_INF("Received a nudge on listening socket!");
 
 		int err;
 		err = k_work_reschedule_for_queue(&message_q, &modem_poll_work, K_NO_WAIT);
@@ -1318,7 +1323,7 @@ int messaging_module_init(void)
 	if (err < 0) {
 		return err;
 	}
-	err = k_work_schedule_for_queue(&message_q, &modem_poll_work, K_SECONDS(2));
+	err = k_work_schedule_for_queue(&message_q, &modem_poll_work, K_MINUTES(15));
 	if (err < 0) {
 		return err;
 	}
