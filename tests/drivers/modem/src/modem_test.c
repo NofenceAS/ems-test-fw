@@ -155,16 +155,17 @@ static int modem_process_empty_cmd_resp(void)
  *
  * @param[in] dev Unused
  *
- * @return 0 if everything was ok, error code otherwise
  */
 static void modem_dev_sim(void *dev)
 {
 	uint32_t size = 0;
 	uint32_t total_size = 0;
 	uint8_t data[100];
+	int unit_test_timeout_count = 0;
 
 	while (true) {
 		if (k_sem_take(&modem_rx_sem, K_MSEC(10)) == 0) {
+			unit_test_timeout_count = 0;
 			mock_uart_receive(uart_dev, &data[total_size], &size, sizeof(data), true);
 			total_size += size;
 			if (total_size > 0 && modem_process_cmd_resp(data, total_size) == 0) {
@@ -172,8 +173,10 @@ static void modem_dev_sim(void *dev)
 			}
 
 		} else {
+			unit_test_timeout_count++;
 			modem_process_empty_cmd_resp();
 		}
+		zassert_true(unit_test_timeout_count < 10000, "Detected test hang");
 	}
 }
 
@@ -218,6 +221,47 @@ static void test_simple_socket_recv()
 	zassert_mem_equal(buf, "0123456789", 10, "");
 }
 
+static void test_socket_recv_partial_read()
+{
+	int ret;
+	char buf[10];
+	memset(buf, 0, sizeof(buf));
+	zassert_equal(socket_id, 0, "");
+	modem_add_expected_cmd_rsp("", "+UUSORD:  2,10\r");
+
+	modem_add_expected_cmd_rsp("AT+USORD=2,10\r", "+USORD:  2,10,\"0123");
+	modem_add_expected_cmd_rsp("", "\r");
+	modem_add_expected_cmd_rsp("", "456789\"\r"
+				       "OK\r");
+
+	ret = recv(socket_id, buf, sizeof(buf), 0);
+
+	zassert_equal(ret, 10, "");
+	zassert_mem_equal(buf, "0123456789", 10, buf);
+}
+
+/**
+ * Test socket receive when the +UUSORD is missing.
+ * @see XF-293
+ */
+static void test_socket_recv_missing_urc()
+{
+	int ret;
+	char buf[10];
+	memset(buf, 0, sizeof(buf));
+	zassert_equal(socket_id, 0, "");
+	/* Check timeout on recv */
+	modem_add_expected_cmd_rsp("AT+USORD=2,10\r", "+USORD:  2,\"\"\r"
+						      "OK\r");
+	modem_add_expected_cmd_rsp("AT+USORD=2,10\r", "+UUSO\r"
+						      "+USORD:  2,10,\"0123456789\"\r"
+						      "OK\r");
+	ret = recv(socket_id, buf, sizeof(buf), 0);
+
+	zassert_equal(ret, 10, "");
+	zassert_mem_equal(buf, "0123456789", 10, "");
+}
+
 void test_main(void)
 {
 	zassert_not_null(gpio0_dev, "GPIO is null");
@@ -232,7 +276,8 @@ void test_main(void)
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 
 	ztest_test_suite(common, ztest_unit_test(test_simple_socket_connect),
-			 ztest_unit_test(test_simple_socket_recv)
+			 ztest_unit_test(test_simple_socket_recv),
+			 ztest_unit_test(test_socket_recv_missing_urc)
 
 	);
 	ztest_run_test_suite(common);

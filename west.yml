@@ -14,7 +14,7 @@ manifest:
     - name: zephyr
       repo-path: sdk-zephyr
       remote: nofence
-      revision: v2.7.0-ncs1-nf03
+      revision: v2.7.0-ncs1-nf05
       import:
         # In addition to the zephyr repository itself, NCS also
         # imports the contents of zephyr/west.yml at the above
