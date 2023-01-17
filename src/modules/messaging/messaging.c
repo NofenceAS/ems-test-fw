@@ -756,7 +756,7 @@ void messaging_tx_thread_fn(void)
 void data_request_work_fn()
 {
 #if defined(CONFIG_DIAGNOSTIC_EMS_FW)
-	int err = k_work_reschedule_for_queue(&message_q, &data_request_work, K_SECONDS(3));
+	int err = k_work_reschedule_for_queue(&message_q, &data_request_work, K_MINUTES(1));
 #else
 	LOG_INF("Periodic request of environment data");
 	int err = k_work_reschedule_for_queue(&message_q, &data_request_work, K_MINUTES(1));
@@ -1319,7 +1319,7 @@ int messaging_module_init(void)
 	if (err < 0) {
 		return err;
 	}
-	err = k_work_schedule_for_queue(&message_q, &modem_poll_work, K_MINUTES(15));
+	err = k_work_schedule_for_queue(&message_q, &modem_poll_work, K_SECONDS(2));
 	if (err < 0) {
 		return err;
 	}
