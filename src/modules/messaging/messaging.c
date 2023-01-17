@@ -635,11 +635,7 @@ void fence_update_req_fn(struct k_work *item)
 static int set_tx_state_ready(messaging_tx_type_t tx_type)
 {
 	int state = atomic_get(&m_message_tx_type);
-#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
-	atomic_set(&m_message_tx_type, POLL_REQ);
-	k_sem_give(&sem_release_tx_thread);
-	return 0;
-#endif
+
 	if (state != IDLE) {
 		/* Tx thread busy sending something else */
 		if ((tx_type == POLL_REQ) && (state == LOG_MSG)) {
