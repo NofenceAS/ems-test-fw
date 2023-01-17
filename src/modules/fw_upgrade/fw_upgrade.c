@@ -178,7 +178,7 @@ static bool event_handler(const struct event_header *eh)
 		}
 		return false;
 	}
-#if defined(CONFIG_DIAGNOSTIC_EMS_FW)	
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
 	if (is_diag_thread_cntl_event(eh)) {
 		struct diag_thread_cntl_event *event = cast_diag_thread_cntl_event(eh);
 		allow_fota = (event->allow_fota == true);
