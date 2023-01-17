@@ -178,12 +178,14 @@ static bool event_handler(const struct event_header *eh)
 		}
 		return false;
 	}
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)	
 	if (is_diag_thread_cntl_event(eh)) {
 		struct diag_thread_cntl_event *event = cast_diag_thread_cntl_event(eh);
 		allow_fota = (event->allow_fota == true);
 		LOG_WRN("Allow fota = %d", allow_fota);
 		return false;
 	}
+#endif
 	if (is_cancel_fota_event(eh)) {
 		/* Cancel an ongoing FOTA. This will trigger FOTA_DOWNLOAD_EVT_CANCELLED 
 		 * status in the fota_dl_handler callback 
@@ -206,4 +208,6 @@ static bool event_handler(const struct event_header *eh)
 EVENT_LISTENER(MODULE, event_handler);
 EVENT_SUBSCRIBE(MODULE, start_fota_event);
 EVENT_SUBSCRIBE(MODULE, cancel_fota_event);
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
 EVENT_SUBSCRIBE(MODULE, diag_thread_cntl_event);
+#endif
