@@ -1298,7 +1298,8 @@ static int modem_reset(void)
 
 	static const struct setup_cmd pre_setup_cmds[] = {
 		SETUP_CMD_NOHANDLE("AT+COPS=2"),
-		SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
+		//SETUP_CMD_NOHANDLE("AT+URAT=7,9"),
+		SETUP_CMD_NOHANDLE("AT+URAT=7"),
 		SETUP_CMD_NOHANDLE("AT+CPSMS=0"),
 		SETUP_CMD_NOHANDLE("AT+UBANDMASK=0,526494,2"),
 		//		SETUP_CMD_NOHANDLE("AT+COPS=1,2,\"24201\",0"),

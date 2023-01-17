@@ -176,7 +176,7 @@ GET_GSM_DATA = 0xA6
 #value = struct.unpack('I', resp['data'][:4])
 #print(resp)
 
-resp = try_cmd(nfdiag.GROUP_MODEM, nfdiag.CMD_GET_IP)
+resp = try_cmd(nfdiag.GROUP_SYSTEM, 0x22)
 #value = struct.unpack('I', resp['data'][:4])
 print(resp)
 
