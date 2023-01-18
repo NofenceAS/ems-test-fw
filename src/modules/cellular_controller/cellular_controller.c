@@ -462,6 +462,11 @@ static void cellular_controller_keep_alive(void *dev)
 			announce_connection_state(connected);
 			pending = false;
 		}
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+		else {
+			announce_connection_state(false);
+		}
+#endif
 	}
 }
 
