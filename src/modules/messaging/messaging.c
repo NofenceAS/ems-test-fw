@@ -635,16 +635,15 @@ void fence_update_req_fn(struct k_work *item)
 static int set_tx_state_ready(messaging_tx_type_t tx_type)
 {
 	int state = atomic_get(&m_message_tx_type);
-#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
-	atomic_set(&m_message_tx_type, POLL_REQ);
-	k_sem_give(&sem_release_tx_thread);
-	return 0;
-#endif
+
 	if (state != IDLE) {
 		/* Tx thread busy sending something else */
 		if ((tx_type == POLL_REQ) && (state == LOG_MSG)) {
 			/* Sending log messages always starts with a poll request- no need to send
 			 * additional poll */
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+			k_sem_give(&sem_release_tx_thread);
+#endif
 			return 0;
 		}
 		return -EBUSY;
@@ -678,6 +677,7 @@ void messaging_tx_thread_fn(void)
 			if ((tx_type == POLL_REQ) || (m_last_poll_req_timestamp_ms == 0) ||
 			    ((tx_type == LOG_MSG) &&
 			     ((k_uptime_get() - m_last_poll_req_timestamp_ms) >= 60000))) {
+				LOG_WRN("When Do I Enter this state #1");
 				if (k_sem_take(&cache_ready_sem, K_SECONDS(60)) != 0) {
 					LOG_WRN("Cached semaphore not ready, Sending what we have");
 				}
@@ -702,7 +702,8 @@ void messaging_tx_thread_fn(void)
 					LOG_WRN("Failed to send poll request, rescheduled");
 					if (tx_type == POLL_REQ) {
 						int ret = k_work_reschedule_for_queue(
-							&message_q, &modem_poll_work, K_MINUTES(1));
+							&message_q, &modem_poll_work,
+							K_SECONDS(30));
 						if (ret < 0) {
 							LOG_ERR("Failed to reschedule work");
 						}
@@ -760,7 +761,7 @@ void messaging_tx_thread_fn(void)
 void data_request_work_fn()
 {
 #if defined(CONFIG_DIAGNOSTIC_EMS_FW)
-	int err = k_work_reschedule_for_queue(&message_q, &data_request_work, K_SECONDS(3));
+	int err = k_work_reschedule_for_queue(&message_q, &data_request_work, K_MINUTES(1));
 #else
 	LOG_INF("Periodic request of environment data");
 	int err = k_work_reschedule_for_queue(&message_q, &data_request_work, K_MINUTES(1));
@@ -1323,7 +1324,7 @@ int messaging_module_init(void)
 	if (err < 0) {
 		return err;
 	}
-	err = k_work_schedule_for_queue(&message_q, &modem_poll_work, K_MINUTES(15));
+	err = k_work_schedule_for_queue(&message_q, &modem_poll_work, K_SECONDS(2));
 	if (err < 0) {
 		return err;
 	}

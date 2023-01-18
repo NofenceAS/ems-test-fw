@@ -303,6 +303,7 @@ output_thread.start()
 run_thread = False
 allow_fota = False
 force_gnss_mode = 0
+thread_flags = 0
 
 while 1:
 	print("Press following to run test")
@@ -315,12 +316,14 @@ while 1:
 	print("a - Start EP and Toggle onoff charging")
 	print("b - Start buzzer continous tone")
 	print("SLEEP - Enter sleep")	
-	print("ACT_FOTA - Start Cellular Thread")
-	print("ACT_CEL_FOTA - Start Cellular Thread and FOTA")
+	print("ACT_FOTA - Enable FOTA")
+	print("ACT_CEL - Start Cellular Thread")
+	print("DACT_CEL_FOTA - Stopp Cellular Thread and FOTA")
+	print("ACT_CEL_FOTA	- Start Cellular Thread and FOTA")
 	print("FORCE_POLL_REQ - Force poll request")	
 	print("GNSS_NOMODE - Release GNSS Force mode")
 	print("GNSS_INACTIVE - Force GNSS to Inactive")
-	print("GNSS_POT - Force GNSS to POT")
+	print("GNSS_PSM - Force GNSS to PSM")
 	print("GNSS_MAX - Force GNSS to MAX")
 	x = input("'x' jump to next test step -> ")
 	if x == "z":
@@ -349,39 +352,56 @@ while 1:
 	elif x == "ACT_CEL":		
 		print("Start cellular thread")
 		run_thread = True
-		cmndr.thread_control(1)	
-	elif x == "STOP_CEL":		
+		thread_flags = (force_gnss_mode << 2) | (allow_fota << 1) | (run_thread << 0)
+		print("Threadflag = {0:b}".format(thread_flags))
+		cmndr.thread_control(thread_flags)
+	elif x == "DACT_CEL_FOTA":		
 		print("Stop cellular thread")
 		run_thread = False
-		cmndr.thread_control(0)	
+		allow_fota = False
+		thread_flags = (force_gnss_mode << 2) | (allow_fota << 1) | (run_thread << 0)
+		print("Threadflag = {0:b}".format(thread_flags))
+		cmndr.thread_control(thread_flags)
 	elif x == "ACT_FOTA":		
 		print("Activate FOTA")
 		allow_fota = True
-		cmndr.thread_control(2)	
+		thread_flags = (force_gnss_mode << 2) | (allow_fota << 1) | (run_thread << 0)
+		print("Threadflag = {0:b}".format(thread_flags))
+		cmndr.thread_control(thread_flags)
 	elif x == "ACT_CEL_FOTA":		
 		print("Activate CELLULAR AND FOTA")
 		allow_fota = True		
 		run_thread = True
-		cmndr.thread_control(3)	
+		thread_flags = (force_gnss_mode << 2) | (allow_fota << 1) | (run_thread << 0)
+		print("Threadflag = {0:b}".format(thread_flags))
+		cmndr.thread_control(thread_flags)	
 	elif x == "FORCE_POLL_REQ":		
 		print("FORCE POLL REQ")
 		cmndr.force_poll_req()			
 	elif x == "GNSS_NOMODE":		
 		print("GNSS NOMODE")
 		force_gnss_mode = 0
-		cmndr.thread_control(3)		
+		thread_flags = (force_gnss_mode << 2) | (allow_fota << 1) | (run_thread << 0)
+		print("Threadflag = {0:b}".format(thread_flags))
+		cmndr.thread_control(thread_flags)
 	elif x == "GNSS_INACTIVE":				
 		print("GNSS INACTIVE")
 		force_gnss_mode = 1
-		cmndr.thread_control(3)	
+		thread_flags = (force_gnss_mode << 2) | (allow_fota << 1) | (run_thread << 0)
+		print("Threadflag = {0:b}".format(thread_flags))
+		cmndr.thread_control(thread_flags)
 	elif x == "GNSS_PSM":				
 		print("GNSS PSM")
 		force_gnss_mode = 2
-		cmndr.thread_control(force_gnss_mode | allow_fota | run_thread)	
+		thread_flags = (force_gnss_mode << 2) | (allow_fota << 1) | (run_thread << 0)
+		print("Threadflag = {0:b}".format(thread_flags))
+		cmndr.thread_control(thread_flags)
 	elif x == "GNSS_MAX":				
 		print("GNSS MAX")
 		force_gnss_mode = 4
-		cmndr.thread_control(force_gnss_mode | allow_fota | run_thread)				
+		thread_flags = (force_gnss_mode << 2) | (allow_fota << 1) | (run_thread << 0)
+		print("Threadflag = {0:b}".format(thread_flags))
+		cmndr.thread_control(thread_flags)			
 	elif x == "SLEEP":		
 		cmndr.enter_sleep()
 	elif x == "x":		

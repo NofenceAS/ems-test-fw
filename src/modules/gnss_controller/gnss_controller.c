@@ -35,6 +35,7 @@ static uint8_t gnss_failed_init_count;
 
 #if defined(CONFIG_DIAGNOSTIC_EMS_FW)
 static int diagnostic_force_gnss_mode = GNSSMODE_INACTIVE;
+static int last_force_gnss_mode = GNSSMODE_INACTIVE;
 #endif
 
 K_THREAD_STACK_DEFINE(pub_gnss_stack, STACK_SIZE);
@@ -227,13 +228,12 @@ static int gnss_set_mode(gnss_mode_t mode, bool wakeup)
 	int ret;
 
 #if defined(CONFIG_DIAGNOSTIC_EMS_FW)
-	if (diagnostic_force_gnss_mode != GNSSMODE_NOMODE) {
-		if (diagnostic_force_gnss_mode & 0x7FFF)
-			mode = diagnostic_force_gnss_mode;
-
-		if (diagnostic_force_gnss_mode & 0x8000)
-			wakeup = true;
+	if ((diagnostic_force_gnss_mode != last_force_gnss_mode) &&
+	    (last_force_gnss_mode == GNSSMODE_INACTIVE)) {
+		wakeup = true;
 	}
+	mode = diagnostic_force_gnss_mode;
+	LOG_INF("EMS GNSS mode: %d", mode);
 #endif
 
 	if (wakeup) {

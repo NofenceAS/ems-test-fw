@@ -125,7 +125,7 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 			diag->run_cellular_thread = true; //Cellular thread ON
 			LOG_WRN("CEL ON");
 		}
-		if (tc & (0 << 0)) {
+		if (!(tc & (1 << 0))) {
 			diag->run_cellular_thread = false; //Cellular thread OFF
 			LOG_WRN("CEL OFF");
 		}
@@ -133,11 +133,26 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 			diag->allow_fota = true; //Cellular thread OFF
 			LOG_WRN("FOTA ON");
 		}
-		if (tc & (0 << 1)) {
+		if (!(tc & (0 << 1))) {
 			diag->allow_fota = false; //Cellular thread OFF
 			LOG_WRN("FOTA OFF");
 		}
+		if ((tc >> 2) == 1) {
+			diag->force_gnss_mode = 1; //GNSS INACTIVE
+			LOG_WRN("GNSS INACTIVE");
+		} else if ((tc >> 2) == 2) {
+			diag->force_gnss_mode = 2; //GNSS PSM
+			LOG_WRN("GNSS PSM");
+		} else if ((tc >> 2) == 4) {
+			diag->force_gnss_mode = 4; //GNSS Max
+			LOG_WRN("GNSS MAX");
+		}
+
 		EVENT_SUBMIT(diag);
+
+		struct gnss_set_mode_event *ev = new_gnss_set_mode_event();
+		ev->mode = diag->force_gnss_mode;
+		EVENT_SUBMIT(ev);
 
 		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
 		break;
