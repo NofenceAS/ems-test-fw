@@ -59,7 +59,10 @@ int diagnostic_flags_init(void)
 	char binstr[33];
 	diagnostic_flags_to_string(&binstr);
 	LOG_INF("diagnostic flags loaded: %s", log_strdup(binstr));
-
+	LOG_INF("diagnostic OTA_DISABLED = %d", diagnostic_has_flag(FOTA_DISABLED));
+	LOG_INF("diagnostic CELLULAR_THREAD_DISABLED = %d", diagnostic_has_flag(CELLULAR_THREAD_DISABLED));
+	LOG_INF("diagnostic GNSS_THREAD_DISABLED = %d", diagnostic_has_flag(GNSS_THREAD_DISABLED));
+	LOG_INF("diagnostic BUZZER_DISABLED = %d", diagnostic_has_flag(BUZZER_DISABLED));
 	return res;
 }
 
