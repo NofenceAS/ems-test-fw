@@ -641,6 +641,9 @@ static int set_tx_state_ready(messaging_tx_type_t tx_type)
 		if ((tx_type == POLL_REQ) && (state == LOG_MSG)) {
 			/* Sending log messages always starts with a poll request- no need to send
 			 * additional poll */
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+			k_sem_give(&sem_release_tx_thread);
+#endif
 			return 0;
 		}
 		return -EBUSY;
@@ -674,6 +677,7 @@ void messaging_tx_thread_fn(void)
 			if ((tx_type == POLL_REQ) || (m_last_poll_req_timestamp_ms == 0) ||
 			    ((tx_type == LOG_MSG) &&
 			     ((k_uptime_get() - m_last_poll_req_timestamp_ms) >= 60000))) {
+				LOG_WRN("When Do I Enter this state #1");
 				if (k_sem_take(&cache_ready_sem, K_SECONDS(60)) != 0) {
 					LOG_WRN("Cached semaphore not ready, Sending what we have");
 				}
@@ -698,7 +702,8 @@ void messaging_tx_thread_fn(void)
 					LOG_WRN("Failed to send poll request, rescheduled");
 					if (tx_type == POLL_REQ) {
 						int ret = k_work_reschedule_for_queue(
-							&message_q, &modem_poll_work, K_MINUTES(1));
+							&message_q, &modem_poll_work,
+							K_SECONDS(30));
 						if (ret < 0) {
 							LOG_ERR("Failed to reschedule work");
 						}
