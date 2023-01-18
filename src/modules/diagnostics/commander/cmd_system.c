@@ -125,19 +125,19 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 		if (tc & (1 << 0)) {
 			diag->run_cellular_thread = true; //Cellular thread ON
 			LOG_WRN("CEL ON");
-		}
-		if (!(tc & (1 << 0))) {
+		} else {
 			diag->run_cellular_thread = false; //Cellular thread OFF
 			LOG_WRN("CEL OFF");
 		}
+
 		if (tc & (1 << 1)) {
 			diag->allow_fota = true; //Cellular thread OFF
 			LOG_WRN("FOTA ON");
-		}
-		if (!(tc & (0 << 1))) {
+		} else {
 			diag->allow_fota = false; //Cellular thread OFF
 			LOG_WRN("FOTA OFF");
 		}
+
 		if ((tc >> 2) == 1) {
 			diag->force_gnss_mode = 1; //GNSS INACTIVE
 			LOG_WRN("GNSS INACTIVE");
