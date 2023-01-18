@@ -343,6 +343,8 @@ static int mia_m10_nav_sat_handler(void *context, void *payload, uint32_t size)
 			cnt++;
 			cno_ += nav_sat->satinfo[x].cno;
 		}
+
+		//LOG_DBG("GNSS SAT: %d, %d, %d, %d", nav_sat->numSv, nav_sat->satinfo[x].cno, nav_sat->satinfo[x].svid, nav_sat->satinfo[x].flags);
 	}
 
 	if (cnt > 0) {
@@ -482,10 +484,10 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 	}
 
 	/* Enable NAV-SAT output on UART */
-	/*ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
+	ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
 	if (ret != 0) {
 		return ret;
-	}*/
+	}
 	ret = ublox_register_handler(UBX_NAV, UBX_NAV_SAT, mia_m10_nav_sat_handler, NULL);
 	if (ret != 0) {
 		return ret;
