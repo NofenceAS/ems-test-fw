@@ -233,6 +233,7 @@ static int gnss_set_mode(gnss_mode_t mode, bool wakeup)
 		wakeup = true;
 	}
 	mode = diagnostic_force_gnss_mode;
+	LOG_INF("EMS GNSS mode: %d", mode);
 #endif
 
 	if (wakeup) {
