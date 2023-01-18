@@ -285,13 +285,6 @@ int stg_init_storage_controller(void)
 	 */
 	update_ano_active_entry(NULL);
 
-	LOG_WRN("clearing partition STG_PARTITION_PASTURE");
-	err = stg_clear_partition(STG_PARTITION_PASTURE);
-	if (err) {
-		LOG_ERR("error clearing partition STG_PARTITION_PASTURE");
-		return err;
-	}
-
 	return 0;
 }
 
