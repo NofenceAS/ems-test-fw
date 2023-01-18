@@ -15,18 +15,21 @@
 #include "stg_config.h"
 #include "storage.h"
 #include "nf_settings.h"
+#include "diagnostic_flags.h"
 
 #define COPY_FROM_EEPROM 1
 
 LOG_MODULE_REGISTER(stg_config, CONFIG_STG_CONFIG_LOG_LEVEL);
 
 /* Config parameter types */
-enum { STG_INVALID_PARAM_TYPE = 0,
-       STG_U8_PARAM_TYPE,
-       STG_U16_PARAM_TYPE,
-       STG_U32_PARAM_TYPE,
-       STG_STR_PARAM_TYPE,
-       STG_BLOB_PARAM_TYPE } stg_param_type;
+enum {
+	STG_INVALID_PARAM_TYPE = 0,
+	STG_U8_PARAM_TYPE,
+	STG_U16_PARAM_TYPE,
+	STG_U32_PARAM_TYPE,
+	STG_STR_PARAM_TYPE,
+	STG_BLOB_PARAM_TYPE
+} stg_param_type;
 
 static const struct device *mp_device;
 static const struct flash_area *mp_flash_area;
@@ -81,6 +84,8 @@ int stg_config_init(void)
 			return err;
 		}
 		m_initialized = true;
+
+		diagnostic_flags_init();
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
 		err = copy_eeprom_parameters_to_stg_flash();
@@ -433,7 +438,8 @@ int is_valid_id(stg_config_param_id_t param_id)
 		break;
 	}
 	case STG_U32_UID:
-	case STG_U32_WARN_CNT_TOT: {
+	case STG_U32_WARN_CNT_TOT:
+	case STG_U32_DIAGNOSTIC_FLAGS: {
 		param_type = STG_U32_PARAM_TYPE;
 		break;
 	}
