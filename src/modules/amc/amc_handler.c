@@ -29,7 +29,7 @@
 #include "stg_config.h"
 
 #define MODULE amc
-LOG_MODULE_REGISTER(MODULE, CONFIG_AMC_LOG_LEVEL);
+LOG_MODULE_REGISTER(MODULE, 4); //CONFIG_AMC_LOG_LEVEL);
 
 /* Thread stack area that we use for the calculation process. We add a work
  * item here when we have data available from GNSS. This thread can then use the 
@@ -154,7 +154,7 @@ static inline int update_pasture_from_stg(void)
 		nf_app_warning(ERR_AMC, err, NULL, 0);
 		/* Submit event that we have now begun to use the new fence. */
 		struct update_fence_version *ver = new_update_fence_version();
-		ver->fence_version = UINT32_MAX;
+		ver->fence_version = 0; //UINT32_MAX;
 		ver->total_fences = 0;
 		EVENT_SUBMIT(ver);
 		return 0;
@@ -219,6 +219,7 @@ static inline int update_pasture_from_stg(void)
 
 		/* Submit event that we have now begun to use the new fence. */
 		struct update_fence_version *ver = new_update_fence_version();
+		LOG_INF("UPDATING FENCE VERSION TO = %u", pasture->m.ul_fence_def_version);
 		ver->fence_version = pasture->m.ul_fence_def_version;
 		ver->total_fences = pasture->m.ul_total_fences;
 		EVENT_SUBMIT(ver);

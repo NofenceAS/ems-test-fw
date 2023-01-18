@@ -10,6 +10,7 @@
 #include "pwr_event.h"
 #include "cellular_helpers_header.h"
 #include "messaging_module_events.h"
+#include "storage.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(diag_cmd_system, 4);
@@ -163,6 +164,55 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 
 		struct send_poll_request_now *wake_up = new_send_poll_request_now();
 		EVENT_SUBMIT(wake_up);
+
+		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
+		break;
+	}
+	case CLEAR_PASTURE: {
+		LOG_INF("clearing pasture partition...");
+		err = stg_clear_partition(STG_PARTITION_PASTURE);
+		if (err) {
+			LOG_ERR("could not clear pasture partition: %d", err);
+			resp = ERROR;
+		} else {
+			LOG_INF("pasture partition cleared!");
+		}
+		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
+		break;
+	}
+	case ERASE_FLASH: {
+		LOG_INF("erasing flash...");
+		resp = ACK;
+
+		err = stg_clear_partition(STG_PARTITION_LOG);
+		if (err) {
+			LOG_ERR("could not clear LOG partition: %d", err);
+			resp = ERROR;
+		}
+		err = stg_clear_partition(STG_PARTITION_ANO);
+		if (err) {
+			LOG_ERR("could not clear ANO partition: %d", err);
+			resp = ERROR;
+		}
+		err = stg_clear_partition(STG_PARTITION_PASTURE);
+		if (err) {
+			LOG_ERR("could not clear PASTURE partition: %d", err);
+			resp = ERROR;
+		}
+		err = stg_clear_partition(STG_PARTITION_SYSTEM_DIAG);
+		if (err) {
+			LOG_ERR("could not clear SYSTEM_DIAG partition: %d", err);
+			resp = ERROR;
+		}
+
+		struct update_flash_erase *ev = new_update_flash_erase();
+		EVENT_SUBMIT(ev);
+
+		if (resp == ACK) {
+			LOG_INF("flash erased!");
+		} else {
+			LOG_ERR("could not erase flash");
+		}
 
 		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
 		break;

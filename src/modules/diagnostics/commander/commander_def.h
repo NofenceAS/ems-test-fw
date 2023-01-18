@@ -68,7 +68,9 @@ typedef enum {
 	WAKEUP = 0xE1,
 	REBOOT = 0xEB,
 	THREAD_CONTROL = 0x40,
-	FORCE_POLL_REQ = 0x42
+	FORCE_POLL_REQ = 0x42,
+	CLEAR_PASTURE = 0xC0,
+	ERASE_FLASH = 0xEF,
 } system_cmd_t;
 
 typedef enum { READ = 0x00, WRITE = 0x01, ERASE_ALL = 0xEA } settings_cmd_t;

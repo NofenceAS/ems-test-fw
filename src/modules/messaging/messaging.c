@@ -921,6 +921,7 @@ static bool event_handler(const struct event_header *eh)
 	}
 	if (is_update_fence_version(eh)) {
 		struct update_fence_version *ev = cast_update_fence_version(eh);
+		LOG_INF("FENCE VERSION IS SET = %u", ev->fence_version);
 		current_state.fence_version = ev->fence_version;
 		update_cache_reg(FENCE_VERSION);
 		if (!m_transfer_boot_params) {
