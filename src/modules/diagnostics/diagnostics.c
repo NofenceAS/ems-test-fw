@@ -66,6 +66,9 @@ static uint8_t rtt_down_data_buffer[CONFIG_DIAGNOSTICS_RTT_BUFFER_SIZE];
 uint8_t rtt_receive_buffer[CONFIG_DIAGNOSTICS_RECEIVE_BUFFER_LENGTH];
 uint32_t rtt_received_count = 0;
 
+static uint16_t last_battery_mv = 0;
+static uint16_t last_charging_mv = 0;
+
 /**
  * @brief Restart activity timer for RTT. 
  */
@@ -481,7 +484,15 @@ static bool event_handler(const struct event_header *eh)
 	if (is_pwr_status_event(eh)) {
 		struct pwr_status_event *event = cast_pwr_status_event(eh);
 
-		onboard_set_power_data(event->pwr_state, event->battery_mv, event->charging_ma);
+		if (event->pwr_state != PWR_CHARGING) {
+			last_battery_mv =
+				event->battery_mv; //As evenyt is not reporting last readed value we need to add this check here
+		} //By the way the event should always return latest available value and this check should not be nesesary
+		else {
+			last_charging_mv = event->charging_ma;
+		}
+
+		onboard_set_power_data(event->pwr_state, last_battery_mv, last_charging_mv);
 
 		return false;
 	}

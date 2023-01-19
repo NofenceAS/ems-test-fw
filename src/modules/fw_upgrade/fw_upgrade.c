@@ -35,9 +35,10 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_FW_UPGRADE_LOG_LEVEL);
 #error Unsupported boardfile for performing Nofence FOTA! (SG25/C25 only)
 #endif
 
-//#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
 //static bool allow_fota = false;
-//#endif
+static uint16_t battery_mv = 0;
+#endif
 
 #define FOTA_RETRIES                                                                               \
 	2 /* to ensure modem is switched back to PSV in case of
@@ -210,5 +211,6 @@ EVENT_LISTENER(MODULE, event_handler);
 EVENT_SUBSCRIBE(MODULE, start_fota_event);
 EVENT_SUBSCRIBE(MODULE, cancel_fota_event);
 #if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+EVENT_SUBSCRIBE(MODULE, pwr_status_event);
 EVENT_SUBSCRIBE(MODULE, diag_thread_cntl_event);
 #endif

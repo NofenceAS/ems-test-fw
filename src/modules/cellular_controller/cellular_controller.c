@@ -51,9 +51,10 @@ K_SEM_DEFINE(listen_sem, 0, 1); /* this semaphore will be given by the modem
 
 K_SEM_DEFINE(close_main_socket_sem, 0, 1);
 
-//#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
 //static bool run_cellular_thread = false;
-//#endif
+static uint16_t battery_mv = 0;
+#endif
 
 static bool modem_is_ready = false;
 static bool power_level_ok = false;
@@ -301,6 +302,11 @@ static bool cellular_controller_event_handler(const struct event_header *eh)
 		return false;
 	} else if (is_pwr_status_event(eh)) {
 		struct pwr_status_event *ev = cast_pwr_status_event(eh);
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+		if (ev->pwr_state != PWR_CHARGING) {
+			battery_mv = ev->battery_mv;
+		}
+#endif
 		if (ev->pwr_state < PWR_NORMAL && power_level_ok) {
 			LOG_WRN("Will power off the modem!");
 			power_level_ok = false;
@@ -381,8 +387,21 @@ static void publish_gsm_info(void)
 static void cellular_controller_keep_alive(void *dev)
 {
 	int ret;
+
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+	if (battery_mv >= 4000) {
+		struct send_poll_request_now *wake_up = new_send_poll_request_now();
+		EVENT_SUBMIT(wake_up);
+	}
+#endif
+
 	while (true) {
 #if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+		if (battery_mv >= 4000) {
+			run_cellular_thread =
+				true; //Force to run thread when battery voltage is above or equal to 4V
+		}
+
 		if (k_sem_take(&connection_state_sem, K_FOREVER) == 0 && !pending &&
 		    !diagnostic_has_flag(CELLULAR_THREAD_DISABLED)) {
 #else
