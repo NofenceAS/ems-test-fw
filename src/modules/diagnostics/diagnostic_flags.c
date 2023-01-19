@@ -38,11 +38,11 @@ bool diagnostic_flags_battery_override(void)
 		LOG_ERR("error reading battery override");
 	}
 
-	bool override = (ob_data.battery_mv <= 4250 && ob_data.battery_mv >= 4150);
+	bool override = (ob_data.battery_mv >= 4100 && ob_data.battery_mv <= 4200);
 
 	LOG_WRN("BATTERY OVERRIDE VALUE = %d, OVERRIDE = %d", ob_data.battery_mv, override);
 
-	return false;
+	return override;
 }
 
 int diagnostic_flags_init(void)
