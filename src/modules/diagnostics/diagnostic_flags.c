@@ -9,6 +9,7 @@
 LOG_MODULE_REGISTER(diagnostic_flags, 4);
 
 static uint32_t diagnostic_flags = 0;
+//static uint16_t battery_mv = 0;
 
 int diagnostic_stg_load_flags(void)
 {
