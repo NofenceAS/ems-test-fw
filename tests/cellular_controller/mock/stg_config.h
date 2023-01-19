@@ -35,7 +35,8 @@ typedef enum {
 	STG_U32_WARN_CNT_TOT,
 	STG_STR_HOST_PORT,
 	STG_BLOB_BLE_KEY,
-	STG_PARAM_ID_CNT
+	STG_PARAM_ID_CNT,
+	STG_U32_DIAGNOSTIC_FLAGS,
 } stg_config_param_id_t;
 
 int stg_config_u8_read(stg_config_param_id_t id, uint8_t *value);
