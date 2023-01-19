@@ -35,9 +35,9 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_FW_UPGRADE_LOG_LEVEL);
 #error Unsupported boardfile for performing Nofence FOTA! (SG25/C25 only)
 #endif
 
-#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
-static bool allow_fota = false;
-#endif
+//#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+//static bool allow_fota = false;
+//#endif
 
 #define FOTA_RETRIES                                                                               \
 	2 /* to ensure modem is switched back to PSV in case of
@@ -135,9 +135,6 @@ static bool event_handler(const struct event_header *eh)
 		if (diagnostic_has_flag(FOTA_DISABLED)) {
 			return false;
 		}
-		if (!allow_fota) {
-			return false;
-		}
 #endif
 		struct start_fota_event *ev = cast_start_fota_event(eh);
 
@@ -182,14 +179,14 @@ static bool event_handler(const struct event_header *eh)
 		}
 		return false;
 	}
-#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+	/*#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
 	if (is_diag_thread_cntl_event(eh)) {
 		struct diag_thread_cntl_event *event = cast_diag_thread_cntl_event(eh);
 		allow_fota = (event->allow_fota == true);
 		LOG_WRN("Allow fota = %d", allow_fota);
 		return false;
 	}
-#endif
+#endif*/
 	if (is_cancel_fota_event(eh)) {
 		/* Cancel an ongoing FOTA. This will trigger FOTA_DOWNLOAD_EVT_CANCELLED 
 		 * status in the fota_dl_handler callback 

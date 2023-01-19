@@ -10,6 +10,7 @@
 #include "pwr_event.h"
 #include "stg_config.h"
 #include "diagnostics_events.h"
+#include "diagnostic_flags.h"
 
 #define RCV_THREAD_STACK CONFIG_RECV_THREAD_STACK_SIZE
 #define RCV_PRIORITY CONFIG_RECV_THREAD_PRIORITY
@@ -50,9 +51,9 @@ K_SEM_DEFINE(listen_sem, 0, 1); /* this semaphore will be given by the modem
 
 K_SEM_DEFINE(close_main_socket_sem, 0, 1);
 
-#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
-static bool run_cellular_thread = false;
-#endif
+//#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+//static bool run_cellular_thread = false;
+//#endif
 
 static bool modem_is_ready = false;
 static bool power_level_ok = false;
@@ -216,13 +217,13 @@ static bool cellular_controller_event_handler(const struct event_header *eh)
 		ack->message_sent = false;
 		EVENT_SUBMIT(ack);
 		return false;
-#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+		/*#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
 	} else if (is_diag_thread_cntl_event(eh)) {
 		struct diag_thread_cntl_event *event = cast_diag_thread_cntl_event(eh);
 		run_cellular_thread = (event->run_cellular_thread == true);
 		LOG_WRN("Cellular thread running = %d", run_cellular_thread);
 		return false;
-#endif
+		#endif*/
 	} else if (is_messaging_host_address_event(eh)) {
 		uint8_t port_length = 0;
 		int ret = stg_config_str_read(STG_STR_HOST_PORT, server_address_tmp, &port_length);
@@ -383,7 +384,7 @@ static void cellular_controller_keep_alive(void *dev)
 	while (true) {
 #if defined(CONFIG_DIAGNOSTIC_EMS_FW)
 		if (k_sem_take(&connection_state_sem, K_FOREVER) == 0 && !pending &&
-		    run_cellular_thread) {
+		    !diagnostic_has_flag(CELLULAR_THREAD_DISABLED)) {
 #else
 		if (k_sem_take(&connection_state_sem, K_FOREVER) == 0 && !pending) {
 #endif

@@ -176,9 +176,28 @@ GET_GSM_DATA = 0xA6
 #value = struct.unpack('I', resp['data'][:4])
 #print(resp)
 
-resp = try_cmd(nfdiag.GROUP_SYSTEM, 0x22)
-#value = struct.unpack('I', resp['data'][:4])
+FOTA_DISABLED = (1 << 0)
+CELLULAR_THREAD_DISABLED = (1 << 1)
+GNSS_THREAD_DISABLED = (1 << 2)
+BUZZER_DISABLED = (1 << 3)
+CLEAR_STG_FLAGS_ON_STARTUP = (1 << 30)
+DIAG_STG_FLAGS_IS_ACTIVE = (1 << 31)
+
+GET_DIAG_FLAGS = 0x80
+SET_DIAG_FLAGS = 0x82
+CLR_DIAG_FLAGS = 0x84
+
+FLAGS = FOTA_DISABLED|CELLULAR_THREAD_DISABLED
+
+print('{0:b}'.format(FLAGS))
+payload = struct.pack('<I', BUZZER_DISABLED)
+resp = try_cmd(nfdiag.GROUP_SYSTEM, CLR_DIAG_FLAGS, payload)
+#resp = try_cmd(nfdiag.GROUP_SYSTEM, GET_DIAG_FLAGS)
+#resp = try_cmd(nfdiag.GROUP_SYSTEM, CLR_DIAG_FLAGS, payload)
+value = struct.unpack('<I', resp['data'][:4])
+print(bin(value[0]))
 print(resp)
+print(hex(128))
 
 
 # \x00\x74\x0a\x0a\x08\x96\xd7\xc3\x0a\x10\x00\x18\x88\x07\x12\x66\x08\x01\x18\x03\x20\x05\x28\x02\x30\xff\xff\x03\x38\xf3\x02\x42\x03\x30\x88\x07\x5a\x14\x38\x39\x34\x36\x32\x30\x33\x38\x30\x30\x37\x30\x30\x36\x38\x38\x37\x36\x39\x36\x68\x00\x92\x01\x06\x08\x14\x10\x00\x18\x02\xa0\x01\xff\xff\x03\xba\x01\x08\x08\x01\x10\x04\x18\x05\x20\x02\xc0\x01\xff\xff\x03\xc8\x01\xff\xff\x03\xda\x01\x08\x81\xb4\x1a\x2a\x89\x37\xeb\x85\xe2\x01\x09\x0a\x05\x32\x34\x32\x30\x31\x10\x07

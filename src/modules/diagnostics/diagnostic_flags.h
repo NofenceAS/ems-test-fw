@@ -10,9 +10,11 @@
 typedef enum {
 	FOTA_DISABLED = (1 << 0),
 	CELLULAR_THREAD_DISABLED = (1 << 1),
-	GNSS_THREAD_DISABLED = (1 << 2),
-	BUZZER_DISABLED = (1 << 3),
-	CLEAR_STG_FLAGS_ON_STARTUP = (1 << 31),
+	//GNSS_THREAD_DISABLED = (1 << 2),
+	//BUZZER_DISABLED = (1 << 3),
+
+	INTERNAL_CLEAR_FLAGS_ON_STARTUP = (1 << 30),
+	INTERNAL_DIAG_FLAGS_IS_ACTIVE = (1 << 31),
 } diagnostic_flags_t;
 
 int diagnostic_flags_init(void);
@@ -26,6 +28,5 @@ int diagnostic_clear_flag(uint32_t flag);
 int diagnostic_set_flag(uint32_t flag);
 
 bool diagnostic_has_flag(uint32_t flag);
-
 
 #endif

@@ -22,6 +22,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 cmndr = None
+sn = None
 
 def user_input(prompt):
     try:
@@ -186,8 +187,9 @@ def change_config():
 
 
 def print_config():
-    global cmndr
-    print(f'-  Serial No:    {cmndr.read_setting(nfdiag.ID_SERIAL)}')
+    global cmndr, sn
+    sn = cmndr.read_setting(nfdiag.ID_SERIAL)
+    print(f'-  Serial No:    {sn}')
     print(f'-  Host Port:    {str(cmndr.read_setting(nfdiag.ID_HOST_PORT))}')
     print(f'-  EMS Provider: {cmndr.read_setting(nfdiag.ID_EMS_PROVIDER)}')
     print(f'-  Product Type: {cmndr.read_setting(nfdiag.ID_PRODUCT_TYPE)}')
@@ -265,6 +267,58 @@ def force_poll_req():
 
 
 
+def read_flag_configuration():
+    _, resp = run_command(nfdiag.GROUP_SYSTEM, nfdiag.GET_DIAG_FLAGS)
+    diag_flags = 0
+    try:
+        if resp['code'] == 1:
+            value = struct.unpack('<I', resp['data'][:4])
+            diag_flags = value[0]
+    except Exception as e:
+        print(f'Error reading flags: {e}')
+    return diag_flags
+
+def clear_all_flags():
+    diag_flags = read_flag_configuration()
+    print(f'Current diagnostic flags: {bin(diag_flags).replace("0b","").zfill(8)}')
+    print('Clearing', end=' ')
+    resp_str, resp = run_command(nfdiag.GROUP_SYSTEM, nfdiag.CLR_DIAG_FLAGS)
+    print(resp_str) 
+    diag_flags = read_flag_configuration()
+    print(f'Updated diagnostic flags: {bin(diag_flags).replace("0b","").zfill(8)}')
+   
+
+def set_flag_configuration():
+    global cmndr
+
+    flaglist = [
+        ('FOTA_DISABLED', nfdiag.FLAG_FOTA_DISABLED),
+        ('CELLULAR_THREAD_DISABLED', nfdiag.FLAG_CELLULAR_THREAD_DISABLED),
+    ]
+    diag_flags = read_flag_configuration()
+    print(f'Current diagnostic flags: {bin(diag_flags).replace("0b","").zfill(8)}\n')
+    for fname, fval in flaglist:
+        current_val = 1 if fval & diag_flags else 0
+        val = input(f'{fname} [{current_val}]: ')
+        if val == '1' or val == '0':
+            try: 
+                payload = struct.pack('<I', fval)
+                if val == '1':
+                    _, resp = run_command(nfdiag.GROUP_SYSTEM, nfdiag.SET_DIAG_FLAGS, payload)
+                else:
+                    _, resp = run_command(nfdiag.GROUP_SYSTEM, nfdiag.CLR_DIAG_FLAGS, payload)
+                if resp['code'] == 1:
+                    value = struct.unpack('<I', resp['data'][:4])
+                    new_val = current_val = 1 if fval & value[0] else 0
+                    print(f' - {fname} = "{new_val}"')
+            except Exception as e:
+                print(f'Error writing flag {val} for {fname}: {e}')
+    
+    diag_flags = read_flag_configuration()
+    print(f'\nUpdated diagnostic flags: {bin(diag_flags).replace("0b","").zfill(8)}')
+
+
+
 
 # ------------------------
 
@@ -272,28 +326,34 @@ def force_poll_req():
 # Parse input arguments
 parser = argparse.ArgumentParser(description='Nofence final test')
 parser.add_argument('--comport', help='Serial comport connected to the BLE uart gateway', required=False)
+parser.add_argument('--rtt', help='Serial number of Segger J-Link to use for RTT communication', required=False)
 parser.add_argument('--sn', help='Collar serial number or device name', required=False)
 args = parser.parse_args()
 
 sn = args.sn if args.sn else None
-while not sn:
-    try:
-        sn = user_input('Enter serial number: ').strip()
-        if len(sn) > 1:
-            print(f'SN: "{sn}"')
-            break
-        else:
-            print(f'Invalid SN: "{sn}"')
-    except Exception as e:
-        exit('SN missing')
+if args.comport:
+    while not sn:
+        try:
+            sn = user_input('Enter serial number or device name to search for: ').strip()
+            if len(sn) > 1:
+                print(f'SN: "{sn}"')
+                break
+            else:
+                print(f'Invalid SN: "{sn}"')
+        except Exception as e:
+            exit('SN missing')
 
 stream = None
 retries = 5
 while retries > 0:
     try:
-        print(f'Searching for "{sn}"...')
-        stream = nfdiag.BLEStream(port=args.comport, serial=sn)
-        break
+        if args.comport:
+            print(f'Searching for "{sn}" BLE...')
+            stream = nfdiag.BLEStream(port=args.comport, serial=sn)
+            break
+        else:
+            stream = nfdiag.JLinkStream(serial=args.rtt)
+            break
     except KeyboardInterrupt:
         exit('Connecting attemt canceled...')
     except Exception as e:
@@ -333,6 +393,8 @@ options = [
     ('read CCID', read_modem_ccid),
     ('read IP', read_modem_ip),
     ('thread control', thread_control),
+    ('config flags', set_flag_configuration),
+    ('clear flags', clear_all_flags),
     ('sleep mode', force_sleep),
     ('self-test', self_test),
     ('force poll request', force_poll_req),
