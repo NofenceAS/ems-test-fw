@@ -280,14 +280,6 @@ static void test_setup(void)
 	gnss_add_expected_cmd_rsp(cmd_cfg_setval_nav_status, sizeof(cmd_cfg_setval_nav_status),
 				  resp_cfg_setval_nav_status, sizeof(resp_cfg_setval_nav_status));
 
-	/* Enable NAV-SAT output on UART, no handler */
-	/*uint8_t cmd_cfg_setval_nav_sat[] = {0xB5, 0x62, 0x06, 0x8A, 0x09, 0x00, 0x00, 0x03, 0x00, 0x00, 0x16, 0x00, 0x91, 0x20, 0x01, 0x64, 0xa3};
-	uint8_t resp_cfg_setval_nav_sat[] = {0xB5, 0x62, 0x05, 0x01, 0x02, 0x00, 0x06, 0x8A, 0x98, 0xC1};
-	gnss_add_expected_cmd_rsp(cmd_cfg_setval_nav_sat, 
-				  sizeof(cmd_cfg_setval_nav_sat), 
-				  resp_cfg_setval_nav_sat,
-				  sizeof(resp_cfg_setval_nav_sat));*/
-
 	/* Enable NAV-PL output on UART */
 	uint8_t cmd_cfg_setval_nav_pl[] = { 0xB5, 0x62, 0x06, 0x8A, 0x09, 0x00, 0x00, 0x03, 0x00,
 					    0x00, 0x16, 0x04, 0x91, 0x20, 0x01, 0x68, 0xB3 };
@@ -295,6 +287,14 @@ static void test_setup(void)
 					     0x00, 0x06, 0x8A, 0x98, 0xC1 };
 	gnss_add_expected_cmd_rsp(cmd_cfg_setval_nav_pl, sizeof(cmd_cfg_setval_nav_pl),
 				  resp_cfg_setval_nav_pl, sizeof(resp_cfg_setval_nav_pl));
+
+	/* Enable NAV-SAT output on UART, no handler */
+	uint8_t cmd_cfg_setval_nav_sat[] = { 0xB5, 0x62, 0x06, 0x8A, 0x09, 0x00, 0x00, 0x03, 0x00,
+					     0x00, 0x16, 0x00, 0x91, 0x20, 0x01, 0x64, 0xa3 };
+	uint8_t resp_cfg_setval_nav_sat[] = { 0xB5, 0x62, 0x05, 0x01, 0x02,
+					      0x00, 0x06, 0x8A, 0x98, 0xC1 };
+	gnss_add_expected_cmd_rsp(cmd_cfg_setval_nav_sat, sizeof(cmd_cfg_setval_nav_sat),
+				  resp_cfg_setval_nav_sat, sizeof(resp_cfg_setval_nav_sat));
 
 	/* Enable MGA-ACK output on UART */
 	uint8_t cmd_cfg_setval_mga_ack[] = { 0xB5, 0x62, 0x06, 0x8A, 0x09, 0x00, 0x00, 0x03, 0x00,
@@ -362,14 +362,6 @@ static void test_setup_2(void)
 	gnss_add_expected_cmd_rsp(cmd_cfg_setval_nav_status, sizeof(cmd_cfg_setval_nav_status),
 				  resp_cfg_setval_nav_status, sizeof(resp_cfg_setval_nav_status));
 
-	/* Enable NAV-SAT output on UART, no handler */
-	/*uint8_t cmd_cfg_setval_nav_sat[] = {0xB5, 0x62, 0x06, 0x8A, 0x09, 0x00, 0x00, 0x03, 0x00, 0x00, 0x16, 0x00, 0x91, 0x20, 0x01, 0x64, 0xa3};
-	uint8_t resp_cfg_setval_nav_sat[] = {0xB5, 0x62, 0x05, 0x01, 0x02, 0x00, 0x06, 0x8A, 0x98, 0xC1};
-	gnss_add_expected_cmd_rsp(cmd_cfg_setval_nav_sat, 
-				  sizeof(cmd_cfg_setval_nav_sat), 
-				  resp_cfg_setval_nav_sat,
-				  sizeof(resp_cfg_setval_nav_sat));*/
-
 	/* Enable NAV-PL output on UART */
 	uint8_t cmd_cfg_setval_nav_pl[] = { 0xB5, 0x62, 0x06, 0x8A, 0x09, 0x00, 0x00, 0x03, 0x00,
 					    0x00, 0x16, 0x04, 0x91, 0x20, 0x01, 0x68, 0xB3 };
@@ -377,6 +369,14 @@ static void test_setup_2(void)
 					     0x00, 0x06, 0x8A, 0x98, 0xC1 };
 	gnss_add_expected_cmd_rsp(cmd_cfg_setval_nav_pl, sizeof(cmd_cfg_setval_nav_pl),
 				  resp_cfg_setval_nav_pl, sizeof(resp_cfg_setval_nav_pl));
+
+	/* Enable NAV-SAT output on UART, no handler */
+	uint8_t cmd_cfg_setval_nav_sat[] = { 0xB5, 0x62, 0x06, 0x8A, 0x09, 0x00, 0x00, 0x03, 0x00,
+					     0x00, 0x16, 0x00, 0x91, 0x20, 0x01, 0x64, 0xa3 };
+	uint8_t resp_cfg_setval_nav_sat[] = { 0xB5, 0x62, 0x05, 0x01, 0x02,
+					      0x00, 0x06, 0x8A, 0x98, 0xC1 };
+	gnss_add_expected_cmd_rsp(cmd_cfg_setval_nav_sat, sizeof(cmd_cfg_setval_nav_sat),
+				  resp_cfg_setval_nav_sat, sizeof(resp_cfg_setval_nav_sat));
 
 	/* Enable MGA-ACK output on UART */
 	uint8_t cmd_cfg_setval_mga_ack[] = { 0xB5, 0x62, 0x06, 0x8A, 0x09, 0x00, 0x00, 0x03, 0x00,
@@ -450,14 +450,6 @@ static void test_setup_3(void)
 	gnss_add_expected_cmd_rsp(cmd_cfg_setval_nav_status, sizeof(cmd_cfg_setval_nav_status),
 				  resp_cfg_setval_nav_status, sizeof(resp_cfg_setval_nav_status));
 
-	/* Enable NAV-SAT output on UART, no handler */
-	/*uint8_t cmd_cfg_setval_nav_sat[] = {0xB5, 0x62, 0x06, 0x8A, 0x09, 0x00, 0x00, 0x03, 0x00, 0x00, 0x16, 0x00, 0x91, 0x20, 0x01, 0x64, 0xa3};
-	uint8_t resp_cfg_setval_nav_sat[] = {0xB5, 0x62, 0x05, 0x01, 0x02, 0x00, 0x06, 0x8A, 0x98, 0xC1};
-	gnss_add_expected_cmd_rsp(cmd_cfg_setval_nav_sat, 
-				  sizeof(cmd_cfg_setval_nav_sat), 
-				  resp_cfg_setval_nav_sat,
-				  sizeof(resp_cfg_setval_nav_sat));*/
-
 	/* Enable NAV-PL output on UART */
 	uint8_t cmd_cfg_setval_nav_pl[] = { 0xB5, 0x62, 0x06, 0x8A, 0x09, 0x00, 0x00, 0x03, 0x00,
 					    0x00, 0x16, 0x04, 0x91, 0x20, 0x01, 0x68, 0xB3 };
@@ -465,6 +457,14 @@ static void test_setup_3(void)
 					     0x00, 0x06, 0x8A, 0x98, 0xC1 };
 	gnss_add_expected_cmd_rsp(cmd_cfg_setval_nav_pl, sizeof(cmd_cfg_setval_nav_pl),
 				  resp_cfg_setval_nav_pl, sizeof(resp_cfg_setval_nav_pl));
+
+	/* Enable NAV-SAT output on UART, no handler */
+	uint8_t cmd_cfg_setval_nav_sat[] = { 0xB5, 0x62, 0x06, 0x8A, 0x09, 0x00, 0x00, 0x03, 0x00,
+					     0x00, 0x16, 0x00, 0x91, 0x20, 0x01, 0x64, 0xa3 };
+	uint8_t resp_cfg_setval_nav_sat[] = { 0xB5, 0x62, 0x05, 0x01, 0x02,
+					      0x00, 0x06, 0x8A, 0x98, 0xC1 };
+	gnss_add_expected_cmd_rsp(cmd_cfg_setval_nav_sat, sizeof(cmd_cfg_setval_nav_sat),
+				  resp_cfg_setval_nav_sat, sizeof(resp_cfg_setval_nav_sat));
 
 	/* Enable MGA-ACK output on UART */
 	uint8_t cmd_cfg_setval_mga_ack[] = { 0xB5, 0x62, 0x06, 0x8A, 0x09, 0x00, 0x00, 0x03, 0x00,
