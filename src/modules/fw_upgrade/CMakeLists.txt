@@ -12,4 +12,5 @@ fw_upgrade.c
 ./../../events/error_handler/error_event.c
 ./../../events/power_manager/pwr_event.c
 ./../../events/diagnostics/diagnostics_events.c
+./../../modules/diagnostics/diagnostic_flags.c
 )

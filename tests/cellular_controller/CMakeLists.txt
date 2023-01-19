@@ -24,6 +24,7 @@ FILE(GLOB app_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/fw_upgrade_events.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager/pwr_event.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/diagnostics/diagnostics_events.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/diagnostics/diagnostic_flags.c        
         )
 target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE ${APP_SOURCE})
@@ -44,5 +45,7 @@ zephyr_library_include_directories(
         #${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/nf_settings/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/drivers/modem_nf/zephyr
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/drivers/gnss/zephyr
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/diagnostics    
 )
 add_dependencies(app collar_protocol_headers)

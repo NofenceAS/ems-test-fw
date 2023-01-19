@@ -3,6 +3,7 @@ if (CONFIG_DIAGNOSTICS)
 zephyr_include_directories(
     .
     ./commander
+    ./../../drivers/gnss/zephyr
     ./../../events/diagnostics/
     ./../../modules/buzzer)
 
