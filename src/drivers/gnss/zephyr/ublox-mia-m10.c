@@ -222,6 +222,21 @@ static int mia_m10_nav_pvt_handler(void *context, void *payload, uint32_t size)
 		gnss_unix_timestamp = mia_m10_nav_pvt_to_unix_time(nav_pvt);
 	}
 
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+	uint8_t cur_psm_state = (nav_pvt->flags >> 2) & 0x07;
+	if (cur_psm_state != 0) {
+		if (cur_psm_state == 4) {
+			LOG_DBG("GNSS PSM %d: POT", cur_psm_state);
+		} else if (cur_psm_state == 3) {
+			LOG_DBG("GNSS PSM %d: TRACKING", cur_psm_state);
+		} else if (cur_psm_state == 2) {
+			LOG_DBG("GNSS PSM %d: ACQUSITION", cur_psm_state);
+		} else if (cur_psm_state == 1) {
+			LOG_DBG("GNSS PSM %d: ENABLED", cur_psm_state);
+		}
+	}
+#endif
+
 	mia_m10_sync_complete(GNSS_DATA_FLAG_NAV_PVT);
 
 	return 0;
