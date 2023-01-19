@@ -28,8 +28,7 @@ enum {
 	STG_U16_PARAM_TYPE,
 	STG_U32_PARAM_TYPE,
 	STG_STR_PARAM_TYPE,
-	STG_BLOB_PARAM_TYPE
-} stg_param_type;
+	STG_BLOB_PARAM_TYPE } stg_param_type;
 
 static const struct device *mp_device;
 static const struct flash_area *mp_flash_area;

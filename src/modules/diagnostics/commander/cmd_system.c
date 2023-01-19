@@ -218,8 +218,10 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
 		break;
 	}
-	case SET_DIAG_FLAGS:
-	case GET_DIAG_FLAGS: 
+	case SET_DIAG_FLAGS: {
+	}
+	case GET_DIAG_FLAGS: {
+	}
 	case CLR_DIAG_FLAGS: {
 		resp = DATA;
 
@@ -270,8 +272,7 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 			LOG_WRN("FLAGS READ: %u", flags_out);
 		}
 
-		commander_send_resp(interface, SYSTEM, cmd, resp, buffer,
-				    sizeof(uint32_t));
+		commander_send_resp(interface, SYSTEM, cmd, resp, buffer, sizeof(uint32_t));
 		break;
 	}
 	default:
