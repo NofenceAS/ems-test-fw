@@ -10,7 +10,8 @@
 #include "amc_states_cache.h"
 #include "embedded.pb.h"
 
-LOG_MODULE_REGISTER(amc_cache, CONFIG_AMC_LIB_LOG_LEVEL);
+//LOG_MODULE_REGISTER(amc_cache, CONFIG_AMC_LIB_LOG_LEVEL);
+LOG_MODULE_REGISTER(amc_cache, 0);
 
 K_SEM_DEFINE(fence_data_sem, 1, 1);
 K_SEM_DEFINE(gnss_data_sem, 1, 1);

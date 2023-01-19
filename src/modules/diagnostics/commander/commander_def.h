@@ -71,6 +71,10 @@ typedef enum {
 	FORCE_POLL_REQ = 0x42,
 	CLEAR_PASTURE = 0xC0,
 	ERASE_FLASH = 0xEF,
+
+	GET_DIAG_FLAGS = 0x80,
+	SET_DIAG_FLAGS = 0x82,
+	CLR_DIAG_FLAGS = 0x84,
 } system_cmd_t;
 
 typedef enum { READ = 0x00, WRITE = 0x01, ERASE_ALL = 0xEA } settings_cmd_t;
@@ -94,6 +98,7 @@ typedef enum {
 
 	BUZZER_WARN = 0xB0,
 	ELECTRICAL_PULSE = 0xE0,
+	ELECTRICAL_PULSE_INFINITE = 0xE3,
 } simulator_cmd_t;
 
 typedef enum {

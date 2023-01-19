@@ -29,7 +29,8 @@
 #include "stg_config.h"
 
 #define MODULE amc
-LOG_MODULE_REGISTER(MODULE, 4); //CONFIG_AMC_LOG_LEVEL);
+//LOG_MODULE_REGISTER(MODULE, CONFIG_AMC_LOG_LEVEL);
+LOG_MODULE_REGISTER(MODULE, 0);
 
 /* Thread stack area that we use for the calculation process. We add a work
  * item here when we have data available from GNSS. This thread can then use the 

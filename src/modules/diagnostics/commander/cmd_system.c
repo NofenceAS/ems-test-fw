@@ -11,6 +11,7 @@
 #include "cellular_helpers_header.h"
 #include "messaging_module_events.h"
 #include "storage.h"
+#include "diagnostic_flags.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(diag_cmd_system, 4);
@@ -215,6 +216,63 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 		}
 
 		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
+		break;
+	}
+	case SET_DIAG_FLAGS: {
+	}
+	case GET_DIAG_FLAGS: {
+	}
+	case CLR_DIAG_FLAGS: {
+		resp = DATA;
+
+		if (cmd == SET_DIAG_FLAGS) {
+			if (size >= 4) {
+				uint32_t flags_in = (data[0] << 0) + (data[1] << 8) +
+						    (data[2] << 16) + (data[3] << 24);
+				err = diagnostic_set_flag(flags_in);
+				if (err != 0) {
+					resp = ERROR;
+					LOG_ERR("ERROR SETTING FLAGS: %u", flags_in);
+				} else {
+					LOG_WRN("FLAGS SET: %u", flags_in);
+				}
+			} else {
+				resp = NOT_ENOUGH;
+			}
+		} else if (cmd == CLR_DIAG_FLAGS) {
+			if (size >= 4) {
+				uint32_t flags_in = (data[0] << 0) + (data[1] << 8) +
+						    (data[2] << 16) + (data[3] << 24);
+				err = diagnostic_clear_flag(flags_in);
+				if (err != 0) {
+					resp = ERROR;
+					LOG_ERR("ERROR CLEARING FLAGS: %u", flags_in);
+				} else {
+					LOG_WRN("FLAGS CLEARED: %u", flags_in);
+				}
+			} else {
+				err = diagnostic_clear_flags();
+				if (err != 0) {
+					resp = ERROR;
+					LOG_ERR("ERROR CLEARING ALL FLAGS");
+				} else {
+					LOG_WRN("ALL FLAGS CLEARED");
+				}
+			}
+		}
+
+		uint8_t buffer[4] = { 0 };
+		uint32_t flags_out = 0;
+		err = diagnostic_get_flags(&flags_out);
+		if (err != 0) {
+			resp = ERROR;
+			LOG_ERR("ERROR READING FLAGS: %u", flags_out);
+		} else {
+			memcpy(&buffer, &flags_out, sizeof(uint32_t));
+			LOG_WRN("FLAGS READ: %u", flags_out);
+		}
+
+		commander_send_resp(interface, SYSTEM, cmd, resp, buffer, sizeof(uint32_t));
 		break;
 	}
 	default:

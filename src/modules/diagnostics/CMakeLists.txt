@@ -3,6 +3,7 @@ if (CONFIG_DIAGNOSTICS)
 zephyr_include_directories(
     .
     ./commander
+    ./../../drivers/gnss/zephyr
     ./../../events/diagnostics/
     ./../../modules/buzzer)
 
@@ -10,6 +11,7 @@ target_sources(app PRIVATE
     diagnostics.c
     selftest.c
     onboard_data.c
+    diagnostic_flags.c
     parser.c
     passthrough.c
     ./../../events/diagnostics/diagnostics_events.c

@@ -82,6 +82,8 @@ int stg_config_init(void)
 		}
 		m_initialized = true;
 
+		diagnostic_flags_init();
+
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
 		err = copy_eeprom_parameters_to_stg_flash();
 		if (err != 0) {
@@ -433,7 +435,8 @@ int is_valid_id(stg_config_param_id_t param_id)
 		break;
 	}
 	case STG_U32_UID:
-	case STG_U32_WARN_CNT_TOT: {
+	case STG_U32_WARN_CNT_TOT:
+	case STG_U32_DIAGNOSTIC_FLAGS: {
 		param_type = STG_U32_PARAM_TYPE;
 		break;
 	}
