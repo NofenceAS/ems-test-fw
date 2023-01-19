@@ -197,6 +197,8 @@ def print_config():
     print(f'-  Model:        {cmndr.read_setting(nfdiag.ID_BOM_MEC_REV)}')
     print(f'-  Revision:     {cmndr.read_setting(nfdiag.ID_BOM_PCB_REV)}')
     print(f'-  HW Version:   {cmndr.read_setting(nfdiag.ID_HW_VERSION)}')
+    diag_flags = read_flag_configuration()
+    print(f'\n-  Diag flags:   {bin(diag_flags).replace("0b","").zfill(8)}')
 
 
 def thread_control():

@@ -32,15 +32,15 @@ int diagnostic_stg_save_flags(void)
 
 bool diagnostic_flags_battery_override(void)
 {
-	onboard_data_struct_t ob_data;
+	onboard_data_struct_t *ob_data;
 	int res = onboard_get_data(&ob_data);
 	if (res != 0) {
 		LOG_ERR("error reading battery override");
 	}
 
-	bool override = (ob_data.battery_mv >= 4100 && ob_data.battery_mv <= 4200);
+	bool override = (ob_data->battery_mv >= 4000 && ob_data->battery_mv <= 4400);
 
-	LOG_WRN("BATTERY OVERRIDE VALUE = %d, OVERRIDE = %d", ob_data.battery_mv, override);
+	LOG_WRN("BATTERY OVERRIDE VALUE = %d, OVERRIDE = %d", ob_data->battery_mv, override);
 
 	return override;
 }

@@ -397,10 +397,10 @@ static void cellular_controller_keep_alive(void *dev)
 
 	while (true) {
 #if defined(CONFIG_DIAGNOSTIC_EMS_FW)
-		if (battery_mv >= 4000) {
-			run_cellular_thread =
-				true; //Force to run thread when battery voltage is above or equal to 4V
-		}
+		//		if (battery_mv >= 4000) {
+		//			run_cellular_thread =
+		//				true; //Force to run thread when battery voltage is above or equal to 4V
+		//		}
 
 		if (k_sem_take(&connection_state_sem, K_FOREVER) == 0 && !pending &&
 		    !diagnostic_has_flag(CELLULAR_THREAD_DISABLED)) {
