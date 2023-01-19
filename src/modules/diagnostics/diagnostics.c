@@ -23,6 +23,7 @@
 #include "env_sensor_event.h"
 #include "pwr_event.h"
 #include "onboard_data.h"
+#include "diagnostic_flags.h"
 
 #include <zephyr.h>
 #include <logging/log.h>
@@ -174,6 +175,8 @@ int diagnostics_module_init()
 	struct log_backend_diag_action backend_actions = { .send_resp = diagnostics_send,
 							   .thru_enable = passthrough_enable };
 	log_backend_diag_init(&backend_actions);
+
+	//diagnostic_flags_init();
 
 	return 0;
 }

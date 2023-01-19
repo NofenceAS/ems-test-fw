@@ -17,6 +17,7 @@
 
 #include "pwr_event.h"
 #include "diagnostics_events.h"
+#include "diagnostic_flags.h"
 
 #define MODULE fw_upgrade
 LOG_MODULE_REGISTER(MODULE, CONFIG_FW_UPGRADE_LOG_LEVEL);
@@ -131,6 +132,9 @@ static bool event_handler(const struct event_header *eh)
 	static uint32_t fota_requests;
 	if (is_start_fota_event(eh)) {
 #if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+		if (diagnostic_has_flag(FOTA_DISABLED)) {
+			return false;
+		}
 		if (!allow_fota) {
 			return false;
 		}

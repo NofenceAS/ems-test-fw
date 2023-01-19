@@ -10,6 +10,7 @@ target_sources(app PRIVATE
     diagnostics.c
     selftest.c
     onboard_data.c
+    diagnostic_flags.c
     parser.c
     passthrough.c
     ./../../events/diagnostics/diagnostics_events.c
