@@ -328,11 +328,11 @@ def clear_flash():
     ]
     print('Clear flash:')
     for n, o in enumerate(opt):
-        print(f'{n}. {o[0]} ({o[1]})')
+        print(f'{n}. {o[0]}')
     cmd = user_input(f'\nClear (0-{len(opt)-1}): ').strip()
     if cmd.isdigit() and (int(cmd) >= 0 and int(cmd) < len(opt)):            
         resp_str, resp = run_command(nfdiag.GROUP_SYSTEM, opt[int(cmd)][1])
-        print(f'Cleared {opt[int(cmd)].lower()}: {resp_str}')
+        print(f'Cleared {opt[int(cmd)][0].lower()}: {resp_str}')
     else:
         print(f'canceled')
 
