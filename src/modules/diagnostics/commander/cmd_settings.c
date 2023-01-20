@@ -191,9 +191,20 @@ static int commander_settings_write(enum diagnostics_interface interface, settin
 	case SERIAL: {
 		/* Must be exactly 4 bytes for uint32_t */
 		if (size == 4) {
-			uint32_t serial =
+			uint32_t new_serial =
 				(data[0] << 0) + (data[1] << 8) + (data[2] << 16) + (data[3] << 24);
-			err = stg_config_u32_write(STG_U32_UID, serial);
+
+			uint32_t old_serial;
+			err = stg_config_u32_read(STG_U32_UID, &old_serial);
+			if ((new_serial != old_serial)) {
+				err = stg_config_u32_write(STG_U32_UID, new_serial);
+				/* reset business logic variables to 0 */
+				err = stg_config_u8_write(STG_U8_TEACH_MODE_FINISHED, 0);
+				err = stg_config_u8_write(STG_U8_KEEP_MODE, 0);
+				err = stg_config_u16_write(STG_U16_ZAP_CNT_TOT, 0);
+				err = stg_config_u16_write(STG_U16_ZAP_CNT_DAY, 0);
+				err = stg_config_u32_write(STG_U32_WARN_CNT_TOT, 0);
+			}
 		}
 		break;
 	}
