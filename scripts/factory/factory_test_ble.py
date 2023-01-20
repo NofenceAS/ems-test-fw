@@ -320,6 +320,23 @@ def set_flag_configuration():
     print(f'\nUpdated diagnostic flags: {bin(diag_flags).replace("0b","").zfill(8)}')
 
 
+def clear_flash():
+    global cmndr
+    opt = [
+        ('Pasture / fence version', nfdiag.CMD_CLEAR_PASTURE),
+        ('All flash memory', nfdiag.CMD_ERASE_FLASH),
+    ]
+    print('Clear flash:')
+    for n, o in enumerate(opt):
+        print(f'{n}. {o[0]} ({o[1]})')
+    cmd = user_input(f'\nClear (0-{len(opt)-1}): ').strip()
+    if cmd.isdigit() and (int(cmd) >= 0 and int(cmd) < len(opt)):            
+        resp_str, resp = run_command(nfdiag.GROUP_SYSTEM, opt[int(cmd)][1])
+        print(f'Cleared {opt[int(cmd)].lower()}: {resp_str}')
+    else:
+        print(f'canceled')
+
+
 
 
 # ------------------------
@@ -397,6 +414,7 @@ options = [
     ('thread control', thread_control),
     ('config flags', set_flag_configuration),
     ('clear flags', clear_all_flags),
+    ('clear flash memory', clear_flash),
     ('sleep mode', force_sleep),
     ('self-test', self_test),
     ('force poll request', force_poll_req),

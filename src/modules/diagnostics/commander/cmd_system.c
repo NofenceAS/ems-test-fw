@@ -178,6 +178,7 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 		} else {
 			LOG_INF("pasture partition cleared!");
 		}
+
 		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
 		break;
 	}
@@ -205,6 +206,12 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 			LOG_ERR("could not clear SYSTEM_DIAG partition: %d", err);
 			resp = ERROR;
 		}
+
+		err = stg_config_u8_write(STG_U8_TEACH_MODE_FINISHED, 0);
+		err = stg_config_u8_write(STG_U8_KEEP_MODE, 0);
+		err = stg_config_u16_write(STG_U16_ZAP_CNT_TOT, 0);
+		err = stg_config_u16_write(STG_U16_ZAP_CNT_DAY, 0);
+		err = stg_config_u32_write(STG_U32_WARN_CNT_TOT, 0);
 
 		struct update_flash_erase *ev = new_update_flash_erase();
 		EVENT_SUBMIT(ev);
