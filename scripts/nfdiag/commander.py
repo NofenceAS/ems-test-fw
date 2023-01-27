@@ -155,7 +155,7 @@ class Commander(threading.Thread):
 		return resp
 
 	def electric_pulse_infinite(self, value):
-		payload = struct.pack("<B" + value)
+		payload = struct.pack("<B", value)
 		resp = self.send_cmd(GROUP_STIMULATOR, CMD_ELECTRICAL_PULSE_INFINITE, payload)
 		
 		logging.debug(resp)

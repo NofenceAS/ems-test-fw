@@ -11,7 +11,9 @@
 #include "onboard_data.h"
 #include "charging.h"
 #include "onboard_data.h"
+#include "ep_module.h"
 #include <logging/log.h>
+#include "amc_states_cache.h"
 LOG_MODULE_REGISTER(diagnostics_stimulator, 4);
 
 static void commander_gnss_data_received(void)
@@ -153,8 +155,15 @@ S			 * <Timeout on getting a new warn zone freq>, Error code=-116, Sever~ */
 
 		break;
 	}
+	case BUZZER_TEST: {
+		struct sound_event *sound_event_warn = new_sound_event();
+		sound_event_warn->type = SND_SHORT_200;
+		EVENT_SUBMIT(sound_event_warn);
+		break;
+	}
 	case ELECTRICAL_PULSE: {
 		resp = ACK;
+		ep_module_init(); //Initialize module as it might have been re-configured again after startup
 		struct warn_correction_pause_event *ev_q_test_zap =
 			new_warn_correction_pause_event();
 		ev_q_test_zap->reason = Reason_WARNPAUSEREASON_ZAP;
@@ -178,6 +187,8 @@ S			 * <Timeout on getting a new warn zone freq>, Error code=-116, Sever~ */
 		/* Send electric pulse infinit until duration is reached*/
 		uint8_t duration_in_hr = data[0]; //Amount of hours
 		int64_t elapsed = k_uptime_get();
+		ep_module_init(); //Initialize module as it might have been re-configured again after startup
+
 		for (int i = 0; i < duration_in_hr; i++) {
 			while ((k_uptime_get() - elapsed) <= 3600000) //Run for 1hour
 			{
@@ -192,6 +203,7 @@ S			 * <Timeout on getting a new warn zone freq>, Error code=-116, Sever~ */
 				ready_ep_event->ep_status = EP_RELEASE;
 				ready_ep_event->is_first_pulse = false;
 				EVENT_SUBMIT(ready_ep_event);
+				increment_zap_count(); //Added to enable server to report the amount of zap and not via BLE
 				k_sleep(K_SECONDS(6));
 				struct sound_status_event *ev_idle = new_sound_status_event();
 				ev_idle->status = SND_STATUS_IDLE;

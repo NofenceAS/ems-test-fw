@@ -97,6 +97,7 @@ typedef enum {
 	TURN_ONOFF_CHARGING = 0xE1,
 
 	BUZZER_WARN = 0xB0,
+	BUZZER_TEST = 0xB1,
 	ELECTRICAL_PULSE = 0xE0,
 	ELECTRICAL_PULSE_INFINITE = 0xE3,
 } simulator_cmd_t;
