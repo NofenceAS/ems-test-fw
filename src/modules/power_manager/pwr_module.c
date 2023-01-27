@@ -138,7 +138,11 @@ static void charging_poll_work_fn()
 	event->pwr_state = PWR_CHARGING;
 	event->charging_ma = charging_current_avg;
 	EVENT_SUBMIT(event);
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+	k_work_reschedule(&charging_poll_work, K_MSEC(50));
+#else
 	k_work_reschedule(&charging_poll_work, K_MSEC(CONFIG_CHARGING_POLLER_WORK_MSEC));
+#endif
 }
 #endif
 
@@ -269,6 +273,18 @@ int fetch_battery_percent(void)
 	}
 	return battery_level_soc(batt_mV);
 }
+
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+int fetch_battery_mv(void)
+{
+	int batt_mV = battery_sample_averaged();
+	if (batt_mV < 0) {
+		LOG_ERR("Failed to read battery voltage: %d", batt_mV);
+		return -ENOENT;
+	}
+	return batt_mV;
+}
+#endif
 
 int pwr_module_reboot_reason(uint8_t *aReason)
 {

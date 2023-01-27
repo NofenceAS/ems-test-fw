@@ -39,6 +39,14 @@ int log_and_fetch_battery_voltage(void);
  */
 int fetch_battery_percent(void);
 
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+/**
+ * @brief Fetches the battery voltage.
+ * @return battery voltage [mV].
+ */
+int fetch_battery_mv(void);
+#endif
+
 /**
  * @brief Set whether module requires external clock to be active.
  * 

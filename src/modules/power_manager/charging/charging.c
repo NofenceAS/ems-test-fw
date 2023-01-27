@@ -91,7 +91,11 @@ void charging_init_moving_average(void)
 	i_charg_mov_avg.average = 0;
 	i_charg_mov_avg.N = 0;
 	i_charg_mov_avg.total = 0;
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+	i_charg_mov_avg.MAX_SAMPLES = 48;
+#else
 	i_charg_mov_avg.MAX_SAMPLES = CONFIG_CURRENT_MOVING_AVERAGE_SAMPLES;
+#endif
 }
 
 int charging_setup(void)
