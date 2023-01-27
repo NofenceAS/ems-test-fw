@@ -128,6 +128,15 @@ void main(void)
 	LOG_ERR("Was soft reset ?:%i, Soft reset reason:%d, Battery percent:%i", is_soft_reset,
 		soft_reset_reason, bat_percent);
 
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+	int bat_mv = fetch_battery_mv();
+
+	if (bat_mv >= 4000) {
+		struct sound_event *sound_ev = new_sound_event();
+		sound_ev->type = SND_SOLAR_TEST;
+		EVENT_SUBMIT(sound_ev);
+	}
+#else
 	/* Play welcome- and battery sound as long as the device was not reset
 	 * due to a FOTA update */
 	if (soft_reset_reason != REBOOT_FOTA_RESET) {
@@ -150,7 +159,7 @@ void main(void)
 			EVENT_SUBMIT(sound_ev);
 		}
 	}
-
+#endif
 	/* Initialize the watchdog */
 #if defined(CONFIG_WATCHDOG_ENABLE)
 	err = watchdog_init_and_start();
