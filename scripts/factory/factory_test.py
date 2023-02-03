@@ -288,6 +288,30 @@ def output_data():
 			except Exception as e:
 				print(f'error: {e}')			
 
+def _help():
+	print("")	
+	print("Press following to run test")
+	print("'Help' - Print this list")
+	print("'z' - Start single EP test")
+	print("'Z' - Start infinit EP test")
+	print("'I' - Start infinit EP test runtime")
+	print("'O' - Output debug data")
+	print("'s' - Toggle 1V8_S voltage")
+	print("'c' - Toggle onoff charging")
+	print("'a' - Start EP and Toggle onoff charging")
+	print("'b' - Start buzzer continous tone")
+	print("'SLEEP' - Enter sleep")	
+	print("'ACT_FOTA' - Enable FOTA")
+	print("'ACT_CEL' - Start Cellular Thread")
+	print("'DACT_CEL_FOTA' - Stopp Cellular Thread and FOTA")
+	print("'ACT_CEL_FOTA'	- Start Cellular Thread and FOTA")
+	print("'FORCE_POLL_REQ' - Force poll request")	
+	print("'GNSS_NOMODE' - Release GNSS Force mode")
+	print("'GNSS_INACTIVE' - Force GNSS to Inactive")
+	print("'GNSS_PSM' - Force GNSS to PSM")
+	print("'GNSS_MAX' - Force GNSS to MAX")
+	print("")
+
 buzzer_thread = Thread(target=play_buzzer, args=())
 buzzer_thread.daemon = True
 buzzer_thread.start()
@@ -306,25 +330,7 @@ force_gnss_mode = 0
 thread_flags = 0
 
 while 1:
-	print("Press following to run test")
-	print("z - Start single EP test")
-	print("Z - Start infinit EP test")
-	print("I - Start infinit EP test runtime")
-	print("O - Output debug data")
-	print("s - Toggle 1V8_S voltage")
-	print("c - Toggle onoff charging")
-	print("a - Start EP and Toggle onoff charging")
-	print("b - Start buzzer continous tone")
-	print("SLEEP - Enter sleep")	
-	print("ACT_FOTA - Enable FOTA")
-	print("ACT_CEL - Start Cellular Thread")
-	print("DACT_CEL_FOTA - Stopp Cellular Thread and FOTA")
-	print("ACT_CEL_FOTA	- Start Cellular Thread and FOTA")
-	print("FORCE_POLL_REQ - Force poll request")	
-	print("GNSS_NOMODE - Release GNSS Force mode")
-	print("GNSS_INACTIVE - Force GNSS to Inactive")
-	print("GNSS_PSM - Force GNSS to PSM")
-	print("GNSS_MAX - Force GNSS to MAX")
+	_help()
 	x = input("'x' jump to next test step -> ")
 	if x == "z":
 		print("Pulse in 1 seconds!!!!!!!!!!")
@@ -333,8 +339,12 @@ while 1:
 	elif x == "Z":
 		print("Infinit EP each 5 second!!!!!!!!!!")
 		ep_on = not ep_on
-	elif x == "I":
-		cmndr.electric_pulse_infinite(10)			
+	elif x == "Help":
+		_help()		
+	elif x == "I1000":
+		cmndr.electric_pulse_infinite(1)		#Run 3k electrical pulse		
+	elif x == "I10000":
+		cmndr.electric_pulse_infinite(10)		#Run 10k electrical pulse			
 	elif x == "b":
 		buzzer_on = not buzzer_on			
 	elif x == "c":
