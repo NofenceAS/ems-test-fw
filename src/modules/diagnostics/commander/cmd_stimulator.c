@@ -185,30 +185,29 @@ S			 * <Timeout on getting a new warn zone freq>, Error code=-116, Sever~ */
 
 	case ELECTRICAL_PULSE_INFINITE: {
 		/* Send electric pulse infinit until duration is reached*/
-		uint8_t duration_in_hr = data[0]; //Amount of hours
-		int64_t elapsed = k_uptime_get();
+		int no_of_zap = data[0] * 1000; //Amount of hours
+		//int64_t elapsed = k_uptime_get();
+		LOG_DBG("No of zap: %d", no_of_zap);
 		ep_module_init(); //Initialize module as it might have been re-configured again after startup
 
-		for (int i = 0; i < duration_in_hr; i++) {
-			while ((k_uptime_get() - elapsed) <= 3600000) //Run for 1hour
-			{
-				resp = ACK;
-				struct warn_correction_pause_event *ev_q_test_zap =
-					new_warn_correction_pause_event();
-				ev_q_test_zap->reason = Reason_WARNPAUSEREASON_ZAP;
-				ev_q_test_zap->fence_dist = 1;
-				ev_q_test_zap->warn_duration = 1;
-				EVENT_SUBMIT(ev_q_test_zap);
-				struct ep_status_event *ready_ep_event = new_ep_status_event();
-				ready_ep_event->ep_status = EP_RELEASE;
-				ready_ep_event->is_first_pulse = false;
-				EVENT_SUBMIT(ready_ep_event);
-				increment_zap_count(); //Added to enable server to report the amount of zap and not via BLE
-				k_sleep(K_SECONDS(6));
-				struct sound_status_event *ev_idle = new_sound_status_event();
-				ev_idle->status = SND_STATUS_IDLE;
-				EVENT_SUBMIT(ev_idle);
-			}
+		for (int i = 0; i < no_of_zap; i++) {
+			resp = ACK;
+			struct warn_correction_pause_event *ev_q_test_zap =
+				new_warn_correction_pause_event();
+			ev_q_test_zap->reason = Reason_WARNPAUSEREASON_ZAP;
+			ev_q_test_zap->fence_dist = 1;
+			ev_q_test_zap->warn_duration = 1;
+			EVENT_SUBMIT(ev_q_test_zap);
+			struct ep_status_event *ready_ep_event = new_ep_status_event();
+			ready_ep_event->ep_status = EP_RELEASE;
+			ready_ep_event->is_first_pulse = false;
+			EVENT_SUBMIT(ready_ep_event);
+			increment_zap_count(); //Added to enable server to report the amount of zap and not via BLE
+			k_sleep(K_SECONDS(6));
+			LOG_DBG("Zapcnt: %d", i);
+			struct sound_status_event *ev_idle = new_sound_status_event();
+			ev_idle->status = SND_STATUS_IDLE;
+			EVENT_SUBMIT(ev_idle);
 		}
 		break;
 	}
