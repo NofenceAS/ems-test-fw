@@ -304,6 +304,24 @@ static void test_setup(void)
 	gnss_add_expected_cmd_rsp(cmd_cfg_setval_mga_ack, sizeof(cmd_cfg_setval_mga_ack),
 				  resp_cfg_setval_mga_ack, sizeof(resp_cfg_setval_mga_ack));
 
+#if (CONFIG_GNSS_MIA_M10_FIXMODE != 0)
+	uint8_t cmd_cfg_setval_fixmode_ack[] = { 0xB5, 0x62, 0x06, 0x8A, 0x09, 0x00,
+						 0x00, 0x03, 0x00, 0x00, 0x11, 0x00,
+						 0x11, 0x20, 0x02, 0xe0, 0x0b };
+	uint8_t resp_cfg_setval_fixmode_ack[] = { 0xB5, 0x62, 0x05, 0x01, 0x02,
+						  0x00, 0x06, 0x8A, 0x98, 0xC1 };
+	gnss_add_expected_cmd_rsp(cmd_cfg_setval_fixmode_ack, sizeof(cmd_cfg_setval_fixmode_ack),
+				  resp_cfg_setval_fixmode_ack, sizeof(resp_cfg_setval_fixmode_ack));
+#endif
+#if (CONFIG_GNSS_MIA_M10_PACC != 0)
+	// Pacc
+	uint8_t cmd_cfg_setval_pacc_ack[] = { 0xB5, 0x62, 0x06, 0x8A, 0x0A, 0x00, 0x00, 0x03, 0x00,
+					      0x00, 0xb3, 0x00, 0x11, 0x30, 0x32, 0x00, 0xc3, 0x53 };
+	uint8_t resp_cfg_setval_pacc_ack[] = { 0xB5, 0x62, 0x05, 0x01, 0x02,
+					       0x00, 0x06, 0x8A, 0x98, 0xC1 };
+	gnss_add_expected_cmd_rsp(cmd_cfg_setval_pacc_ack, sizeof(cmd_cfg_setval_pacc_ack),
+				  resp_cfg_setval_pacc_ack, sizeof(resp_cfg_setval_pacc_ack));
+#endif
 	zassert_equal(gnss_setup(gnss_dev, true), 0, "GNSS Setup failed");
 	zassert_equal(k_sem_take(&gnss_sem, K_MSEC(1000)), 0,
 		      "GNSS simulator did not indicate completion");
@@ -474,6 +492,24 @@ static void test_setup_3(void)
 	gnss_add_expected_cmd_rsp(cmd_cfg_setval_mga_ack, sizeof(cmd_cfg_setval_mga_ack),
 				  resp_cfg_setval_mga_ack, sizeof(resp_cfg_setval_mga_ack));
 
+#if (CONFIG_GNSS_MIA_M10_FIXMODE != 0)
+	uint8_t cmd_cfg_setval_fixmode_ack[] = { 0xB5, 0x62, 0x06, 0x8A, 0x09, 0x00,
+						 0x00, 0x03, 0x00, 0x00, 0x11, 0x00,
+						 0x11, 0x20, 0x02, 0xe0, 0x0b };
+	uint8_t resp_cfg_setval_fixmode_ack[] = { 0xB5, 0x62, 0x05, 0x01, 0x02,
+						  0x00, 0x06, 0x8A, 0x98, 0xC1 };
+	gnss_add_expected_cmd_rsp(cmd_cfg_setval_fixmode_ack, sizeof(cmd_cfg_setval_fixmode_ack),
+				  resp_cfg_setval_fixmode_ack, sizeof(resp_cfg_setval_fixmode_ack));
+#endif
+#if (CONFIG_GNSS_MIA_M10_PACC != 0)
+	// Pacc
+	uint8_t cmd_cfg_setval_pacc_ack[] = { 0xB5, 0x62, 0x06, 0x8A, 0x0A, 0x00, 0x00, 0x03, 0x00,
+					      0x00, 0xb3, 0x00, 0x11, 0x30, 0x32, 0x00, 0xc3, 0x53 };
+	uint8_t resp_cfg_setval_pacc_ack[] = { 0xB5, 0x62, 0x05, 0x01, 0x02,
+					       0x00, 0x06, 0x8A, 0x98, 0xC1 };
+	gnss_add_expected_cmd_rsp(cmd_cfg_setval_pacc_ack, sizeof(cmd_cfg_setval_pacc_ack),
+				  resp_cfg_setval_pacc_ack, sizeof(resp_cfg_setval_pacc_ack));
+#endif
 	zassert_equal(gnss_setup(gnss_dev, true), 0, "GNSS Setup failed");
 	zassert_equal(k_sem_take(&gnss_sem, K_MSEC(1000)), 0,
 		      "GNSS simulator did not indicate completion");

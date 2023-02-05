@@ -518,6 +518,21 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 		return ret;
 	}
 
+#if (CONFIG_GNSS_MIA_M10_FIXMODE != 0)
+	/* 3D fix only */
+	ret = mia_m10_config_set_u8(UBX_CFG_FIXMODE, CONFIG_GNSS_MIA_M10_FIXMODE);
+	if (ret != 0) {
+		return ret;
+	}
+#endif
+#if (CONFIG_GNSS_MIA_M10_PACC != 0)
+	/* 50m output accuracy*/
+	ret = mia_m10_config_set_u16(UBX_CFG_OUTFIL_PACC, CONFIG_GNSS_MIA_M10_PACC);
+	if (ret != 0) {
+		return ret;
+	}
+#endif
+
 	return 0;
 }
 
