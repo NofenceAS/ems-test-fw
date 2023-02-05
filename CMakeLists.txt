@@ -81,6 +81,7 @@ zephyr_library_include_directories(
         src/events/collar_stats
         src/events/amc
         src/events/watchdog
+        src/drivers/approtect
         ${PROJECT_BINARY_DIR}/include/generated/)
         
 target_sources(app PRIVATE ${APP_MAIN}
@@ -118,3 +119,5 @@ add_subdirectory(src/modules/movement_controller)
 add_subdirectory(src/modules/time_use)
 add_subdirectory(src/events/collar_stats)
 add_subdirectory(src/events/movement_controller)
+
+add_subdirectory(src/drivers/approtect)

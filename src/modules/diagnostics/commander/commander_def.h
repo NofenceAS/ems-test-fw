@@ -75,6 +75,8 @@ typedef enum {
 	GET_DIAG_FLAGS = 0x80,
 	SET_DIAG_FLAGS = 0x82,
 	CLR_DIAG_FLAGS = 0x84,
+
+	SET_LOCK_BIT = 0xDE,
 } system_cmd_t;
 
 typedef enum { READ = 0x00, WRITE = 0x01, ERASE_ALL = 0xEA } settings_cmd_t;

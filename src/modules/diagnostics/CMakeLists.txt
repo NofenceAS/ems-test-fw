@@ -3,10 +3,11 @@ if (CONFIG_DIAGNOSTICS)
 zephyr_include_directories(
     .
     ./commander
-    ./../../drivers/gnss/zephyr
+    ./../../drivers/gnss/zephyr    
     ./../../events/diagnostics/
     ./../../modules/buzzer
     ./../../modules/storage_controller
+    #./../../drivers/approtect    
 )
 
 target_sources(app PRIVATE 
@@ -19,6 +20,7 @@ target_sources(app PRIVATE
     ./../../events/diagnostics/diagnostics_events.c
     ./../../modules/storage_controller/stg_config.c
     log_backend_diag.c
+    #./../../drivers/approtect.c
 )
 
 if (CONFIG_DIAGNOSTICS_TEXT_PARSER)

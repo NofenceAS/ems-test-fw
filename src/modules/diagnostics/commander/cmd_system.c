@@ -12,6 +12,7 @@
 #include "messaging_module_events.h"
 #include "storage.h"
 #include "diagnostic_flags.h"
+#include "approtect.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(diag_cmd_system, 4);
@@ -280,6 +281,14 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 		}
 
 		commander_send_resp(interface, SYSTEM, cmd, resp, buffer, sizeof(uint32_t));
+		break;
+	}
+	case SET_LOCK_BIT: {
+		resp = ACK;
+		LOG_WRN("Setting firmware protection lock bit!");
+		lock_approtect();
+		LOG_WRN("Protection lock bit set!");
+		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
 		break;
 	}
 	default:
