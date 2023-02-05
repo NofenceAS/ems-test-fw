@@ -739,7 +739,7 @@ static void init_eeprom_variables(void)
 		nf_app_error(ERR_BLE_MODULE, err, NULL, 0);
 	} else {
 		char tmp[DEVICE_NAME_LEN + 1];
-		snprintf(tmp, DEVICE_NAME_LEN - 2, "%i", serial_id);
+		snprintf(tmp, DEVICE_NAME_LEN - 1, "%i", serial_id);
 		uint32_t len = strlen(tmp);
 		memset(bt_device_name, '0', sizeof(bt_device_name));
 		bt_device_name[0] = 'N';
