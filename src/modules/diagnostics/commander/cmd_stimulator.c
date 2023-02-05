@@ -135,9 +135,9 @@ int commander_stimulator_handler(enum diagnostics_interface interface, uint8_t c
 	case BUZZER_WARN: {
 		uint32_t freq = WARN_FREQ_MAX;
 
-		if (size >= 4) {
-			freq = (data[0] << 0) + (data[1] << 8) + (data[2] << 16) + (data[3] << 24);
-		}
+		//if (size >= 4) {
+		//	freq = (data[0] << 0) + (data[1] << 8) + (data[2] << 16) + (data[3] << 24);
+		//}
 
 		/** unable to confirm frequency
 		 *  <Timeout on getting a new warn zone freq>, Error code=-116, Sever~ 
