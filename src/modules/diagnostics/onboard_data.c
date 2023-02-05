@@ -113,9 +113,9 @@ int onboard_get_all_data(onboard_all_data_struct_t **ob_all_data_out)
 	ob_all_data.acc_x = ob_data.accel[0];
 	ob_all_data.acc_y = ob_data.accel[1];
 	ob_all_data.acc_z = ob_data.accel[2];
-	ob_all_data.bme280_temp = (int32_t)(ob_data.temp*1000);
-	ob_all_data.bme280_pres = (int32_t)(ob_data.pressure*1000);
-	ob_all_data.bme280_hum = (int32_t)(ob_data.humidity*1000);
+	ob_all_data.bme280_temp = (int32_t)(ob_data.temp * 1000.);
+	ob_all_data.bme280_pres = (int32_t)(ob_data.pressure * 1000.);
+	ob_all_data.bme280_hum = (int32_t)(ob_data.humidity * 1000.);
 
 	*ob_all_data_out = &ob_all_data;
 
