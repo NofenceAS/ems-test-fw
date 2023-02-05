@@ -98,6 +98,7 @@ typedef enum {
 
 	BUZZER_WARN = 0xB0,
 	BUZZER_TEST = 0xB1,
+	BUZZER_STOP = 0xBF,
 	ELECTRICAL_PULSE = 0xE0,
 	ELECTRICAL_PULSE_INFINITE = 0xE3,
 } simulator_cmd_t;

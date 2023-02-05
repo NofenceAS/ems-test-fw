@@ -139,15 +139,16 @@ int commander_stimulator_handler(enum diagnostics_interface interface, uint8_t c
 			freq = (data[0] << 0) + (data[1] << 8) + (data[2] << 16) + (data[3] << 24);
 		}
 
-		struct sound_event *sound_event_warn = new_sound_event();
-		sound_event_warn->type = SND_WARN;
-		EVENT_SUBMIT(sound_event_warn);
-
 		/** unable to confirm frequency
-S			 * <Timeout on getting a new warn zone freq>, Error code=-116, Sever~ */
+		 *  <Timeout on getting a new warn zone freq>, Error code=-116, Sever~ 
 		struct sound_set_warn_freq_event *sound_warn_freq = new_sound_set_warn_freq_event();
 		sound_warn_freq->freq = freq;
 		EVENT_SUBMIT(sound_warn_freq);
+		*/
+
+		struct sound_event *sound_event_warn = new_sound_event();
+		sound_event_warn->type = SND_WARN;
+		EVENT_SUBMIT(sound_event_warn);
 
 		resp = DATA;
 		commander_send_resp(interface, STIMULATOR, cmd, resp, (uint8_t *)&freq,
@@ -158,6 +159,13 @@ S			 * <Timeout on getting a new warn zone freq>, Error code=-116, Sever~ */
 	case BUZZER_TEST: {
 		struct sound_event *sound_event_warn = new_sound_event();
 		sound_event_warn->type = SND_SHORT_200;
+		EVENT_SUBMIT(sound_event_warn);
+		break;
+	}
+	case BUZZER_STOP: {
+		resp = ACK;
+		struct sound_event *sound_event_warn = new_sound_event();
+		sound_event_warn->type = SND_OFF;
 		EVENT_SUBMIT(sound_event_warn);
 		break;
 	}
