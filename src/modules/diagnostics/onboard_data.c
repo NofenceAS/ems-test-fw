@@ -3,9 +3,10 @@
 #include "onboard_data.h"
 #include "gnss.h"
 #include "modem_nf.h"
+#include <stdio.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(oboard_data, 4);
+LOG_MODULE_REGISTER(onboard_data, 4);
 
 static gnss_struct_t ob_gnss_data;
 static gsm_info ob_gsm_data;
@@ -49,6 +50,9 @@ int onboard_set_power_data(uint8_t pwr_state, uint16_t battery_mv, uint16_t char
 
 int onboard_set_env_sens_data(double temp, double humidity, double pressure)
 {
+	char buf[16] = { 0 };
+	sprintf(buf, "sprintf %.3f", temp);
+	LOG_DBG("Temperature: %s (%u)", log_strdup(buf), (int32_t)temp);
 	ob_data.temp = temp;
 	ob_data.humidity = humidity;
 	ob_data.pressure = pressure;
@@ -109,9 +113,9 @@ int onboard_get_all_data(onboard_all_data_struct_t **ob_all_data_out)
 	ob_all_data.acc_x = ob_data.accel[0];
 	ob_all_data.acc_y = ob_data.accel[1];
 	ob_all_data.acc_z = ob_data.accel[2];
-	ob_all_data.bme280_temp = ob_data.temp;
-	ob_all_data.bme280_pres = ob_data.pressure;
-	ob_all_data.bme280_hum = ob_data.humidity;
+	ob_all_data.bme280_temp = (int32_t)(ob_data.temp*1000);
+	ob_all_data.bme280_pres = (int32_t)(ob_data.pressure*1000);
+	ob_all_data.bme280_hum = (int32_t)(ob_data.humidity*1000);
 
 	*ob_all_data_out = &ob_all_data;
 

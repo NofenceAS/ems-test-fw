@@ -144,6 +144,9 @@ def read_onboard_data():
                 num_requests += 1
                 values = [datetime.now().strftime('%d-%m-%y %H:%M:%S')]
                 values += struct.unpack('BBBBBBBBhHHiiIIIIIiiiiii', resp['data'][0:68])
+                values[-1] /= 1000. # convert int32 temperature back to float 
+                values[-2] /= 1000. # convert int32 pressure back to float
+                values[-3] /= 1000. # convert int32 humidity back to float
                 obvals = []
                 for n, v in enumerate(values):
                     val = str(v)
@@ -345,7 +348,7 @@ def clear_flash():
 # Parse input arguments
 parser = argparse.ArgumentParser(description='Nofence final test')
 parser.add_argument('--comport', help='Serial comport connected to the BLE uart gateway', required=False)
-parser.add_argument('--rtt', help='Serial number of Segger J-Link to use for RTT communication', required=False)
+parser.add_argument('--rtt', help='Serial number of Segger J-Link to use for RTT communication', default='821007298', required=False)
 parser.add_argument('--sn', help='Collar serial number or device name', required=False)
 args = parser.parse_args()
 
