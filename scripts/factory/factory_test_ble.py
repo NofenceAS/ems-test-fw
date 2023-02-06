@@ -173,10 +173,14 @@ def change_config():
         ('Model', nfdiag.ID_BOM_MEC_REV),
         ('Revision', nfdiag.ID_BOM_PCB_REV),
         ('HW Version', nfdiag.ID_HW_VERSION),
-        ('Accel sigma noactivity limit', nfdiag.ID_ACC_SIGMA_NOACT)
-        ('Accel sigma sleep limit', nfdiag.ID_ACC_SIGMA_SLEEP)
-        ('Off animal time limit', nfdiag.ID_OFF_ANIMAL_TIME)
+        ('Accel Sigma Noactivity Limit', nfdiag.ID_ACC_SIGMA_NOACT),
+        ('Accel Sigma Sleep Limit', nfdiag.ID_ACC_SIGMA_SLEEP),
+        ('Off Animal Time Limit', nfdiag.ID_OFF_ANIMAL_TIME),
     ]
+
+    #cmndr.write_setting(nfdiag.ID_ACC_SIGMA_NOACT, 400)
+    #cmndr.write_setting(nfdiag.ID_ACC_SIGMA_SLEEP, 600)
+    #cmndr.write_setting(nfdiag.ID_OFF_ANIMAL_TIME, 1800)
 
     for pname, pid in params:
         current_val = cmndr.read_setting(pid)
@@ -203,6 +207,9 @@ def print_config():
     print(f'-  Model:        {cmndr.read_setting(nfdiag.ID_BOM_MEC_REV)}')
     print(f'-  Revision:     {cmndr.read_setting(nfdiag.ID_BOM_PCB_REV)}')
     print(f'-  HW Version:   {cmndr.read_setting(nfdiag.ID_HW_VERSION)}')
+    #print(f'-  Accel Sigma Noactivity Limit:    {cmndr.read_setting(nfdiag.ID_ACC_SIGMA_NOACT)}')
+    #print(f'-  Accel Sigma Sleep Limit:         {cmndr.read_setting(nfdiag.ID_ACC_SIGMA_SLEEP)}')
+    #print(f'-  Off Animal Time Limit:           {cmndr.read_setting(nfdiag.ID_OFF_ANIMAL_TIME)}')
     diag_flags = read_flag_configuration()
     print(f'\n-  Diag flags:   {bin(diag_flags).replace("0b","").zfill(8)}')
 
