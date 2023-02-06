@@ -171,6 +171,43 @@ static int commander_settings_read(enum diagnostics_interface interface, setting
 		}
 		break;
 	}
+	case ACC_SIGMA_NOACT: {
+		uint16_t accel_sigma_noact_limit = 0;
+		err = stg_config_u16_read(STG_U16_ACC_SIGMA_NOACTIVITY_LIMIT, &accel_sigma_noact_limit);
+		if (err == 0) {
+			memcpy(&buf[1], &accel_sigma_noact_limit, sizeof(uint16_t));
+			commander_send_resp(interface, SETTINGS, READ, DATA, buf,
+					    1 + sizeof(uint16_t));
+		} else {
+			commander_send_resp(interface, SETTINGS, READ, ERROR, NULL, 0);
+		}
+		break;
+	}
+	case ACC_SIGMA_SLEEP: {
+		uint16_t accel_sigma_sleep_limit = 0;
+		err = stg_config_u16_read(STG_U16_ACC_SIGMA_SLEEP_LIMIT, &accel_sigma_sleep_limit);
+		if (err == 0) {
+			memcpy(&buf[1], &accel_sigma_sleep_limit, sizeof(uint16_t));
+			commander_send_resp(interface, SETTINGS, READ, DATA, buf,
+					    1 + sizeof(uint16_t));
+		} else {
+			commander_send_resp(interface, SETTINGS, READ, ERROR, NULL, 0);
+		}
+		break;
+	}
+	case OFF_ANIMAL_TIME: {
+		uint16_t off_animal_time_limit = 0;
+		err = stg_config_u16_read(STG_U16_OFF_ANIMAL_TIME_LIMIT_SEC, &off_animal_time_limit);
+		if (err == 0) {
+			memcpy(&buf[1], &off_animal_time_limit, sizeof(uint16_t));
+			commander_send_resp(interface, SETTINGS, READ, DATA, buf,
+					    1 + sizeof(uint16_t));
+		} else {
+			commander_send_resp(interface, SETTINGS, READ, ERROR, NULL, 0);
+		}
+		break;
+	}
+
 	default: {
 		commander_send_resp(interface, SETTINGS, READ, UNKNOWN, NULL, 0);
 
@@ -260,6 +297,30 @@ static int commander_settings_write(enum diagnostics_interface interface, settin
 		if (size == 2) {
 			uint32_t prod_type = (data[0] << 0) + (data[1] << 8);
 			err = stg_config_u16_write(STG_U16_PRODUCT_TYPE, (uint16_t)prod_type);
+		}
+		break;
+	}
+	case ACC_SIGMA_NOACT: {
+		/* Must be exactly 2 bytes for uint16_t */
+		if (size == 2) {
+			uint32_t accel_sigma_noact_limit = (data[0] << 0) + (data[1] << 8);
+			err = stg_config_u16_write(STG_U16_ACC_SIGMA_NOACTIVITY_LIMIT, (uint16_t)accel_sigma_noact_limit);
+		}
+		break;
+	}
+	case ACC_SIGMA_SLEEP: {
+		/* Must be exactly 2 bytes for uint16_t */
+		if (size == 2) {
+			uint32_t accel_sigma_sleep_limit = (data[0] << 0) + (data[1] << 8);
+			err = stg_config_u16_write(STG_U16_ACC_SIGMA_SLEEP_LIMIT, (uint16_t)accel_sigma_sleep_limit);
+		}
+		break;
+	}
+	case OFF_ANIMAL_TIME: {
+		/* Must be exactly 2 bytes for uint16_t */
+		if (size == 2) {
+			uint32_t off_animal_time_limit = (data[0] << 0) + (data[1] << 8);
+			err = stg_config_u16_write(STG_U16_OFF_ANIMAL_TIME_LIMIT_SEC, (uint16_t)off_animal_time_limit);
 		}
 		break;
 	}

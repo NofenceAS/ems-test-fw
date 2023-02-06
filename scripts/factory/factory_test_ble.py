@@ -173,6 +173,9 @@ def change_config():
         ('Model', nfdiag.ID_BOM_MEC_REV),
         ('Revision', nfdiag.ID_BOM_PCB_REV),
         ('HW Version', nfdiag.ID_HW_VERSION),
+        ('Accel sigma noactivity limit', nfdiag.ID_ACC_SIGMA_NOACT)
+        ('Accel sigma sleep limit', nfdiag.ID_ACC_SIGMA_SLEEP)
+        ('Off animal time limit', nfdiag.ID_OFF_ANIMAL_TIME)
     ]
 
     for pname, pid in params:

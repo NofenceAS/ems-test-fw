@@ -57,6 +57,9 @@ typedef enum {
 	PRODUCT_REVISION = 0x05,
 	HW_VERSION = 0x06,
 	PRODUCT_TYPE = 0x07,
+	ACC_SIGMA_NOACT = 0x08,
+	ACC_SIGMA_SLEEP = 0x09,
+	OFF_ANIMAL_TIME = 0x0A,
 } settings_id_t;
 
 typedef enum {
