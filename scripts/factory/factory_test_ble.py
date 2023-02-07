@@ -184,6 +184,7 @@ def change_config():
         if val:
             if 's' in pid[1]:
                 val = bytes(val, 'utf-8', 'ignore') + b'\x00'
+                print(val)
             else:
                 val = int(val)
             if not cmndr.write_setting(pid, val):
@@ -365,7 +366,7 @@ def clear_flash():
 # Parse input arguments
 parser = argparse.ArgumentParser(description='Nofence final test')
 parser.add_argument('--comport', help='Serial comport connected to the BLE uart gateway', required=False)
-parser.add_argument('--rtt', help='Serial number of Segger J-Link to use for RTT communication', default='821007298', required=False)
+parser.add_argument('--rtt', help='Serial number of Segger J-Link to use for RTT communication', required=False)
 parser.add_argument('--sn', help='Collar serial number or device name', required=False)
 args = parser.parse_args()
 

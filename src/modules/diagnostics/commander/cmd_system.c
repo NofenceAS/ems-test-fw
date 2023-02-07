@@ -59,6 +59,8 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 		LOG_DBG("Setting device in sleep by setting GNSS to inactive...");
 
 		struct diag_thread_cntl_event *diag = new_diag_thread_cntl_event();
+		diag->allow_fota = false;
+		diag->run_cellular_thread = false;
 		diag->force_gnss_mode = 1; //GNSS INACTIVE
 		EVENT_SUBMIT(diag);
 
@@ -133,6 +135,16 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 		struct gnss_set_mode_event *ev = new_gnss_set_mode_event();
 		ev->mode = diag->force_gnss_mode;
 		EVENT_SUBMIT(ev);
+
+		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
+		break;
+	}
+	case READ_THREAD_CONTROL: {
+		resp = NOT_IMPLEMENTED;
+		uint8_t tc = 0;
+
+		/* not implemented, could add subscription in diagnostics
+		   and add status to onboard_data */
 
 		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
 		break;
