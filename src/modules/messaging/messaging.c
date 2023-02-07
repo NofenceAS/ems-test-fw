@@ -1764,8 +1764,11 @@ void process_poll_response(NofenceMessage *proto)
 	if (pResp->has_usPollConnectIntervalSec) {
 		/* Update poll request interval if not equal to interval requested by server */
 		if (atomic_get(&poll_period_seconds) != pResp->usPollConnectIntervalSec) {
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+			atomic_set(&poll_period_seconds, (5 * 60));
+#else
 			atomic_set(&poll_period_seconds, pResp->usPollConnectIntervalSec);
-
+#endif
 			err = k_work_reschedule_for_queue(
 				&message_q, &modem_poll_work,
 				K_SECONDS(atomic_get(&poll_period_seconds)));
