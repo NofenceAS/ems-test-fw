@@ -173,14 +173,10 @@ def change_config():
         ('Model', nfdiag.ID_BOM_MEC_REV),
         ('Revision', nfdiag.ID_BOM_PCB_REV),
         ('HW Version', nfdiag.ID_HW_VERSION),
-        ('Accel Sigma Noactivity Limit', nfdiag.ID_ACC_SIGMA_NOACT),
-        ('Accel Sigma Sleep Limit', nfdiag.ID_ACC_SIGMA_SLEEP),
-        ('Off Animal Time Limit', nfdiag.ID_OFF_ANIMAL_TIME),
+        #('Accel Sigma Noactivity Limit', nfdiag.ID_ACC_SIGMA_NOACT),
+        #('Accel Sigma Sleep Limit', nfdiag.ID_ACC_SIGMA_SLEEP),
+        #('Off Animal Time Limit', nfdiag.ID_OFF_ANIMAL_TIME),
     ]
-
-    #cmndr.write_setting(nfdiag.ID_ACC_SIGMA_NOACT, 400)
-    #cmndr.write_setting(nfdiag.ID_ACC_SIGMA_SLEEP, 600)
-    #cmndr.write_setting(nfdiag.ID_OFF_ANIMAL_TIME, 1800)
 
     for pname, pid in params:
         current_val = cmndr.read_setting(pid)
@@ -195,6 +191,12 @@ def change_config():
             new_val = cmndr.read_setting(pid)
             print(f' - {pname} = "{new_val}"')
 
+    # We don't want the operator to see these values, but we want them to have
+    # a default value. Thus we program them silently at the end of this call 
+    cmndr.write_setting(nfdiag.ID_ACC_SIGMA_NOACT, 400)
+    cmndr.write_setting(nfdiag.ID_ACC_SIGMA_SLEEP, 600)
+    cmndr.write_setting(nfdiag.ID_OFF_ANIMAL_TIME, 1800)
+
 
 def print_config():
     global cmndr, sn
@@ -207,11 +209,16 @@ def print_config():
     print(f'-  Model:        {cmndr.read_setting(nfdiag.ID_BOM_MEC_REV)}')
     print(f'-  Revision:     {cmndr.read_setting(nfdiag.ID_BOM_PCB_REV)}')
     print(f'-  HW Version:   {cmndr.read_setting(nfdiag.ID_HW_VERSION)}')
-    #print(f'-  Accel Sigma Noactivity Limit:    {cmndr.read_setting(nfdiag.ID_ACC_SIGMA_NOACT)}')
-    #print(f'-  Accel Sigma Sleep Limit:         {cmndr.read_setting(nfdiag.ID_ACC_SIGMA_SLEEP)}')
-    #print(f'-  Off Animal Time Limit:           {cmndr.read_setting(nfdiag.ID_OFF_ANIMAL_TIME)}')
     diag_flags = read_flag_configuration()
     print(f'\n-  Diag flags:   {bin(diag_flags).replace("0b","").zfill(8)}')
+
+
+def accel_config():
+    global cmndr, sn
+    sn = cmndr.read_setting(nfdiag.ID_SERIAL)
+    print(f'-  Accel Sigma Noactivity Limit:    {cmndr.read_setting(nfdiag.ID_ACC_SIGMA_NOACT)}')
+    print(f'-  Accel Sigma Sleep Limit:         {cmndr.read_setting(nfdiag.ID_ACC_SIGMA_SLEEP)}')
+    print(f'-  Off Animal Time Limit:           {cmndr.read_setting(nfdiag.ID_OFF_ANIMAL_TIME)}')
 
 
 def thread_control():
@@ -431,6 +438,7 @@ options = [
     ('sleep mode', force_sleep),
     ('self-test', self_test),
     ('force poll request', force_poll_req),
+    ('read accel sleep config', accel_config),
 ]
 
 while True:
