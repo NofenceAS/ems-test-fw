@@ -222,20 +222,61 @@ def accel_config():
     print(f'-  Off Animal Time Limit:           {cmndr.read_setting(nfdiag.ID_OFF_ANIMAL_TIME)}')
 
 
+run_thread = False
+allow_fota = False
+force_gnss_mode = 0
+thread_flags = 0
+
 def thread_control():
-    global cmndr
+    global cmndr, run_thread, allow_fota, force_gnss_mode, thread_flags
     opt = [
-        ('Stop cellular thread', 'STOP CEL'),
         ('Start cellular thread', 'ACT_CEL'),
+        ('Stop cellular thread', 'DACT_CEL_FOTA'),
         ('Activate FOTA', 'ACT_FOTA'),
-        ('Activate CELLULAR AND FOTA', 'ACT_CEL_FOTA')
+        ('Activate CELLULAR AND FOTA', 'ACT_CEL_FOTA'),
+        ('Set GNSS to NOMODE', 'GNSS_NOMODE'),
+        ('Set GNSS to INACTIVE', 'GNSS_INACTIVE'),
+        ('Set GNSS to PSM', 'GNSS_PSM'),
+        ('Set GNSS to MAX', 'GNSS_MAX'),
     ]
+    print(f'Current:\n thread_flags = {thread_flags:>08b}\n run_thread = {run_thread}\n allow_fota = {allow_fota}\n force_gnss_mode = {force_gnss_mode}\n')
     for n, o in enumerate(opt):
         print(f'{n}. {o[0]} ({o[1]})')
     cmd = user_input(f'\nSet thread to (0-{len(opt)-1}): ').strip()
-    if cmd.isdigit() and (int(cmd) >= 0 and int(cmd) < len(opt)):    
-        cmndr.thread_control(int(cmd))
-        print(f'setting thread to {cmd} ({opt[int(cmd)][1]})')
+    if cmd.isdigit() and (int(cmd) >= 0 and int(cmd) < len(opt)):
+
+        str_cmd = opt[int(cmd)][1]
+
+        if str_cmd == "ACT_CEL":		
+            print("Start cellular thread")
+            run_thread = True
+        elif str_cmd == "DACT_CEL_FOTA":		
+            print("Stop cellular thread")
+            run_thread = False
+            allow_fota = False
+        elif str_cmd == "ACT_FOTA":		
+            print("Activate FOTA")
+            allow_fota = True
+        elif str_cmd == "ACT_CEL_FOTA":		
+            print("Activate CELLULAR AND FOTA")
+            allow_fota = True		
+            run_thread = True
+        elif str_cmd == "GNSS_NOMODE":		
+            print("GNSS NOMODE")
+            force_gnss_mode = 0
+        elif str_cmd == "GNSS_INACTIVE":				
+            print("GNSS INACTIVE")
+            force_gnss_mode = 1
+        elif str_cmd == "GNSS_PSM":				
+            print("GNSS PSM")
+            force_gnss_mode = 2
+        elif str_cmd == "GNSS_MAX":				
+            print("GNSS MAX")
+            force_gnss_mode = 4
+
+        thread_flags = (force_gnss_mode << 2) | (allow_fota << 1) | (run_thread << 0)
+        print(f'thread_flags = {thread_flags:>08b} (run_thread = {run_thread}, allow_fota = {allow_fota}, force_gnss_mode = {force_gnss_mode})')
+        cmndr.thread_control(thread_flags)
     else:
         print(f'canceled')
 
@@ -426,16 +467,16 @@ print_config()
 options = [
     ('pulse', trigger_pulse),
     ('buzzer', trigger_buzzer),
-    ('charging', set_charging),
+    ('charging...', set_charging),
     ('read onboard data', read_onboard_data),
     ('change config', change_config),
     ('read config', print_config),
     ('read CCID', read_modem_ccid),
     ('read IP', read_modem_ip),
-    ('thread control', thread_control),
+    ('thread control...', thread_control),
     ('config flags', set_flag_configuration),
     ('clear flags', clear_all_flags),
-    ('clear flash memory', clear_flash),
+    ('clear flash memory...', clear_flash),
     ('sleep mode', force_sleep),
     ('self-test', self_test),
     ('force poll request', force_poll_req),
