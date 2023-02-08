@@ -422,7 +422,7 @@ if args.comport:
             else:
                 print(f'Invalid SN: "{sn}"')
         except Exception as e:
-            exit('SN missing')
+            sys.exit('SN missing')
 
 stream = None
 retries = 5
@@ -436,7 +436,7 @@ while retries > 0:
             stream = nfdiag.JLinkStream(serial=args.rtt)
             break
     except KeyboardInterrupt:
-        exit('Connecting attemt canceled...')
+        sys.exit('Connecting attemt canceled...')
     except Exception as e:
         retries -= 1
 
@@ -444,7 +444,7 @@ try_until = time.time()+10
 while not stream.is_connected():
     time.sleep(0.1)
     if time.time() > try_until:
-        exit('Timed out waiting for connection...')
+        sys.exit('Timed out waiting for connection...')
         
 got_ping = True
 if stream.is_connected():
@@ -458,7 +458,7 @@ if stream.is_connected():
             got_ping = True
             print("Got ping")
     if not got_ping:
-        exit('Could not ping collar...')
+        sys.exit('Could not ping collar...')
 
 
 print(f'\n-- {f"Connected ".ljust(40, "-")}\n')
