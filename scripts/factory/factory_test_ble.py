@@ -18,7 +18,10 @@ import cobs
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
+
+OPERATOR_MODE = True
 
 
 cmndr = None
@@ -30,12 +33,12 @@ def user_input(prompt):
     except Exception as e:
         raise KeyboardInterrupt()
 
-def run_command(group, cmd, payload=None):
+def run_command(group, cmd, payload=None, timeout=2):
     global cmndr
     resp = None
     resp_str = 'TIMEOUT'
     try:
-        resp = cmndr.send_cmd(group, cmd, payload)
+        resp = cmndr.send_cmd(group, cmd, payload, timeout)
         if resp:
             if resp['code'] == nfdiag.RESP_ACK:
                 resp_str = 'OK' 
@@ -44,8 +47,8 @@ def run_command(group, cmd, payload=None):
             else:
                 resp_str = f'FAILED (code: {resp["code"]})'
     except Exception as e:
-        resp_str = f'FAILED ({e})'
-    logging.debug(resp)
+        resp_str = f'DIAG COMMAND FAILED: ({e})'
+    logger.debug(resp)
     return resp_str, resp
 
 # ---------------
@@ -173,10 +176,13 @@ def change_config():
         ('Model', nfdiag.ID_BOM_MEC_REV),
         ('Revision', nfdiag.ID_BOM_PCB_REV),
         ('HW Version', nfdiag.ID_HW_VERSION),
-        #('Accel Sigma Noactivity Limit', nfdiag.ID_ACC_SIGMA_NOACT),
-        #('Accel Sigma Sleep Limit', nfdiag.ID_ACC_SIGMA_SLEEP),
-        #('Off Animal Time Limit', nfdiag.ID_OFF_ANIMAL_TIME),
     ]
+    if not OPERATOR_MODE:
+        params += [
+            ('Accel Sigma Noactivity Limit', nfdiag.ID_ACC_SIGMA_NOACT),
+            ('Accel Sigma Sleep Limit', nfdiag.ID_ACC_SIGMA_SLEEP),
+            ('Off Animal Time Limit', nfdiag.ID_OFF_ANIMAL_TIME),
+        ]
 
     for pname, pid in params:
         current_val = cmndr.read_setting(pid)
@@ -192,11 +198,12 @@ def change_config():
             new_val = cmndr.read_setting(pid)
             print(f' - {pname} = "{new_val}"')
 
-    # We don't want the operator to see these values, but we want them to have
-    # a default value. Thus we program them silently at the end of this call 
-    cmndr.write_setting(nfdiag.ID_ACC_SIGMA_NOACT, 400)
-    cmndr.write_setting(nfdiag.ID_ACC_SIGMA_SLEEP, 600)
-    cmndr.write_setting(nfdiag.ID_OFF_ANIMAL_TIME, 1800)
+    if OPERATOR_MODE:
+        # We don't want the operator to see these values, but we want them to have
+        # a default value. Thus we program them silently at the end of this call 
+        cmndr.write_setting(nfdiag.ID_ACC_SIGMA_NOACT, 400)
+        cmndr.write_setting(nfdiag.ID_ACC_SIGMA_SLEEP, 600)
+        cmndr.write_setting(nfdiag.ID_OFF_ANIMAL_TIME, 1800)
 
 
 def print_config():
@@ -210,6 +217,9 @@ def print_config():
     print(f'-  Model:        {cmndr.read_setting(nfdiag.ID_BOM_MEC_REV)}')
     print(f'-  Revision:     {cmndr.read_setting(nfdiag.ID_BOM_PCB_REV)}')
     print(f'-  HW Version:   {cmndr.read_setting(nfdiag.ID_HW_VERSION)}')
+    if not OPERATOR_MODE:
+        print('')
+        accel_config()
     diag_flags = read_flag_configuration()
     print(f'\n-  Diag flags:   {bin(diag_flags).replace("0b","").zfill(8)}')
 
@@ -386,8 +396,11 @@ def clear_flash():
     global cmndr
     opt = [
         ('Pasture / fence version', nfdiag.CMD_CLEAR_PASTURE),
-        ('All flash memory', nfdiag.CMD_ERASE_FLASH),
     ]
+    if not OPERATOR_MODE:
+        opt += [
+            ('All flash memory', nfdiag.CMD_ERASE_FLASH),
+        ]
     print('Clear flash:')
     for n, o in enumerate(opt):
         print(f'{n}. {o[0]}')
@@ -397,6 +410,26 @@ def clear_flash():
         print(f'Cleared {opt[int(cmd)][0].lower()}: {resp_str}')
     else:
         print(f'canceled')
+
+
+def debug_log():
+    global cmndr
+    resp_str, resp = run_command(nfdiag.GROUP_SYSTEM, nfdiag.CMD_LOG, b'\x01\x01')
+    if resp and (resp['code'] == nfdiag.RESP_ACK or resp['code'] == nfdiag.RESP_DATA): 
+        print(f'Enabling debug log: {resp_str} (ctrl+c to stop)\n---\n')
+        while True:
+            try:
+                data = cmndr.get_data(0.1)
+                if data:
+                    print(str(data, 'ascii', 'ignore'))
+            except KeyboardInterrupt:
+                print('\n---\nStopping debug log...')
+                break
+    else:
+        print(f'Enabling debug log: {resp_str}\n')
+    _ = run_command(nfdiag.GROUP_SYSTEM, nfdiag.CMD_LOG, b'\x00\x00') #timeout first try
+    resp_str, resp = run_command(nfdiag.GROUP_SYSTEM, nfdiag.CMD_LOG, b'\x00\x00')
+    print(f'Disabling debug log: {resp_str}\n')
 
 
 
@@ -475,19 +508,21 @@ options = [
     ('read IP', read_modem_ip),
     ('thread control ...', thread_control),
     ('config flags', set_flag_configuration),
-    ('clear flags', clear_all_flags),
+    ('clear flags', clear_all_flags, OPERATOR_MODE),
     ('clear flash memory ...', clear_flash),
     ('sleep mode', force_sleep),
     ('self-test', self_test),
     ('force poll request', force_poll_req),
     ('read accel sleep config', accel_config),
+    ('debug log', debug_log),
 ]
 
 while True:
     try:
         print(f'\n{"-"*43}\n')
         for n, opt in enumerate(options):
-            print(f'{str(n+1).rjust(2)}. {opt[0]}')
+            if len(opt) < 3 or (len(opt) >= 3 and not opt[2]): 
+                print(f'{str(n+1).rjust(2)}. {opt[0]}')
         print('\n q. quit (ctrl+c)')
         cmd = user_input(f'\nCommand (1-{len(options)}): ').strip()
         print('\n')
@@ -497,9 +532,14 @@ while True:
             try:
                 n = int(cmd)-1
                 if n >= 0 and n < len(options):
-                    c, func = options[n]
-                    print(f'-- {f"{c.title()} ".ljust(40, "-")}\n')
-                    func()
+                    c = options[n][0]                    
+                    func = options[n][1]
+                    hidden = options[n][2] if len(options[n]) >= 3 else False
+                    if not hidden:
+                        print(f'-- {f"{c.title()} ".ljust(40, "-")}\n')
+                        func()
+                    else:
+                        print(f'{cmd} not allowed')
                 else:
                     print(f'Invalid command: "{cmd}"')
             except Exception as e:
