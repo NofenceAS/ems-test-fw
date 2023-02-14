@@ -3,6 +3,7 @@
  */
 
 #include <ztest.h>
+#include <storage.h>
 #include "messaging.h"
 #include "ble_ctrl_event.h"
 #include "ble_data_event.h"
@@ -23,6 +24,7 @@ static K_SEM_DEFINE(seq_msg_out, 0, 1);
 static K_SEM_DEFINE(msg_in, 0, 1);
 static K_SEM_DEFINE(new_host, 0, 1);
 static K_SEM_DEFINE(error_sem, 0, 1);
+static K_SEM_DEFINE(mdm_upgrade_sem, 0, 1);
 
 #define BYTESWAP16(x) (((x) << 8) | ((x) >> 8))
 
@@ -46,10 +48,35 @@ void assert_post_action(const char *file, unsigned int line)
 	printk("assert_post_action - file: %s (line: %u)\n", file, line);
 }
 
+int stg_read_log_data(fcb_read_cb cb, uint16_t num_entries)
+{
+	NofenceMessage dummy_msg;
+	dummy_msg.which_m = 16; /* all simulated log messages are hardcoded to status_msg */
+	dummy_msg.header.ulId = 0;
+	dummy_msg.header.ulUnixTimestamp = 1;
+	dummy_msg.m.status_msg.eMode = 0;
+	dummy_msg.m.status_msg.eReason = 0;
+	dummy_msg.m.status_msg.eCollarStatus = 0;
+	dummy_msg.m.status_msg.eFenceStatus = 0;
+	dummy_msg.m.status_msg.usBatteryVoltage = 0;
+
+	uint8_t encoded_msg[NofenceMessage_size];
+	memset(encoded_msg, 0, sizeof(encoded_msg));
+	size_t encoded_size;
+
+	int ret = collar_protocol_encode(&dummy_msg, &encoded_msg[2], sizeof(encoded_msg),
+					 &encoded_size);
+	printk("\n%d\n", ret);
+	uint16_t total_size = encoded_size + 2;
+	memcpy(&encoded_msg[0], &total_size, 2);
+	cb(&encoded_msg[0], encoded_size);
+	k_sleep(K_SECONDS(0.1));
+	return ztest_get_return_value();
+}
 void test_init(void)
 {
 	/* 
-	 * Test the initialization of the messaging module. Verify that the first poll request sent 
+	 * Test the initialization of the messaging module. Verify that the fimodem_nf_get_model_and_fw_versionrst poll request sent
 	 * after boot and initialization contains boot parameters.
 	 */
 
@@ -74,6 +101,12 @@ void test_init(void)
 	ztest_returns_value(stg_config_u8_read, 0);
 	ztest_returns_value(stg_config_u8_read, 0); //Boot reason
 	ztest_returns_value(stg_config_u8_write, 0); //Boot reason
+	ztest_returns_value(modem_nf_get_model_and_fw_version, 0);
+	/* @todo see mock, dont manage to copy data to char ** */
+	/*
+	ztest_return_data(modem_nf_get_model_and_fw_version,model,modem_model);
+	ztest_return_data(modem_nf_get_model_and_fw_version,version,modem_version);
+        */
 
 	zassert_false(event_manager_init(), "Error when initializing event manager");
 	zassert_false(messaging_module_init(), "Error when initializing messaging module");
@@ -127,6 +160,15 @@ void test_init(void)
 		m_latest_proto_msg.m.poll_message_req.versionInfo.has_ulNRF52SoftDeviceVersion, "");
 
 	zassert_equal(m_latest_proto_msg.header.ulId, 1, "");
+	zassert_equal(m_latest_proto_msg.m.poll_message_req.has_xVersionInfoModem, true, "");
+	/* 32 bytes max, so we expect 31, last char should be replaced by \0 */
+	zassert_equal(strcmp(m_latest_proto_msg.m.poll_message_req.xVersionInfoModem.xModel,
+			     "0123456789012345678901234567890"),
+		      0, "");
+	/* 64 bytes max, so we expect 63, last char should be replaced by \0  */
+	zassert_equal(strcmp(m_latest_proto_msg.m.poll_message_req.xVersionInfoModem.xVersion,
+			     "012345678901234567890123456789012345678901234567890123456789012"),
+		      0, "");
 
 	k_sleep(K_SECONDS(5));
 
@@ -137,12 +179,18 @@ void test_init(void)
 	/* Confirm that status messages are now sent after the initial updates are done */
 	ztest_returns_value(date_time_now, 0);
 	ztest_returns_value(stg_write_log_data, 0);
+	ztest_returns_value(date_time_now, 0);
+	ztest_returns_value(stg_write_log_data, 0);
+
 	ztest_returns_value(stg_read_log_data, 0);
 	ztest_returns_value(stg_log_pointing_to_last, false);
 
 	struct update_collar_status *collar_evt = new_update_collar_status();
 	collar_evt->collar_status = CollarStatus_Stuck;
 	EVENT_SUBMIT(collar_evt);
+
+	struct animal_escape_event *escaped_evt0 = new_animal_escape_event();
+	EVENT_SUBMIT(escaped_evt0);
 
 	/* Verify that seq message is NOT sent. Periodic seq message is scheduled after 30 minutes 
 	 * and should not send messages before receiving the initial poll response from the server- 
@@ -214,8 +262,8 @@ void test_send_seq_message_with_preceding_poll_req(void)
 	 * Note! This assumes a 30 min seq message interval.
 	 */
 
-	/* Check the initial message count before starting the test */
-	zassert_equal(msg_count, 2, "");
+	/* Reset message count before starting the test */
+	msg_count = 0;
 
 	ztest_returns_value(date_time_now, 0); //Poll request
 
@@ -244,7 +292,7 @@ void test_send_seq_message_with_preceding_poll_req(void)
 
 	zassert_equal(k_sem_take(&msg_out, K_MSEC(500)), 0, "");
 
-	zassert_equal(msg_count, 4 /* Initial count + log preceding poll req. */, "");
+	zassert_equal(msg_count, 3 /* preceding poll req. + seq1 + seq2 */, "");
 }
 
 void test_stop_excessive_poll_requests(void)
@@ -282,10 +330,10 @@ void test_stop_excessive_poll_requests(void)
 	struct animal_escape_event *escaped_evt1 = new_animal_escape_event();
 	EVENT_SUBMIT(escaped_evt1);
 
-	k_sleep(K_SECONDS(1));
+	k_sleep(K_SECONDS(10));
 
 	zassert_equal(k_sem_take(&msg_out, K_SECONDS(1)), 0, "");
-	zassert_equal(m_latest_proto_msg.which_m, NofenceMessage_poll_message_req_tag, "");
+	zassert_equal(m_latest_proto_msg.which_m, 16, "");
 }
 
 void test_poll_request_out_when_nudged_from_server(void)
@@ -341,7 +389,6 @@ void test_poll_response_has_new_fence(void)
 			.has_bUseUbloxAno = true,
 			.bUseUbloxAno = true,
 			.has_usPollConnectIntervalSec = false,
-			.usPollConnectIntervalSec = 60
 		}
 	};
 
@@ -439,7 +486,6 @@ void test_poll_response_has_new_fence(void)
 			.has_bUseUbloxAno = true,
 			.bUseUbloxAno = true,
 			.has_usPollConnectIntervalSec = false,
-			.usPollConnectIntervalSec = 60
 		}
 	};
 
@@ -497,7 +543,6 @@ void test_fence_download_frame_loss(void)
 			.has_bUseUbloxAno = true,
 			.bUseUbloxAno = true,
 			.has_usPollConnectIntervalSec = false,
-			.usPollConnectIntervalSec = 60
 		}
 	};
 	memset(encoded_msg, 0, sizeof(encoded_msg));
@@ -686,7 +731,6 @@ void test_poll_response_has_host_address(void)
 			.has_bUseUbloxAno = true,
 			.bUseUbloxAno = true,
 			.has_usPollConnectIntervalSec = false,
-			.usPollConnectIntervalSec = 60
 		}
 	};
 	memcpy(poll_response.m.poll_message_resp.xServerIp, dummy_host, sizeof(dummy_host[0] * 22));
@@ -756,9 +800,10 @@ void test_poll_request_retry_after_missing_ack_from_cellular_controller(void)
 
 void test_messages_during_fota(void)
 {
+	msg_count = 0;
 	/*
-	 * Test that during a FOTA only poll requests are sent. Poll responses should not be handled
-	 * and other message, such as log messages or ANO data, should NOT be sent.
+	 * Test that during a FOTA log messages are not sent, all other message types are sent
+	 * and responses from the server are handled.
 	 */
 
 	/* Simulate FOTA started/ongoing from the fw_upgrade module by sending the event */
@@ -800,9 +845,6 @@ void test_messages_during_fota(void)
 
 	k_sleep(K_SECONDS(1));
 
-	/* Simulate a incomming poll response to verify that it is not processed during FOTA.
-	 * Note! This fails on missing return statements if the message is sent.
-	 */
 	NofenceMessage poll_response = {
 		.which_m = NofenceMessage_poll_message_resp_tag,
 		.header = {
@@ -817,7 +859,6 @@ void test_messages_during_fota(void)
 			.has_bUseUbloxAno = true,
 			.bUseUbloxAno = true,
 			.has_usPollConnectIntervalSec = false,
-			.usPollConnectIntervalSec = 60
 		}
 	};
 
@@ -836,9 +877,17 @@ void test_messages_during_fota(void)
 	msgIn->len = encoded_size + 2;
 	EVENT_SUBMIT(msgIn);
 
-	k_sleep(K_SECONDS(1));
+	ztest_returns_value(date_time_now, 0);
+	zassert_equal(k_sem_take(&msg_out, K_SECONDS(1)), 0, "");
+	zassert_equal(m_latest_proto_msg.which_m, NofenceMessage_fence_definition_req_tag, "");
+	zassert_equal(m_latest_proto_msg.m.fence_definition_req.ulFenceDefVersion, 10, "");
 
-	/* Send poll request and verify that it is sent during FOTA */
+	k_sleep(K_MSEC(500));
+
+	/* Send poll request and verify that it is sent and its response is handled during FOTA
+	 * (poll response has fence version 10, verify that we will ask for fence ver. 10 as soon
+	 * as we process the poll response (even during FOTA).
+	 * ) */
 	k_sem_reset(&msg_out);
 	ztest_returns_value(date_time_now, 0);
 	struct send_poll_request_now *poll_evt2 = new_send_poll_request_now();
@@ -854,7 +903,7 @@ void test_messages_during_fota(void)
 
 	k_sleep(K_MSEC(500));
 
-	/* Send poll request and verify that it is sent */
+	/* Send poll request and verify that it is sent after FOTA stops */
 	k_sem_reset(&msg_out);
 	ztest_returns_value(date_time_now, 0);
 	struct send_poll_request_now *poll_evt3 = new_send_poll_request_now();
@@ -877,11 +926,286 @@ void test_messages_during_fota(void)
 	struct animal_escape_event *escaped_evt1 = new_animal_escape_event();
 	EVENT_SUBMIT(escaped_evt1);
 
-	k_sleep(K_SECONDS(1)); //Delay to let the test finish
+	zassert_equal(k_sem_take(&msg_out, K_SECONDS(1)), 0, ""); //shouldn't send the poll
+	// request associated with the new escape (status) message as the previous one was sent
+	// within the past 60 seconds, this must be the escape message
+	zassert_not_equal(m_latest_proto_msg.which_m, NofenceMessage_poll_message_req_tag, "");
+	zassert_equal(m_latest_proto_msg.which_m, 16, "");
+
+	k_sleep(K_SECONDS(61)); //to ensure that a preceding poll request will be sent with the
+	// next log message
+
+	k_sem_reset(&msg_out);
+	ztest_returns_value(date_time_now, 0); //Timestamp the escaped status message
+	ztest_returns_value(stg_write_log_data, 0); //Store message
+	ztest_returns_value(date_time_now, 0); //Preceding poll header
+
+	ztest_returns_value(stg_read_log_data, 0); //Send log msg
+	ztest_returns_value(stg_log_pointing_to_last, false); //Send log msg
+	struct animal_escape_event *escaped_evt2 = new_animal_escape_event();
+	EVENT_SUBMIT(escaped_evt2);
+
+	zassert_equal(k_sem_take(&msg_out, K_SECONDS(1)), 0, "");
+	zassert_equal(m_latest_proto_msg.which_m, NofenceMessage_poll_message_req_tag, "");
+
+	k_sem_reset(&msg_out);
+	zassert_equal(k_sem_take(&msg_out, K_SECONDS(1)), 0, "");
+	zassert_equal(m_latest_proto_msg.which_m, 16, "");
+	k_sleep(K_SECONDS(61));
+
+	// new forced poll request
+	k_sem_reset(&msg_out);
+	ztest_returns_value(date_time_now, 0);
+	struct send_poll_request_now *poll_evt4 = new_send_poll_request_now();
+	EVENT_SUBMIT(poll_evt4);
+	zassert_equal(k_sem_take(&msg_out, K_SECONDS(1)), 0, "");
+	zassert_equal(m_latest_proto_msg.which_m, NofenceMessage_poll_message_req_tag, "");
+	k_sleep(K_SECONDS(10)); //Delay to let the test finish
+}
+
+static bool g_is_reboot = false;
+static void test_fota_wdt_cb()
+{
+	g_is_reboot = true;
+}
+
+static void test_app_fota_wdt(void)
+{
+	/*
+	 * Test that the application watchdog triggers when FOTA doesn't finish
+	 */
+	fota_wdt_cb_register(test_fota_wdt_cb);
+
+	/* Simulate FOTA started/ongoing from the fw_upgrade module by sending the event */
+	struct dfu_status_event *fota_start_event = new_dfu_status_event();
+	fota_start_event->dfu_status = DFU_STATUS_IN_PROGRESS;
+	EVENT_SUBMIT(fota_start_event);
+
+	k_sleep(K_MINUTES(CONFIG_APP_FOTA_WDT_MINUTES + 2));
+	zassert_equal(g_is_reboot, true, "");
+
+	g_is_reboot = false;
+
+	/* Simulate FOTA started/ongoing from the fw_upgrade module by sending the event */
+	fota_start_event = new_dfu_status_event();
+	fota_start_event->dfu_status = DFU_STATUS_IN_PROGRESS;
+	EVENT_SUBMIT(fota_start_event);
+	struct dfu_status_event *fota_stop_event = new_dfu_status_event();
+	fota_stop_event->dfu_status = DFU_STATUS_IDLE;
+	EVENT_SUBMIT(fota_stop_event);
+	k_sleep(K_MINUTES(CONFIG_APP_FOTA_WDT_MINUTES));
+	zassert_equal(g_is_reboot, false, "");
+}
+
+void test_poll_request_takes_precedence_over_log_messages(void)
+{
+	k_sleep(K_SECONDS(61));
+	k_sem_reset(&msg_out);
+
+	ztest_returns_value(date_time_now, 0); //Timestamp the escaped status message
+	ztest_returns_value(stg_write_log_data, 0); //Store message
+	ztest_returns_value(date_time_now, 0); //Preceding poll header
+	ztest_returns_value(stg_read_log_data, 0); //Send log msg
+	ztest_returns_value(stg_log_pointing_to_last, false); //Send log msg
+	ztest_returns_value(date_time_now, 0); //forced poll request
+	/* for illustration: if the poll request is delayed a bit, the log message will be sent
+	 * first, releasing the Tx thread.*/
+
+	struct animal_escape_event *escaped_evt = new_animal_escape_event();
+	EVENT_SUBMIT(escaped_evt);
+	k_sleep(K_SECONDS(10));
+	struct send_poll_request_now *poll_evt = new_send_poll_request_now();
+	EVENT_SUBMIT(poll_evt);
+
+	NofenceMessage poll_response = {
+		.which_m = NofenceMessage_poll_message_resp_tag,
+		.header = {
+			.ulId = 0,
+			.ulUnixTimestamp = 1,
+			.ulVersion = 0,
+			.has_ulVersion = false,
+		},
+		.m.poll_message_resp = {
+			.eActivationMode = ActivationMode_Active,
+			.ulFenceDefVersion = 0,
+			.has_bUseUbloxAno = true,
+			.bUseUbloxAno = true,
+			.has_usPollConnectIntervalSec = false,
+		}
+	};
+
+	uint8_t encoded_msg[NofenceMessage_size];
+	memset(encoded_msg, 0, sizeof(encoded_msg));
+	size_t encoded_size = 0;
+
+	int ret = collar_protocol_encode(&poll_response, &encoded_msg[0], sizeof(encoded_msg),
+					 &encoded_size);
+	zassert_equal(ret, 0, "Unable to decode protobuf message");
+
+	memcpy(&encoded_msg[2], &encoded_msg[0], encoded_size);
+
+	struct cellular_proto_in_event *msgIn = new_cellular_proto_in_event();
+	msgIn->buf = &encoded_msg[0];
+	msgIn->len = encoded_size + 2;
+	EVENT_SUBMIT(msgIn);
+
+	k_sleep(K_SECONDS(10));
+
+	ztest_returns_value(date_time_now, 0); //Timestamp the escaped status message
+	ztest_returns_value(stg_write_log_data, 0); //Store message
+
+	/* reading and sending of the escape message should happen here, however the poll request
+	 * will take precedence!.*/
+
+	ztest_returns_value(date_time_now, 0); //Forced poll header
+
+	struct animal_escape_event *escaped_evt2 = new_animal_escape_event();
+	EVENT_SUBMIT(escaped_evt2);
+
+	struct send_poll_request_now *poll_evt2 = new_send_poll_request_now();
+	EVENT_SUBMIT(poll_evt2);
+
+	/* Now we simulate that the read_and_send_log_data_cb returns -EBUSY (break_log_stream is
+	 * asserted) */
+	k_sleep(K_SECONDS(1));
+	k_sem_reset(&msg_out);
+
+	ztest_returns_value(date_time_now, 0); //Timestamp the escaped status message
+	ztest_returns_value(stg_write_log_data, 0); //Store message
+	ztest_returns_value(stg_read_log_data, -EBUSY); // simulate a break_log_stream_token
+
+	ztest_returns_value(date_time_now, 0); //forced poll request
+	/* for illustration: if the poll request is delayed a bit, the log message will be sent
+	 * first, releasing the Tx thread.*/
+
+	struct animal_escape_event *escaped_evt3 = new_animal_escape_event();
+	EVENT_SUBMIT(escaped_evt3);
+	k_sleep(K_SECONDS(10));
+	struct send_poll_request_now *poll_evt3 = new_send_poll_request_now();
+	EVENT_SUBMIT(poll_evt3);
+}
+
+static char *expected_version;
+static size_t expected_length;
+void test_new_mdm_firmware(void)
+{
+	k_sem_reset(&msg_out);
+	/* Simulate a poll-reply to the initial poll request. */
+	NofenceMessage poll_response = {
+		.which_m = NofenceMessage_poll_message_resp_tag,
+		.header = {
+			.ulId = 0,
+			.ulUnixTimestamp = 1,
+		},
+		.m.poll_message_resp = {
+			.eActivationMode = ActivationMode_Active,
+			.ulFenceDefVersion = 0
+		},
+		.m.poll_message_resp.has_xModemFwFileName = true,
+		.m.poll_message_resp.xModemFwFileName = "SARA-R422-0013",
+		.m.poll_message_resp.has_usPollConnectIntervalSec = true,
+		.m.poll_message_resp.usPollConnectIntervalSec = 60,
+	};
+	uint8_t encoded_msg[NofenceMessage_size];
+	memset(encoded_msg, 0, sizeof(encoded_msg));
+	size_t encoded_size;
+
+	int ret = collar_protocol_encode(&poll_response, &encoded_msg[0], sizeof(encoded_msg),
+					 &encoded_size);
+	zassert_equal(ret, 0, "Could not encode server response!");
+
+	k_sem_reset(&msg_in);
+
+	memcpy(&encoded_msg[2], &encoded_msg[0], encoded_size);
+	struct cellular_proto_in_event *msgIn = new_cellular_proto_in_event();
+	msgIn->buf = &encoded_msg[0];
+	msgIn->len = encoded_size + 2;
+	EVENT_SUBMIT(msgIn);
+
+	/* Notify cellular controller */
+	zassert_equal(k_sem_take(&mdm_upgrade_sem, K_MSEC(50)), 0, "");
+	ret = memcmp(expected_version, poll_response.m.poll_message_resp.xModemFwFileName,
+		     sizeof(poll_response.m.poll_message_resp.xModemFwFileName));
+	zassert_equal(ret, 0, "Wrong version file!");
+
+	struct mdm_fw_update_event *download_OK = new_mdm_fw_update_event();
+	download_OK->status = MDM_FW_DOWNLOAD_COMPLETE;
+	EVENT_SUBMIT(download_OK);
+
+	ztest_returns_value(date_time_now, 0);
+	ztest_returns_value(modem_nf_get_model_and_fw_version, 0);
+	zassert_equal(k_sem_take(&msg_out, K_SECONDS(5.2)), 0, "");
+
+	zassert_equal(m_latest_proto_msg.which_m, NofenceMessage_poll_message_req_tag, "");
+	zassert_true(m_latest_proto_msg.m.poll_message_req.xVersionInfoModem
+			     .has_xModemFwFileNameDownloaded,
+		     "");
+	zassert_equal(memcmp(m_latest_proto_msg.m.poll_message_req.xVersionInfoModem
+				     .xModemFwFileNameDownloaded,
+			     expected_version,
+			     sizeof(m_latest_proto_msg.m.poll_message_req.xVersionInfoModem
+					    .xModemFwFileNameDownloaded)),
+		      0, "");
+
+	k_sem_reset(&msg_in);
+
+	NofenceMessage poll_response2 = {
+		.which_m = NofenceMessage_poll_message_resp_tag,
+		.header = {
+			.ulId = 0,
+			.ulUnixTimestamp = 1,
+		},
+		.m.poll_message_resp = {
+			.eActivationMode = ActivationMode_Active,
+			.ulFenceDefVersion = 0
+		},
+		.m.poll_message_resp.has_xModemFwFileName = false,
+	};
+
+	memset(encoded_msg, 0, sizeof(encoded_msg));
+
+	ret = collar_protocol_encode(&poll_response2, &encoded_msg[0], sizeof(encoded_msg),
+				     &encoded_size);
+	zassert_equal(ret, 0, "Could not encode server response!");
+
+	k_sem_reset(&msg_in);
+
+	memcpy(&encoded_msg[2], &encoded_msg[0], encoded_size);
+	struct cellular_proto_in_event *msgIn2 = new_cellular_proto_in_event();
+	msgIn2->buf = &encoded_msg[0];
+	msgIn2->len = encoded_size + 2;
+	EVENT_SUBMIT(msgIn2);
+
+	cellular_ack_ok = false;
+	ztest_returns_value(
+		date_time_now,
+		0); /* at this point cellular controller is immediately blocking any TX messages until the installation is finished */
+
+	zassert_equal(
+		k_sem_take(&msg_out, K_SECONDS(61)), 0,
+		""); /* we need to wait for more than a minute as we are deliberately blocking the message with the new version on the first go to make sure it will include the new version after the modem is reset */
+
+	cellular_ack_ok = true;
+	struct mdm_fw_update_event *install_OK = new_mdm_fw_update_event();
+	install_OK->status = INSTALLATION_COMPLETE;
+	EVENT_SUBMIT(install_OK);
+
+	ztest_returns_value(date_time_now, 0);
+	ztest_returns_value(modem_nf_get_model_and_fw_version, 0);
+
+	/* simulate installation duration */ // TODO: increase this to a more realistic value and mock the building of all the messages that are blocked during the installation in a clean way
+	k_sleep(K_MINUTES(2));
+
+	zassert_equal(m_latest_proto_msg.which_m, NofenceMessage_poll_message_req_tag, "");
+	zassert_false(m_latest_proto_msg.m.poll_message_req.xVersionInfoModem
+			      .has_xModemFwFileNameDownloaded,
+		      "");
+	zassert_true(m_latest_proto_msg.m.poll_message_req.has_xVersionInfoModem, "");
 }
 
 void test_main(void)
 {
+	// clang-format off
 	ztest_test_suite(
 		messaging_tests,
 		/* Note! Has to be 1st test due to timing */
@@ -896,8 +1220,11 @@ void test_main(void)
 		ztest_unit_test(test_fence_download_frame_loss),
 		ztest_unit_test(test_poll_response_has_host_address),
 		ztest_unit_test(test_poll_request_retry_after_missing_ack_from_cellular_controller),
-		ztest_unit_test(test_messages_during_fota));
-
+		ztest_unit_test(test_messages_during_fota),
+		ztest_unit_test(test_app_fota_wdt),
+		ztest_unit_test(test_poll_request_takes_precedence_over_log_messages),
+		ztest_unit_test(test_new_mdm_firmware));
+	// clang-format on
 	ztest_run_test_suite(messaging_tests);
 }
 
@@ -905,7 +1232,7 @@ static uint8_t buf[NofenceMessage_size + 10];
 static bool event_handler(const struct event_header *eh)
 {
 	if (is_messaging_proto_out_event(eh)) {
-		printk("msg_count: %d\n", msg_count++);
+		printk("msg_count: %d\n", ++msg_count);
 
 		struct messaging_proto_out_event *ev = cast_messaging_proto_out_event(eh);
 		/* When running with profiling enabled, the ev->buf get corrupted, because it is reused by another thread */
@@ -932,7 +1259,6 @@ static bool event_handler(const struct event_header *eh)
 			EVENT_SUBMIT(ack);
 		}
 		printk("Simulated cellular ack!\n");
-		k_sleep(K_SECONDS(1));
 
 		return true;
 	}
@@ -955,6 +1281,13 @@ static bool event_handler(const struct event_header *eh)
 		EVENT_SUBMIT(ev1);
 		return false;
 	}
+	if (is_messaging_mdm_fw_event(eh)) {
+		k_sem_give(&mdm_upgrade_sem);
+		struct messaging_mdm_fw_event *ev = cast_messaging_mdm_fw_event(eh);
+		expected_version = ev->buf;
+		expected_length = ev->len;
+		return false;
+	}
 	return false;
 }
 
@@ -964,3 +1297,4 @@ EVENT_SUBSCRIBE(test_main, messaging_ack_event);
 EVENT_SUBSCRIBE(test_main, messaging_host_address_event);
 EVENT_SUBSCRIBE(test_main, error_event);
 EVENT_SUBSCRIBE(test_main, check_connection);
+EVENT_SUBSCRIBE(test_main, messaging_mdm_fw_event);

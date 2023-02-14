@@ -80,6 +80,27 @@ int ublox_set_response_handlers(uint8_t *buffer,
 int ublox_get_cfg_val(uint8_t *payload, uint32_t size, uint8_t val_size, uint64_t *val);
 
 /**
+ * @brief Gets data of response payload for ubx mon ver. 
+ *
+ * @param[in] payload . 
+ * @param[in] size Size of payload. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
+int ublox_get_mon_ver(uint8_t *payload, uint32_t size, struct ublox_mon_ver *pmia_m10_versions);
+
+/**
+ * @brief Builds command for mon-ver
+ *
+ * @param[out] buffer Buffer to build command in. 
+ * @param[out] size Size of built command. 
+ * @param[in] max_size Maximum size of command. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
+int ublox_build_mon_ver(uint8_t *buffer, uint32_t *size, uint32_t max_size);
+
+/**
  * @brief Gets uint8_t data of response payload for configuration get. 
  *
  * @param[in] payload Payload poll response for configuration get. 
@@ -193,6 +214,17 @@ inline double ublox_get_cfg_val_f64(uint8_t *payload, uint32_t size)
  */
 int ublox_build_cfg_valget(uint8_t *buffer, uint32_t *size, uint32_t max_size,
 			   enum ublox_cfg_val_layer layer, uint16_t position, uint32_t key);
+
+/**
+ * @brief Builds command for nav-status
+ *
+ * @param[out] buffer Buffer to build command in. 
+ * @param[out] size Size of built command. 
+ * @param[in] max_size Maximum size of command. 
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
+int ublox_build_nav_status(uint8_t *buffer, uint32_t *size, uint32_t max_size);
 
 /**
  * @brief Builds command for cfg-valset

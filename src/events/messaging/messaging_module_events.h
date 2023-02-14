@@ -32,6 +32,17 @@ struct messaging_proto_out_event {
 
 EVENT_TYPE_DECLARE(messaging_proto_out_event);
 
+/** @brief Notify cellular_controller of a new modem fw version on the FTP server.
+ *         Published by the messaging module and consumed by the cellular controller.
+ */
+struct messaging_mdm_fw_event {
+	struct event_header header;
+	char *buf;
+	size_t len;
+};
+
+EVENT_TYPE_DECLARE(messaging_mdm_fw_event);
+
 /** @brief Notify cellular_controller of a new host address.
  *         Published by the messaging module and consumed by the cellular controller.
  */

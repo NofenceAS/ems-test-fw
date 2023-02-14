@@ -1,9 +1,9 @@
-
 #ifndef GNSS_H_
 #define GNSS_H_
 
 #include <zephyr.h>
 #include <device.h>
+#include "ublox_types.h"
 
 /**
  * @brief GNSS domain-specific operation modes.
@@ -175,6 +175,15 @@ typedef int (*gnss_setup_t)(const struct device *dev, bool try_default_baud_firs
 typedef int (*gnss_reset_t)(const struct device *dev, uint16_t mask, uint8_t mode);
 
 /**
+ * @typedef gnss_version_get_t
+ * @brief Callback API for requesting version_get to be performed for GNSS receiver
+ *
+ * See gnss_version_get() for argument description
+ */
+typedef int (*gnss_version_get_t)(const struct device *dev,
+				  struct ublox_mon_ver *pmia_m10_versions);
+
+/**
  * @typedef gnss_upload_assist_data_t
  * @brief Callback API for sending assistance data to GNSS receiver
  *
@@ -238,9 +247,18 @@ typedef int (*gnss_wakeup_t)(const struct device *dev);
  */
 typedef int (*gnss_set_power_mode_t)(const struct device *dev, gnss_mode_t mode);
 
+/**
+ * @typedef gnss_resetn_pin_t
+ * @brief API for hard reset of the receiver using external resetn pin.
+ *
+ * See gnss_resetn_pin() for argument description
+ */
+typedef int (*gnss_resetn_pin_t)();
+
 __subsystem struct gnss_driver_api {
 	gnss_setup_t gnss_setup;
 	gnss_reset_t gnss_reset;
+	gnss_version_get_t gnss_version_get;
 	gnss_upload_assist_data_t gnss_upload_assist_data;
 	gnss_set_rate_t gnss_set_rate;
 	gnss_get_rate_t gnss_get_rate;
@@ -249,6 +267,7 @@ __subsystem struct gnss_driver_api {
 	gnss_set_backup_mode_t gnss_set_backup_mode;
 	gnss_wakeup_t gnss_wakeup;
 	gnss_set_power_mode_t gnss_set_power_mode;
+	gnss_resetn_pin_t gnss_resetn_pin;
 };
 
 /**
@@ -284,6 +303,22 @@ static inline int gnss_reset(const struct device *dev, uint16_t mask, uint8_t mo
 	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
 
 	return api->gnss_reset(dev, mask, mode);
+}
+
+/**
+ * @brief Request version_get to be performed for GNSS receiver
+ *
+ * @param[in] dev Pointer to the GNSS device
+ * @param[in] pmia_m10_versions Pointer to mia_m10_versions struct.
+ * 
+ * @return 0 if everything was ok, error code otherwise
+ */
+static inline int gnss_version_get(const struct device *dev,
+				   struct ublox_mon_ver *pmia_m10_versions)
+{
+	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
+
+	return api->gnss_version_get(dev, pmia_m10_versions);
 }
 
 /**
@@ -397,6 +432,18 @@ static inline int gnss_set_power_mode(const struct device *dev, gnss_mode_t mode
 	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
 
 	return api->gnss_set_power_mode(dev, mode);
+}
+
+/**
+* @brief Hard reset of the receiver after starting the device.
+* @param[in] dev Pointer to the GNSS device
+* @return 0 if OK, negative error code otherwise
+*/
+static inline int gnss_resetn_pin(const struct device *dev)
+{
+	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
+
+	return api->gnss_resetn_pin();
 }
 
 #endif /* GNSS_H_ */

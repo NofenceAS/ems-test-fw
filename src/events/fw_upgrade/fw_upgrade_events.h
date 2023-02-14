@@ -16,7 +16,8 @@
 enum dfu_status_flag {
 	DFU_STATUS_IDLE = 0,
 	DFU_STATUS_IN_PROGRESS = 1,
-	DFU_STATUS_SUCCESS_REBOOT_SCHEDULED = 2
+	DFU_STATUS_SUCCESS_REBOOT_SCHEDULED = 2,
+	DFU_STATUS_ALREADY_RUNNING = 3
 };
 
 /** @brief Struct containg status messages regarding the firmware upgrade. */
@@ -37,9 +38,7 @@ struct start_fota_event {
 	 *  the protobuf message.
 	 */
 	bool override_default_host;
-	bool reset_download_client;
 	char host[CONFIG_FW_UPGRADE_HOST_LEN];
-	char path[CONFIG_FW_UPGRADE_PATH_LEN];
 
 	uint32_t version;
 };

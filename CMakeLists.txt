@@ -31,7 +31,7 @@ endif()
 # The Nofence X3 board exists out-of-tree from zephyr boards
 # Default board is a future revision that does not exist yet
 # Force users to select boards for now, uncomment line below later
-# set(BOARD nf_x25_nrf52840)
+set(BOARD nf_sg25_27o_nrf52840)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
@@ -78,6 +78,7 @@ zephyr_library_include_directories(
         src/events/cellular_controller
   	src/modules/buzzer
         src/modules/time_use
+        src/modules/nofence_watchdog
         src/events/collar_stats
         src/events/amc
         src/events/watchdog
@@ -99,6 +100,7 @@ add_subdirectory(src/events/amc)
 add_subdirectory(src/modules/cellular_controller)
 add_subdirectory(src/modules/buzzer)
 add_subdirectory(src/modules/error_handler)
+add_subdirectory(src/modules/nofence_watchdog)
 
 add_subdirectory(src/modules/power_manager)
 add_subdirectory(src/events/power_manager)

@@ -7,6 +7,8 @@ EVENT_TYPE_DEFINE(cellular_ack_event, /* Unique event name. */
 
 EVENT_TYPE_DEFINE(cellular_proto_in_event, false, NULL, NULL);
 
+EVENT_TYPE_DEFINE(mdm_fw_update_event, false, NULL, NULL);
+
 EVENT_TYPE_DEFINE(cellular_error_event, false, NULL, NULL);
 
 EVENT_TYPE_DEFINE(connection_state_event, false, NULL, NULL);
@@ -18,3 +20,5 @@ EVENT_TYPE_DEFINE(free_message_mem_event, false, NULL, NULL);
 EVENT_TYPE_DEFINE(gsm_info_event, false, NULL, NULL);
 
 EVENT_TYPE_DEFINE(request_gsm_info_event, false, NULL, NULL);
+
+EVENT_TYPE_DEFINE(save_modem_status_event, false, NULL, NULL);

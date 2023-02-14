@@ -19,7 +19,7 @@ uint8_t socket_receive(struct data *socket_data, char **msg)
 	return ztest_get_return_value();
 }
 
-int8_t socket_connect(struct data *dummy_data, struct sockaddr *dummy_add, size_t dummy_len)
+int socket_connect(struct data *dummy_data, struct sockaddr *dummy_add, size_t dummy_len)
 {
 	return ztest_get_return_value();
 }
@@ -34,21 +34,16 @@ int reset_modem(void)
 	return ztest_get_return_value();
 }
 
-int stop_tcp(void)
+int stop_tcp(const bool keep_modem_awake, bool *flag, struct k_sem *sem)
 {
-	return 0;
+	printk("\nStop TCP!\n");
+	*flag = false;
+	return ztest_get_return_value();
 };
 
 int8_t send_tcp(char *dummy, size_t dummy_len)
 {
 	return ztest_get_return_value();
-}
-
-void send_tcp_q(char *dummy, size_t dummy_len)
-{
-	ztest_check_expected_value(*dummy);
-	ztest_check_expected_value(dummy_len);
-	return;
 }
 
 int8_t lte_init(void)
@@ -105,11 +100,11 @@ bool query_listen_sock(void)
 	return ztest_get_return_value();
 }
 
-void send_tcp_fn(void)
-{
-	return;
-}
 //int8_t cache_server_address(void)
 //{
 //    return ztest_get_return_value();
 //}
+void enable_rssi(void)
+{
+	return;
+}

@@ -1,5 +1,6 @@
 #include <ztest.h>
 #include "storage.h"
+#include "messaging.h"
 
 int stg_init_storage_controller(void)
 {
@@ -12,11 +13,6 @@ int stg_clear_partition(flash_partition_t partition)
 }
 
 int stg_fcb_reset_and_init()
-{
-	return ztest_get_return_value();
-}
-
-int stg_read_log_data(fcb_read_cb cb, uint16_t num_entries)
 {
 	return ztest_get_return_value();
 }

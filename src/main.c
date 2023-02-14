@@ -140,7 +140,7 @@ void main(void)
 	/* Play welcome- and battery sound as long as the device was not reset
 	 * due to a FOTA update */
 	if (soft_reset_reason != REBOOT_FOTA_RESET) {
-		if (bat_percent > 20) {
+		if (bat_percent > CONFIG_BUZZER_WELCOME_THRESHOLD) {
 			if (bat_percent >= 75) {
 				/* Play battery sound. */
 				struct sound_event *sound_ev = new_sound_event();

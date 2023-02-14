@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+#define MIA_M10_SW_VERSION_SIZE 30
+#define MIA_M10_HW_VERSION_SIZE 10
+
 /* Structures are tightly packed, using little-endian format, 
  * to be directly translateable to U-blox format. 
  */
@@ -38,6 +41,12 @@ struct UBLOX_STORAGE_ATTR ublox_header {
 struct UBLOX_STORAGE_ATTR ublox_ack_ack {
 	uint8_t clsID;
 	uint8_t msgID;
+};
+
+/** @brief U-blox MON-VER message. */
+struct UBLOX_STORAGE_ATTR ublox_mon_ver {
+	char swVersion[MIA_M10_SW_VERSION_SIZE];
+	char hwVersion[MIA_M10_HW_VERSION_SIZE];
 };
 
 /** @brief U-blox CFG-VAL message. */

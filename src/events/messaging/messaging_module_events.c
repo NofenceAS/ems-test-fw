@@ -4,6 +4,8 @@ EVENT_TYPE_DEFINE(messaging_ack_event, false, NULL, NULL);
 
 EVENT_TYPE_DEFINE(messaging_proto_out_event, false, NULL, NULL);
 
+EVENT_TYPE_DEFINE(messaging_mdm_fw_event, false, NULL, NULL);
+
 EVENT_TYPE_DEFINE(messaging_stop_connection_event, false, NULL, NULL);
 
 EVENT_TYPE_DEFINE(messaging_host_address_event, false, NULL, NULL);

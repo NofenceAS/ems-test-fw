@@ -9,8 +9,8 @@
 		dummy-extint = &gpio0;
 	};
 	chosen {
-          zephyr,nofence = &gpio0;
-        };
+		zephyr,nofence = &gpio0;
+	};
 
 
 };
@@ -27,6 +27,7 @@ gnssuart: &uart0 {
 		label = "ublox-mia-m10";
 		status = "okay";
 		extint-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+		resetn-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
 	};
 };
 

@@ -38,6 +38,7 @@
 			label = "CHARGING LOAD SWITCH";
 		};
 	};
+
 	vbatt {
 		compatible = "voltage-divider";
 		io-channels = <&adc 1>;
@@ -138,6 +139,7 @@ gnss_uart: &uart1 {
 
 		pps-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
 		extint-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+		resetn-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
 	};
 	/* vin-supply = <&gnss_flash_pwr>; */
 };

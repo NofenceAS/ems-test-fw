@@ -17,3 +17,7 @@ properties:
     extint-gpios:
       type: phandle-array
       required: true
+
+    resetn-gpios:
+      type: phandle-array
+      required: true
