@@ -7,6 +7,15 @@ typedef enum {
 	SLEEP = 2,
 } modem_pwr_mode;
 
+typedef enum {
+	MDM_FOTA_STATUS_INIT = 0,
+	MDM_FW_DOWNLOAD_COMPLETE,
+	DOWNLOAD_FAILED,
+	INSTALLATION_IN_PROGRESS, /* used only by the messaging module */
+	INSTALLATION_COMPLETE,
+	INSTALLATION_FAILED,
+} mdm_fota_status;
+
 /** @brief Empty event published by the cellular controller to acknowledge
  * reception of proto_out messages from the messaging module. */
 
@@ -85,3 +94,15 @@ struct request_gsm_info_event {
 	struct event_header header;
 };
 EVENT_TYPE_DECLARE(request_gsm_info_event);
+
+struct mdm_fw_update_event {
+	struct event_header header;
+	mdm_fota_status status;
+};
+EVENT_TYPE_DECLARE(mdm_fw_update_event);
+
+struct save_modem_status_event {
+	struct event_header header;
+	uint8_t modem_status;
+};
+EVENT_TYPE_DECLARE(save_modem_status_event);

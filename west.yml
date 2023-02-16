@@ -9,12 +9,12 @@ manifest:
     - name: nrf
       repo-path: sdk-nrf
       remote: nofence
-      revision: v1.8.0-nf1
+      revision: v1.8.0-2-gc89b8c3a7
       import: true
     - name: zephyr
       repo-path: sdk-zephyr
       remote: nofence
-      revision: v2.7.0-ncs1-nf05
+      revision: v2.7.0-ncs1-nf06
       import:
         # In addition to the zephyr repository itself, NCS also
         # imports the contents of zephyr/west.yml at the above
@@ -56,4 +56,4 @@ manifest:
     - name: collar-protocol
       remote: nofence
       repo-path: collar-protocol
-      revision: proto_update
+      revision: nf-25-05

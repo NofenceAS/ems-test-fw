@@ -408,6 +408,17 @@ int ublox_get_cfg_val(uint8_t *payload, uint32_t size, uint8_t val_size, uint64_
 	return 0;
 }
 
+int ublox_get_mon_ver(uint8_t *payload, uint32_t size, struct ublox_mon_ver *pmia_m10_versions)
+{
+	struct ublox_mon_ver *msg = (void *)payload;
+	if (size < offsetof(struct ublox_mon_ver, hwVersion)) {
+		return -EINVAL;
+	}
+	memcpy(pmia_m10_versions, msg, sizeof(struct ublox_mon_ver));
+
+	return 0;
+}
+
 int ublox_build_cfg_valget(uint8_t *buffer, uint32_t *size, uint32_t max_size,
 			   enum ublox_cfg_val_layer layer, uint16_t position, uint32_t key)
 {
@@ -442,6 +453,80 @@ int ublox_build_cfg_valget(uint8_t *buffer, uint32_t *size, uint32_t max_size,
 	cfg_valget->layer = (uint8_t)layer;
 	cfg_valget->position = position;
 	cfg_valget->keys = key;
+
+	/* Calculate checksum */
+	checksum->ck = ublox_calculate_checksum(buffer, header->length);
+
+	*size = packet_length;
+
+	return 0;
+}
+
+int ublox_build_mon_ver(uint8_t *buffer, uint32_t *size, uint32_t max_size)
+{
+	/* Calculate packet length */
+	uint32_t payload_length = 0;
+	uint32_t packet_length = UBLOX_OVERHEAD_SIZE + payload_length;
+
+	if (max_size < packet_length) {
+		return -ENOBUFS;
+	}
+
+	uint8_t msg_class = UBX_MON;
+	uint8_t msg_id = UBX_MON_VER;
+
+	/* Build data structure pointers */
+	struct ublox_header *header = (void *)buffer;
+	struct ublox_mon_ver *mon_ver = (void *)&buffer[sizeof(struct ublox_header)];
+	union ublox_checksum *checksum =
+		(void *)&buffer[sizeof(struct ublox_header) + payload_length];
+
+	/* Fill header */
+	header->sync1 = UBLOX_SYNC_CHAR_1;
+	header->sync2 = UBLOX_SYNC_CHAR_2;
+	header->msg_class = msg_class;
+	header->msg_id = msg_id;
+	header->length = payload_length;
+
+	/* Null payload first to account for reserved fields */
+	memset(mon_ver, 0, payload_length);
+
+	/* Calculate checksum */
+	checksum->ck = ublox_calculate_checksum(buffer, header->length);
+
+	*size = packet_length;
+
+	return 0;
+}
+
+int ublox_build_nav_status(uint8_t *buffer, uint32_t *size, uint32_t max_size)
+{
+	/* Calculate packet length */
+	uint32_t payload_length = 0;
+	uint32_t packet_length = UBLOX_OVERHEAD_SIZE + payload_length;
+
+	if (max_size < packet_length) {
+		return -ENOBUFS;
+	}
+
+	uint8_t msg_class = UBX_NAV;
+	uint8_t msg_id = UBX_NAV_STATUS;
+
+	/* Build data structure pointers */
+	struct ublox_header *header = (void *)buffer;
+	struct ublox_nav_status *nav_status = (void *)&buffer[sizeof(struct ublox_header)];
+	union ublox_checksum *checksum =
+		(void *)&buffer[sizeof(struct ublox_header) + payload_length];
+
+	/* Fill header */
+	header->sync1 = UBLOX_SYNC_CHAR_1;
+	header->sync2 = UBLOX_SYNC_CHAR_2;
+	header->msg_class = msg_class;
+	header->msg_id = msg_id;
+	header->length = payload_length;
+
+	/* Null payload first to account for reserved fields */
+	memset(nav_status, 0, payload_length);
 
 	/* Calculate checksum */
 	checksum->ck = ublox_calculate_checksum(buffer, header->length);

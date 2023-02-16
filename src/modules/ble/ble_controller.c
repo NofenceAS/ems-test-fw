@@ -738,14 +738,11 @@ static void init_eeprom_variables(void)
 		strncpy(bt_device_name, "NF?????????", DEVICE_NAME_LEN + 1);
 		nf_app_error(ERR_BLE_MODULE, err, NULL, 0);
 	} else {
-		char tmp[DEVICE_NAME_LEN + 1];
-		snprintf(tmp, DEVICE_NAME_LEN - 1, "%i", serial_id);
-		uint32_t len = strlen(tmp);
-		memset(bt_device_name, '0', sizeof(bt_device_name));
-		bt_device_name[0] = 'N';
-		bt_device_name[1] = 'F';
-		strcpy(bt_device_name + DEVICE_NAME_LEN - len, tmp);
-
+		if (serial_id > 999999) {
+			strncpy(bt_device_name, "NF??????", DEVICE_NAME_LEN + 1);
+		} else {
+			snprintf(bt_device_name, sizeof(bt_device_name), "NF%06d", serial_id);
+		}
 		current_serial_number = serial_id;
 	}
 

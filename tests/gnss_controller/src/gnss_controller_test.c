@@ -11,10 +11,11 @@
 /* semaphores to check publishing of the cellular controller events. */
 static K_SEM_DEFINE(gnss_data_out, 0, 1);
 static K_SEM_DEFINE(error, 0, 1);
+static K_SEM_DEFINE(gnss_set_mode_sem, 0, 1);
 
 static int timeout_count;
 static int data_count;
-
+static gnss_mode_t g_mode_received;
 extern k_tid_t pub_gnss_thread_id;
 
 const int DEFAULT_MIN_RATE_MS = CONFIG_GNSS_MINIMUM_ALLOWED_GNSS_RATE;
@@ -30,17 +31,37 @@ void test_init_ok(void)
 	}
 	ztest_returns_value(mock_gnss_wakeup, 0);
 	ztest_returns_value(mock_gnss_set_data_cb, 0);
+	ztest_returns_value(mock_gnss_version_get, 0);
 	ztest_returns_value(mock_gnss_setup, 0);
 	int8_t err = gnss_controller_init();
 	zassert_equal(err, 0, "Gnss controller initialization incomplete!");
 	zassert_equal(z_cleanup_mock(), 0, "");
 }
 
-void test_init_fails1(void)
+void test_init_fails1_helper_restart_procedure(void)
 {
-	for (int i = 0; i < (CONFIG_GNSS_INIT_MAX_COUNT); i++) {
+	// Once first try to setup the GNSS
+	for (int i = 0; i < (CONFIG_GNSS_MAX_COUNT_INIT); i++) {
 		ztest_returns_value(mock_gnss_set_data_cb, -1);
 	}
+	// If the first try fail, attempt to cold restart and then setup again several times
+	for (int i = 0; i < (CONFIG_GNSS_MAX_COUNT_SOFT_RESTART); i++) {
+		ztest_returns_value(mock_gnss_reset, 0);
+		ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_COLD);
+
+		for (int i = 0; i < (CONFIG_GNSS_MAX_COUNT_INIT); i++) {
+			ztest_returns_value(mock_gnss_set_data_cb, -1);
+		}
+	}
+}
+
+void test_init_fails1(void)
+{
+	test_init_fails1_helper_restart_procedure();
+	// If the attempts to cold restart fails, try to toggle the hard resetn GPIO pin
+	ztest_returns_value(mock_gnss_resetn_pin, 0);
+	test_init_fails1_helper_restart_procedure();
+
 	int8_t ret = gnss_controller_init();
 
 	int8_t err = k_sem_take(&error, K_MSEC(100));
@@ -48,14 +69,33 @@ void test_init_fails1(void)
 	zassert_equal(ret, -1,
 		      "Gnss controller initialization "
 		      "incomplete!");
+}
+
+void test_init_fails2_helper_restart_procedure(void)
+{
+	// Once first try to setup the GNSS
+	for (int i = 0; i < (CONFIG_GNSS_MAX_COUNT_INIT); i++) {
+		ztest_returns_value(mock_gnss_set_data_cb, 0);
+		ztest_returns_value(mock_gnss_wakeup, -1);
+	}
+	// If the first try fail, attempt to cold restart and then setup again several times
+	for (int i = 0; i < (CONFIG_GNSS_MAX_COUNT_SOFT_RESTART); i++) {
+		ztest_returns_value(mock_gnss_reset, 0);
+		ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_COLD);
+
+		for (int i = 0; i < (CONFIG_GNSS_MAX_COUNT_INIT); i++) {
+			ztest_returns_value(mock_gnss_set_data_cb, 0);
+			ztest_returns_value(mock_gnss_wakeup, -1);
+		}
+	}
 }
 
 void test_init_fails2(void)
 {
-	for (int i = 0; i < (CONFIG_GNSS_INIT_MAX_COUNT); i++) {
-		ztest_returns_value(mock_gnss_set_data_cb, 0);
-		ztest_returns_value(mock_gnss_wakeup, -1);
-	}
+	test_init_fails2_helper_restart_procedure();
+	// If the attempts to cold restart fails, try to toggle the hard resetn GPIO pin
+	ztest_returns_value(mock_gnss_resetn_pin, 0);
+	test_init_fails2_helper_restart_procedure();
 
 	int8_t ret = gnss_controller_init();
 	int8_t err = k_sem_take(&error, K_MSEC(100));
@@ -65,13 +105,33 @@ void test_init_fails2(void)
 		      "incomplete!");
 }
 
-void test_init_fails3(void)
+void test_init_fails3_helper_restart_procedure(void)
 {
-	for (int i = 0; i < (CONFIG_GNSS_INIT_MAX_COUNT); i++) {
+	// Once first try to setup the GNSS
+	for (int i = 0; i < (CONFIG_GNSS_MAX_COUNT_INIT); i++) {
 		ztest_returns_value(mock_gnss_set_data_cb, 0);
 		ztest_returns_value(mock_gnss_wakeup, 0);
 		ztest_returns_value(mock_gnss_setup, -1);
 	}
+	// If the first try fail, attempt to cold restart and then setup again several times
+	for (int i = 0; i < (CONFIG_GNSS_MAX_COUNT_SOFT_RESTART); i++) {
+		ztest_returns_value(mock_gnss_reset, 0);
+		ztest_expect_value(mock_gnss_reset, mask, GNSS_RESET_MASK_COLD);
+
+		for (int i = 0; i < (CONFIG_GNSS_MAX_COUNT_INIT); i++) {
+			ztest_returns_value(mock_gnss_set_data_cb, 0);
+			ztest_returns_value(mock_gnss_wakeup, 0);
+			ztest_returns_value(mock_gnss_setup, -1);
+		}
+	}
+}
+
+void test_init_fails3(void)
+{
+	test_init_fails3_helper_restart_procedure();
+	// If the attempts to cold restart fails, try to toggle the hard resetn GPIO pin
+	ztest_returns_value(mock_gnss_resetn_pin, 0);
+	test_init_fails3_helper_restart_procedure();
 
 	int8_t ret = gnss_controller_init();
 	int8_t err = k_sem_take(&error, K_MSEC(100));
@@ -124,6 +184,7 @@ void test_gnss_timeout_and_resets(void)
 	struct gnss_set_mode_event *ev = new_gnss_set_mode_event();
 	ev->mode = GNSSMODE_MAX;
 	EVENT_SUBMIT(ev);
+	k_sem_take(&gnss_set_mode_sem, K_FOREVER);
 	k_sleep(K_MSEC(DEFAULT_MIN_RATE_MS + 10));
 
 	/* Data arrives on time */
@@ -204,6 +265,43 @@ void test_gnss_timeout_and_resets(void)
 	zassert_equal(z_cleanup_mock(), 0, "");
 }
 
+void test_gnss_retries(void)
+{
+	/* Test that we do 2 retries (KCONFIG default) and fail to update the GNSS mode */
+	ztest_returns_value(mock_gnss_wakeup, 0);
+	ztest_expect_value(mock_gnss_set_power_mode, mode, GNSSMODE_CAUTION);
+	ztest_returns_value(mock_gnss_set_power_mode, -1);
+	ztest_returns_value(mock_gnss_wakeup, 0);
+	ztest_expect_value(mock_gnss_set_power_mode, mode, GNSSMODE_CAUTION);
+	ztest_returns_value(mock_gnss_set_power_mode, -1);
+	struct gnss_set_mode_event *ev = new_gnss_set_mode_event();
+	ev->mode = GNSSMODE_CAUTION;
+	EVENT_SUBMIT(ev);
+	k_sem_take(&gnss_set_mode_sem, K_FOREVER);
+	k_sleep(K_SECONDS(0.25));
+	zassert_not_equal(g_mode_received, GNSSMODE_CAUTION, "");
+	zassert_equal(z_cleanup_mock(), 0, "");
+
+	/* Test that we do 2 retries (KCONFIG default) and pass on the second try*/
+	ztest_returns_value(mock_gnss_wakeup, 0);
+	ztest_expect_value(mock_gnss_set_power_mode, mode, GNSSMODE_CAUTION);
+	ztest_returns_value(mock_gnss_set_power_mode, -1);
+	ztest_returns_value(mock_gnss_wakeup, 0);
+	ztest_expect_value(mock_gnss_set_power_mode, mode, GNSSMODE_CAUTION);
+	ztest_returns_value(mock_gnss_set_power_mode, 0);
+
+	uint16_t dummy_rate = DEFAULT_MIN_RATE_MS;
+	ztest_return_data(mock_gnss_get_rate, rate, &dummy_rate);
+	ztest_returns_value(mock_gnss_get_rate, 0);
+	ev = new_gnss_set_mode_event();
+	ev->mode = GNSSMODE_CAUTION;
+	EVENT_SUBMIT(ev);
+	k_sem_take(&gnss_set_mode_sem, K_FOREVER);
+	k_sleep(K_SECONDS(0.25));
+	zassert_equal(g_mode_received, GNSSMODE_CAUTION, "");
+	zassert_equal(z_cleanup_mock(), 0, "");
+}
+
 void test_semisteady_gnss_data_stream(void)
 {
 	k_thread_suspend(pub_gnss_thread_id);
@@ -216,10 +314,10 @@ void test_semisteady_gnss_data_stream(void)
 	ztest_returns_value(mock_gnss_set_power_mode, 0);
 	ztest_return_data(mock_gnss_get_rate, rate, &dummy_rate);
 	ztest_returns_value(mock_gnss_get_rate, 0);
-
 	struct gnss_set_mode_event *ev = new_gnss_set_mode_event();
 	ev->mode = GNSSMODE_MAX;
 	EVENT_SUBMIT(ev);
+	k_sem_take(&gnss_set_mode_sem, K_FOREVER);
 	k_sleep(K_SECONDS(0.25));
 	zassert_equal(z_cleanup_mock(), 0, "");
 
@@ -257,6 +355,7 @@ static void test_gnss_set_backup_mode_on_inactive_event(void)
 	struct gnss_set_mode_event *ev = new_gnss_set_mode_event();
 	ev->mode = GNSSMODE_INACTIVE;
 	EVENT_SUBMIT(ev);
+	k_sem_take(&gnss_set_mode_sem, K_FOREVER);
 	k_sleep(K_SECONDS(0.25));
 }
 
@@ -284,23 +383,33 @@ static bool event_handler(const struct event_header *eh)
 		k_sem_give(&error);
 		printk("released semaphore for error event!\n");
 		return false;
+	} else if (is_gnss_mode_changed_event(eh)) {
+		struct gnss_mode_changed_event *ev = cast_gnss_mode_changed_event(eh);
+		g_mode_received = ev->mode;
+		printk("released semaphore for set mode event!\n");
+		k_sem_give(&gnss_set_mode_sem);
 	}
 	return false;
 }
 
 void test_main(void)
 {
-	ztest_test_suite(gnss_controller_tests, ztest_unit_test(test_init_ok),
-			 ztest_unit_test(test_init_fails1), ztest_unit_test(test_init_fails2),
+	// clang-format off
+	ztest_test_suite(gnss_controller_tests, 
+			 ztest_unit_test(test_init_ok),
+			 ztest_unit_test(test_init_fails1), 
+			 ztest_unit_test(test_init_fails2),
 			 ztest_unit_test(test_init_fails3),
 			 ztest_unit_test(test_publish_event_with_gnss_data_callback),
 			 ztest_unit_test(test_gnss_timeout_and_resets),
 			 ztest_unit_test(test_semisteady_gnss_data_stream),
+			 ztest_unit_test(test_gnss_retries),
 			 ztest_unit_test(test_gnss_set_backup_mode_on_inactive_event));
-
+	// clang-format on
 	ztest_run_test_suite(gnss_controller_tests);
 }
 
 EVENT_LISTENER(test, event_handler);
 EVENT_SUBSCRIBE(test, gnss_data);
+EVENT_SUBSCRIBE(test, gnss_mode_changed_event);
 EVENT_SUBSCRIBE(test, error_event);

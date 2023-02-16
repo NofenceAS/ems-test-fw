@@ -33,6 +33,13 @@ static int mock_gnss_reset(const struct device *dev, uint16_t mask, uint8_t mode
 	return ztest_get_return_value();
 }
 
+static int mock_gnss_version_get(const struct device *dev, struct ublox_mon_ver *pmia_m10_versions)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pmia_m10_versions);
+	return ztest_get_return_value();
+}
+
 static int mock_gnss_upload_assist_data(const struct device *dev, uint8_t *data, uint32_t size)
 {
 	ARG_UNUSED(dev);
@@ -74,6 +81,12 @@ static int mock_gnss_wakeup(const struct device *dev)
 	return ztest_get_return_value();
 }
 
+static int mock_gnss_resetn_pin(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return ztest_get_return_value();
+}
+
 static int mock_gnss_set_power_mode(const struct device *dev, gnss_mode_t mode)
 {
 	ARG_UNUSED(dev);
@@ -84,12 +97,14 @@ static int mock_gnss_set_power_mode(const struct device *dev, gnss_mode_t mode)
 static const struct gnss_driver_api mock_gnss_driver_funcs = {
 	.gnss_setup = mock_gnss_setup,
 	.gnss_reset = mock_gnss_reset,
+	.gnss_version_get = mock_gnss_version_get,
 	.gnss_upload_assist_data = mock_gnss_upload_assist_data,
 	.gnss_set_rate = mock_gnss_set_rate,
 	.gnss_get_rate = mock_gnss_get_rate,
 	.gnss_set_data_cb = mock_gnss_set_data_cb,
 	.gnss_data_fetch = mock_gnss_data_fetch,
 	.gnss_set_backup_mode = mock_gnss_set_backup_mode,
+	.gnss_resetn_pin = mock_gnss_resetn_pin,
 	.gnss_wakeup = mock_gnss_wakeup,
 	.gnss_set_power_mode = mock_gnss_set_power_mode
 };

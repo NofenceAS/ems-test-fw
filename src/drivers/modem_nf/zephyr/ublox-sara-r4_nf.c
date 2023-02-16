@@ -54,6 +54,8 @@ enum mdm_control_pins {
 };
 extern struct k_sem listen_sem;
 
+#define STATUS_UPGRADE_RUNNING 0x01
+#define STATUS_UPGRADE_NOT_RUNNING 0xFF
 static struct modem_pin modem_pins[] = {
 	/* MDM_POWER */
 	MODEM_PIN(DT_INST_GPIO_LABEL(0, mdm_power_gpios), DT_INST_GPIO_PIN(0, mdm_power_gpios),
@@ -105,6 +107,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_MANUFACTURER_LENGTH 10
 #define MDM_MODEL_LENGTH 16
 #define MDM_REVISION_LENGTH 64
+#define MDM_INFORMATION_LENGTH 32
 #define MDM_IMEI_LENGTH 16
 #define MDM_IMSI_LENGTH 16
 #define MDM_APN_LENGTH 32
@@ -159,6 +162,7 @@ struct modem_data {
 	/* modem data */
 	char mdm_manufacturer[MDM_MANUFACTURER_LENGTH];
 	char mdm_model[MDM_MODEL_LENGTH];
+	char mdm_information[MDM_INFORMATION_LENGTH];
 	char mdm_revision[MDM_REVISION_LENGTH];
 	char mdm_imei[MDM_IMEI_LENGTH];
 	char mdm_imsi[MDM_IMSI_LENGTH];
@@ -193,13 +197,28 @@ struct modem_data {
 
 	/* prompt semaphore */
 	struct k_sem sem_prompt;
+
+	/* FTP result semaphore */
+	struct k_sem sem_ftp;
+
+	/* Last FTP opcode fetched via the +UUFTPC URC */
+	int ftp_op_code;
+
+	/* Last FTP result fetched via the +UUFTPC URC */
+	int ftp_result;
+
+	/* FW install result semaphore */
+	struct k_sem sem_fw_install;
 };
 
 static struct modem_data mdata;
 static struct modem_context mctx;
 static bool stop_rssi_work = false;
-int wake_up(void);
-
+static int wake_up(void);
+static int (*modem_read_status_cb)(uint8_t *status) = NULL;
+static int (*modem_write_status_cb)(uint8_t status) = NULL;
+static int modem_read_status(uint8_t *status);
+static int modem_write_status(uint8_t status);
 //#if defined(CONFIG_DNS_RESOLVER)
 static struct zsock_addrinfo result;
 static struct sockaddr result_addr;
@@ -545,7 +564,7 @@ MODEM_CMD_DEFINE(on_cmd_exterror)
 	return 0;
 }
 
-/*
+/*>
  * Modem Info Command Handlers
  */
 
@@ -595,6 +614,18 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_revision)
 				    data->rx_buf, 0, len);
 	mdata.mdm_revision[out_len] = '\0';
 	LOG_INF("Revision: %s", log_strdup(mdata.mdm_revision));
+	return 0;
+}
+
+/* Handler: <information> */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_information)
+{
+	size_t out_len;
+
+	out_len = net_buf_linearize(mdata.mdm_information, sizeof(mdata.mdm_information) - 1,
+				    data->rx_buf, 0, len);
+	mdata.mdm_information[out_len] = '\0';
+	LOG_INF("Information: %s", log_strdup(mdata.mdm_information));
 	return 0;
 }
 
@@ -978,6 +1009,15 @@ MODEM_CMD_DEFINE(on_cmd_dns)
 }
 //#endif
 
+#ifdef DEBUG_UFTPC
+/* Handler +UFTPER: <error_class>,<error_code> */
+MODEM_CMD_DEFINE(on_cmd_uftper)
+{
+	LOG_DBG("FTP ERROR %s,%s", argv[0], argv[1]);
+	return 0;
+}
+#endif
+
 /*
  * MODEM UNSOLICITED NOTIFICATION HANDLERS
  */
@@ -1027,6 +1067,27 @@ MODEM_CMD_DEFINE(on_cmd_socknotifycreg)
 	return 0;
 }
 
+/* Handler: +UFWINSTALL: <progress_install>[0] */
+MODEM_CMD_DEFINE(on_cmd_ufwinstall_urc)
+{
+	uint8_t status = STATUS_UPGRADE_RUNNING;
+	int mdm_fw_progress = ATOI(argv[0], 0, "progress");
+	if (mdm_fw_progress == 128) {
+		k_sem_give(&mdata.sem_fw_install);
+		status = STATUS_UPGRADE_NOT_RUNNING;
+	} else if (mdm_fw_progress > 100) {
+		k_sem_reset(&mdata.sem_fw_install);
+		status = STATUS_UPGRADE_NOT_RUNNING;
+	}
+	/* The NVS will handle to not re-write the same value */
+	int ret = modem_write_status(status);
+	if (ret != 0) {
+		LOG_ERR("Failed to write modem install bit to ext flash, error %i ", ret);
+		return ret;
+	}
+	return ret;
+}
+
 /* Handler: +UUSOLI: <socket>,<ip_address>,
 <port>,<listening_socket>,<local_
 ip_address>,<listening_port> */
@@ -1043,6 +1104,16 @@ MODEM_CMD_DEFINE(on_cmd_socknotify_listen_udp)
 {
 	LOG_DBG("Received new message on UDP listening socket!");
 	k_sem_give(&listen_sem);
+	return 0;
+}
+
+/* Handler: +UUFTPCR: <op_code>,<ftp_result>[,<md5_sum>]  */
+
+MODEM_CMD_DEFINE(on_cmd_ftp_urc)
+{
+	mdata.ftp_op_code = atoi(argv[0]);
+	mdata.ftp_result = atoi(argv[1]);
+	k_sem_give(&mdata.sem_ftp);
 	return 0;
 }
 
@@ -1197,7 +1268,25 @@ static int pin_init(void)
 
 	uart_state_set(PM_DEVICE_STATE_ACTIVE);
 
-	LOG_INF("... Done!");
+	LOG_DBG("Setting increased drive strength for UART TX and RX gpios");
+	const struct device *gpio_dev = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
+
+	uint32_t tx_pin = DT_PROP(DT_INST_BUS(0), tx_pin);
+	int ret = gpio_pin_configure(gpio_dev, tx_pin,
+				     GPIO_ACTIVE_HIGH | GPIO_DS_ALT_HIGH | GPIO_DS_ALT_LOW);
+	if (ret != 0) {
+		LOG_ERR("Failed to set GPIO parameters for the UART TX pin");
+	}
+
+	uint32_t rx_pin = DT_PROP(DT_INST_BUS(0), rx_pin);
+	ret = gpio_pin_configure(gpio_dev, rx_pin,
+				 GPIO_ACTIVE_HIGH | GPIO_DS_ALT_HIGH | GPIO_DS_ALT_LOW |
+					 GPIO_PULL_UP);
+	if (ret != 0) {
+		LOG_ERR("Failed to set GPIO parameters for the UART RX pin");
+	}
+
+	LOG_DBG("... Done!");
 
 	return 0;
 }
@@ -1289,17 +1378,80 @@ static void modem_rssi_query_work(struct k_work *work)
 }
 #endif
 
+static int modem_read_status(uint8_t *status)
+{
+	if (modem_read_status_cb) {
+		return modem_read_status_cb(status);
+	} else {
+		LOG_WRN("modem read status not set");
+	}
+	return -1;
+}
+
+static int modem_write_status(uint8_t status)
+{
+	if (modem_write_status_cb) {
+		return modem_write_status_cb(status);
+	} else {
+		LOG_WRN("modem write status not set");
+	}
+	return -1;
+}
+
+void set_modem_status_cb(int (*read_status)(uint8_t *), int (*write_status)(uint8_t))
+{
+	modem_read_status_cb = read_status;
+	modem_write_status_cb = write_status;
+}
+
 static int modem_reset(void)
 {
+	LOG_INF("modem_reset");
 	int ret = 0, retry_count = 0, counter = 0;
 	static uint8_t reset_counter;
+	uint8_t is_installing = STATUS_UPGRADE_NOT_RUNNING;
 	stop_rssi_work = false;
 	mdata.min_rssi = 31;
 	mdata.max_rssi = 0;
+	/*
+	 * In case of reset, be sure that we release all semaphores a socket might
+	 * still cling onto. Failing to do so might lead to a dead-lock after a
+	 * modem reset.
+	 * @see https://github.com/zephyrproject-rtos/zephyr/issues/38632
+	 */
+	for (int i = 0; i < mdata.socket_config.sockets_len; i++) {
+		if (mdata.sockets[i].id < mdata.socket_config.base_socket_num) {
+			continue;
+		}
+		LOG_INF("cleaning up socket %d", mdata.sockets[i].sock_fd);
+		modem_socket_put(&mdata.socket_config, mdata.sockets[i].sock_fd);
+	}
 	memset(mdata.iface_data.rx_rb_buf, 0, mdata.iface_data.rx_rb_buf_len);
 	memset(mdata.cmd_handler_data.match_buf, 0, mdata.cmd_handler_data.match_buf_len);
 	k_sem_reset(&mdata.sem_response);
 	k_sem_reset(&mdata.sem_prompt);
+
+	ret = modem_read_status(&is_installing);
+	if (ret != 0) {
+		LOG_ERR("Failed to read new collar mode to ext flash, error %i ", ret);
+		/* If we have an error, default to modem upgrade not running */
+		goto error;
+	}
+
+	LOG_INF("Modem install nvm: %d", is_installing);
+	if (is_installing == STATUS_UPGRADE_RUNNING) {
+		LOG_INF("Modem in middle of upgrade, wait for URC end");
+		ret = modem_nf_ftp_fw_install(false);
+		if (ret != 0) {
+			/* We timed out waiting for a URC, let's deactivate upgrade mode and try to continue */
+			ret = modem_write_status(STATUS_UPGRADE_NOT_RUNNING);
+			if (ret != 0) {
+				LOG_ERR("Failed to read new collar mode to ext flash, error %i ",
+					ret);
+				goto error;
+			}
+		}
+	}
 
 	static const struct setup_cmd mno_profile_cmds[] = {
 		SETUP_CMD_NOHANDLE("AT+UMNOPROF=100"),
@@ -1346,6 +1498,7 @@ static int modem_reset(void)
 		SETUP_CMD("AT+CGMI", "", on_cmd_atcmdinfo_manufacturer, 0U, ""),
 		SETUP_CMD("AT+CGMM", "", on_cmd_atcmdinfo_model, 0U, ""),
 		SETUP_CMD("AT+CGMR", "", on_cmd_atcmdinfo_revision, 0U, ""),
+		SETUP_CMD("ATI0", "", on_cmd_atcmdinfo_information, 0U, ""),
 		SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
 		SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 		SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_ccid, 0U, ""),
@@ -1354,6 +1507,7 @@ static int modem_reset(void)
 		SETUP_CMD_NOHANDLE("AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_UBLOX_SARA_R4_APN "\""),
 		/* start functionality */
 		SETUP_CMD_NOHANDLE("AT+CFUN=1"),
+		SETUP_CMD_NOHANDLE("ATE0"),
 		SETUP_CMD("AT+UPSV=0", "", on_cmd_atcmdinfo_upsv_get, 2U, " "),
 		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 2U, " "),
 #endif
@@ -1410,19 +1564,17 @@ restart:
 	 * Also wait for CSPS=1 or RRCSTATE=1 notification
 	 */
 
-	if (wake_up() != 0) {
+	ret = wake_up();
+	if (ret != 0) {
 		goto error;
 	}
 
-	if (ret < 0) {
-		LOG_ERR("MODEM WAIT LOOP ERROR: %d", ret);
-		goto error;
-	}
 	k_sleep(K_MSEC(50));
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler, mno_profile_cmds,
 					   ARRAY_SIZE(mno_profile_cmds), &mdata.sem_response,
 					   MDM_REGISTRATION_TIMEOUT);
-	if (wake_up() != 0) {
+	ret = wake_up();
+	if (ret != 0) {
 		goto error;
 	}
 
@@ -1431,13 +1583,11 @@ restart:
 					   ARRAY_SIZE(pre_setup_cmds), &mdata.sem_response,
 					   MDM_REGISTRATION_TIMEOUT);
 
-	if (wake_up() != 0) {
+	ret = wake_up();
+	if (ret != 0) {
 		goto error;
 	}
-	if (ret < 0) {
-		LOG_ERR("MODEM WAIT LOOP ERROR: %d", ret);
-		goto error;
-	}
+
 	k_sleep(K_MSEC(250));
 	int len = reset_counter++ % 8 == 0 ? ARRAY_SIZE(setup_cmds0) : 1;
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler, setup_cmds0, len,
@@ -1489,6 +1639,8 @@ restart:
 	/* Enable RF */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, "AT+CFUN=1",
 			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, "ATE0", &mdata.sem_response,
+			     MDM_CMD_TIMEOUT);
 
 	/*
 	 * TODO: A lot of this should be setup as a 3GPP module to handle
@@ -1514,7 +1666,8 @@ restart:
 
 		k_sleep(K_SECONDS(1));
 	}
-
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, "ATE0", &mdata.sem_response,
+			     MDM_CMD_TIMEOUT);
 	/* query modem RSSI */
 	modem_rssi_query_work(NULL);
 	k_sleep(MDM_WAIT_FOR_RSSI_DELAY);
@@ -1568,29 +1721,28 @@ restart:
 
 	LOG_INF("Network is ready.");
 	k_sleep(K_MSEC(250));
-	if (mdata.session_rat != 7) {
-		static const struct setup_cmd check_pdp[] = {
-			SETUP_CMD("AT+CGACT?", "", on_cmd_atcmdinfo_cgact_get, 2U, ","),
-		};
-		ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler, check_pdp,
-						   ARRAY_SIZE(check_pdp), &mdata.sem_response,
-						   MDM_REGISTRATION_TIMEOUT);
 
-		if (!mdata.pdp_active) {
-			k_sleep(K_MSEC(50));
-			ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0,
-					     "AT+CGACT=1,1", &mdata.sem_response,
-					     MDM_REGISTRATION_TIMEOUT);
-			if (ret != 0) {
-				LOG_ERR("Problem activating PDP context!");
-				return ret;
-			}
+	/* The following commmands are necessary for the UFTPC to connect */
+	static const struct setup_cmd check_pdp[] = {
+		SETUP_CMD_NOHANDLE("AT+UPSD=0,0,0"), SETUP_CMD_NOHANDLE("AT+UPSD=0,100,1"),
+		SETUP_CMD_NOHANDLE("AT+CGACT=1,1"),
+		SETUP_CMD("AT+CGACT?", "", on_cmd_atcmdinfo_cgact_get, 2U, ",")
+	};
+	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler, check_pdp,
+					   ARRAY_SIZE(check_pdp), &mdata.sem_response,
+					   MDM_REGISTRATION_TIMEOUT);
+
+	if (!mdata.pdp_active) {
+		k_sleep(K_MSEC(50));
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, "AT+CGACT=1,1",
+				     &mdata.sem_response, MDM_REGISTRATION_TIMEOUT);
+		if (ret != 0) {
+			LOG_ERR("Problem activating PDP context!");
+			return ret;
 		}
-
-		k_sleep(K_MSEC(250));
-	} else {
-		LOG_INF("No need to manually activate pdp.");
 	}
+
+	k_sleep(K_MSEC(250));
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* start RSSI query */
@@ -1641,6 +1793,9 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 
 	snprintk(buf2, sizeof(buf2), "AT+USOSO=%d,65535,128,1,%d", mdata.last_sock,
 		 3000); //TODO: use a config flag for linger time
+
+	k_sleep(K_MSEC(50));
+
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf2, &mdata.sem_response,
 			     MDM_CMD_TIMEOUT);
 	if (ret < 0) {
@@ -1722,7 +1877,7 @@ static int offload_close(void *obj)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	char buf[sizeof("AT+USOCL=#\r")];
-	int ret;
+	int ret = -1;
 
 	/* make sure we assigned an id */
 	if (sock->id < mdata.socket_config.base_socket_num) {
@@ -1739,6 +1894,7 @@ static int offload_close(void *obj)
 		// more time compared to other commands.
 		if (ret < 0) {
 			LOG_ERR("%s ret:%d", log_strdup(buf), ret);
+			return ret;
 		}
 	}
 
@@ -2377,6 +2533,8 @@ static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("+CREG: ", on_cmd_socknotifycreg, 1U, ""),
 	MODEM_CMD("+UUSOLI: ", on_cmd_socknotify_listen, 6U, ","),
 	MODEM_CMD("+UUSORF: ", on_cmd_socknotify_listen_udp, 2U, ","),
+	MODEM_CMD_ARGS_MAX("+UUFTPCR: ", on_cmd_ftp_urc, 2U, 3U, ","),
+	MODEM_CMD("+UUFWINSTALL: ", on_cmd_ufwinstall_urc, 1U, ""),
 };
 
 static int modem_init(const struct device *dev)
@@ -2387,6 +2545,8 @@ static int modem_init(const struct device *dev)
 
 	k_sem_init(&mdata.sem_response, 0, 1);
 	k_sem_init(&mdata.sem_prompt, 0, 1);
+	k_sem_init(&mdata.sem_ftp, 0, 1);
+	k_sem_init(&mdata.sem_fw_install, 0, 1);
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* initialize the work queue */
@@ -2430,6 +2590,7 @@ static int modem_init(const struct device *dev)
 	/* modem data storage */
 	mctx.data_manufacturer = mdata.mdm_manufacturer;
 	mctx.data_model = mdata.mdm_model;
+	mctx.data_information = mdata.mdm_information;
 	mctx.data_revision = mdata.mdm_revision;
 	mctx.data_imei = mdata.mdm_imei;
 
@@ -2488,7 +2649,7 @@ int get_pdp_addr(char **ip_addr)
 /* Give the modem a while to start responding to simple 'AT' commands.
 	 * Also wait for CSPS=1 or RRCSTATE=1 notification
 	 */
-int wake_up(void)
+static int wake_up(void)
 {
 	LOG_WRN("Waking up modem!");
 	int ret = -1;
@@ -2532,16 +2693,16 @@ int wake_up_from_upsv(void)
 	if (mdata.upsv_state == 4) {
 		if (k_sem_take(&mdata.cmd_handler_data.sem_tx_lock, K_SECONDS(2)) == 0) {
 			modem_pin_config(&mctx, MDM_POWER, true);
-			unsigned int irq_lock_key = irq_lock();
+
 			LOG_DBG("MDM_POWER_PIN -> DISABLE");
 			modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
-			k_sleep(K_MSEC(120)); /* min. value 100 msec (r4 datasheet
+			k_sleep(K_MSEC(10)); /* min. value 100 msec (r4 datasheet
  * section 4.2.10 )*/
 			modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
 
 			LOG_DBG("MDM_POWER_PIN -> ENABLE");
 			modem_pin_config(&mctx, MDM_POWER, false);
-			irq_unlock(irq_lock_key);
+
 			/* Wait for modem GPIO RX pin to rise, indicating readiness */
 			LOG_DBG("Waiting for Modem RX = 1");
 			do {
@@ -2558,21 +2719,24 @@ int wake_up_from_upsv(void)
 		return -EIO;
 	}
 
-	int ret;
 check_signal_strength:
-	ret = wake_up();
-	mdata.rssi = 0;
-	mdata.min_rssi = 31;
-	mdata.max_rssi = 0;
-	uint8_t counter = 0;
-	while (counter++ < MDM_WAIT_FOR_RSSI_COUNT) {
-		modem_rssi_query_work(NULL);
-		k_sleep(K_MSEC(50));
-	}
-	if (mdata.max_rssi < MDM_MIN_ALLOWED_RSSI) {
+	if (wake_up() != 0) {
 		return -EIO;
 	}
-	return ret;
+	if (!stop_rssi_work) {
+		mdata.rssi = 0;
+		mdata.min_rssi = 31;
+		mdata.max_rssi = 0;
+		uint8_t counter = 0;
+		while (counter++ < MDM_WAIT_FOR_RSSI_COUNT) {
+			modem_rssi_query_work(NULL);
+			k_sleep(K_MSEC(50));
+		}
+		if (mdata.max_rssi < MDM_MIN_ALLOWED_RSSI) {
+			return -EIO;
+		}
+	}
+	return 0;
 }
 
 static int sleep(void)
@@ -2582,30 +2746,16 @@ static int sleep(void)
 		SETUP_CMD_NOHANDLE("AT+CPSMS=1"),
 #endif
 		SETUP_CMD_NOHANDLE("AT+UPSV=4"),
+		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 2U, " "),
 	};
 	int ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler, set_psv,
 					       ARRAY_SIZE(set_psv), &mdata.sem_response,
 					       MDM_REGISTRATION_TIMEOUT);
-	if (ret != 0) {
-		return -1;
-	}
-
-	const struct setup_cmd read_upsv_cmd[] = {
-
-		//		SETUP_CMD_NOHANDLE("AT+USOCTL=0,10"), TODO: use this command
-		//		 to confirm that the listening socket is
-		//		 actually listening, and take some action if
-		//		 it is not.
-		SETUP_CMD("AT+UPSV?", "", on_cmd_atcmdinfo_upsv_get, 2U, " "),
-	};
-	k_sleep(K_MSEC(100));
-	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler, read_upsv_cmd,
-					   ARRAY_SIZE(read_upsv_cmd), &mdata.sem_response,
-					   MDM_REGISTRATION_TIMEOUT);
 
 	if (ret == 0) {
 		if (mdata.upsv_state == 4) {
 			LOG_INF("Modem power mode switched to 4!");
+			return 0;
 		} else {
 			LOG_ERR("Modem power not mode switched to 4!");
 			return -1;
@@ -2616,7 +2766,6 @@ static int sleep(void)
 		 * caller.*/
 		return ret;
 	}
-	return 0;
 }
 
 static int pwr_off(void)
@@ -2893,6 +3042,143 @@ int modem_test_tx_run_test_default(void)
 	uint16_t test_dur = 1000; // ms
 
 	return modem_test_tx_run_test(tx_ch, dbm_level, test_dur);
+}
+
+void enable_rssi(void)
+{
+	stop_rssi_work = false;
+}
+
+int modem_nf_get_model_and_fw_version(const char **model, const char **version)
+{
+	if (model == NULL || version == NULL) {
+		return -EINVAL;
+	}
+	if (mctx.data_information == NULL || mctx.data_revision == NULL ||
+	    *mctx.data_information == '\0' || *mctx.data_revision == '\0') {
+		return -ENODATA;
+	}
+	*model = mctx.data_information;
+	*version = mctx.data_revision;
+	return 0;
+}
+
+#ifdef DEBUG_UFTPC
+static void log_uftp_error()
+{
+	static const struct modem_cmd cmds[] = { MODEM_CMD("+UFTPER: ", on_cmd_uftper, 2U, ",") };
+	int ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds),
+				 "AT+UFTPER", &mdata.sem_response, MDM_CMD_TIMEOUT);
+	if (ret != 0) {
+		LOG_ERR("Cannot get FTP error %d", ret);
+	}
+}
+#endif
+
+int modem_nf_ftp_fw_download(const struct modem_nf_uftp_params *ftp_params, const char *filename)
+{
+	int ret;
+	if (ftp_params == NULL || filename == NULL) {
+		return -EINVAL;
+	}
+
+	char buf_uftp_server[sizeof("AT+UFTP=\"#,###.###.###.###\"")];
+	char buf_uftp_user[sizeof("AT+UFTP=#,\"################################\"")];
+	char buf_uftp_pass[sizeof("AT+UFTP=#,\"################################\"")];
+	char buf_uftpc_100[sizeof("AT+UFTPC=###,\"########################\"")];
+
+	snprintk(buf_uftp_server, sizeof(buf_uftp_server), "AT+UFTP=0,\"%s\"",
+		 ftp_params->ftp_server);
+	snprintk(buf_uftp_user, sizeof(buf_uftp_user), "AT+UFTP=2,\"%s\"", ftp_params->ftp_user);
+	snprintk(buf_uftp_pass, sizeof(buf_uftp_pass), "AT+UFTP=3,\"%s\"",
+		 ftp_params->ftp_password);
+
+	/* Setup FTP parameters */
+	const struct setup_cmd uftp_commands[] = { SETUP_CMD_NOHANDLE(buf_uftp_server),
+						   SETUP_CMD_NOHANDLE(buf_uftp_user),
+						   SETUP_CMD_NOHANDLE(buf_uftp_pass) };
+	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler, uftp_commands,
+					   ARRAY_SIZE(uftp_commands), &mdata.sem_response,
+					   MDM_CMD_TIMEOUT);
+	if (ret != 0) {
+		LOG_ERR("UFTP setup commands failed %d", ret);
+		return ret;
+	}
+	/* Connect to the FTP server */
+	k_sem_reset(&mdata.sem_ftp);
+	mdata.ftp_op_code = 0;
+	mdata.ftp_result = 0;
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, "AT+UFTPC=1",
+			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+	if (ret != 0) {
+		LOG_ERR("UFTPC connect failed %d", ret);
+		return ret;
+	}
+	/*  Wait for asynchronous feedback on connect */
+	ret = k_sem_take(&mdata.sem_ftp, K_SECONDS(60));
+	if (ret != 0) {
+		LOG_ERR("UFTPC connect timeout %d", ret);
+		return -ETIMEDOUT;
+	}
+	if (mdata.ftp_op_code != 1 || mdata.ftp_result != 1) {
+		LOG_ERR("UFTPC connect failed %d,%d", mdata.ftp_op_code, mdata.ftp_result);
+#ifdef DEBUG_UFTPC
+		log_uftp_error();
+#endif
+		return -ECONNREFUSED;
+	}
+	/* Get the file */
+	snprintk(buf_uftpc_100, sizeof(buf_uftpc_100), "AT+UFTPC=100,\"%s\"", filename);
+	k_sem_reset(&mdata.sem_ftp);
+	mdata.ftp_op_code = 0;
+	mdata.ftp_result = 0;
+
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, buf_uftpc_100,
+			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+	if (ret != 0) {
+		LOG_ERR("Could not get %s  %d", filename, ret);
+		return ret;
+	}
+	ret = k_sem_take(&mdata.sem_ftp, ftp_params->download_timeout_sec > 0 ?
+						 K_SECONDS(ftp_params->download_timeout_sec) :
+						 K_FOREVER);
+	if (ret != 0) {
+		LOG_ERR("UFTPC GET timeout %d", ret);
+		return -ETIMEDOUT;
+	}
+	if (mdata.ftp_op_code != 100 || mdata.ftp_result != 1) {
+		LOG_ERR("UFTPC=100 failed %d,%d", mdata.ftp_op_code, mdata.ftp_result);
+		return -EIO;
+	}
+	return 0;
+}
+
+int modem_nf_ftp_fw_install(bool start_install)
+{
+	int ret = -1;
+	const struct setup_cmd ufinstall_cmds[] = {
+		SETUP_CMD_NOHANDLE("AT+UFWINSTALL=1,115200,,1"),
+		SETUP_CMD_NOHANDLE("AT+UFWINSTALL"),
+	};
+
+	if (start_install) {
+		ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler, ufinstall_cmds,
+						   ARRAY_SIZE(ufinstall_cmds), &mdata.sem_response,
+						   MDM_CMD_TIMEOUT);
+
+		if (ret != 0) {
+			LOG_ERR("UFWINSTALL failed %d", ret);
+			return ret;
+		}
+	}
+
+	ret = k_sem_take(&mdata.sem_fw_install, K_MINUTES(40));
+
+	if (ret != 0) {
+		LOG_ERR("Modem FW upgrade failed %d", ret);
+		return ret;
+	}
+	return ret;
 }
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL, &mdata, NULL,

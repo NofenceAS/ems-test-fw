@@ -24,6 +24,7 @@ zephyr_include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/time_use/lib/include/
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/lib/crc
 	${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/error_handler
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/nofence_watchdog
 )
 
 FILE(GLOB app_sources 
@@ -50,6 +51,7 @@ FILE(GLOB app_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/power_manager/battery/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/movement_controller/*.c
 	${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/watchdog/watchdog_event.c
+	${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/nofence_watchdog/nofence_watchdog.c
 )
 
 target_sources(app PRIVATE ${app_sources})
@@ -74,6 +76,7 @@ zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/fw_upgrade/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/power_manager/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/power_manager/
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/nofence_watchdog/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/modules/power_manager/battery/
   ${CMAKE_CURRENT_SOURCE_DIR}/../../src/events/watchdog
   ${CMAKE_CURRENT_SOURCE_DIR}/../../include

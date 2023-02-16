@@ -17,3 +17,11 @@ struct gnss_set_mode_event {
 };
 
 EVENT_TYPE_DECLARE(gnss_set_mode_event);
+
+/** @brief send out GNSS mode changed status **/
+struct gnss_mode_changed_event {
+	struct event_header header;
+	gnss_mode_t mode;
+};
+
+EVENT_TYPE_DECLARE(gnss_mode_changed_event);

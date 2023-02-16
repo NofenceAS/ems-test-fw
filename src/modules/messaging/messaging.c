@@ -38,6 +38,8 @@
 #include "histogram_events.h"
 #include <sys/sys_heap.h>
 #include "amc_const.h"
+#include "pwr_event.h"
+#include "nofence_watchdog.h"
 
 #define MODULE messaging
 LOG_MODULE_REGISTER(MODULE, CONFIG_MESSAGING_LOG_LEVEL);
@@ -78,8 +80,10 @@ K_SEM_DEFINE(sem_release_tx_thread, 0, 1);
 static collar_state_struct_t current_state;
 static gnss_last_fix_struct_t cached_fix;
 
-static bool fota_reset = true;
 static bool block_fota_request = false;
+
+/** @brief counts the number of FOTA requests, only reset on success */
+static int m_fota_attempts = 0;
 
 typedef enum {
 	COLLAR_MODE,
@@ -99,6 +103,7 @@ static int cached_and_ready_reg[CACHED_READY_END_OF_LIST];
 
 static int rat, mnc, rssi, min_rssi, max_rssi;
 static uint8_t ccid[20] = "\0";
+static char mdm_fw_file_name[sizeof(((PollMessageResponse *)NULL)->xModemFwFileName)] = "\0";
 
 static uint8_t expected_ano_frame, new_ano_in_progress;
 static bool first_ano_frame;
@@ -127,7 +132,9 @@ int8_t request_ano_frame(uint16_t, uint16_t);
 void ano_download(uint16_t, uint16_t);
 void proto_InitHeader(NofenceMessage *);
 void process_poll_response(NofenceMessage *);
-void process_upgrade_request(VersionInfoFW *);
+
+static int process_upgrade_request(VersionInfoFW *);
+
 uint8_t process_fence_msg(FenceDefinitionResponse *);
 uint8_t process_ano_msg(UbxAnoReply *);
 
@@ -148,7 +155,7 @@ static bool m_confirm_acc_limits, m_confirm_ble_key;
 
 K_MUTEX_DEFINE(send_binary_mutex);
 K_MUTEX_DEFINE(read_flash_mutex);
-static bool reboot_scheduled;
+static bool reboot_scheduled = false;
 
 K_MSGQ_DEFINE(ble_cmd_msgq, sizeof(struct ble_cmd_event), CONFIG_MSGQ_BLE_CMD_SIZE,
 	      4 /* Byte alignment */);
@@ -175,6 +182,7 @@ struct k_work_delayable process_warning_work;
 struct k_work_delayable process_warning_correction_start_work;
 struct k_work_delayable process_warning_correction_end_work;
 struct k_work_delayable log_send_work;
+struct k_work_delayable fota_wdt_work;
 
 struct fence_def_update {
 	struct k_work_delayable work;
@@ -182,12 +190,13 @@ struct fence_def_update {
 	int request_frame;
 } m_fence_update_req;
 
-#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW) && !CONFIG_ZTEST
 atomic_t poll_period_seconds = ATOMIC_INIT(5 * 60);
 #else
 atomic_t poll_period_seconds = ATOMIC_INIT(15 * 60);
 #endif
 atomic_t log_period_minutes = ATOMIC_INIT(30);
+static atomic_t m_new_mdm_fw_update_state = ATOMIC_INIT(0);
 
 /* Messaging Rx thread */
 K_THREAD_DEFINE(messaging_rx_thread, CONFIG_MESSAGING_THREAD_STACK_SIZE, messaging_rx_thread_fn,
@@ -208,8 +217,14 @@ typedef enum {
 	/* Add additional states here (ANO, diagnostic etc)... */
 } messaging_tx_type_t;
 
-atomic_t m_halt_data_transfer = ATOMIC_INIT(0);
+atomic_t m_fota_in_progress = ATOMIC_INIT(0);
+atomic_t m_break_log_stream_token = ATOMIC_INIT(0);
+
 atomic_t m_message_tx_type = ATOMIC_INIT(0);
+
+#define WDT_MODULE_MESSAGING ("messaging")
+#define WDT_MODULE_KEEP_ALIVE ("keep_alive")
+#define WDT_MODULE_RECV_TCP ("receive_tcp")
 
 static int set_tx_state_ready(messaging_tx_type_t tx_type);
 
@@ -297,15 +312,21 @@ static void build_log_message()
  * @param len Length of the encoded log message read from storage.
  * @return Returns 0 if successfull, otherwise negative error code.
  */
-int read_and_send_log_data_cb(uint8_t *data, size_t len)
+static int read_and_send_log_data_cb(uint8_t *data, size_t len)
 {
 	/* Only send log data stored to flash if not halted by some other process, e.g. a pending
 	 * FOTA. Retuning an error from this callback will abort the FCB walk in the storage
 	 * controller untill log data trafic is reinstated. */
-	if (atomic_get(&m_halt_data_transfer) == true) {
-		LOG_DBG("Unable to send log data, data transfer is currently halted");
+	if (atomic_get(&m_fota_in_progress) == true) {
+		LOG_DBG("FOTA download in progress, will not send log data now!");
 		return -EBUSY;
 	}
+
+	if (atomic_get(&m_break_log_stream_token) == true) {
+		LOG_DBG("Breaking the log stream!");
+		return -EBUSY;
+	}
+
 	LOG_DBG("Send log message fetched from flash");
 
 	/* Fetch the length from the two first bytes */
@@ -635,23 +656,29 @@ void fence_update_req_fn(struct k_work *item)
 static int set_tx_state_ready(messaging_tx_type_t tx_type)
 {
 	int state = atomic_get(&m_message_tx_type);
-
 	if (state != IDLE) {
 		/* Tx thread busy sending something else */
-		if ((tx_type == POLL_REQ) && (state == LOG_MSG)) {
-			/* Sending log messages always starts with a poll request- no need to send
-			 * additional poll */
-#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+		if ((state == LOG_MSG) && (tx_type == POLL_REQ)) {
+			/* poll requests should always go through in the case of too many logs
+			 * stored on the flash. Tx thread will consume the token when the fcb 
+			 * walk returns. */
+			atomic_set(&m_break_log_stream_token, true);
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW) && !CONFIG_ZTEST
 			k_sem_give(&sem_release_tx_thread);
 #endif
 			return 0;
 		}
 		return -EBUSY;
 	}
-	if ((tx_type != POLL_REQ) && (atomic_get(&m_halt_data_transfer) != false)) {
-		/* Unable to send log messages as log data transfer is currently halted */
-		return -EACCES;
+	if ((tx_type == LOG_MSG)) {
+		if (atomic_get(&m_fota_in_progress) == true) {
+			/* Unable to send log messages as log data transfer is currently halted */
+			return -EACCES;
+		} else {
+			atomic_set(&m_break_log_stream_token, false);
+		}
 	}
+
 	state = (int)tx_type;
 	atomic_set(&m_message_tx_type, state);
 
@@ -703,7 +730,12 @@ void messaging_tx_thread_fn(void)
 					if (tx_type == POLL_REQ) {
 						int ret = k_work_reschedule_for_queue(
 							&message_q, &modem_poll_work,
-							K_SECONDS(30));
+#ifdef CONFIG_ZTEST
+							K_SECONDS(60)
+#else
+							K_SECONDS(30)
+#endif
+						);
 						if (ret < 0) {
 							LOG_ERR("Failed to reschedule work");
 						}
@@ -713,7 +745,7 @@ void messaging_tx_thread_fn(void)
 
 			/* LOG MESSAGES */
 			if ((tx_type == LOG_MSG) && (err == 0) &&
-			    (atomic_get(&m_halt_data_transfer) == false)) {
+			    (atomic_get(&m_fota_in_progress) == false)) {
 				/* Sending, all stored log messages are already proto encoded */
 				err = send_all_stored_messages();
 				/* Log message error handler,
@@ -724,8 +756,7 @@ void messaging_tx_thread_fn(void)
 			}
 
 			/* FENCE DEFINITION REQUEST */
-			if ((tx_type == FENCE_REQ) &&
-			    (atomic_get(&m_halt_data_transfer) == false)) {
+			if ((tx_type == FENCE_REQ)) {
 				NofenceMessage fence_req;
 				proto_InitHeader(&fence_req);
 				fence_req.which_m = NofenceMessage_fence_definition_req_tag;
@@ -746,6 +777,14 @@ void messaging_tx_thread_fn(void)
 
 			/* Reset Tx thread */
 			atomic_set(&m_message_tx_type, IDLE);
+
+			if (atomic_get(&m_break_log_stream_token) == true) {
+				/* consume the token and enforce the poll request */
+				atomic_set(&m_break_log_stream_token, false);
+				atomic_set(&m_message_tx_type, POLL_REQ);
+				k_sem_give(&sem_release_tx_thread);
+			}
+
 		} else {
 			LOG_WRN("Tx thread semaphore returned unexpectedly");
 			k_sem_reset(&sem_release_tx_thread);
@@ -797,6 +836,8 @@ static void update_cache_reg(cached_and_ready_enum index)
  */
 static bool event_handler(const struct event_header *eh)
 {
+	/* Kick watchdog here */
+	nofence_wdt_kick(WDT_MODULE_MESSAGING);
 	if (is_pwr_reboot_event(eh)) {
 		reboot_scheduled = true;
 		return false;
@@ -839,6 +880,8 @@ static bool event_handler(const struct event_header *eh)
 		return true;
 	}
 	if (is_cellular_proto_in_event(eh)) {
+		/* Kick receive_tcp() Watchdog */
+		nofence_wdt_kick(WDT_MODULE_RECV_TCP);
 		struct cellular_proto_in_event *ev = cast_cellular_proto_in_event(eh);
 		while (k_msgq_put(&lte_proto_msgq, ev, K_NO_WAIT) != 0) {
 			k_msgq_purge(&lte_proto_msgq);
@@ -978,6 +1021,8 @@ static bool event_handler(const struct event_header *eh)
 		return false;
 	}
 	if (is_connection_state_event(eh)) {
+		/* Kick watchdog here */
+		nofence_wdt_kick(WDT_MODULE_KEEP_ALIVE);
 		struct connection_state_event *ev = cast_connection_state_event(eh);
 		if (ev->state) {
 			k_sem_give(&connection_ready);
@@ -1081,17 +1126,48 @@ static bool event_handler(const struct event_header *eh)
 	if (is_dfu_status_event(eh)) {
 		struct dfu_status_event *fw_upgrade_event = cast_dfu_status_event(eh);
 
+		if (fw_upgrade_event->dfu_status == DFU_STATUS_IDLE ||
+		    fw_upgrade_event->dfu_status == DFU_STATUS_SUCCESS_REBOOT_SCHEDULED) {
+			/* Error or cancelled, stop the watchdog */
+			LOG_INF("Cancelling APP FOTA WDT");
+			k_work_cancel_delayable(&fota_wdt_work);
+		} else {
+			/* Start/Kick the FOTA application watchdog */
+			LOG_INF("Kicking APP FOTA WDT");
+			k_work_reschedule_for_queue(&message_q, &fota_wdt_work,
+						    K_MINUTES(CONFIG_APP_FOTA_WDT_MINUTES));
+		}
 		if (fw_upgrade_event->dfu_status == DFU_STATUS_IDLE &&
 		    fw_upgrade_event->dfu_error != 0) {
-			fota_reset = true;
-
 			/* DFU/FOTA is canceled, release the halt on log data trafic in the
 			 * messaging tx thread */
-			atomic_set(&m_halt_data_transfer, false);
+			LOG_WRN("DFU error %d", fw_upgrade_event->dfu_error);
+			atomic_set(&m_fota_in_progress, false);
+			if (m_fota_attempts > CONFIG_APP_FOTA_FAILURES_BEFORE_REBOOT) {
+				int err = stg_config_u8_write(
+					STG_U8_RESET_REASON,
+					(uint8_t)REBOOT_FOTA_MAX_FAILURE_ATTEMPTS);
+				if (err != 0) {
+					LOG_ERR("Error writing fota reset reason");
+				}
+				LOG_WRN("Rebooting due to too many failed FOTA tries");
+				sys_reboot(SYS_REBOOT_COLD);
+			}
 		} else if (fw_upgrade_event->dfu_status != DFU_STATUS_IDLE) {
 			/* DFU/FOTA has started or is in progress, halt log data trafic in the
 			 * messaging tx thread */
-			atomic_set(&m_halt_data_transfer, true);
+			atomic_set(&m_fota_in_progress, true);
+		}
+		return false;
+	}
+	if (is_mdm_fw_update_event(eh)) {
+		struct mdm_fw_update_event *ev = cast_mdm_fw_update_event(eh);
+		atomic_set(&m_new_mdm_fw_update_state, ev->status);
+		int err;
+		err = k_work_reschedule_for_queue(&message_q, &modem_poll_work, K_SECONDS(5));
+		if (err < 0) {
+			LOG_ERR("Error starting modem poll worker on mdm fw update! (%d)", err);
+			nf_app_error(ERR_MESSAGING, err, NULL, 0);
 		}
 		return false;
 	}
@@ -1163,6 +1239,10 @@ EVENT_SUBSCRIBE(MODULE, warn_correction_end_event);
 EVENT_SUBSCRIBE(MODULE, gsm_info_event);
 EVENT_SUBSCRIBE(MODULE, dfu_status_event);
 EVENT_SUBSCRIBE(MODULE, block_fota_event);
+
+#if !defined(CONFIG_DIAGNOSTIC_EMS_FW) || CONFIG_ZTEST
+EVENT_SUBSCRIBE(MODULE, mdm_fw_update_event);
+#endif
 
 /**
  * @brief Process commands recieved on the bluetooth interface, and performs the appropriate
@@ -1239,24 +1319,20 @@ static void process_lte_proto_event(void)
 		return;
 	}
 
-	/* Process poll response if data transfer is not otherwie halted for some reason, e.g. a
-	 * pending or ongoing FOTA */
-	if (atomic_get(&m_halt_data_transfer) == 0) {
-		if (proto.which_m == NofenceMessage_poll_message_resp_tag) {
-			LOG_INF("Process poll reponse");
-			process_poll_response(&proto);
-			return;
-		} else if (proto.which_m == NofenceMessage_fence_definition_resp_tag) {
-			uint8_t received_frame = process_fence_msg(&proto.m.fence_definition_resp);
-			fence_download(received_frame);
-			return;
-		} else if (proto.which_m == NofenceMessage_ubx_ano_reply_tag) {
-			uint16_t new_ano_frame = process_ano_msg(&proto.m.ubx_ano_reply);
-			ano_download(proto.m.ubx_ano_reply.usAnoId, new_ano_frame);
-			return;
-		} else {
-			return;
-		}
+	if (proto.which_m == NofenceMessage_poll_message_resp_tag) {
+		LOG_INF("Process poll reponse");
+		process_poll_response(&proto);
+		return;
+	} else if (proto.which_m == NofenceMessage_fence_definition_resp_tag) {
+		uint8_t received_frame = process_fence_msg(&proto.m.fence_definition_resp);
+		fence_download(received_frame);
+		return;
+	} else if (proto.which_m == NofenceMessage_ubx_ano_reply_tag) {
+		uint16_t new_ano_frame = process_ano_msg(&proto.m.ubx_ano_reply);
+		ano_download(proto.m.ubx_ano_reply.usAnoId, new_ano_frame);
+		return;
+	} else {
+		return;
 	}
 }
 
@@ -1280,6 +1356,57 @@ void messaging_rx_thread_fn()
 			msgq_events[i].state = K_POLL_STATE_NOT_READY;
 		}
 	}
+}
+
+/**
+ * @brief Default App watchdog callback
+ */
+static void fota_app_wdt_cb()
+{
+	int err = stg_config_u8_write(STG_U8_RESET_REASON, (uint8_t)REBOOT_FOTA_HANG);
+	if (err != 0) {
+		LOG_ERR("Error writing fota reset reason");
+	}
+	sys_reboot(SYS_REBOOT_COLD);
+}
+
+static void nofence_wdt_cb_trigger(uint8_t reason)
+{
+	int err = stg_config_u8_write(STG_U8_RESET_REASON, reason);
+	if (err != 0) {
+		LOG_ERR("Error writing fota reset reason");
+	}
+	sys_reboot(SYS_REBOOT_COLD);
+}
+
+static fota_wdt_cb g_wdt_cb = fota_app_wdt_cb;
+
+/**
+ * @brief Trigger called by fota_wdt_work
+ */
+void fota_app_wdt_trigger()
+{
+	if (g_wdt_cb) {
+		g_wdt_cb();
+	}
+}
+
+/**
+ * @brief Register/overwrite fota app watchdog callback
+ * @param fota wdt callback
+ */
+void fota_wdt_cb_register(fota_wdt_cb wdt_cb)
+{
+	g_wdt_cb = wdt_cb;
+}
+
+/**
+ * @brief Work item handler for "fota_wdt_work". Restarts the system
+ * @param item Pointer to work item.
+ */
+static void fota_wdt_work_fn(struct k_work *item)
+{
+	fota_app_wdt_trigger();
 }
 
 int messaging_module_init(void)
@@ -1312,10 +1439,25 @@ int messaging_module_init(void)
 	k_work_init_delayable(&process_warning_correction_end_work, log_correction_end_work_fn);
 	k_work_init_delayable(&data_request_work, data_request_work_fn);
 	k_work_init_delayable(&m_fence_update_req.work, fence_update_req_fn);
+	k_work_init_delayable(&fota_wdt_work, fota_wdt_work_fn);
 
 	memset(&pasture_temp, 0, sizeof(pasture_t));
 	cached_fences_counter = 0;
 	pasture_temp.m.us_pasture_crc = EMPTY_FENCE_CRC;
+
+	/* Initialize nofence watchdog */
+	nofence_wdt_init();
+	nofence_wdt_register_cb(nofence_wdt_cb_trigger);
+	nofence_wdt_module_register(WDT_MODULE_MESSAGING, REBOOT_WDT_RESET_MESSAGING,
+				    CONFIG_WDT_MODULE_MESSAGING_TIME_SECONDS);
+	nofence_wdt_module_register(WDT_MODULE_KEEP_ALIVE, REBOOT_WDT_RESET_KEEP_ALIVE,
+				    CONFIG_WDT_MODULE_KEEP_ALIVE_TIME_SECONDS);
+	nofence_wdt_module_register(WDT_MODULE_RECV_TCP, REBOOT_WDT_RESET_RECV_TCP,
+				    CONFIG_WDT_MODULE_RECV_TCP_TIME_SECONDS);
+
+	/** @todo Should add semaphore and only start these queues when
+	 *  we get connection to network with modem.
+	 */
 
 	err = k_work_schedule_for_queue(&message_q, &data_request_work, K_NO_WAIT);
 	if (err < 0) {
@@ -1434,16 +1576,6 @@ void build_poll_request(NofenceMessage *poll_req)
 			       sizeof(poll_req->m.poll_message_req.xSimCardId) - 1);
 		}
 
-		/* TODO pshustad, clean up and re-enable the commented code below */
-		//		uint16_t xbootVersion;
-		//		if (xboot_get_version(&xbootVersion) == XB_SUCCESS) {
-		//			poll_req.m.poll_message_req.versionInfo
-		//				.usATmegaBootloaderVersion =
-		//				xbootVersion;
-		//			poll_req.m.poll_message_req.versionInfo
-		//				.has_usATmegaBootloaderVersion = true;
-		//		}
-
 		poll_req->m.poll_message_req.has_versionInfoHW = true;
 
 		uint8_t pcb_rf_version = 0;
@@ -1476,17 +1608,37 @@ void build_poll_request(NofenceMessage *poll_req)
 		pwr_module_reboot_reason(&reboot_reason);
 		poll_req->m.poll_message_req.has_ucMCUSR = true;
 		poll_req->m.poll_message_req.ucMCUSR = reboot_reason;
+	}
 
-		/** @todo Add information of SIM card */
-#if 0
-		poll_req.m.poll_message_req.has_xSimCardId = true;
-		memcpy(poll_req.m.poll_message_req.xSimCardId, BGS_SCID(),
-			sizeof(poll_req.m.poll_message_req.xSimCardId));
-		poll_req.m.poll_message_req.versionInfo.has_ulATmegaVersion =
-			true;
-		poll_req.m.poll_message_req.versionInfo.ulATmegaVersion =
-			NF_X25_VERSION_NUMBER;
-#endif
+	if (m_transfer_boot_params ||
+	    atomic_get(&m_new_mdm_fw_update_state) >= MDM_FW_DOWNLOAD_COMPLETE) {
+		/* Add modem model and FW version */
+		const char *modem_model = NULL;
+		const char *modem_version = NULL;
+		int ret = modem_nf_get_model_and_fw_version(&modem_model, &modem_version);
+		if (ret == 0) {
+			poll_req->m.poll_message_req.has_xVersionInfoModem = true;
+			strncpy(poll_req->m.poll_message_req.xVersionInfoModem.xModel, modem_model,
+				sizeof(poll_req->m.poll_message_req.xVersionInfoModem.xModel) - 1);
+			strncpy(poll_req->m.poll_message_req.xVersionInfoModem.xVersion,
+				modem_version,
+				sizeof(poll_req->m.poll_message_req.xVersionInfoModem.xVersion) -
+					1);
+			if (atomic_get(&m_new_mdm_fw_update_state) == MDM_FW_DOWNLOAD_COMPLETE) {
+				poll_req->m.poll_message_req.xVersionInfoModem
+					.has_xModemFwFileNameDownloaded = true;
+				strncpy(poll_req->m.poll_message_req.xVersionInfoModem
+						.xModemFwFileNameDownloaded,
+					&mdm_fw_file_name[0],
+					sizeof(poll_req->m.poll_message_req.xVersionInfoModem
+						       .xModemFwFileNameDownloaded) -
+						1);
+				LOG_INF("%s", poll_req->m.poll_message_req.xVersionInfoModem
+						      .xModemFwFileNameDownloaded);
+			}
+		} else {
+			LOG_WRN("Could not get modem version info: %d", ret);
+		}
 	}
 }
 
@@ -1719,6 +1871,16 @@ void process_poll_response(NofenceMessage *proto)
 
 	/* When we receive a poll reply, we don't want to transfer boot params */
 	m_transfer_boot_params = false;
+
+	if (atomic_cas(&m_new_mdm_fw_update_state, MDM_FW_DOWNLOAD_COMPLETE, 0)) {
+		struct messaging_mdm_fw_event *mdm_fw_ver = new_messaging_mdm_fw_event();
+		mdm_fw_ver->buf = NULL;
+		mdm_fw_ver->len = 0;
+		EVENT_SUBMIT(mdm_fw_ver);
+	}
+
+	atomic_cas(&m_new_mdm_fw_update_state, INSTALLATION_COMPLETE, 0);
+
 	PollMessageResponse *pResp = &proto->m.poll_message_resp;
 	if (pResp->has_xServerIp && strlen(pResp->xServerIp) > 0) {
 		struct messaging_host_address_event *host_add_event =
@@ -1764,7 +1926,7 @@ void process_poll_response(NofenceMessage *proto)
 	if (pResp->has_usPollConnectIntervalSec) {
 		/* Update poll request interval if not equal to interval requested by server */
 		if (atomic_get(&poll_period_seconds) != pResp->usPollConnectIntervalSec) {
-#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW) && !CONFIG_TEST
 			atomic_set(&poll_period_seconds, (5 * 60));
 #else
 			atomic_set(&poll_period_seconds, pResp->usPollConnectIntervalSec);
@@ -1778,6 +1940,16 @@ void process_poll_response(NofenceMessage *proto)
 
 			LOG_INF("Poll period of %d seconds will be used",
 				atomic_get(&poll_period_seconds));
+			uint32_t wdt_module_ts =
+				atomic_get(&poll_period_seconds) * CONFIG_WDT_KEEP_ALIVE_NUM_POLLS;
+			/* Setup the KEEP_ALIVE watchdog to be smallest of WDT_KEEP_ALIVE_NUM_POLLS and CONFIG_WDT_KEEP_MAX_TIME_SECONDS */
+			if (CONFIG_WDT_KEEP_ALIVE_NUM_POLLS * atomic_get(&poll_period_seconds) >
+			    CONFIG_WDT_KEEP_MAX_TIME_SECONDS) {
+				wdt_module_ts = CONFIG_WDT_KEEP_MAX_TIME_SECONDS;
+			}
+
+			nofence_wdt_module_register(WDT_MODULE_KEEP_ALIVE,
+						    REBOOT_WDT_RESET_KEEP_ALIVE, wdt_module_ts);
 		}
 	}
 	m_confirm_acc_limits = false;
@@ -1854,13 +2026,41 @@ void process_poll_response(NofenceMessage *proto)
 		if (err < 0) {
 			LOG_ERR("Failed to schedule work");
 		}
-		return;
 	}
 
 	if (pResp->has_versionInfo) {
-		process_upgrade_request(&pResp->versionInfo);
+		if (process_upgrade_request(&pResp->versionInfo) == 0) {
+			return;
+		}
+	}
+
+	if (pResp->has_xModemFwFileName) {
+		strncpy(mdm_fw_file_name, pResp->xModemFwFileName,
+			sizeof(pResp->xModemFwFileName) - 1);
+		LOG_INF("%s", mdm_fw_file_name);
+		struct messaging_mdm_fw_event *mdm_fw_ver = new_messaging_mdm_fw_event();
+		mdm_fw_ver->buf = mdm_fw_file_name;
+		mdm_fw_ver->len = sizeof(pResp->xModemFwFileName);
+		EVENT_SUBMIT(mdm_fw_ver);
 	}
 	return;
+}
+
+/** @todo : This is code duplication, create a utility parsing host and port from NVS */
+static int get_and_parse_server_ip_address(char *buf, size_t size)
+{
+	uint8_t port_length = 0;
+	int ret = stg_config_str_read(STG_STR_HOST_PORT, buf, &port_length);
+	if (ret != 0) {
+		LOG_ERR("Failed to read host address from ext flash");
+		return ret;
+	}
+	char *ptr_colon = strchr(buf, ':');
+	if (ptr_colon == NULL) {
+		return -EINVAL;
+	}
+	*ptr_colon = '\0';
+	return 0;
 }
 
 /**
@@ -1868,7 +2068,7 @@ void process_poll_response(NofenceMessage *proto)
  * version is available on the server.
  * @param fw_ver_from_server The firmware version available on the server.
  */
-void process_upgrade_request(VersionInfoFW *fw_ver_from_server)
+static int process_upgrade_request(VersionInfoFW *fw_ver_from_server)
 {
 	if (fw_ver_from_server->has_ulApplicationVersion &&
 	    fw_ver_from_server->ulApplicationVersion != NF_X25_VERSION_NUMBER &&
@@ -1876,14 +2076,21 @@ void process_upgrade_request(VersionInfoFW *fw_ver_from_server)
 		LOG_INF("Received new app version from server %i",
 			fw_ver_from_server->ulApplicationVersion);
 		if (!reboot_scheduled) {
+			m_fota_attempts++;
 			struct start_fota_event *ev = new_start_fota_event();
-			ev->override_default_host = false;
-			ev->reset_download_client = fota_reset;
+			if (get_and_parse_server_ip_address(ev->host, sizeof(ev->host)) == 0) {
+				ev->override_default_host = true;
+			} else {
+				LOG_WRN("Cannot parse server address");
+				ev->override_default_host = false;
+			}
+
 			ev->version = fw_ver_from_server->ulApplicationVersion;
 			EVENT_SUBMIT(ev);
-			fota_reset = false;
+			return 0;
 		}
 	}
+	return -1;
 }
 
 /** @brief Process a fence frame and stores it into the cached pasture so we can validate if its

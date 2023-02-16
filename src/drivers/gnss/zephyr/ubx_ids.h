@@ -22,6 +22,8 @@
 #define UBX_NAV_STATUS 0x03
 #define UBX_NAV_PL 0x62
 #define UBX_NAV_SAT 0x35
+#define UBX_MON 0x0A
+#define UBX_MON_VER 0x04
 
 #define UBX_RXM 0x02
 #define UBX_RXM_PMREQ 0x41

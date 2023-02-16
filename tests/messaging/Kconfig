@@ -7,6 +7,7 @@ menu "APPLICATION_CODE"
     rsource "./../../src/modules/cellular_controller/Kconfig"
     rsource "./../../src/modules/fw_upgrade/Kconfig"
     rsource "./../../src/events/fw_upgrade/Kconfig"
+
 endmenu # APPLICATION CODE
 
 menu "ERROR_HANDLER"
@@ -27,6 +28,10 @@ endmenu
 
 menu "PWR_MANAGER"
     rsource "./../../src/modules/power_manager/Kconfig"
+endmenu
+
+menu "NOFENCE_WATCHDOG"
+    rsource "../../src/modules/nofence_watchdog/Kconfig"
 endmenu
 menu "Zephyr Kernel"
 source "Kconfig.zephyr"

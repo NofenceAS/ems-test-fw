@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(MIA_M10, CONFIG_GNSS_LOG_LEVEL);
 static const struct device *mia_m10_uart_dev = GNSS_UART_DEV;
 
 #define MIA_M10_DEFAULT_BAUDRATE 38400
+#define MIA_M10_RESETN_TIME 1
 
 /* Parser thread structures */
 K_KERNEL_STACK_DEFINE(gnss_parse_stack, CONFIG_GNSS_MIA_M10_PARSE_STACK_SIZE);
@@ -77,6 +78,8 @@ static struct k_mutex gnss_cb_mutex;
 static gnss_data_cb_t data_cb = NULL;
 
 const struct device *gpio_dev;
+static const struct gpio_dt_spec gnss_resetn =
+	GPIO_DT_SPEC_GET(DT_INST(0, u_blox_mia_m10), resetn_gpios);
 
 #if (CONFIG_GNSS_LOG_LEVEL >= 4)
 static uint8_t dbg_last_msg_class;
@@ -118,9 +121,14 @@ static int mia_m10_sync_tow(uint32_t tow)
 static int mia_m10_sync_complete(uint32_t flag)
 {
 	gnss_data_flags |= flag;
+#ifdef CONFIG_ZTEST
+	if (gnss_data_flags == (GNSS_DATA_FLAG_NAV_DOP | GNSS_DATA_FLAG_NAV_PVT |
+				GNSS_DATA_FLAG_NAV_STATUS | GNSS_DATA_FLAG_NAV_PL)) {
+#else
 	if (gnss_data_flags ==
 	    (GNSS_DATA_FLAG_NAV_DOP | GNSS_DATA_FLAG_NAV_PVT | GNSS_DATA_FLAG_NAV_STATUS |
 	     GNSS_DATA_FLAG_NAV_PL | GNSS_DATA_FLAG_NAV_SAT)) {
+#endif
 		/* Copy data from "in progress" to "working", and call callbacks */
 		if (k_mutex_lock(&gnss_data_mutex, K_MSEC(10)) == 0) {
 			memcpy(&gnss_data.latest, &gnss_data_in_progress, sizeof(gnss_struct_t));
@@ -488,6 +496,12 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 		return ret;
 	}
 
+	/* Enable NAV-SAT output on UART, no handler */
+	/*ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
+	if (ret != 0) {
+		return ret;
+	}*/
+
 	/* Enable the hopefully promising UBX-NAV-PL message on UART*/
 	ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_PL_UART1, 1);
 	if (ret != 0) {
@@ -498,11 +512,6 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 		return ret;
 	}
 
-	/* Enable NAV-SAT output on UART */
-	ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
-	if (ret != 0) {
-		return ret;
-	}
 	ret = ublox_register_handler(UBX_NAV, UBX_NAV_SAT, mia_m10_nav_sat_handler, NULL);
 	if (ret != 0) {
 		return ret;
@@ -787,6 +796,11 @@ static int mia_m10_init(const struct device *dev)
 		return ret;
 	}
 
+	ret = gpio_pin_configure_dt(&gnss_resetn, GPIO_OUTPUT_ACTIVE);
+	if (ret != 0) {
+		return ret;
+	}
+
 	k_sem_init(&gnss_rx_sem, 0, 1);
 	gnss_hub_init(mia_m10_uart_dev, &gnss_rx_sem, MIA_M10_DEFAULT_BAUDRATE);
 
@@ -983,6 +997,37 @@ int mia_m10_config_get(uint32_t key, uint8_t size, uint64_t *raw_value)
 			return ret;
 		}
 
+		k_mutex_unlock(&cmd_mutex);
+	} else {
+		return -EBUSY;
+	}
+
+	return ret;
+}
+
+int mia_m10_version_get(const struct device *dev, struct ublox_mon_ver *pmia_m10_versions)
+{
+	int ret = 0;
+
+	if (k_mutex_lock(&cmd_mutex, K_MSEC(CONFIG_GNSS_MIA_M10_CMD_RESP_TIMEOUT)) == 0) {
+		ret = ublox_build_mon_ver(cmd_buf, &cmd_size, CONFIG_GNSS_MIA_M10_CMD_MAX_SIZE);
+		if (ret != 0) {
+			k_mutex_unlock(&cmd_mutex);
+			return ret;
+		}
+
+		ret = mia_m10_send_ubx_cmd(cmd_buf, cmd_size, false, true);
+		if (ret != 0) {
+			k_mutex_unlock(&cmd_mutex);
+			return ret;
+		}
+
+		/* Parse result payload */
+		ret = ublox_get_mon_ver(cmd_buf, cmd_size, pmia_m10_versions);
+		if (ret != 0) {
+			k_mutex_unlock(&cmd_mutex);
+			return ret;
+		}
 		k_mutex_unlock(&cmd_mutex);
 	} else {
 		return -EBUSY;
@@ -1210,9 +1255,27 @@ static int mia_m10_wakeup(const struct device *dev)
 	return 0;
 }
 
+static int mia_m10_resetn_pin(const struct device *dev)
+{
+	LOG_DBG("mia m10 hard resetn pin toggled");
+	int ret = 0;
+	ret = gpio_pin_set_dt(&gnss_resetn, 0);
+	if (ret != 0) {
+		return ret;
+	}
+	//Driving RESET_N low for at least 1 ms will trigger a reset of the mia m10.
+	k_sleep(K_MSEC(MIA_M10_RESETN_TIME));
+	ret = gpio_pin_set_dt(&gnss_resetn, 1);
+	if (ret != 0) {
+		return ret;
+	}
+	return 0;
+}
+
 static const struct gnss_driver_api mia_m10_api_funcs = {
 	.gnss_setup = mia_m10_setup,
 	.gnss_reset = mia_m10_reset,
+	.gnss_version_get = mia_m10_version_get,
 	.gnss_upload_assist_data = mia_m10_upload_assist_data,
 	.gnss_set_rate = mia_m10_set_rate,
 	.gnss_get_rate = mia_m10_get_rate,
@@ -1220,7 +1283,8 @@ static const struct gnss_driver_api mia_m10_api_funcs = {
 	.gnss_data_fetch = mia_m10_data_fetch,
 	.gnss_set_backup_mode = mia_m10_set_backup_mode,
 	.gnss_wakeup = mia_m10_wakeup,
-	.gnss_set_power_mode = mia_m10_set_power_mode
+	.gnss_set_power_mode = mia_m10_set_power_mode,
+	.gnss_resetn_pin = mia_m10_resetn_pin
 };
 
 /* Create device object.
