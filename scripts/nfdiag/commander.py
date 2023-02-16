@@ -7,7 +7,7 @@ import time
 from collections import namedtuple
 
 import logging
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Definitions used for group/command/response
 GROUP_SYSTEM = 0x00
@@ -104,6 +104,7 @@ class Commander(threading.Thread):
 		self.crc_calc = crc.CrcCalculator(crc16_conf)
 
 		self.resp_queue = Queue()
+		self.data_queue = Queue()
 
 		self.running = True
 		self.daemon = True
@@ -144,7 +145,7 @@ class Commander(threading.Thread):
 
 	def force_poll_req(self):
 		resp = self.send_cmd(GROUP_SYSTEM, CMD_FORCE_POLL_REQ)
-		logging.debug(resp)
+		logger.debug(resp)
 		return resp
 
 	def electric_pulse_now(self):
@@ -155,14 +156,14 @@ class Commander(threading.Thread):
 		# 		return value[0]
 		# 	else:
 		# 		return b""
-		logging.debug(resp)
+		logger.debug(resp)
 		return resp
 
 	def electric_pulse_infinite(self, value):
 		payload = struct.pack("<B", value)
 		resp = self.send_cmd(GROUP_STIMULATOR, CMD_ELECTRICAL_PULSE_INFINITE, payload)
 		
-		logging.debug(resp)
+		logger.debug(resp)
 		return resp		
 
 	def start_buzzer(self):
@@ -173,7 +174,7 @@ class Commander(threading.Thread):
 		# 		return value[0]
 		# 	else:
 		# 		return b""
-		logging.debug(resp)
+		logger.debug(resp)
 		return resp
 
 	def turn_onoff_charging(self):
@@ -184,7 +185,7 @@ class Commander(threading.Thread):
 		# 		return value[0]
 		# 	else:
 		# 		return b""
-		logging.debug(resp)
+		logger.debug(resp)
 		return resp
 
 	def get_onboard_data(self):
@@ -200,7 +201,7 @@ class Commander(threading.Thread):
 	def enter_sleep(self):
 		resp = self.send_cmd(GROUP_SYSTEM, CMD_ENTER_SLEEP)
 		print("ENTER SLEEP ->")
-		logging.debug(resp)
+		logger.debug(resp)
 		return resp
 
 	def write_setting(self, id, value):
@@ -209,7 +210,7 @@ class Commander(threading.Thread):
 		else:
 			payload = struct.pack("<B" + id[1], id[0], value)
 		resp = self.send_cmd(GROUP_SETTINGS, CMD_WRITE, payload)
-		logging.debug(resp)
+		logger.debug(resp)
 		return resp
 	
 	def read_setting(self, id):
@@ -236,7 +237,7 @@ class Commander(threading.Thread):
 		raw_cmd[2] = checksum&0xFF
 		raw_cmd[3] = (checksum>>8)&0xFF
 
-		logging.debug("Sending: " + str(raw_cmd))
+		logger.debug("Sending: " + str(raw_cmd))
 
 		self.stream.write(cobs.encode(raw_cmd) + b"\x00")
 
@@ -257,13 +258,13 @@ class Commander(threading.Thread):
 		return resp
 
 	def handle_resp(self, resp):
-		logging.debug("Response: " + str(resp))
+		logger.debug("Response: " + str(resp))
 
 		resp_struct_format = "<BBBH"
 		
 		size = len(resp)
 		if size < struct.Struct(resp_struct_format).size:
-			logging.warning("Response too short")
+			logger.warning("Response too short")
 			return
 		
 		data_size = size - struct.Struct(resp_struct_format).size
@@ -280,14 +281,14 @@ class Commander(threading.Thread):
 		resp[4] = 0
 		calc_checksum = self.crc_calc.calculate_checksum(resp)
 		if checksum != calc_checksum:
-			#logging.warning("Invalid checksum")
+			#logger.warning("Invalid checksum")
 			return
 		
-		logging.debug("Got response: ")
-		logging.debug("    group=" + str(group))
-		logging.debug("    cmd=" + str(cmd))
-		logging.debug("    code=" + str(code))
-		logging.debug("    data=" + str(data))
+		logger.debug("Got response: ")
+		logger.debug("    group=" + str(group))
+		logger.debug("    cmd=" + str(cmd))
+		logger.debug("    code=" + str(code))
+		logger.debug("    data=" + str(data))
 
 		response = {}
 		response["group"] = group
@@ -297,6 +298,15 @@ class Commander(threading.Thread):
 
 		self.resp_queue.put(response)
 
+	def get_data(self, timeout=0.5):
+		data = None
+		end_time = time.time() + timeout
+		while time.time() < end_time:
+			try:
+				data = self.data_queue.get(timeout=end_time - time.time())
+			except Exception as e:
+				pass		
+		return data
 
 	def run(self):
 		receive_buffer = b""
@@ -316,15 +326,18 @@ class Commander(threading.Thread):
 						found_zero = (ind >= 0)
 						if found_zero:
 							# Identified a COBS encoded packet, fetch and remove from buffer
-							logging.debug("Received: " + str(receive_buffer))
+							logger.debug("Received: " + str(receive_buffer))
 							enc = data[:ind]
 							receive_buffer = receive_buffer[ind+1:]
 
-							logging.debug("COBS-data: " + str(enc))
+							logger.debug("COBS-data: " + str(enc))
 							resp = cobs.decode(enc)
-							logging.debug("Decoded data: " + str(resp))
+							logger.debug("Decoded data: " + str(resp))
 
 							self.handle_resp(resp)
+
+					if len(receive_buffer):
+						self.data_queue.put(receive_buffer)
 				else:
 					time.sleep(0.001)
 			except Exception as e:
@@ -346,7 +359,7 @@ class TestStream:
 		return data
 	
 	def write(self, data):
-		logging.debug("Writing: " + str(data))
+		logger.debug("Writing: " + str(data))
 
 if __name__ == "__main__":
 	stream = TestStream()
