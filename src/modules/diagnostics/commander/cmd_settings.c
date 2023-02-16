@@ -1,5 +1,6 @@
 #include "cmd_settings.h"
 #include "stg_config.h"
+#include "nf_version.h"
 
 #include <string.h>
 
@@ -159,6 +160,17 @@ static int commander_settings_read(enum diagnostics_interface interface, setting
 		}
 		break;
 	}
+	case FW_VERSION: {
+		uint16_t fwversion = NF_X25_VERSION_NUMBER;
+		if (err == 0) {
+			memcpy(&buf[1], &fwversion, sizeof(uint16_t));
+			commander_send_resp(interface, SETTINGS, READ, DATA, buf,
+					    1 + sizeof(uint16_t));
+		} else {
+			commander_send_resp(interface, SETTINGS, READ, ERROR, NULL, 0);
+		}
+		break;
+	}	
 	case PRODUCT_TYPE: {
 		uint16_t prod_type = 0;
 		err = stg_config_u16_read(STG_U16_PRODUCT_TYPE, &prod_type);

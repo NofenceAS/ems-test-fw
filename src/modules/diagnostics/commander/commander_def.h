@@ -60,6 +60,7 @@ typedef enum {
 	ACC_SIGMA_NOACT = 0x08,
 	ACC_SIGMA_SLEEP = 0x09,
 	OFF_ANIMAL_TIME = 0x0A,
+	FW_VERSION = 0x0B,
 } settings_id_t;
 
 typedef enum {

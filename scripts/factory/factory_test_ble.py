@@ -217,6 +217,7 @@ def print_config():
     print(f'-  Model:        {cmndr.read_setting(nfdiag.ID_BOM_MEC_REV)}')
     print(f'-  Revision:     {cmndr.read_setting(nfdiag.ID_BOM_PCB_REV)}')
     print(f'-  HW Version:   {cmndr.read_setting(nfdiag.ID_HW_VERSION)}')
+    print(f'-  FW Version:   {cmndr.read_setting(nfdiag.ID_FW_VERSION)}')
     if not OPERATOR_MODE:
         print('')
         accel_config()
