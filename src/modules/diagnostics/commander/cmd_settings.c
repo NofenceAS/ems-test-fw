@@ -170,7 +170,7 @@ static int commander_settings_read(enum diagnostics_interface interface, setting
 			commander_send_resp(interface, SETTINGS, READ, ERROR, NULL, 0);
 		}
 		break;
-	}	
+	}
 	case PRODUCT_TYPE: {
 		uint16_t prod_type = 0;
 		err = stg_config_u16_read(STG_U16_PRODUCT_TYPE, &prod_type);
