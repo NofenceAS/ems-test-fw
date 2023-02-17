@@ -152,7 +152,7 @@ class BLEStream:
         if serial is None:
             self.nfdiag = NFDiagnostics(self.adapter)
         else:
-            self.nfdiag = NFDiagnostics(self.adapter, dev_name=str(serial), wildcard=False)
+            self.nfdiag = NFDiagnostics(self.adapter, dev_name="NF" + str(serial).zfill(6), wildcard=True)
         self.nfdiag.open()
     
         self.conn = self.nfdiag.connect_and_discover()
