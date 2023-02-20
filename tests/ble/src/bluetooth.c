@@ -975,12 +975,6 @@ static bool event_handler(const struct event_header *eh)
 		const struct ble_ctrl_event *event = cast_ble_ctrl_event(eh);
 		printk("BLE ctrl event received! %d\n", event->cmd);
 		switch (event->cmd) {
-		case BLE_CTRL_ADV_ENABLE:
-			// TODO: A test of this should be added later
-			break;
-		case BLE_CTRL_ADV_DISABLE:
-			// TODO: A test of this should be added later
-			break;
 		case BLE_CTRL_SCAN_START:
 			// TODO: A test of this should be added later
 			printk("Start scanning for beacon\n");
@@ -997,17 +991,6 @@ static bool event_handler(const struct event_header *eh)
 			break;
 		case BLE_CTRL_ERROR_FLAG_UPDATE:
 			k_sem_give(&ble_error_flag_sem);
-			break;
-		case BLE_CTRL_COLLAR_MODE_UPDATE:
-			/* Unused */
-		case BLE_CTRL_COLLAR_STATUS_UPDATE:
-			/* Unused */
-		case BLE_CTRL_FENCE_STATUS_UPDATE:
-			/* Unused */
-		case BLE_CTRL_PASTURE_UPDATE:
-			/* Unused */
-		case BLE_CTRL_FENCE_DEF_VER_UPDATE:
-			/* Unused */
 			break;
 		}
 		return false;

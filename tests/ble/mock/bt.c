@@ -5,11 +5,30 @@
 #define BUFFER_AD_LEN 5
 struct bt_data buffer_ad[BUFFER_AD_LEN];
 
+static bt_ready_cb_t ready_cb;
+static int ready_cb_err;
+
+/**
+ * @brief simulates time taken by the BLE stack to initialize
+ */
+static void delayed_cb_fn(struct k_work *work)
+{
+	ready_cb(ready_cb_err);
+}
+
+static K_WORK_DELAYABLE_DEFINE(delayed_cb, delayed_cb_fn);
+
+/**
+ *  @brief Simulated bt_enable with some delay fired on a separate thread if the
+ *  cb is non null
+ */
 int bt_enable(bt_ready_cb_t cb)
 {
 	int err = ztest_get_return_value();
+	ready_cb = cb;
+	ready_cb_err = err;
 	if (cb != NULL) {
-		cb(err);
+		k_work_schedule(&delayed_cb, K_SECONDS(1));
 	}
 	return err;
 }
