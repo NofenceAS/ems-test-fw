@@ -251,7 +251,7 @@ def read_flash_config():
 
 run_thread = False
 allow_fota = False
-force_gnss_mode = 0
+force_gnss_mode = 4
 thread_flags = 0
 
 def thread_control():
