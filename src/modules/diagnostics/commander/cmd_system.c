@@ -282,8 +282,7 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 	}
 	case GET_FW_VERSION: {
 		uint16_t fwversion = NF_X25_VERSION_NUMBER;
-		commander_send_resp(interface, SYSTEM, cmd, DATA, &fwversion,
-					    sizeof(uint16_t));
+		commander_send_resp(interface, SYSTEM, cmd, DATA, &fwversion, sizeof(uint16_t));
 		break;
 	}
 	default:

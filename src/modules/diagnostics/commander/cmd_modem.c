@@ -27,15 +27,10 @@ int commander_modem_handler(enum diagnostics_interface interface, uint8_t cmd, u
 		break;
 	}
 	case GET_IP: {
-		char *collar_ip = NULL;
+		/* previous attemt using get_ip() from cellular_helpers 
+		seems to block CPU and break connection to host */
+		commander_send_resp(interface, MODEM, cmd, NOT_IMPLEMENTED, NULL, 0);
 
-		err = get_ip(&collar_ip);
-		if (err == 0) {
-			commander_send_resp(interface, MODEM, cmd, DATA, (uint8_t *)collar_ip,
-					    strlen(collar_ip));
-		} else {
-			commander_send_resp(interface, MODEM, cmd, ERROR, NULL, 0);
-		}
 		break;
 	}
 	case TEST_MODEM_TX: {
