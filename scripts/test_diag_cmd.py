@@ -165,9 +165,9 @@ GET_GSM_DATA = 0xA6
 
 #print(read_gsm_data(try_stimuli_cmd(GET_GSM_DATA)))
 
-resp = try_system_cmd(0xE0)
-print(resp)
-
+resp = try_system_cmd(0x0B)
+payload = struct.unpack('<H', resp['data'])
+print(payload)
 exit()
 #payload = struct.pack('<I', 2000)
 resp = try_stimuli_cmd(0xB0)

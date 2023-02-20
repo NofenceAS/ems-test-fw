@@ -13,6 +13,7 @@
 #include "storage.h"
 #include "diagnostic_flags.h"
 #include "approtect.h"
+#include "nf_version.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(diag_cmd_system, 4);
@@ -277,6 +278,12 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 		lock_approtect();
 		LOG_WRN("Protection lock bit set!");
 		commander_send_resp(interface, SYSTEM, cmd, resp, NULL, 0);
+		break;
+	}
+	case GET_FW_VERSION: {
+		uint16_t fwversion = NF_X25_VERSION_NUMBER;
+		commander_send_resp(interface, SYSTEM, cmd, DATA, &fwversion,
+					    sizeof(uint16_t));
 		break;
 	}
 	default:

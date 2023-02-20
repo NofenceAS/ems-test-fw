@@ -60,12 +60,11 @@ typedef enum {
 	ACC_SIGMA_NOACT = 0x08,
 	ACC_SIGMA_SLEEP = 0x09,
 	OFF_ANIMAL_TIME = 0x0A,
-	FW_VERSION = 0x0B,
-	FLASH_TEACH_MODE_FINISHED = 0x0C,
-	FLASH_KEEP_MODE = 0x0D,
-	FLASH_ZAP_CNT_TOT = 0x0E,
-	FLASH_ZAP_CNT_DAY = 0x0F,
-	FLASH_WARN_CNT_TOT = 0x10,
+	FLASH_TEACH_MODE_FINISHED = 0x0B,
+	FLASH_KEEP_MODE = 0x0C,
+	FLASH_ZAP_CNT_TOT = 0x0D,
+	FLASH_ZAP_CNT_DAY = 0x0E,
+	FLASH_WARN_CNT_TOT = 0x0F,
 } settings_id_t;
 
 typedef enum {
@@ -88,6 +87,9 @@ typedef enum {
 	CLR_DIAG_FLAGS = 0x84,
 
 	SET_LOCK_BIT = 0xDE,
+
+	GET_FW_VERSION = 0x0B,
+
 } system_cmd_t;
 
 typedef enum { READ = 0x00, WRITE = 0x01, ERASE_ALL = 0xEA } settings_cmd_t;
