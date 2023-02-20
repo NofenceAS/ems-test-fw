@@ -82,8 +82,6 @@ int stg_config_init(void)
 		}
 		m_initialized = true;
 
-		diagnostic_flags_init();
-
 #if DT_NODE_HAS_STATUS(DT_ALIAS(eeprom), okay)
 		err = copy_eeprom_parameters_to_stg_flash();
 		if (err != 0) {

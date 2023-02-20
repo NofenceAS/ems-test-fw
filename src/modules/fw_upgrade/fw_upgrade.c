@@ -17,7 +17,6 @@
 
 #include "pwr_event.h"
 #include "diagnostics_events.h"
-#include "diagnostic_flags.h"
 
 #define MODULE fw_upgrade
 LOG_MODULE_REGISTER(MODULE, CONFIG_FW_UPGRADE_LOG_LEVEL);
@@ -36,7 +35,7 @@ LOG_MODULE_REGISTER(MODULE, CONFIG_FW_UPGRADE_LOG_LEVEL);
 #endif
 
 #if defined(CONFIG_DIAGNOSTIC_EMS_FW)
-//static bool allow_fota = false;
+static bool diagnostic_allow_fota = false;
 static uint16_t battery_mv = 0;
 #endif
 
@@ -184,7 +183,10 @@ static bool event_handler(const struct event_header *eh)
 {
 	if (is_start_fota_event(eh)) {
 #if defined(CONFIG_DIAGNOSTIC_EMS_FW)
-		if (diagnostic_has_flag(FOTA_DISABLED)) {
+		if (battery_mv >= 4000)
+			diagnostic_allow_fota = true; //Force allow fota if battery voltage above 4V
+
+		if (!diagnostic_allow_fota) {
 			return false;
 		}
 #endif
@@ -205,14 +207,20 @@ static bool event_handler(const struct event_header *eh)
 
 		return false;
 	}
-	/*#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
 	if (is_diag_thread_cntl_event(eh)) {
 		struct diag_thread_cntl_event *event = cast_diag_thread_cntl_event(eh);
-		allow_fota = (event->allow_fota == true);
-		LOG_WRN("Allow fota = %d", allow_fota);
+		diagnostic_allow_fota = (event->allow_fota == true);
+		LOG_WRN("Allow fota = %d", diagnostic_allow_fota);
+		return false;
+	} else if (is_pwr_status_event(eh)) {
+		struct pwr_status_event *ev = cast_pwr_status_event(eh);
+		if (ev->pwr_state != PWR_CHARGING) {
+			battery_mv = ev->battery_mv;
+		}
 		return false;
 	}
-#endif*/
+#endif
 	if (is_cancel_fota_event(eh)) {
 		/* Cancel an ongoing FOTA. This will trigger FOTA_DOWNLOAD_EVT_CANCELLED 
 		 * status in the fota_dl_handler callback 
