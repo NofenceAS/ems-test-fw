@@ -704,7 +704,6 @@ void messaging_tx_thread_fn(void)
 			if ((tx_type == POLL_REQ) || (m_last_poll_req_timestamp_ms == 0) ||
 			    ((tx_type == LOG_MSG) &&
 			     ((k_uptime_get() - m_last_poll_req_timestamp_ms) >= 60000))) {
-				LOG_WRN("When Do I Enter this state #1");
 				if (k_sem_take(&cache_ready_sem, K_SECONDS(60)) != 0) {
 					LOG_WRN("Cached semaphore not ready, Sending what we have");
 				}
