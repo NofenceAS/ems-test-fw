@@ -3,6 +3,9 @@
 
 #include <string.h>
 
+#include <logging/log.h>
+LOG_MODULE_REGISTER(cmd_settings, 4);
+
 /* Comment from Zephyr OS: 
  * newlib doesn't declare this function unless __POSIX_VISIBLE >= 200809.  No
  * idea how to make that happen, so lets put it right here.
@@ -86,11 +89,11 @@ static int commander_settings_read(enum diagnostics_interface interface, setting
 	}
 	case HOST_PORT: {
 		//err = eep_read_host_port(&buf[1], sizeof(buf)-1);
-		char port[STG_CONFIG_HOST_PORT_BUF_LEN];
+		char port[STG_CONFIG_HOST_PORT_BUF_LEN] = { 0 };
 		uint8_t port_length = 0;
 		err = stg_config_str_read(STG_STR_HOST_PORT, port, &port_length);
 		if (err == 0) {
-			memcpy(&buf[1], port, port_length);
+			memcpy(&buf[1], port, port_length + 1);
 			commander_send_resp(interface, SETTINGS, READ, DATA, buf,
 					    1 + strnlen(&buf[1], sizeof(buf) - 1));
 		} else {
