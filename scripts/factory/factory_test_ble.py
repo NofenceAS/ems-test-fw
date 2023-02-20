@@ -227,7 +227,7 @@ def print_config():
     print(f'-  Model [RW]:                      {cmndr.read_setting(nfdiag.ID_BOM_MEC_REV)}')
     print(f'-  PR Revision [RW]:                {cmndr.read_setting(nfdiag.ID_BOM_PCB_REV)}')
     print(f'-  PCB HW Version [RW]:             {cmndr.read_setting(nfdiag.ID_HW_VERSION)}')
-    print(f'-  MCU FW Version:                  {cmndr.read_setting(nfdiag.ID_FW_VERSION)}')
+    print(f'-  MCU FW Version:                  {cmndr.get_fw_version()}')
     if not OPERATOR_MODE:
         read_flash_config()
 

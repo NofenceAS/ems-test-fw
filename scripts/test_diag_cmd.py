@@ -186,10 +186,6 @@ for c in cmds:
 
 exit()
 
-resp = try_system_cmd(0x0B)
-payload = struct.unpack('<H', resp['data'])
-print(payload)
-exit()
 #payload = struct.pack('<I', 2000)
 resp = try_stimuli_cmd(0xB0)
 #value = struct.unpack('I', resp['data'][:4])

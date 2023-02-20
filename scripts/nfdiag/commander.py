@@ -223,6 +223,18 @@ class Commander(threading.Thread):
 		logger.debug(resp)
 		return resp
 
+	def get_fw_version(self):
+		resp = self.send_cmd(GROUP_SYSTEM, CMD_GET_FW_VERSION)
+		fwver = -1
+		if resp and resp['code'] == RESP_DATA:
+			try:
+				fwver, = struct.unpack('<H', resp['data'])
+			except:
+				pass
+		if fwver < 0:
+			print('error reading fw version')
+		return fwver
+
 	def write_setting(self, id, value):
 		if id[1] == "s":
 			payload = struct.pack("<B" + str(len(value)) + id[1], id[0], value)
