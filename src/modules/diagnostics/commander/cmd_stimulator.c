@@ -94,6 +94,14 @@ int commander_stimulator_handler(enum diagnostics_interface interface, uint8_t c
 				    sizeof(onboard_data_struct_t));
 		break;
 	}
+	case GET_OB_DEVICE_VERSION_DATA: {
+		onboard_device_versions_struct_t *ob_version;
+		onboard_get_device_version(&ob_version);
+		resp = DATA;
+		commander_send_resp(interface, STIMULATOR, cmd, resp, (void *)ob_version,
+				    sizeof(onboard_device_versions_struct_t));
+		break;
+	}
 	case TURN_ONOFF_CHARGING: {
 		LOG_DBG("toggling charging: off");
 		if (charging_stop() < 0) {

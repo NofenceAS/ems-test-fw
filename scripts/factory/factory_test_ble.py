@@ -182,6 +182,11 @@ def change_config():
             ('Accel Sigma Noactivity Limit', nfdiag.ID_ACC_SIGMA_NOACT),
             ('Accel Sigma Sleep Limit', nfdiag.ID_ACC_SIGMA_SLEEP),
             ('Off Animal Time Limit', nfdiag.ID_OFF_ANIMAL_TIME),
+            ('FLASH_TEACH_MODE_FINISHED', nfdiag.ID_FLASH_TEACH_MODE_FINISHED),
+            ('FLASH_KEEP_MODE', nfdiag.ID_FLASH_KEEP_MODE),
+            ('FLASH_ZAP_CNT_TOT', nfdiag.ID_FLASH_ZAP_CNT_TOT),
+            ('FLASH_ZAP_CNT_DAY', nfdiag.ID_FLASH_ZAP_CNT_DAY),
+            ('FLASH_WARN_CNT_TOT', nfdiag.ID_FLASH_WARN_CNT_TOT),
         ]
 
     for pname, pid in params:
@@ -204,34 +209,45 @@ def change_config():
         cmndr.write_setting(nfdiag.ID_ACC_SIGMA_NOACT, 400)
         cmndr.write_setting(nfdiag.ID_ACC_SIGMA_SLEEP, 600)
         cmndr.write_setting(nfdiag.ID_OFF_ANIMAL_TIME, 1800)
-
+        cmndr.write_setting(nfdiag.ID_FLASH_TEACH_MODE_FINISHED, 0)
+        cmndr.write_setting(nfdiag.ID_FLASH_KEEP_MODE, 0)
+        cmndr.write_setting(nfdiag.ID_FLASH_ZAP_CNT_TOT, 0)
+        cmndr.write_setting(nfdiag.ID_FLASH_ZAP_CNT_DAY, 0)
+        cmndr.write_setting(nfdiag.ID_FLASH_WARN_CNT_TOT, 0)													 													   																								
 
 def print_config():
     global cmndr, sn
     sn = cmndr.read_setting(nfdiag.ID_SERIAL)
-    print(f'-  Serial No:    {sn}')
-    print(f'-  Host Port:    {str(cmndr.read_setting(nfdiag.ID_HOST_PORT))}')
-    print(f'-  EMS Provider: {cmndr.read_setting(nfdiag.ID_EMS_PROVIDER)}')
-    print(f'-  Product Type: {cmndr.read_setting(nfdiag.ID_PRODUCT_TYPE)}')
-    print(f'-  Generation:   {cmndr.read_setting(nfdiag.ID_PRODUCT_RECORD_REV)}')
-    print(f'-  Model:        {cmndr.read_setting(nfdiag.ID_BOM_MEC_REV)}')
-    print(f'-  Revision:     {cmndr.read_setting(nfdiag.ID_BOM_PCB_REV)}')
-    print(f'-  HW Version:   {cmndr.read_setting(nfdiag.ID_HW_VERSION)}')
-    print(f'-  FW Version:   {cmndr.read_setting(nfdiag.ID_FW_VERSION)}')
+    print("\n----FLASH CONTENT--------------------------------------------------------\n") 
+    print(f'-  Serial No [RW]:                  {sn}')
+    print(f'-  Host Port [RW]:                  {str(cmndr.read_setting(nfdiag.ID_HOST_PORT))}')
+    print(f'-  EMS Provider [RW]:               {cmndr.read_setting(nfdiag.ID_EMS_PROVIDER)}')
+    print(f'-  Product Type [RW]:               {cmndr.read_setting(nfdiag.ID_PRODUCT_TYPE)}')
+    print(f'-  Generation [RW]:                 {cmndr.read_setting(nfdiag.ID_PRODUCT_RECORD_REV)}')
+    print(f'-  Model [RW]:                      {cmndr.read_setting(nfdiag.ID_BOM_MEC_REV)}')
+    print(f'-  PR Revision [RW]:                {cmndr.read_setting(nfdiag.ID_BOM_PCB_REV)}')
+    print(f'-  PCB HW Version [RW]:             {cmndr.read_setting(nfdiag.ID_HW_VERSION)}')
+    print(f'-  MCU FW Version:                  {cmndr.read_setting(nfdiag.ID_FW_VERSION)}')
     if not OPERATOR_MODE:
-        print('')
-        accel_config()
-    diag_flags = read_flag_configuration()
-    print(f'\n-  Diag flags:   {bin(diag_flags).replace("0b","").zfill(8)}')
+        read_flash_config()
 
-
-def accel_config():
+def read_flash_config():
     global cmndr, sn
     sn = cmndr.read_setting(nfdiag.ID_SERIAL)
+    diag_flags = read_flag_configuration()
+    print(f'-  Diag flags:                      {bin(diag_flags).replace("0b","").zfill(8)}')          
     print(f'-  Accel Sigma Noactivity Limit:    {cmndr.read_setting(nfdiag.ID_ACC_SIGMA_NOACT)}')
     print(f'-  Accel Sigma Sleep Limit:         {cmndr.read_setting(nfdiag.ID_ACC_SIGMA_SLEEP)}')
     print(f'-  Off Animal Time Limit:           {cmndr.read_setting(nfdiag.ID_OFF_ANIMAL_TIME)}')
-
+    print(f'-  TEACH_MODE_FINISHED:             {cmndr.read_setting(nfdiag.ID_FLASH_TEACH_MODE_FINISHED)}')
+    print(f'-  KEEP_MODE:                       {cmndr.read_setting(nfdiag.ID_FLASH_KEEP_MODE)}')
+    print(f'-  ZAP_CNT_TOT:                     {cmndr.read_setting(nfdiag.ID_FLASH_ZAP_CNT_TOT)}')
+    print(f'-  ZAP_CNT_DAY:                     {cmndr.read_setting(nfdiag.ID_FLASH_ZAP_CNT_DAY)}')
+    print(f'-  WARN_CNT_TOT:                    {cmndr.read_setting(nfdiag.ID_FLASH_WARN_CNT_TOT)}')
+    print("\n----ONBOARD DEVICE VERSIONS--------------------------------------------------------\n")
+    device_version = cmndr.get_device_version_data()
+    device_version = ' '.join([v for v in str(device_version, 'utf8','ignore').split('\x00') if len(v)])
+    print(f'Onboard Module Version [GNSS and Modem]:                {str(device_version)}')
 
 run_thread = False
 allow_fota = False
@@ -514,7 +530,7 @@ options = [
     ('sleep mode', force_sleep),
     ('self-test', self_test),
     ('force poll request', force_poll_req),
-    ('read accel sleep config', accel_config),
+    ('read flash config', read_flash_config),
     ('debug log', debug_log),
 ]
 
@@ -546,6 +562,7 @@ while True:
             except Exception as e:
                 print(f'Error cmd: {e}')
     except KeyboardInterrupt:
+        stream.close()
         print('\nQuitting...')
         break
     #except Exception as e:

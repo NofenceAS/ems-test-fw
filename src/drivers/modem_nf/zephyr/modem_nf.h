@@ -39,6 +39,9 @@ void stop_rssi(void);
 void enable_rssi(void);
 int modem_nf_pwr_off(void);
 
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+bool modem_has_power(void);
+#endif
 typedef struct {
 	uint8_t success;
 	uint32_t ch;

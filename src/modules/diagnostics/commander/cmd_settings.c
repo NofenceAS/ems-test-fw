@@ -221,6 +221,66 @@ static int commander_settings_read(enum diagnostics_interface interface, setting
 		}
 		break;
 	}
+	case FLASH_TEACH_MODE_FINISHED: {
+		uint8_t teachmode = 0;
+		err = stg_config_u8_read(STG_U8_TEACH_MODE_FINISHED, &teachmode);
+		if (err == 0) {
+			buf[1] = teachmode;
+			commander_send_resp(interface, SETTINGS, READ, DATA, buf,
+					    1 + sizeof(uint8_t));
+		} else {
+			commander_send_resp(interface, SETTINGS, READ, ERROR, NULL, 0);
+		}
+		break;
+	}
+	case FLASH_KEEP_MODE: {
+		uint8_t keepmode = 0;
+		err = stg_config_u8_read(STG_U8_KEEP_MODE, &keepmode);
+		if (err == 0) {
+			buf[1] = keepmode;
+			commander_send_resp(interface, SETTINGS, READ, DATA, buf,
+					    1 + sizeof(uint8_t));
+		} else {
+			commander_send_resp(interface, SETTINGS, READ, ERROR, NULL, 0);
+		}
+		break;
+	}
+	case FLASH_ZAP_CNT_TOT: {
+		uint16_t zapcnttot = 0;
+		err = stg_config_u16_read(STG_U16_ZAP_CNT_TOT, &zapcnttot);
+		if (err == 0) {
+			memcpy(&buf[1], &zapcnttot, sizeof(uint16_t));
+			commander_send_resp(interface, SETTINGS, READ, DATA, buf,
+					    1 + sizeof(uint16_t));
+		} else {
+			commander_send_resp(interface, SETTINGS, READ, ERROR, NULL, 0);
+		}
+		break;
+	}
+	case FLASH_ZAP_CNT_DAY: {
+		uint16_t zapcntday = 0;
+		err = stg_config_u16_read(STG_U16_ZAP_CNT_DAY, &zapcntday);
+		if (err == 0) {
+			memcpy(&buf[1], &zapcntday, sizeof(uint16_t));
+			commander_send_resp(interface, SETTINGS, READ, DATA, buf,
+					    1 + sizeof(uint16_t));
+		} else {
+			commander_send_resp(interface, SETTINGS, READ, ERROR, NULL, 0);
+		}
+		break;
+	}
+	case FLASH_WARN_CNT_TOT: {
+		uint32_t warncnttot = 0;
+		err = stg_config_u32_read(STG_U32_WARN_CNT_TOT, &warncnttot);
+		if (err == 0) {
+			memcpy(&buf[1], &warncnttot, sizeof(uint32_t));
+			commander_send_resp(interface, SETTINGS, READ, DATA, buf,
+					    1 + sizeof(uint32_t));
+		} else {
+			commander_send_resp(interface, SETTINGS, READ, ERROR, NULL, 0);
+		}
+		break;
+	}
 
 	default: {
 		commander_send_resp(interface, SETTINGS, READ, UNKNOWN, NULL, 0);

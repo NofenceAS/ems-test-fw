@@ -41,6 +41,11 @@ ID_ACC_SIGMA_NOACT = (0x08, "H")
 ID_ACC_SIGMA_SLEEP = (0x09, "H")
 ID_OFF_ANIMAL_TIME = (0x0A, "H")
 ID_FW_VERSION = (0x0B, "H")
+ID_FLASH_TEACH_MODE_FINISHED = (0x0C, "B")
+ID_FLASH_KEEP_MODE = (0x0D, "B")
+ID_FLASH_ZAP_CNT_TOT = (0x0E, "H")
+ID_FLASH_ZAP_CNT_DAY = (0x0F, "H")
+ID_FLASH_WARN_CNT_TOT = (0x10, "I")
 
 CMD_READ = 0x00
 CMD_WRITE = 0x01
@@ -49,6 +54,7 @@ ERASE_ALL = 0xEA
 GROUP_STIMULATOR = 0x02
 
 CMD_GET_ONBOARD_DATA = 0xA0
+CMD_GET_OB_DEVICE_VERSION_DATA = 0xA7
 CMD_BUZZER_WARN = 0xB0
 CMD_ELECTRICAL_PULSE = 0xE0
 CMD_TURN_ONOFF_CHARGING = 0xE1
@@ -196,6 +202,17 @@ class Commander(threading.Thread):
 				return resp
 			else:
 				print("response failed")
+				return b""
+		return None
+
+	def get_device_version_data(self):
+		resp = self.send_cmd(GROUP_STIMULATOR, CMD_GET_OB_DEVICE_VERSION_DATA)
+		if resp:
+			if resp["code"] == RESP_DATA:
+				value = struct.unpack("<100s", resp["data"][:100])
+				#value = struct.unpack("<" + str(len(resp["data"])) + "s", resp["data"])				
+				return value[0]
+			else:
 				return b""
 		return None
 

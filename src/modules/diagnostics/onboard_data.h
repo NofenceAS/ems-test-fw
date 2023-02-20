@@ -9,6 +9,7 @@
 #include "gnss.h"
 #include "modem_nf.h"
 #include "pwr_event.h"
+#include "ublox_types.h"
 
 /** @brief on nboard data struct */
 typedef struct {
@@ -81,6 +82,13 @@ typedef struct {
 	int32_t bme280_hum; //4byte
 } onboard_all_data_struct_t;
 
+typedef struct {
+	/** UBLOX GNSS Module SW and HW version*/
+	struct ublox_mon_ver gnss_swhw_version;
+	char modemFWVersion[30];
+	char modemHWVersion[30];
+} onboard_device_versions_struct_t;
+
 int onboard_data_init(void);
 
 int onboard_set_gnss_data(gnss_struct_t gnss_data_in);
@@ -92,6 +100,8 @@ int onboard_set_acc_data(int16_t x, int16_t y, int16_t z);
 int onboard_get_data(onboard_data_struct_t **ob_data_out);
 int onboard_get_gnss_data(gnss_struct_t **gnss_data_out);
 int onboard_get_gsm_data(gsm_info **gsm_data_out);
+int onboard_set_gnss_hwfw_version(struct ublox_mon_ver gnss_hwfw_in);
+int onboard_get_device_version(onboard_device_versions_struct_t **device_version_out);
 
 int onboard_get_all_data(onboard_all_data_struct_t **ob_all_data_out);
 

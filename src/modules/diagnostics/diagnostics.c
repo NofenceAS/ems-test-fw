@@ -23,7 +23,6 @@
 #include "env_sensor_event.h"
 #include "pwr_event.h"
 #include "onboard_data.h"
-#include "diagnostic_flags.h"
 
 #include <zephyr.h>
 #include <logging/log.h>
@@ -505,6 +504,11 @@ static bool event_handler(const struct event_header *eh)
 		return false;
 	}
 
+	if (is_gnss_fwhw_info_event(eh)) {
+		struct gnss_fwhw_info_event *event = cast_gnss_fwhw_info_event(eh);
+		onboard_set_gnss_hwfw_version(event->gnss_fwhw);
+	}
+
 	return false;
 }
 
@@ -516,6 +520,7 @@ EVENT_SUBSCRIBE(MODULE, gsm_info_event);
 EVENT_SUBSCRIBE(MODULE, env_sensor_event);
 EVENT_SUBSCRIBE(MODULE, pwr_status_event);
 EVENT_SUBSCRIBE(MODULE, acc_raw_event);
+EVENT_SUBSCRIBE(MODULE, gnss_fwhw_info_event);
 
 #if CONFIG_DIAGNOSTICS_PROFILE_EVENTS
 

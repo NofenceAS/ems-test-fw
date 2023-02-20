@@ -12,6 +12,7 @@ static gnss_struct_t ob_gnss_data;
 static gsm_info ob_gsm_data;
 static onboard_data_struct_t ob_data;
 static onboard_all_data_struct_t ob_all_data;
+static onboard_device_versions_struct_t ob_device_version;
 
 int onboard_data_init(void)
 {
@@ -50,9 +51,9 @@ int onboard_set_power_data(uint8_t pwr_state, uint16_t battery_mv, uint16_t char
 
 int onboard_set_env_sens_data(double temp, double humidity, double pressure)
 {
-	char buf[16] = { 0 };
-	sprintf(buf, "sprintf %.3f", temp);
-	LOG_DBG("Temperature: %s (%u)", log_strdup(buf), (int32_t)temp);
+	//char buf[16] = { 0 };
+	//sprintf(buf, "sprintf %.3f", temp);
+	//LOG_DBG("Temperature: %s (%u)", log_strdup(buf), (int32_t)temp);
 	ob_data.temp = temp;
 	ob_data.humidity = humidity;
 	ob_data.pressure = pressure;
@@ -72,6 +73,36 @@ int onboard_set_acc_data(int16_t x, int16_t y, int16_t z)
 int onboard_get_gnss_data(gnss_struct_t **gnss_data_out)
 {
 	*gnss_data_out = &ob_gnss_data;
+
+	return 0;
+}
+
+int onboard_set_gnss_hwfw_version(struct ublox_mon_ver gnss_hwfw_in)
+{
+	memcpy(&ob_device_version.gnss_swhw_version, &gnss_hwfw_in, sizeof(gnss_hwfw_in));
+	return 0;
+}
+
+int onboard_get_device_version(onboard_device_versions_struct_t **device_version_out)
+{
+	const char *modem_model = NULL;
+	const char *modem_version = NULL;
+
+	modem_nf_get_model_and_fw_version(&modem_model, &modem_version);
+
+	memcpy(&ob_device_version.modemFWVersion, (const char *)modem_version,
+	       sizeof(ob_device_version.modemFWVersion));
+	memcpy(&ob_device_version.modemHWVersion, (const char *)modem_model,
+	       sizeof(ob_device_version.modemHWVersion));
+
+	LOG_DBG("--==UBLOX MODEM SW Version==--:%s", log_strdup(ob_device_version.modemFWVersion));
+	LOG_DBG("--==UBLOX MODEM HW Version==--:%s", log_strdup(ob_device_version.modemHWVersion));
+	LOG_DBG("--==UBLOX GNSS SW Version==--:%s",
+		log_strdup(ob_device_version.gnss_swhw_version.swVersion));
+	LOG_DBG("--==UBLOX GNSS HW Version==--:%s",
+		log_strdup(ob_device_version.gnss_swhw_version.hwVersion));
+
+	*device_version_out = &ob_device_version;
 
 	return 0;
 }
@@ -109,7 +140,7 @@ int onboard_get_all_data(onboard_all_data_struct_t **ob_all_data_out)
 	ob_all_data.ttff = ob_gnss_data.ttff;
 	ob_all_data.vbatt = ob_data.battery_mv;
 	ob_all_data.isolar = ob_data.charging_ma;
-	ob_all_data.vint_stat = 0;
+	ob_all_data.vint_stat = modem_has_power();
 	ob_all_data.acc_x = ob_data.accel[0];
 	ob_all_data.acc_y = ob_data.accel[1];
 	ob_all_data.acc_z = ob_data.accel[2];

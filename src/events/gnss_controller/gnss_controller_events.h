@@ -25,3 +25,13 @@ struct gnss_mode_changed_event {
 };
 
 EVENT_TYPE_DECLARE(gnss_mode_changed_event);
+
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+/** @brief send out GNSS mode changed status **/
+struct gnss_fwhw_info_event {
+	struct event_header header;
+	struct ublox_mon_ver gnss_fwhw;
+};
+
+EVENT_TYPE_DECLARE(gnss_fwhw_info_event);
+#endif

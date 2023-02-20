@@ -170,7 +170,16 @@ int gnss_controller_setup(void)
 	}
 
 	LOG_INF("The GNSS SW Version:%s", log_strdup(mia_m10_versions.swVersion));
-	LOG_INF("The GNSS Hardware Version:%s", log_strdup(mia_m10_versions.hwVersion));
+	LOG_INF("The GNSS HW Version:%s", log_strdup(mia_m10_versions.hwVersion));
+#if defined(CONFIG_DIAGNOSTIC_EMS_FW)
+	struct gnss_fwhw_info_event *ev = new_gnss_fwhw_info_event();
+	ret = gnss_version_get(gnss_dev, &ev->gnss_fwhw);
+	if (ret != 0) {
+		LOG_WRN("Failed to get version of mia m10! %d", ret);
+		return ret;
+	}
+	EVENT_SUBMIT(ev);
+#endif
 	return ret;
 }
 
