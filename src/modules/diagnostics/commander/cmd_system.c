@@ -141,7 +141,6 @@ int commander_system_handler(enum diagnostics_interface interface, uint8_t cmd, 
 	}
 	case READ_THREAD_CONTROL: {
 		resp = NOT_IMPLEMENTED;
-		uint8_t tc = 0;
 
 		/* not implemented, could add subscription in diagnostics
 		   and add status to onboard_data */
