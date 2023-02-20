@@ -682,7 +682,7 @@ static void init_eeprom_variables(void)
 	err = stg_config_u32_read(STG_U32_UID, &serial_id);
 	if (err != 0) {
 		LOG_ERR("Failed to read serial number from storage! (%d)", err);
-		strncpy(bt_device_name, "NF?????????", DEVICE_NAME_LEN + 1);
+		strncpy(bt_device_name, "NF??????", DEVICE_NAME_LEN + 1);
 		nf_app_error(ERR_BLE_MODULE, err, NULL, 0);
 	} else {
 		if (serial_id > 999999) {
