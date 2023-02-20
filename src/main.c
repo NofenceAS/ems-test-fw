@@ -136,6 +136,11 @@ void main(void)
 		sound_ev->type = SND_SOLAR_TEST;
 		EVENT_SUBMIT(sound_ev);
 	}
+
+	//Unkown reason why this 400mSec delay is required, but tests runned seems to
+	//indicate that advertising could be interruped from starting after a restart when no sound is played
+	//We anyway increas it to 400 from 200mSwith 200mS extra
+	k_sleep(K_MSEC(400));
 #else
 	/* Play welcome- and battery sound as long as the device was not reset
 	 * due to a FOTA update */
