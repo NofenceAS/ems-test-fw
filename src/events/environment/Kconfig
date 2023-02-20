@@ -7,7 +7,7 @@ comment "Initially logged events"
 
 config LOG_ENVIRONMENT_EVENT
 	bool "Environment status event"
-	default y
+	default n
 
 config LOG_REQUEST_ENVIRONMENT_EVENT
 	bool "Request environment status event"

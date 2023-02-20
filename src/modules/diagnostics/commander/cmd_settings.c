@@ -389,6 +389,48 @@ static int commander_settings_write(enum diagnostics_interface interface, settin
 		}
 		break;
 	}
+	case FLASH_TEACH_MODE_FINISHED: {
+		/* Must be exactly 1 byte for uint8_t */
+		if (size == 1) {
+			uint8_t teachmode = (data[0] << 0);
+			err = stg_config_u8_write(STG_U8_TEACH_MODE_FINISHED, teachmode);
+		}
+		break;
+	}
+	case FLASH_KEEP_MODE: {
+		/* Must be exactly 1 byte for uint8_t */
+		if (size == 1) {
+			uint8_t keepmode = (data[0] << 0);
+			err = stg_config_u8_write(STG_U8_KEEP_MODE, keepmode);
+		}
+		break;
+	}
+	case FLASH_ZAP_CNT_TOT: {
+		/* Must be exactly 2 bytes for uint16_t */
+		if (size == 2) {
+			uint16_t zapcnttot = (data[0] << 0) + (data[1] << 8);
+			err = stg_config_u16_write(STG_U16_ZAP_CNT_TOT, zapcnttot);
+		}
+		break;
+	}
+	case FLASH_ZAP_CNT_DAY: {
+		/* Must be exactly 2 bytes for uint16_t */
+		if (size == 2) {
+			uint16_t zapcntday = (data[0] << 0) + (data[1] << 8);
+			err = stg_config_u16_write(STG_U16_ZAP_CNT_DAY, zapcntday);
+		}
+		break;
+	}
+	case FLASH_WARN_CNT_TOT: {
+		/* Must be exactly 4 bytes for uint32_t */
+		if (size == 4) {
+			uint32_t warncnttot =
+				(data[0] << 0) + (data[1] << 8) + (data[2] << 16) + (data[3] << 24);
+			err = stg_config_u32_write(STG_U32_WARN_CNT_TOT, warncnttot);
+		}
+		break;
+	}
+
 	default: {
 		err = -EINVAL;
 		break;

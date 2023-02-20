@@ -165,6 +165,27 @@ GET_GSM_DATA = 0xA6
 
 #print(read_gsm_data(try_stimuli_cmd(GET_GSM_DATA)))
 
+cmds = [
+	('ID_FLASH_TEACH_MODE_FINISHED', nfdiag.ID_FLASH_TEACH_MODE_FINISHED),
+	('ID_FLASH_KEEP_MODE', nfdiag.ID_FLASH_KEEP_MODE),
+	('ID_FLASH_ZAP_CNT_TOT', nfdiag.ID_FLASH_ZAP_CNT_TOT),
+	('ID_FLASH_ZAP_CNT_DAY', nfdiag.ID_FLASH_ZAP_CNT_DAY),
+	('ID_FLASH_WARN_CNT_TOT', nfdiag.ID_FLASH_WARN_CNT_TOT),
+]
+
+for c in cmds:
+	v = 0
+	print(c[0], c[1])
+	resp = cmndr.write_setting(c[1], v)
+	print(resp)
+	time.sleep(0.5)
+	val = cmndr.read_setting(c[1])
+	print(v, '==', val, '=', v == val)
+	time.sleep(0.5)
+	print()
+
+exit()
+
 resp = try_system_cmd(0x0B)
 payload = struct.unpack('<H', resp['data'])
 print(payload)
