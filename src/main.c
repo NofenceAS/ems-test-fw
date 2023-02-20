@@ -135,6 +135,10 @@ void main(void)
 		struct sound_event *sound_ev = new_sound_event();
 		sound_ev->type = SND_SOLAR_TEST;
 		EVENT_SUBMIT(sound_ev);
+	} else {
+		struct sound_event *sound_ev = new_sound_event();
+		sound_ev->type = SND_SHORT_100;
+		EVENT_SUBMIT(sound_ev);
 	}
 
 	//Unkown reason why this 400mSec delay is required, but tests runned seems to
