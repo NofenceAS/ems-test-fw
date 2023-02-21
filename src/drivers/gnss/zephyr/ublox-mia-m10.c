@@ -243,6 +243,7 @@ static int mia_m10_nav_pvt_handler(void *context, void *payload, uint32_t size)
 			LOG_DBG("GNSS PSM %d: ENABLED", cur_psm_state);
 		}
 	}
+	//LOG_DBG("GNSS NAV: %d, %d, %d, %d", nav_pvt->numSV, nav_pvt->lat, nav_pvt->lon, nav_pvt->valid);
 #endif
 
 	mia_m10_sync_complete(GNSS_DATA_FLAG_NAV_PVT);
@@ -496,18 +497,18 @@ static int mia_m10_setup(const struct device *dev, bool try_default_baud_first)
 		return ret;
 	}
 
-	/* Enable NAV-SAT output on UART, no handler */
-	/*ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
-	if (ret != 0) {
-		return ret;
-	}*/
-
 	/* Enable the hopefully promising UBX-NAV-PL message on UART*/
 	ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_PL_UART1, 1);
 	if (ret != 0) {
 		return ret;
 	}
 	ret = ublox_register_handler(UBX_NAV, UBX_NAV_PL, mia_m10_nav_pl_handler, NULL);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Enable NAV-SAT output on UART, no handler */
+	ret = mia_m10_config_set_u8(UBX_CFG_MSGOUT_UBX_NAV_SAT_UART1, 1);
 	if (ret != 0) {
 		return ret;
 	}
