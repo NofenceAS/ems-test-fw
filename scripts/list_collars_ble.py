@@ -1,9 +1,15 @@
 import sys
 import time
 import logging
+import argparse
 from queue import Queue, Empty
 from pc_ble_driver_py.observers import *
 from datetime import datetime  
+
+
+parser = argparse.ArgumentParser(description='Nofence GNSS BLE listener')
+parser.add_argument('--suid', help='DUT Unique serial number', required=False)
+args = parser.parse_args()
 
 CONNECTIONS = 1
 CFG_TAG = 1
@@ -40,6 +46,9 @@ def init(conn_ic_id):
     global nrf_sd_ble_api_ver
     nrf_sd_ble_api_ver = config.sd_api_ver_get()
 
+last_time = 0
+time = 0
+delta = 0
 
 class NFDiagnostics(BLEDriverObserver, BLEAdapterObserver):
     def __init__(self, adapter):
@@ -110,9 +119,22 @@ class NFDiagnostics(BLEDriverObserver, BLEAdapterObserver):
         address_string = "".join("{0:02X}".format(b) for b in peer_addr.addr)
         str_date_time = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
-        if dev_name.startswith('NF'): # and '?' not in dev_name:
-            sn = dev_name[2:]
-            print(f'[{str_date_time}] {sn} ({dev_name}, RSSI: {rssi}, address: 0x{address_string})')
+        global last_time
+        global time
+        global delta
+
+        if (args.suid):
+            if dev_name.startswith(f'NF{args.suid}'): # and '?' not in dev_name:
+                last_time = time
+                time = datetime.now()
+                delta = time - last_time
+                sn = dev_name[2:]
+                print(f'[{str_date_time}] {sn} ({dev_name}, RSSI: {rssi}, address: 0x{address_string}, diff: {delta.total_seconds()})')            
+        else:
+            if dev_name.startswith('NF'): # and '?' not in dev_name:
+                sn = dev_name[2:]
+                print(f'[{str_date_time}] {sn} ({dev_name}, RSSI: {rssi}, address: 0x{address_string})')            
+
             #self.adapter.connect(peer_addr, tag=CFG_TAG)
 
     def on_notification(self, ble_adapter, conn_handle, uuid, data):
@@ -135,7 +157,10 @@ def main(selected_serial_port):
     adapter = BLEAdapter(driver)
     nfdiag = NFDiagnostics(adapter)
     nfdiag.open()
-    print('Searching for BLE device names starting with "NF"... (Ctrl+C to stop)')
+    if(args.suid):
+        print(f'Searching for BLE device names starting with "NF{args.suid}"... (Ctrl+C to stop)')
+    else:    
+        print('Searching for BLE device names starting with "NF"... (Ctrl+C to stop)')
     while 1:
         try:
             conn = nfdiag.discover()
