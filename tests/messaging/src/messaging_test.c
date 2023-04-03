@@ -899,17 +899,16 @@ void test_messages_during_fota(void)
 	/* Simulate FOTA stopped from the fw_upgrade module by sending the event */
 	struct dfu_status_event *fota_stop_event = new_dfu_status_event();
 	fota_stop_event->dfu_status = DFU_STATUS_IDLE;
+	fota_stop_event->dfu_error = -123;
 	EVENT_SUBMIT(fota_stop_event);
 
 	k_sleep(K_MSEC(500));
 
-	/* Send poll request and verify that it is sent after FOTA stops */
+	/* Verify that the module automatically sends a poll req (EMS branch) after a short time */
 	k_sem_reset(&msg_out);
 	ztest_returns_value(date_time_now, 0);
-	struct send_poll_request_now *poll_evt3 = new_send_poll_request_now();
-	EVENT_SUBMIT(poll_evt3);
 
-	zassert_equal(k_sem_take(&msg_out, K_SECONDS(1)), 0, "");
+	zassert_equal(k_sem_take(&msg_out, K_SECONDS(10)), 0, "");
 	zassert_equal(m_latest_proto_msg.which_m, NofenceMessage_poll_message_req_tag, "");
 
 	k_sleep(K_SECONDS(1));
@@ -986,12 +985,16 @@ static void test_app_fota_wdt(void)
 
 	g_is_reboot = false;
 
+	/* On this EMS branch, a FOTA failure will generate a poll request */
+	ztest_returns_value(date_time_now, 0);
+
 	/* Simulate FOTA started/ongoing from the fw_upgrade module by sending the event */
 	fota_start_event = new_dfu_status_event();
 	fota_start_event->dfu_status = DFU_STATUS_IN_PROGRESS;
 	EVENT_SUBMIT(fota_start_event);
 	struct dfu_status_event *fota_stop_event = new_dfu_status_event();
 	fota_stop_event->dfu_status = DFU_STATUS_IDLE;
+	fota_stop_event->dfu_error = -1;
 	EVENT_SUBMIT(fota_stop_event);
 	k_sleep(K_MINUTES(CONFIG_APP_FOTA_WDT_MINUTES));
 	zassert_equal(g_is_reboot, false, "");
@@ -999,7 +1002,6 @@ static void test_app_fota_wdt(void)
 
 void test_poll_request_takes_precedence_over_log_messages(void)
 {
-	k_sleep(K_SECONDS(61));
 	k_sem_reset(&msg_out);
 
 	ztest_returns_value(date_time_now, 0); //Timestamp the escaped status message
@@ -1008,8 +1010,10 @@ void test_poll_request_takes_precedence_over_log_messages(void)
 	ztest_returns_value(stg_read_log_data, 0); //Send log msg
 	ztest_returns_value(stg_log_pointing_to_last, false); //Send log msg
 	ztest_returns_value(date_time_now, 0); //forced poll request
+
 	/* for illustration: if the poll request is delayed a bit, the log message will be sent
-	 * first, releasing the Tx thread.*/
+	 * first, releasing the Tx thread.
+	 */
 
 	struct animal_escape_event *escaped_evt = new_animal_escape_event();
 	EVENT_SUBMIT(escaped_evt);
@@ -1050,6 +1054,7 @@ void test_poll_request_takes_precedence_over_log_messages(void)
 	EVENT_SUBMIT(msgIn);
 
 	k_sleep(K_SECONDS(10));
+	zassert_equal(z_cleanup_mock(), 0, "");
 
 	ztest_returns_value(date_time_now, 0); //Timestamp the escaped status message
 	ztest_returns_value(stg_write_log_data, 0); //Store message
@@ -1083,6 +1088,7 @@ void test_poll_request_takes_precedence_over_log_messages(void)
 	k_sleep(K_SECONDS(10));
 	struct send_poll_request_now *poll_evt3 = new_send_poll_request_now();
 	EVENT_SUBMIT(poll_evt3);
+	k_sleep(K_SECONDS(10));
 }
 
 static char *expected_version;

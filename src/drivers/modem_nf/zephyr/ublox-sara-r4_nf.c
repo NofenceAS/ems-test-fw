@@ -2038,6 +2038,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len, int flags, str
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	int ret, next_packet_size;
+	int wait_ret = 0;
 	static const struct modem_cmd cmd[] = {
 		MODEM_CMD("+USORF: ", on_cmd_sockreadfrom, 4U, ","),
 		MODEM_CMD("+USORD: ", on_cmd_sockread, 2U, ","),
@@ -2055,58 +2056,59 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len, int flags, str
 		return -1;
 	}
 
-	while (true) {
-		next_packet_size = modem_socket_next_packet_size(&mdata.socket_config, sock);
-		if (!next_packet_size) {
-			if (flags & ZSOCK_MSG_DONTWAIT) {
-				errno = EAGAIN;
-				return -1;
-			}
-
-			if (!sock->is_connected && sock->ip_proto != IPPROTO_UDP) {
-				errno = 0;
-				return 0;
-			}
-
-			int st_ret = modem_socket_wait_data_timeout(&mdata.socket_config, sock,
-								    K_SECONDS(10));
-			if (st_ret != 0) {
-				LOG_WRN("waiting for +UUSORD timed out, tries to read anyway");
-				next_packet_size = MDM_MAX_DATA_LENGTH;
-			} else {
-				next_packet_size =
-					modem_socket_next_packet_size(&mdata.socket_config, sock);
-			}
+	next_packet_size = modem_socket_next_packet_size(&mdata.socket_config, sock);
+	if (!next_packet_size) {
+		if (flags & ZSOCK_MSG_DONTWAIT) {
+			errno = EAGAIN;
+			return -1;
 		}
 
-		/*
+		if (!sock->is_connected && sock->ip_proto != IPPROTO_UDP) {
+			errno = 0;
+			return 0;
+		}
+
+		wait_ret =
+			modem_socket_wait_data_timeout(&mdata.socket_config, sock, K_SECONDS(30));
+		if (wait_ret != 0) {
+			LOG_WRN("waiting for +UUSORD timed out, tries to read anyway");
+			next_packet_size = MDM_MAX_DATA_LENGTH;
+		} else {
+			next_packet_size =
+				modem_socket_next_packet_size(&mdata.socket_config, sock);
+		}
+	}
+
+	/*
 	 * Binary and ASCII mode allows sending MDM_MAX_DATA_LENGTH bytes to
 	 * the socket in one command
 	 */
-		if (next_packet_size > MDM_MAX_DATA_LENGTH) {
-			next_packet_size = MDM_MAX_DATA_LENGTH;
-		}
+	if (next_packet_size > MDM_MAX_DATA_LENGTH) {
+		next_packet_size = MDM_MAX_DATA_LENGTH;
+	}
 
-		snprintk(sendbuf, sizeof(sendbuf), "AT+USORD=%d,%zd", sock->id,
-			 len < next_packet_size ? len : next_packet_size);
+	snprintk(sendbuf, sizeof(sendbuf), "AT+USORD=%d,%zd", sock->id,
+		 len < next_packet_size ? len : next_packet_size);
 
-		/* socket read settings */
-		(void)memset(&sock_data, 0, sizeof(sock_data));
-		sock_data.recv_buf = buf;
-		sock_data.recv_buf_len = len;
-		sock_data.recv_addr = from;
-		sock->data = &sock_data;
+	/* socket read settings */
+	(void)memset(&sock_data, 0, sizeof(sock_data));
+	sock_data.recv_buf = buf;
+	sock_data.recv_buf_len = len;
+	sock_data.recv_addr = from;
+	sock->data = &sock_data;
 
-		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmd, ARRAY_SIZE(cmd), sendbuf,
-				     &mdata.sem_response, MDM_CMD_TIMEOUT);
-		if (ret < 0) {
-			errno = -ret;
-			ret = -1;
-			goto exit;
-		}
-		if (sock_data.recv_read_len > 0) {
-			break;
-		}
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmd, ARRAY_SIZE(cmd), sendbuf,
+			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		errno = -ret;
+		ret = -1;
+		goto exit;
+	}
+	/* If we got time-out waiting for the semaphore and read returned 0 bytes, bail out */
+	if (sock_data.recv_read_len == 0 && wait_ret != 0) {
+		errno = ETIMEDOUT;
+		ret = -1;
+		goto exit;
 	}
 
 	/* HACK: use dst address as from */
