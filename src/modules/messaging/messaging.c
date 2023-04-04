@@ -1152,6 +1152,20 @@ static bool event_handler(const struct event_header *eh)
 				LOG_WRN("Rebooting due to too many failed FOTA tries");
 				sys_reboot(SYS_REBOOT_COLD);
 			}
+			/*
+			 * WORKAROUND for EMS branch.
+			 * The FOTA has with high probability failed due to network hickup
+			 * but the cellular controller has not caught it.
+			 * Reschedule a poll_message wich check the connection and
+			 * re-starts the FOTA after a poll-reply
+			 */
+			/* Reschedule periodic poll request */
+			int ret = k_work_reschedule_for_queue(&message_q, &modem_poll_work,
+							      K_SECONDS(1));
+			if (ret < 0) {
+				LOG_WRN("Failed to reschedule periodic poll request!");
+			}
+
 		} else if (fw_upgrade_event->dfu_status != DFU_STATUS_IDLE) {
 			/* DFU/FOTA has started or is in progress, halt log data trafic in the
 			 * messaging tx thread */

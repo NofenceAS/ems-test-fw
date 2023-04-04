@@ -426,18 +426,18 @@ void process_correction(Mode amc_mode, gnss_last_fix_struct_t *gnss, FenceStatus
 	atomic_set(&last_mean_dist, mean_dist);
 
 	if (amc_mode == Mode_Teach || amc_mode == Mode_Fence) {
-		LOG_INF("  amc_mode in teach or fence");
+		LOG_DBG("  amc_mode in teach or fence");
 		if (zone == WARN_ZONE) {
-			LOG_INF("  Zone is warn");
+			LOG_DBG("  Zone is warn");
 			if (gnss->mode == GNSSMODE_MAX) {
-				LOG_INF("  GNSS in max");
+				LOG_DBG("  GNSS in max");
 				if (fs == FenceStatus_FenceStatus_Normal ||
 				    fs == FenceStatus_MaybeOutOfFence) {
-					LOG_INF("  Fs is normal or maybe");
+					LOG_DBG("  Fs is normal or maybe");
 					if (get_active_delta() > 0 || get_correction_status() > 0) {
-						LOG_INF("  activedelta or correctionstat");
+						LOG_DBG("  activedelta or correctionstat");
 						if (gnss_has_warn_fix()) {
-							LOG_INF("  has warn fix");
+							LOG_DBG("  has warn fix");
 							correction_start(mean_dist);
 						}
 					}

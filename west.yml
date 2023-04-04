@@ -9,7 +9,7 @@ manifest:
     - name: nrf
       repo-path: sdk-nrf
       remote: nofence
-      revision: v1.8.0-2-gc89b8c3a7
+      revision: 88422caeb8bfb4e600ddd42054f8656d0586378a
       import: true
     - name: zephyr
       repo-path: sdk-zephyr
