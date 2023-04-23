@@ -178,6 +178,7 @@ int pwr_module_init(void)
 		nf_app_error(ERR_PWR_MODULE, err, e_msg, strlen(e_msg));
 		return err;
 	}
+#if !CONFIG_DIAGNOSTIC_EMS_FW
 	err = charging_start();
 	if (err) {
 		LOG_ERR("Failed to start charging %d", err);
@@ -185,6 +186,14 @@ int pwr_module_init(void)
 		nf_app_error(ERR_PWR_MODULE, err, e_msg, strlen(e_msg));
 		return err;
 	}
+#else
+	err = charging_stop();
+	if (err) {
+		LOG_ERR("Failed to stop solar charging %d", err);
+		return err;
+	}
+#endif
+
 #endif
 	current_state = PWR_LOW;
 
