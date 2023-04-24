@@ -26,6 +26,7 @@ int commander_stimulator_handler(enum diagnostics_interface interface, uint8_t c
 	int err = 0;
 
 	uint8_t resp = ACK;
+	static bool charging_enabled = false;
 
 	switch (cmd) {
 	case GNSS_HUB: {
@@ -103,14 +104,22 @@ int commander_stimulator_handler(enum diagnostics_interface interface, uint8_t c
 		break;
 	}
 	case TURN_ONOFF_CHARGING: {
-		LOG_DBG("toggling charging: off");
-		if (charging_stop() < 0) {
-			resp = ERROR;
-		}
-		k_sleep(K_SECONDS(2));
-		LOG_DBG("toggling charging: on");
-		if (charging_start() < 0) {
-			resp = ERROR;
+		if (charging_enabled) {
+			LOG_DBG("toggling charging: off");
+			if (charging_stop() < 0) {
+				resp = ERROR;
+			} else {
+				LOG_DBG("Charging switched OFF!");
+				charging_enabled = !charging_enabled;
+			}
+		} else {
+			LOG_DBG("toggling charging: on");
+			if (charging_start() < 0) {
+				resp = ERROR;
+			} else {
+				LOG_DBG("Charging switched ON!");
+				charging_enabled = !charging_enabled;
+			}
 		}
 		break;
 	}

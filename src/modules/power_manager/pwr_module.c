@@ -83,7 +83,7 @@ static void battery_poll_work_fn()
 		if (batt_voltage < CONFIG_BATTERY_LOW - CONFIG_BATTERY_THRESHOLD) {
 			current_state = PWR_LOW;
 		}
-#if CONFIG_ADC_NRFX_SAADC
+#if CONFIG_ADC_NRFX_SAADC && !CONFIG_DIAGNOSTIC_EMS_FW
 		if (batt_voltage > CONFIG_CHARGING_THRESHOLD_STOP) {
 			if (charging_in_progress()) {
 				charging_stop();
@@ -178,6 +178,7 @@ int pwr_module_init(void)
 		nf_app_error(ERR_PWR_MODULE, err, e_msg, strlen(e_msg));
 		return err;
 	}
+#if !CONFIG_DIAGNOSTIC_EMS_FW
 	err = charging_start();
 	if (err) {
 		LOG_ERR("Failed to start charging %d", err);
@@ -185,6 +186,14 @@ int pwr_module_init(void)
 		nf_app_error(ERR_PWR_MODULE, err, e_msg, strlen(e_msg));
 		return err;
 	}
+#else
+	err = charging_stop();
+	if (err) {
+		LOG_ERR("Failed to stop solar charging %d", err);
+		return err;
+	}
+#endif
+
 #endif
 	current_state = PWR_LOW;
 
