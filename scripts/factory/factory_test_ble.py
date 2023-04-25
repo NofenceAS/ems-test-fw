@@ -497,7 +497,7 @@ while not stream.is_connected():
         sys.exit('Timed out waiting for connection...')
         
 got_ping = True
-if stream.is_connected():
+if stream and stream.is_connected():
     cmndr = nfdiag.Commander(stream)
     print('Trying to ping...')
     got_ping = False

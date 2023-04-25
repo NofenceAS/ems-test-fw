@@ -105,7 +105,7 @@ class NFDiagnostics(BLEDriverObserver, BLEAdapterObserver):
                 address_string, dev_name
             )
         )
-
+        #print(f"dev_name: '{dev_name}', self.dev_name: '{self.dev_name}'")
         if (dev_name == self.dev_name) or (self.wildcard and dev_name.startswith(self.dev_name)) or (dev_name.startswith('NF') and dev_name.endswith(self.dev_name)):
             self.adapter.connect(peer_addr, tag=1)
 
@@ -152,7 +152,8 @@ class BLEStream:
         if serial is None:
             self.nfdiag = NFDiagnostics(self.adapter)
         else:
-            self.nfdiag = NFDiagnostics(self.adapter, dev_name="NF" + str(serial).zfill(6), wildcard=True)
+            #self.nfdiag = NFDiagnostics(self.adapter, dev_name="NF" + str(serial).zfill(6), wildcard=True)
+            self.nfdiag = NFDiagnostics(self.adapter, dev_name=str(serial), wildcard=True)
         self.nfdiag.open()
     
         self.conn = self.nfdiag.connect_and_discover()
